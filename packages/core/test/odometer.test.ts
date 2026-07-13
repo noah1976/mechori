@@ -42,9 +42,11 @@ test("supports repeated meter replacements without imposing a count limit", () =
     reading(900, "episode-4"),
   ];
 
-  const assessments = readings
-    .slice(1)
-    .map((current, index) => assessOdometerSequence(readings[index], current));
+  const assessments = readings.slice(1).map((current, index) => {
+    const previous = readings[index];
+    assert.ok(previous);
+    return assessOdometerSequence(previous, current);
+  });
 
   assert.deepEqual(assessments, ["new_episode", "new_episode", "new_episode"]);
 });

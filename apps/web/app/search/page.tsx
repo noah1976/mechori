@@ -2,8 +2,9 @@
 
 import { DemoNotice } from "@/components/demo-notice";
 import { RecordCard } from "@/components/record-card";
+import { KnowledgeSynthesisPanel } from "@/components/knowledge-synthesis-panel";
 import { useApp } from "@/lib/app-context";
-import { filterRecords, type HazardLevel, type ResolutionStatus } from "@mechory/core";
+import { buildKnowledgeSynthesis, demoKnowledgeCases, filterKnowledgeCasesByText, filterRecords, type HazardLevel, type ResolutionStatus } from "@mechory/core";
 import { translate } from "@mechory/i18n";
 import { Search } from "lucide-react";
 import { Suspense, useMemo, useState } from "react";
@@ -19,6 +20,10 @@ function SearchContent() {
   const [hazard, setHazard] = useState<HazardLevel | "all">("all");
   const ja = locale === "ja";
   const results = useMemo(() => filterRecords(data.records, { keyword, symptom, partNumber, resolutionStatus: resolution, hazardLevel: hazard }), [data.records, keyword, symptom, partNumber, resolution, hazard]);
+  const knowledgeSynthesis = useMemo(
+    () => buildKnowledgeSynthesis(filterKnowledgeCasesByText(demoKnowledgeCases, `${keyword} ${symptom}`)),
+    [keyword, symptom],
+  );
 
   return <div className="page-stack"><DemoNotice /><header className="page-header"><div><span className="eyebrow">KNOWLEDGE SEARCH</span><h1>{translate(locale, "search")}</h1><p>{ja ? "検索範囲と確認状態を見ながら、参考事例を探します。" : "Find reference cases while keeping match scope and verification visible."}</p></div></header>
     <section className="search-panel">
@@ -31,6 +36,7 @@ function SearchContent() {
       </div>
       <p className="search-scope">{ja ? "対象車両：FIAT Barchetta 1997 / 1.8 16V（DEMO）" : "Vehicle scope: FIAT Barchetta 1997 / 1.8 16V (DEMO)"}</p>
     </section>
+    <KnowledgeSynthesisPanel synthesis={knowledgeSynthesis} locale={locale} />
     <section><div className="section-heading"><div><span className="eyebrow">{results.length} RESULTS</span><h2>{ja ? "一致した記録" : "Matching records"}</h2></div></div>{results.length ? <div className="record-grid wide">{results.map((record) => <RecordCard key={record.id} record={record} locale={locale} />)}</div> : <div className="empty-state"><Search size={28} /><h3>{ja ? "一致する記録がありません" : "No matching records"}</h3><p>{translate(locale, "noResults")}</p></div>}</section>
   </div>;
 }
