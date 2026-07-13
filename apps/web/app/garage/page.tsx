@@ -32,9 +32,19 @@ export default function GaragePage() {
             <div><dt>{ja ? "ハンドル" : "Steering"}</dt><dd>{vehicle.steering}</dd></div>
             <div><dt>{ja ? "トランスミッション" : "Transmission"}</dt><dd>{vehicle.transmission}</dd></div>
           </dl>
-          <div className="odometer"><Gauge size={22} /><span><small>{ja ? "現在の走行距離" : "Current odometer"}</small><strong>{vehicle.odometerKm.toLocaleString()} km</strong></span></div>
+          <div className="odometer"><Gauge size={22} /><span><small>{ja ? "現在のメーター表示値" : "Current displayed odometer"}</small><strong>{vehicle.currentOdometerReading.displayedValue.toLocaleString()} {vehicle.currentOdometerReading.unit}</strong></span></div>
           <p className="privacy-caption">{ja ? "VIN・ナンバープレート・正確な保管場所は保持しません。" : "VIN, registration plate, and precise storage location are not retained."}</p>
         </div>
+      </section>
+
+      <section className="odometer-history">
+        <div className="section-heading"><div><span className="eyebrow">ODOMETER HISTORY</span><h2>{ja ? "メーター期間" : "Odometer episodes"}</h2><p>{ja ? "交換や修理のたびに別の期間として残します。表示値の逆行だけで誤り・虚偽とは判断しません。" : "Each replacement or repair starts a separate episode. A lower reading alone is never treated as false or incorrect."}</p></div><span className="episode-count">{vehicle.odometerEpisodes.length}</span></div>
+        <ol>
+          {vehicle.odometerEpisodes.map((episode, index) => {
+            const episodeRecords = records.filter((record) => record.odometerReading.episodeId === episode.id);
+            return <li key={episode.id}><span>{index + 1}</span><div><strong>{ja ? `メーター ${index + 1}` : `Meter ${index + 1}`}</strong><small>{odometerReasonLabel(episode.reason, ja)}{episode.startedAt ? ` · ${episode.startedAt}` : ""}</small></div><em>{ja ? `${episodeRecords.length}件` : `${episodeRecords.length} records`}</em></li>;
+          })}
+        </ol>
       </section>
 
       <section className="garage-stats">
@@ -49,4 +59,17 @@ export default function GaragePage() {
       </section>
     </div>
   );
+}
+
+function odometerReasonLabel(reason: string, ja: boolean) {
+  const labels: Record<string, [string, string]> = {
+    initial: ["初期登録", "Initial"],
+    replacement: ["交換", "Replacement"],
+    repair: ["修理", "Repair"],
+    reset: ["リセット", "Reset"],
+    rollover: ["桁あふれ", "Rollover"],
+    unit_change: ["単位変更", "Unit change"],
+    unknown: ["理由不明", "Unknown reason"],
+  };
+  return (labels[reason] ?? ["理由不明", "Unknown reason"])[ja ? 0 : 1];
 }

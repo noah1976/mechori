@@ -1,4 +1,4 @@
-import type { AppData } from "@mechory/core";
+import { migrateAppData, type AppData } from "@mechory/core";
 
 export interface DataProvider {
   load(): Promise<AppData | null>;
@@ -13,7 +13,12 @@ export class LocalStorageDataProvider implements DataProvider {
     const raw = window.localStorage.getItem(this.storageKey);
     if (!raw) return null;
     try {
-      return JSON.parse(raw) as AppData;
+      const migrated = migrateAppData(JSON.parse(raw));
+      if (!migrated) throw new Error("invalid_local_data");
+      if (JSON.stringify(migrated) !== raw) {
+        window.localStorage.setItem(this.storageKey, JSON.stringify(migrated));
+      }
+      return migrated;
     } catch {
       window.localStorage.removeItem(this.storageKey);
       return null;

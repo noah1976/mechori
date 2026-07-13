@@ -2,7 +2,7 @@
 
 import {
   cloneDemoData,
-  createRecordFromDraft,
+  applyRecordDraftToData,
   type AppData,
   type Locale,
   type MaintenanceRecord,
@@ -70,9 +70,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (draft: RecordDraft) => {
       const vehicle = data.vehicles[0];
       if (!vehicle) throw new Error("A demo vehicle is required");
-      const record = createRecordFromDraft(draft, vehicle.id, undefined, locale);
-      persist({ ...data, records: [record, ...data.records] });
-      return record;
+      const result = applyRecordDraftToData(data, draft, undefined, locale);
+      persist(result.data);
+      return result.record;
     },
     [data, locale, persist],
   );
@@ -81,16 +81,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     (id: string, draft: RecordDraft) => {
       const previous = data.records.find((record) => record.id === id);
       if (!previous) return null;
-      const updated = {
-        ...createRecordFromDraft(draft, previous.vehicleId, id, previous.sourceLanguage),
-        createdAt: previous.createdAt,
-        isDemo: previous.isDemo,
-      };
-      persist({
-        ...data,
-        records: data.records.map((record) => (record.id === id ? updated : record)),
-      });
-      return updated;
+      const result = applyRecordDraftToData(data, draft, id, previous.sourceLanguage);
+      persist(result.data);
+      return result.record;
     },
     [data, persist],
   );

@@ -19,7 +19,8 @@ export function RecordCard({ record, locale }: { record: MaintenanceRecord; loca
       <h3>{recordTitle(record, locale)}</h3>
       <p className="record-excerpt">{record.symptoms}</p>
       <div className="record-meta">
-        <span><Gauge size={15} />{record.odometerKm.toLocaleString()} km</span>
+        <span><Gauge size={15} />{record.odometerReading.displayedValue.toLocaleString()} {record.odometerReading.unit}</span>
+        {record.actions.length > 1 && <span>{locale === "ja" ? `${record.actions.length}作業` : `${record.actions.length} actions`}</span>}
       </div>
       <div className="badge-row">
         <ResolutionBadge value={record.resolutionStatus} locale={locale} />

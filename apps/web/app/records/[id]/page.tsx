@@ -11,6 +11,7 @@ export default function RecordDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data, locale } = useApp();
   const record = data.records.find((item) => item.id === id);
+  const vehicle = data.vehicles.find((item) => item.id === record?.vehicleId);
   const ja = locale === "ja";
   if (!record) return <div className="empty-state"><h1>{ja ? "記録が見つかりません" : "Record not found"}</h1><Link href="/records" className="secondary-action">{ja ? "履歴へ戻る" : "Back to history"}</Link></div>;
 
@@ -20,19 +21,31 @@ export default function RecordDetailPage() {
       <header className="detail-header">
         <div className="record-card-topline"><span>{record.serviceDate}</span>{record.isDemo && <span className="demo-label">DEMO</span>}</div>
         <h1>{recordTitle(record, locale)}</h1>
-        <div className="detail-summary"><span><Gauge size={16} />{record.odometerKm.toLocaleString()} km</span><span>{record.matchScope}</span></div>
+        <div className="detail-summary"><span><Gauge size={16} />{record.odometerReading.displayedValue.toLocaleString()} {record.odometerReading.unit}</span><span>{record.matchScope}</span><span>{ja ? `メーター期間 ${Math.max(1, (vehicle?.odometerEpisodes.findIndex((episode) => episode.id === record.odometerReading.episodeId) ?? 0) + 1)}` : `Meter episode ${Math.max(1, (vehicle?.odometerEpisodes.findIndex((episode) => episode.id === record.odometerReading.episodeId) ?? 0) + 1)}`}</span></div>
         <div className="badge-row"><ResolutionBadge value={record.resolutionStatus} locale={locale} /><VisibilityBadge value={record.visibility} locale={locale} /><HazardBadge level={record.hazardLevel} /><VerificationBadge value={record.verificationStatus} locale={locale} /></div>
         <Link href={`/records/${record.id}/edit`} className="secondary-action"><FilePenLine size={17} />{ja ? "編集" : "Edit"}</Link>
       </header>
 
       {record.hazardLevel === "CRITICAL" && <div className="critical-warning" role="alert"><AlertTriangle size={22} /><div><strong>{ja ? "安全に関わる可能性がある参考情報です" : "This reference may involve safety-critical systems"}</strong><p>{ja ? "実車の診断結果ではありません。作業を進めず、メーカー資料と専門整備工場へ確認してください。" : "This is not a diagnosis. Do not proceed based on this record alone; consult manufacturer material and a qualified workshop."}</p></div></div>}
 
+      {record.odometerReading.sequenceAssessment === "needs_context" && <div className="context-notice"><Gauge size={20} /><div><strong>{ja ? "表示値が前回より小さい記録です" : "This reading is lower than the previous one"}</strong><p>{ja ? "メーター交換・修理・入力時期などの背景確認が必要な状態です。虚偽や誤りとは判定していません。" : "Meter replacement, repair, or record timing may explain it. This is not classified as false or incorrect."}</p></div></div>}
+
       <section className="knowledge-flow">
-        <DetailBlock number="01" title={ja ? "確認した症状" : "Observed symptoms"} value={record.symptoms} />
-        <DetailBlock number="02" title={ja ? "原因候補" : "Possible causes"} value={record.causeCandidates} />
-        <DetailBlock number="03" title={ja ? "確認した箇所" : "Checks performed"} value={record.checksPerformed} />
-        <DetailBlock number="04" title={ja ? "実施した作業" : "Work performed"} value={record.workPerformed} />
-        <DetailBlock number="05" title={ja ? "結果" : "Result"} value={record.result} />
+        <DetailBlock number="01" title={ja ? "入庫のきっかけ・症状" : "Reason for visit and symptoms"} value={record.symptoms} />
+      </section>
+
+      <section className="action-list" aria-labelledby="actions-heading">
+        <div className="section-heading"><div><span className="eyebrow">ACTIONS</span><h2 id="actions-heading">{ja ? `実施作業 ${record.actions.length}件` : `${record.actions.length} recorded actions`}</h2></div></div>
+        {record.actions.map((action, index) => <article className="action-detail" key={action.id}>
+          <header><span>{String(index + 1).padStart(2, "0")}</span><div><h3>{action.summary}</h3><div className="badge-row"><ResolutionBadge value={action.resolutionStatus} locale={locale} /><HazardBadge level={action.hazardLevel} /></div></div></header>
+          <dl>
+            <div><dt>{ja ? "原因候補" : "Possible causes"}</dt><dd>{action.causeCandidates}</dd></div>
+            <div><dt>{ja ? "確認した箇所" : "Checks performed"}</dt><dd>{action.checksPerformed}</dd></div>
+            <div><dt>{ja ? "実施した作業" : "Work performed"}</dt><dd>{action.workPerformed}</dd></div>
+            <div><dt>{ja ? "結果" : "Result"}</dt><dd>{action.result}</dd></div>
+            {action.parts.length > 0 && <div><dt>{ja ? "部品" : "Parts"}</dt><dd>{action.parts.map((part) => [part.name, part.manufacturer, part.partNumber].filter(Boolean).join(" / ")).join(", ")}</dd></div>}
+          </dl>
+        </article>)}
       </section>
 
       <section className="detail-band">
