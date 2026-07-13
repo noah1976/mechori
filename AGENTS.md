@@ -25,6 +25,12 @@ MECHORY（メカリィ）は、車両メンテナンス記録を構造化し、�
 - プロダクト方針: `docs/PRODUCT.md`
 - MVP範囲: `docs/MVP_SCOPE.md`
 - アーキテクチャ: `docs/ARCHITECTURE.md`
+- 主要画面: `docs/SCREENS.md`
+- 初期データモデル: `docs/DATA_MODEL.md`
+- 取込パイプライン: `docs/IMPORT_PIPELINE.md`
+- 信頼性と確認: `docs/TRUST_AND_VERIFICATION.md`
+- プラン権限: `docs/PLAN_ENTITLEMENTS.md`
+- 入力インセンティブ: `docs/CONTRIBUTION_INCENTIVES.md`
 - プライバシー: `docs/PRIVACY.md`
 - 安全性: `docs/SAFETY.md`
 - 法務準備: `docs/LEGAL_READINESS.md`
