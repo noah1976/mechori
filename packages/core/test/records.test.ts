@@ -97,6 +97,27 @@ test("accepts repeated meter replacements without a count limit", () => {
   assert.equal(data.vehicles[0]?.currentOdometerReading.displayedValue, 300);
 });
 
+test("editing a saved meter-change record does not create another episode", () => {
+  const created = applyRecordDraftToData(cloneDemoData(), validDraft({
+    odometerKm: "250",
+    odometerChangeReason: "replacement",
+  }));
+  const episodeCount = created.data.vehicles[0]?.odometerEpisodes.length;
+  const edited = applyRecordDraftToData(
+    created.data,
+    validDraft({
+      summary: "DEMO: 編集済みのメーター交換記録",
+      odometerKm: "260",
+      odometerEpisodeId: created.record.odometerReading.episodeId,
+      odometerChangeReason: "replacement",
+    }),
+    created.record.id,
+  );
+
+  assert.equal(edited.data.vehicles[0]?.odometerEpisodes.length, episodeCount);
+  assert.equal(edited.record.odometerReading.episodeId, created.record.odometerReading.episodeId);
+});
+
 test("flags a lower reading in the same meter episode for context, not rejection", () => {
   const data = cloneDemoData();
   const result = applyRecordDraftToData(data, validDraft({

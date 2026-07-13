@@ -208,9 +208,23 @@ export function applyRecordDraftToData(
     draft.odometerChangeReason === "same_episode"
       ? undefined
       : draft.odometerChangeReason;
-  const creatingEpisode = newEpisodeReason !== undefined;
+  const existingEpisode = existingRecord
+    ? vehicle.odometerEpisodes.find(
+        (episode) => episode.id === existingRecord.odometerReading.episodeId,
+      )
+    : undefined;
+  const reusingRecordedChange = Boolean(
+    newEpisodeReason &&
+      existingRecord &&
+      existingEpisode &&
+      existingEpisode.reason !== "initial" &&
+      existingEpisode.startedAt === existingRecord.serviceDate,
+  );
+  const creatingEpisode = newEpisodeReason !== undefined && !reusingRecordedChange;
   const currentEpisodeId =
-    draft.odometerEpisodeId || vehicle.currentOdometerReading.episodeId;
+    reusingRecordedChange && existingRecord
+      ? existingRecord.odometerReading.episodeId
+      : draft.odometerEpisodeId || vehicle.currentOdometerReading.episodeId;
   const episodeId = creatingEpisode
     ? `episode-${crypto.randomUUID()}`
     : currentEpisodeId;
@@ -236,7 +250,7 @@ export function applyRecordDraftToData(
     episodeId,
     displayedValue: Number(draft.odometerKm),
     unit: draft.odometerUnit,
-    sequenceAssessment: creatingEpisode
+    sequenceAssessment: newEpisodeReason
       ? "new_episode"
       : assessPrototypeOdometer(previousReading, Number(draft.odometerKm), draft.odometerUnit),
   };

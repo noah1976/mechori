@@ -14,6 +14,15 @@ export default function RecordDetailPage() {
   const vehicle = data.vehicles.find((item) => item.id === record?.vehicleId);
   const ja = locale === "ja";
   if (!record) return <div className="empty-state"><h1>{ja ? "記録が見つかりません" : "Record not found"}</h1><Link href="/records" className="secondary-action">{ja ? "履歴へ戻る" : "Back to history"}</Link></div>;
+  const odometerEpisode = vehicle?.odometerEpisodes.find(
+    (episode) => episode.id === record.odometerReading.episodeId,
+  );
+  const meterChangeLabel =
+    odometerEpisode &&
+    odometerEpisode.reason !== "initial" &&
+    odometerEpisode.startedAt === record.serviceDate
+      ? episodeReasonLabel(odometerEpisode.reason, ja)
+      : undefined;
 
   return (
     <div className="page-stack narrow-page">
@@ -21,7 +30,7 @@ export default function RecordDetailPage() {
       <header className="detail-header">
         <div className="record-card-topline"><span>{record.serviceDate}</span>{record.isDemo && <span className="demo-label">DEMO</span>}</div>
         <h1>{recordTitle(record, locale)}</h1>
-        <div className="detail-summary"><span><Gauge size={16} />{record.odometerReading.displayedValue.toLocaleString()} {record.odometerReading.unit}</span><span>{record.matchScope}</span><span>{ja ? `メーター期間 ${Math.max(1, (vehicle?.odometerEpisodes.findIndex((episode) => episode.id === record.odometerReading.episodeId) ?? 0) + 1)}` : `Meter episode ${Math.max(1, (vehicle?.odometerEpisodes.findIndex((episode) => episode.id === record.odometerReading.episodeId) ?? 0) + 1)}`}</span></div>
+        <div className="detail-summary"><span><Gauge size={16} />{record.odometerReading.displayedValue.toLocaleString()} {record.odometerReading.unit}</span><span>{record.matchScope}</span>{meterChangeLabel && <span>{meterChangeLabel}</span>}</div>
         <div className="badge-row"><ResolutionBadge value={record.resolutionStatus} locale={locale} /><VisibilityBadge value={record.visibility} locale={locale} /><HazardBadge level={record.hazardLevel} /><VerificationBadge value={record.verificationStatus} locale={locale} /></div>
         <Link href={`/records/${record.id}/edit`} className="secondary-action"><FilePenLine size={17} />{ja ? "編集" : "Edit"}</Link>
       </header>
@@ -60,4 +69,16 @@ export default function RecordDetailPage() {
 
 function DetailBlock({ number, title, value }: { number: string; title: string; value: string }) {
   return <article><span>{number}</span><div><h2>{title}</h2><p>{value}</p></div></article>;
+}
+
+function episodeReasonLabel(reason: string, ja: boolean) {
+  const labels: Record<string, [string, string]> = {
+    replacement: ["メーター交換", "Odometer replaced"],
+    repair: ["メーター修理", "Odometer repaired"],
+    reset: ["メーターリセット", "Odometer reset"],
+    rollover: ["メーター桁あふれ", "Odometer rollover"],
+    unit_change: ["表示単位変更", "Odometer unit changed"],
+    unknown: ["メーター変更", "Odometer changed"],
+  };
+  return (labels[reason] ?? ["メーター変更", "Odometer changed"])[ja ? 0 : 1];
 }

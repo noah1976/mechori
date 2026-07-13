@@ -21,23 +21,29 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useApp } from "@/lib/app-context";
 
-const episodeReasons: PrototypeOdometerEpisodeReason[] = [
+const meterChangeReasons: PrototypeOdometerEpisodeReason[] = [
   "replacement",
   "repair",
   "reset",
-  "rollover",
   "unit_change",
   "unknown",
 ];
 
 function draftFromRecord(record: MaintenanceRecord | undefined, vehicle: Vehicle): RecordDraft {
   const primaryAction = record?.actions[0];
+  const recordedEpisode = record
+    ? vehicle.odometerEpisodes.find((episode) => episode.id === record.odometerReading.episodeId)
+    : undefined;
+  const recordedMeterChange =
+    recordedEpisode &&
+    recordedEpisode.reason !== "initial" &&
+    recordedEpisode.startedAt === record?.serviceDate;
   return {
     serviceDate: record?.serviceDate ?? new Date().toISOString().slice(0, 10),
     odometerKm: (record?.odometerReading.displayedValue ?? vehicle.currentOdometerReading.displayedValue).toString(),
     odometerUnit: record?.odometerReading.unit ?? vehicle.currentOdometerReading.unit,
     odometerEpisodeId: record?.odometerReading.episodeId ?? vehicle.currentOdometerReading.episodeId,
-    odometerChangeReason: "same_episode",
+    odometerChangeReason: recordedMeterChange ? recordedEpisode.reason : "same_episode",
     summary: record?.summary ?? "",
     symptoms: record?.symptoms ?? "",
     causeCandidates: primaryAction?.causeCandidates ?? record?.causeCandidates ?? "",
@@ -100,19 +106,13 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
     }));
   }
 
-  function onEpisodeChange(value: string) {
-    if (value.startsWith("new:")) {
-      setDraft((current) => ({
-        ...current,
-        odometerEpisodeId: vehicle.currentOdometerReading.episodeId,
-        odometerChangeReason: value.slice(4) as PrototypeOdometerEpisodeReason,
-      }));
-      return;
-    }
+  function onMeterChangeToggle(checked: boolean) {
     setDraft((current) => ({
       ...current,
-      odometerEpisodeId: value,
-      odometerChangeReason: "same_episode",
+      odometerEpisodeId: checked
+        ? vehicle.currentOdometerReading.episodeId
+        : current.odometerEpisodeId,
+      odometerChangeReason: checked ? "replacement" : "same_episode",
     }));
   }
 
@@ -130,39 +130,23 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
         ? "入力内容を確認してください"
         : "Check this field"
       : undefined;
-  const episodeValue =
-    draft.odometerChangeReason === "same_episode"
-      ? draft.odometerEpisodeId
-      : `new:${draft.odometerChangeReason}`;
+  const recordsExistingMeterChange = Boolean(
+    record && draft.odometerChangeReason !== "same_episode",
+  );
+  const hasMeterChange = draft.odometerChangeReason !== "same_episode";
 
   return (
     <form className="record-form" onSubmit={onSubmit} noValidate>
       <section className="form-section">
         <div className="section-heading compact">
-          <div><span className="eyebrow">01</span><h2>{ja ? "入庫とメーター" : "Visit and odometer"}</h2></div>
+          <div><span className="eyebrow">01</span><h2>{ja ? "基本情報" : "Basics"}</h2></div>
           <span className="required-note">{ja ? "* 必須" : "* Required"}</span>
         </div>
-        <div className="form-grid two-columns">
+        <div className="form-grid three-columns">
           <Field label={ja ? "整備日 *" : "Service date *"} error={errorText("serviceDate")}>
             <input type="date" value={draft.serviceDate} onChange={(event) => setField("serviceDate", event.target.value)} />
           </Field>
-          <Field label={ja ? "メーター期間 *" : "Odometer episode *"}>
-            <select value={episodeValue} onChange={(event) => onEpisodeChange(event.target.value)}>
-              {vehicle.odometerEpisodes.map((episode, index) => (
-                <option key={episode.id} value={episode.id}>
-                  {ja ? `メーター ${index + 1}（${episodeReasonLabel(episode.reason, ja)}）` : `Meter ${index + 1} (${episodeReasonLabel(episode.reason, ja)})`}
-                </option>
-              ))}
-              {episodeReasons.map((reason) => (
-                <option key={reason} value={`new:${reason}`}>
-                  {ja ? `新しいメーター期間：${episodeReasonLabel(reason, ja)}` : `New meter episode: ${episodeReasonLabel(reason, ja)}`}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
-        <div className="form-grid two-columns">
-          <Field label={ja ? "メーター表示値 *" : "Displayed odometer value *"} error={errorText("odometerKm")}>
+          <Field label={hasMeterChange ? (ja ? "交換・修理後の走行距離 *" : "Odometer after change *") : (ja ? "走行距離 *" : "Odometer *")} error={errorText("odometerKm")}>
             <input type="number" min="0" inputMode="numeric" value={draft.odometerKm} onChange={(event) => setField("odometerKm", event.target.value)} />
           </Field>
           <Field label={ja ? "表示単位" : "Display unit"}>
@@ -173,11 +157,30 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
             </select>
           </Field>
         </div>
-        <p className="field-guidance">
-          {ja
-            ? "メーター交換・修理・リセット後は新しい期間を選びます。表示値が以前より小さくてもエラーや虚偽とは判定しません。"
-            : "Start a new episode after replacement, repair, or reset. A lower reading is never treated as an error or false claim by itself."}
-        </p>
+        <div className="meter-change-option">
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={hasMeterChange}
+              disabled={recordsExistingMeterChange}
+              onChange={(event) => onMeterChangeToggle(event.target.checked)}
+            />
+            <span>{ja ? "この整備でメーターを交換・修理した" : "The odometer was replaced or repaired during this service"}</span>
+          </label>
+          {recordsExistingMeterChange && <small>{ja ? "保存済みのメーター交換記録です。" : "This meter-change record is already saved."}</small>}
+          {hasMeterChange && <div className="meter-change-fields">
+            <Field label={ja ? "記録する内容" : "What changed"}>
+              <select
+                value={draft.odometerChangeReason}
+                disabled={recordsExistingMeterChange}
+                onChange={(event) => setField("odometerChangeReason", event.target.value as PrototypeOdometerEpisodeReason)}
+              >
+                {meterChangeReasons.map((reason) => <option key={reason} value={reason}>{episodeReasonLabel(reason, ja)}</option>)}
+              </select>
+            </Field>
+            <p>{ja ? "上の走行距離には、交換・修理後のメーター表示値を入力します。以前より小さくても異常や虚偽とは判定しません。" : "Enter the displayed value after replacement or repair above. A lower value is not treated as an error or false claim."}</p>
+          </div>}
+        </div>
         <Field label={ja ? "入庫・整備イベントのタイトル *" : "Visit or maintenance event title *"} error={errorText("summary")}>
           <input value={draft.summary} onChange={(event) => setField("summary", event.target.value)} placeholder={ja ? "例：車検と定期整備" : "e.g. Inspection and routine service"} />
         </Field>
