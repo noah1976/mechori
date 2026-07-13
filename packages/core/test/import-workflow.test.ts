@@ -4,7 +4,9 @@ import test from "node:test";
 import {
   canConfirmCandidate,
   canTransitionImportSession,
+  getImportReviewProgress,
   requiresFieldReview,
+  reviewFieldAssertion,
   transitionImportSession,
   type FieldAssertion,
 } from "../src/index.ts";
@@ -47,4 +49,29 @@ test("does not confirm a candidate while any field still needs review", () => {
     canConfirmCandidate("in_review", [confirmedAssertion, inferredAssertion]),
     false,
   );
+});
+
+test("tracks manual review progress and keeps corrections explicit", () => {
+  const pendingAssertion: FieldAssertion = {
+    ...confirmedAssertion,
+    id: "field-2",
+    fieldCode: "odometer",
+    suggestedValue: "B6420",
+    confidenceBand: "low",
+    inferenceState: "read",
+    verificationState: "needs_review",
+  };
+  const initial = [confirmedAssertion, pendingAssertion];
+
+  assert.deepEqual(getImportReviewProgress(initial), {
+    total: 2,
+    confirmed: 1,
+    rejected: 0,
+    remaining: 1,
+  });
+
+  const reviewed = reviewFieldAssertion(initial, "field-2", "user_confirmed", "86420");
+  assert.equal(reviewed[1]?.correctedValue, "86420");
+  assert.equal(reviewed[1]?.verificationState, "user_confirmed");
+  assert.equal(getImportReviewProgress(reviewed).remaining, 0);
 });

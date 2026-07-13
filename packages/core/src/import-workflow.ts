@@ -58,3 +58,45 @@ export function canConfirmCandidate(
       assertion.verificationState === "rejected",
   );
 }
+
+export interface ImportReviewProgress {
+  total: number;
+  confirmed: number;
+  rejected: number;
+  remaining: number;
+}
+
+export function getImportReviewProgress(assertions: FieldAssertion[]): ImportReviewProgress {
+  const confirmed = assertions.filter(
+    (assertion) => assertion.verificationState === "user_confirmed",
+  ).length;
+  const rejected = assertions.filter(
+    (assertion) => assertion.verificationState === "rejected",
+  ).length;
+
+  return {
+    total: assertions.length,
+    confirmed,
+    rejected,
+    remaining: assertions.length - confirmed - rejected,
+  };
+}
+
+export function reviewFieldAssertion(
+  assertions: FieldAssertion[],
+  assertionId: string,
+  verificationState: "user_confirmed" | "rejected",
+  correctedValue?: string,
+): FieldAssertion[] {
+  return assertions.map((assertion) => {
+    if (assertion.id !== assertionId) return assertion;
+    return {
+      ...assertion,
+      verificationState,
+      correctedValue:
+        verificationState === "user_confirmed" && correctedValue?.trim()
+          ? correctedValue.trim()
+          : undefined,
+    };
+  });
+}

@@ -4,8 +4,9 @@ import { DemoNotice } from "@/components/demo-notice";
 import { RecordCard } from "@/components/record-card";
 import { useApp } from "@/lib/app-context";
 import { translate } from "@mechory/i18n";
-import { Gauge, History, RotateCcw, TriangleAlert } from "lucide-react";
+import { FileClock, Gauge, History, RotateCcw, TriangleAlert } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function GaragePage() {
   const { data, locale, resetDemo } = useApp();
@@ -19,7 +20,10 @@ export default function GaragePage() {
       <DemoNotice />
       <header className="page-header">
         <div><span className="eyebrow">MY GARAGE</span><h1>{vehicle.make} {vehicle.model}</h1><p>{ja ? "愛車の仕様と整備履歴を、ひとつの場所で。" : "Vehicle identity and maintenance history in one place."}</p></div>
-        <button className="secondary-action" type="button" onClick={() => void resetDemo()}><RotateCcw size={17} />{translate(locale, "resetDemo")}</button>
+        <div className="page-header-actions">
+          <Link href="/garage/history" className="primary-action"><FileClock size={17} />{translate(locale, "historySummary")}</Link>
+          <button className="secondary-action" type="button" onClick={() => void resetDemo()}><RotateCcw size={17} />{translate(locale, "resetDemo")}</button>
+        </div>
       </header>
 
       <section className="garage-feature">

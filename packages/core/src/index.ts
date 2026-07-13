@@ -7,5 +7,6 @@ export * from "./import-workflow.ts";
 export * from "./knowledge-synthesis.ts";
 export * from "./media-privacy.ts";
 export * from "./odometer.ts";
+export * from "./owner-history.ts";
 export * from "./records.ts";
 export * from "./types.ts";
