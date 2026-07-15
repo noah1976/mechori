@@ -1,7 +1,7 @@
 import type { AppData } from "./types.ts";
 
 export const demoData: AppData = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   vehicles: [
     {
       id: "vehicle-demo-barchetta",
@@ -213,6 +213,7 @@ export const demoData: AppData = {
       visibility: "private",
       linkedRecordId: "record-demo-oil",
       displayFields: ["service_date", "odometer", "actions"],
+      media: [],
       knowledgeExtractionConsent: false,
       appreciationCount: 0,
       createdAt: "2026-07-10T09:00:00.000Z",
@@ -231,6 +232,20 @@ export const demoData: AppData = {
       sourceLanguage: "ja",
       visibility: "public",
       displayFields: [],
+      media: [
+        {
+          id: "media-demo-roadster",
+          kind: "image",
+          source: "demo_asset",
+          assetPath: "/demo-roadster.png",
+          mimeType: "image/png",
+          sizeBytes: 0,
+          altText: "DEMO: 屋外に停めたオープンカーのサンプル画像",
+          privacyState: "public_ready",
+          createdAt: "2026-07-12T08:30:00.000Z",
+          isDemo: true,
+        },
+      ],
       knowledgeExtractionConsent: true,
       appreciationCount: 14,
       createdAt: "2026-07-12T08:30:00.000Z",
@@ -250,6 +265,7 @@ export const demoData: AppData = {
       sourceLanguage: "ja",
       visibility: "public",
       displayFields: [],
+      media: [],
       knowledgeExtractionConsent: false,
       appreciationCount: 8,
       createdAt: "2026-07-11T11:00:00.000Z",

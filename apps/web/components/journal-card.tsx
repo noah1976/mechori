@@ -9,6 +9,7 @@ import type {
 import { translate } from "@mechory/i18n";
 import { ArrowRight, BookOpen, Heart, Link2, Lock, Users } from "lucide-react";
 import Link from "next/link";
+import { JournalMedia } from "@/components/journal-media";
 
 export function JournalCard({
   journal,
@@ -36,6 +37,7 @@ export function JournalCard({
         </div>
         {journal.isDemo && <span className="demo-label">DEMO</span>}
       </div>
+      <JournalMedia attachments={journal.media} locale={locale} compact />
       <h3>{journal.title}</h3>
       <p>{journal.bodyOriginal}</p>
       {record && (

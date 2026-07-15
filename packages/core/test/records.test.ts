@@ -134,15 +134,19 @@ test("migrates legacy local data into actions and an odometer episode", () => {
   delete legacy.schemaVersion;
   const vehicles = legacy.vehicles as Array<Record<string, unknown>>;
   const records = legacy.records as Array<Record<string, unknown>>;
+  const journals = legacy.journals as Array<Record<string, unknown>>;
   delete vehicles[0]?.odometerEpisodes;
   delete vehicles[0]?.currentOdometerReading;
   delete records[0]?.actions;
   delete records[0]?.odometerReading;
+  delete journals[0]?.media;
 
   const migrated = migrateAppData(legacy);
-  assert.equal(migrated?.schemaVersion, 3);
+  assert.equal(migrated?.schemaVersion, 4);
   assert.equal(migrated?.vehicles[0]?.odometerEpisodes.length, 1);
   assert.equal(migrated?.records[0]?.actions.length, 1);
   assert.ok(migrated?.profiles.length);
   assert.ok(migrated?.journals.length);
+  assert.deepEqual(migrated?.journals[0]?.media, []);
+  assert.equal(migrated?.journals[1]?.media[0]?.source, "demo_asset");
 });

@@ -4,7 +4,7 @@
 
 MECHORYの初期MVPで必要な概念、関係、状態を、特定DBやProviderに固定せず定義します。物理テーブル、インデックス、Supabase RLSは外部接続前に別途設計します。
 
-現行プロトタイプの型は操作確認用です。localStorageの試作スキーマv3では、整備記録に加えてプロフィール、Garage Journal、フォロー関係を保持します。この文書を初期MVPの概念モデルの正とし、実物の整備記録で検証してから物理モデルへ進みます。
+現行プロトタイプの型は操作確認用です。localStorageの試作スキーマv4では、整備記録に加えてプロフィール、Garage Journal、メディア参照、フォロー関係を保持します。メディア本体はIndexedDBへ分離します。この文書を初期MVPの概念モデルの正とし、実物の整備記録で検証してから物理モデルへ進みます。
 
 ## モデルの中心
 
@@ -23,7 +23,8 @@ UserProfile / Vehicle / VehicleModel
   ├─ FollowRelation（フォロー）
   └─ GarageJournalPost（自由記述）
        ├─ JournalMaintenanceLink（整備記録との任意リンク）
-       ├─ MediaPublication（公開確認済み画像）
+       ├─ JournalMediaAttachment（画像・動画の参照と状態）
+       │    └─ MediaPublication（公開確認済み派生ファイル）
        └─ JournalAssertionCandidate（AI等による未確認候補）
 
 ImportSession
@@ -105,6 +106,20 @@ Garage Journalと整備記録を任意で関連付けます。
 - `createdAt`
 
 関連付けだけで非公開MaintenanceEventを公開しません。Journal上に表示する定型情報は、投稿者が項目単位で確認します。
+
+### JournalMediaAttachment
+
+Garage Journalへ添える写真、画像、動画のメタデータです。ファイル本体をJournal本文やlocalStorageへ埋め込みません。
+
+- `id` / `journalPostId`
+- `kind`: 画像、動画
+- `storageObjectId`: 非公開原本または公開用派生ファイルへの内部参照
+- `mimeType` / `sizeBytes`
+- `altText`: 内容の説明
+- `privacyState`: 非公開のみ、処理待ち、目視確認待ち、公開可能、公開停止
+- `createdAt` / `deletedAt`
+
+公開用派生ファイルは原本と別IDにし、原本への公開URLを作りません。動画はフレーム、音声、メタデータの確認状態を別途追跡できる構造とします。
 
 ### JournalAssertionCandidate
 

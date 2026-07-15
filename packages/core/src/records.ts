@@ -286,7 +286,7 @@ export function applyRecordDraftToData(
     record,
     data: {
       ...data,
-      schemaVersion: 3,
+      schemaVersion: 4,
       vehicles: data.vehicles.map((item) => (item.id === vehicleId ? nextVehicle : item)),
       records,
     },
@@ -300,6 +300,9 @@ export function migrateAppData(input: unknown): AppData | null {
     records?: Array<Partial<MaintenanceRecord> & { odometerKm?: number }>;
   };
   if (!Array.isArray(source.vehicles) || !Array.isArray(source.records)) return null;
+  const demoMediaByJournalId = new Map(
+    demoData.journals.map((journal) => [journal.id, journal.media]),
+  );
 
   const vehicles = source.vehicles.filter(hasVehicleIdentity).map((vehicle) => {
     const legacyEpisodeId = `episode-${vehicle.id}-legacy`;
@@ -350,7 +353,7 @@ export function migrateAppData(input: unknown): AppData | null {
   });
 
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     vehicles,
     records,
     profiles: Array.isArray(source.profiles)
@@ -361,7 +364,15 @@ export function migrateAppData(input: unknown): AppData | null {
         ? source.currentProfileId
         : demoData.currentProfileId,
     journals: Array.isArray(source.journals)
-      ? source.journals
+      ? source.journals.map((journal) => ({
+          ...journal,
+          media:
+            Array.isArray(journal.media) && journal.media.length > 0
+              ? journal.media
+              : journal.isDemo
+                ? structuredClone(demoMediaByJournalId.get(journal.id) ?? [])
+                : [],
+        }))
       : structuredClone(demoData.journals),
     follows: Array.isArray(source.follows)
       ? source.follows

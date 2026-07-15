@@ -152,6 +152,23 @@ export type JournalVisibility = "private" | "followers" | "public";
 export type SocialProfileRole = "owner" | "mechanic";
 export type FollowTargetType = "profile" | "vehicle" | "model";
 export type JournalDisplayField = "service_date" | "odometer" | "actions";
+export type JournalMediaKind = "image" | "video";
+export type JournalMediaSource = "local_blob" | "demo_asset";
+export type JournalMediaPrivacyState = "private_only" | "public_ready";
+
+export interface JournalMediaAttachment {
+  id: string;
+  kind: JournalMediaKind;
+  source: JournalMediaSource;
+  storageKey?: string;
+  assetPath?: string;
+  mimeType: string;
+  sizeBytes: number;
+  altText: string;
+  privacyState: JournalMediaPrivacyState;
+  createdAt: string;
+  isDemo: boolean;
+}
 
 export interface SocialProfile {
   id: string;
@@ -175,6 +192,7 @@ export interface GarageJournalPost {
   visibility: JournalVisibility;
   linkedRecordId?: string;
   displayFields: JournalDisplayField[];
+  media: JournalMediaAttachment[];
   knowledgeExtractionConsent: boolean;
   appreciationCount: number;
   createdAt: string;
@@ -205,12 +223,13 @@ export interface JournalDraft {
   vehicleId: string;
   linkedRecordId: string;
   displayFields: JournalDisplayField[];
+  media: JournalMediaAttachment[];
   visibility: JournalVisibility;
   knowledgeExtractionConsent: boolean;
 }
 
 export interface AppData {
-  schemaVersion: 3;
+  schemaVersion: 4;
   vehicles: Vehicle[];
   records: MaintenanceRecord[];
   profiles: SocialProfile[];

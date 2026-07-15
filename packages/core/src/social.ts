@@ -9,7 +9,7 @@ import type {
 
 export interface JournalValidationResult {
   valid: boolean;
-  errors: Partial<Record<"title" | "bodyOriginal", "required">>;
+  errors: Partial<Record<"title" | "bodyOriginal" | "media", "required" | "private_only">>;
 }
 
 export type JournalKnowledgeClassification =
@@ -20,6 +20,12 @@ export function validateJournalDraft(draft: JournalDraft): JournalValidationResu
   const errors: JournalValidationResult["errors"] = {};
   if (!draft.title.trim()) errors.title = "required";
   if (!draft.bodyOriginal.trim()) errors.bodyOriginal = "required";
+  if (
+    draft.visibility !== "private" &&
+    draft.media.some((attachment) => attachment.privacyState !== "public_ready")
+  ) {
+    errors.media = "private_only";
+  }
   return { valid: Object.keys(errors).length === 0, errors };
 }
 
@@ -45,6 +51,7 @@ export function createJournalPost(
     visibility: draft.visibility,
     linkedRecordId: draft.linkedRecordId || undefined,
     displayFields: draft.linkedRecordId ? [...draft.displayFields] : [],
+    media: draft.media.map((attachment) => ({ ...attachment })),
     knowledgeExtractionConsent: draft.knowledgeExtractionConsent,
     appreciationCount: 0,
     createdAt: now,

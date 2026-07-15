@@ -19,6 +19,7 @@ function validDraft(overrides: Partial<JournalDraft> = {}): JournalDraft {
     vehicleId: "vehicle-demo-barchetta",
     linkedRecordId: "record-demo-oil",
     displayFields: ["service_date", "odometer", "actions"],
+    media: [],
     visibility: "private",
     knowledgeExtractionConsent: false,
     ...overrides,
@@ -47,6 +48,40 @@ test("creates a private journal by default without rewriting the body", () => {
   assert.equal(result.journal.visibility, "private");
   assert.equal(result.journal.publishedAt, undefined);
   assert.equal(result.journal.linkedRecordId, "record-demo-oil");
+  assert.deepEqual(result.journal.media, []);
+});
+
+test("preserves media metadata and blocks unprocessed media from publication", () => {
+  const media = [{
+    id: "media-test",
+    kind: "image" as const,
+    source: "local_blob" as const,
+    storageKey: "media-test",
+    mimeType: "image/jpeg",
+    sizeBytes: 1024,
+    altText: "DEMO image",
+    privacyState: "private_only" as const,
+    createdAt: "2026-07-15T10:00:00.000Z",
+    isDemo: false,
+  }];
+  const privateDraft = validDraft({ media });
+  assert.equal(validateJournalDraft(privateDraft).valid, true);
+
+  const publicValidation = validateJournalDraft({
+    ...privateDraft,
+    visibility: "public",
+  });
+  assert.equal(publicValidation.valid, false);
+  assert.equal(publicValidation.errors.media, "private_only");
+
+  const created = addJournalToData(
+    cloneDemoData(),
+    privateDraft,
+    "ja",
+    "2026-07-15T10:00:00.000Z",
+  );
+  assert.deepEqual(created.journal.media, media);
+  assert.notEqual(created.journal.media, media);
 });
 
 test("builds a chronological feed only from followed public or follower posts", () => {

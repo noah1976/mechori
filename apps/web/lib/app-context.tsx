@@ -9,11 +9,13 @@ import {
   type FollowTargetType,
   type GarageJournalPost,
   type JournalDraft,
+  type JournalMediaAttachment,
   type Locale,
   type MaintenanceRecord,
   type RecordDraft,
 } from "@mechory/core";
 import { LocalStorageDataProvider } from "@mechory/shared";
+import { journalMediaStore } from "@/lib/media-store";
 import {
   createContext,
   useCallback,
@@ -31,9 +33,17 @@ interface AppContextValue {
   setLocale(locale: Locale): void;
   addRecord(draft: RecordDraft): MaintenanceRecord;
   updateRecord(id: string, draft: RecordDraft): MaintenanceRecord | null;
-  addJournal(draft: JournalDraft): GarageJournalPost;
+  addJournal(
+    draft: JournalDraft,
+    uploads?: JournalMediaUpload[],
+  ): Promise<GarageJournalPost>;
   toggleFollow(targetType: FollowTargetType, targetId: string): void;
   resetDemo(): Promise<void>;
+}
+
+export interface JournalMediaUpload {
+  attachment: JournalMediaAttachment;
+  blob: Blob;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -96,7 +106,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const addJournal = useCallback(
-    (draft: JournalDraft) => {
+    async (draft: JournalDraft, uploads: JournalMediaUpload[] = []) => {
+      await Promise.all(
+        uploads.map(({ attachment, blob }) => {
+          if (!attachment.storageKey) throw new Error("media_storage_key_required");
+          return journalMediaStore.save(attachment.storageKey, blob);
+        }),
+      );
       const result = addJournalToData(data, draft, locale);
       persist(result.data);
       return result.journal;
@@ -112,7 +128,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const resetDemo = useCallback(async () => {
-    await dataProvider.reset();
+    await Promise.all([dataProvider.reset(), journalMediaStore.reset()]);
     setData(cloneDemoData());
   }, []);
 
