@@ -19,6 +19,13 @@ User
             │    └─ PartUsage（使用・交換した部品）
             └─ EvidenceSource（出典）
 
+UserProfile / Vehicle / VehicleModel
+  ├─ FollowRelation（フォロー）
+  └─ GarageJournalPost（自由記述）
+       ├─ JournalMaintenanceLink（整備記録との任意リンク）
+       ├─ MediaPublication（公開確認済み画像）
+       └─ JournalAssertionCandidate（AI等による未確認候補）
+
 ImportSession
   ├─ TemporaryArtifact（一時原本メタデータ）
   └─ ExtractedCandidate（未確認の抽出候補）
@@ -27,6 +34,10 @@ ImportSession
 MaintenanceEvent
   └─ KnowledgeSubmission（共有候補）
        └─ KnowledgeCase（公開ナレッジ）
+
+GarageJournalPost
+  └─ JournalAssertionCandidate
+       └─ ユーザー確認後のみ MaintenanceEvent または KnowledgeSubmission へ反映
 ```
 
 個人の`MaintenanceEvent`を公開データへ直接変更しません。共有時は`KnowledgeSubmission`を作り、運営確認後に別の`KnowledgeCase`として公開します。
@@ -70,6 +81,55 @@ MaintenanceEvent
 - `decision`: 同意、拒否、撤回
 - `decidedAt`
 - `regionCode`: 必要な場合のみ最小粒度
+
+### GarageJournalPost
+
+オーナーが自分の言葉で書く車両ブログです。構造化整備記録や公開ナレッジの正本にはしません。
+
+- `id` / `authorUserId`
+- `vehicleId`: 任意。車両個体を公開しない投稿も許容する
+- `title` / `bodyOriginal` / `sourceLanguage`
+- `visibility`: 非公開、フォロワー、公開。初期値は非公開
+- `knowledgeExtractionConsent`: ナレッジ候補抽出を許可するか
+- `createdAt` / `updatedAt` / `publishedAt`
+- `moderationState` / `deletionState`
+
+本文はAI生成を前提にせず、本人の原文を保持します。翻訳やAI抽出結果は別データとし、原文を上書きしません。
+
+### JournalMaintenanceLink
+
+Garage Journalと整備記録を任意で関連付けます。
+
+- `journalPostId` / `maintenanceEventId`
+- `displayFields`: 日付、走行距離、整備箇所、作業等から投稿者が表示を許可した項目
+- `createdAt`
+
+関連付けだけで非公開MaintenanceEventを公開しません。Journal上に表示する定型情報は、投稿者が項目単位で確認します。
+
+### JournalAssertionCandidate
+
+Garage Journal本文から抽出した、まだ事実ではない候補です。
+
+- `id` / `journalPostId`
+- `assertionType`: 症状、原因候補、確認箇所、作業、部品、結果、その他
+- `candidateValue` / `sourceTextRange`
+- `extractionMethod`: AI、規則、手動
+- `verificationStatus`: 未確認、本人確認済み、却下
+- `targetType`: 整備記録追記候補、共有ナレッジ候補、検索関連付け
+- `createdAt` / `reviewedAt`
+
+AI抽出だけでMaintenanceEventやKnowledgeCaseを更新しません。
+
+### FollowRelation
+
+利用者が継続して見たい対象を記録します。
+
+- `followerUserId`
+- `targetType`: プロフィール、車両、車種
+- `targetId`
+- `createdAt`
+
+フォロー数やフォロワー数は、KnowledgeCaseの信頼度、検索順位、Professional確認へ利用しません。
 
 ### Vehicle
 

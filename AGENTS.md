@@ -36,6 +36,7 @@ MECHORY（メカリィ）は、車両メンテナンス記録を構造化し、�
 - 外部サービス導入前確認: `docs/EXTERNAL_SERVICE_CHECKLIST.md`
 - プラン権限: `docs/PLAN_ENTITLEMENTS.md`
 - 入力インセンティブ: `docs/CONTRIBUTION_INCENTIVES.md`
+- ソーシャル・Garage Journal: `docs/SOCIAL_LAYER.md`
 - プライバシー: `docs/PRIVACY.md`
 - 安全性: `docs/SAFETY.md`
 - 法務準備: `docs/LEGAL_READINESS.md`
