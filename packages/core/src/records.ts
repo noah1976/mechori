@@ -9,6 +9,7 @@ import type {
   RecordFilters,
   Vehicle,
 } from "./types.ts";
+import { demoData } from "./demo.ts";
 
 export interface ValidationResult {
   valid: boolean;
@@ -284,7 +285,8 @@ export function applyRecordDraftToData(
   return {
     record,
     data: {
-      schemaVersion: 2,
+      ...data,
+      schemaVersion: 3,
       vehicles: data.vehicles.map((item) => (item.id === vehicleId ? nextVehicle : item)),
       records,
     },
@@ -347,7 +349,24 @@ export function migrateAppData(input: unknown): AppData | null {
     } as MaintenanceRecord;
   });
 
-  return { schemaVersion: 2, vehicles, records };
+  return {
+    schemaVersion: 3,
+    vehicles,
+    records,
+    profiles: Array.isArray(source.profiles)
+      ? source.profiles
+      : structuredClone(demoData.profiles),
+    currentProfileId:
+      typeof source.currentProfileId === "string"
+        ? source.currentProfileId
+        : demoData.currentProfileId,
+    journals: Array.isArray(source.journals)
+      ? source.journals
+      : structuredClone(demoData.journals),
+    follows: Array.isArray(source.follows)
+      ? source.follows
+      : structuredClone(demoData.follows),
+  };
 }
 
 function actionFromDraft(

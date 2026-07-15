@@ -148,8 +148,73 @@ export interface RecordFilters {
   hazardLevel?: HazardLevel | "all";
 }
 
+export type JournalVisibility = "private" | "followers" | "public";
+export type SocialProfileRole = "owner" | "mechanic";
+export type FollowTargetType = "profile" | "vehicle" | "model";
+export type JournalDisplayField = "service_date" | "odometer" | "actions";
+
+export interface SocialProfile {
+  id: string;
+  displayName: string;
+  role: SocialProfileRole;
+  bio: string;
+  isProfessional: boolean;
+  isDemo: boolean;
+}
+
+export interface GarageJournalPost {
+  id: string;
+  authorProfileId: string;
+  vehicleId?: string;
+  vehicleTargetId?: string;
+  vehicleLabel: string;
+  modelTargetId: string;
+  title: string;
+  bodyOriginal: string;
+  sourceLanguage: Locale;
+  visibility: JournalVisibility;
+  linkedRecordId?: string;
+  displayFields: JournalDisplayField[];
+  knowledgeExtractionConsent: boolean;
+  appreciationCount: number;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt?: string;
+  isDemo: boolean;
+}
+
+export interface FollowRelation {
+  id: string;
+  followerProfileId: string;
+  targetType: FollowTargetType;
+  targetId: string;
+  createdAt: string;
+}
+
+export interface FollowTargetSummary {
+  type: FollowTargetType;
+  id: string;
+  label: string;
+  description: string;
+  isDemo: boolean;
+}
+
+export interface JournalDraft {
+  title: string;
+  bodyOriginal: string;
+  vehicleId: string;
+  linkedRecordId: string;
+  displayFields: JournalDisplayField[];
+  visibility: JournalVisibility;
+  knowledgeExtractionConsent: boolean;
+}
+
 export interface AppData {
-  schemaVersion: 2;
+  schemaVersion: 3;
   vehicles: Vehicle[];
   records: MaintenanceRecord[];
+  profiles: SocialProfile[];
+  currentProfileId: string;
+  journals: GarageJournalPost[];
+  follows: FollowRelation[];
 }

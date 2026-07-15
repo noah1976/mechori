@@ -1,10 +1,12 @@
 "use client";
 
 import { DemoNotice } from "@/components/demo-notice";
+import { JournalCard } from "@/components/journal-card";
 import { RecordCard } from "@/components/record-card";
 import { useApp } from "@/lib/app-context";
+import { getOwnJournals } from "@mechory/core";
 import { translate } from "@mechory/i18n";
-import { FileClock, Gauge, History, RotateCcw, TriangleAlert } from "lucide-react";
+import { BookOpenText, FileClock, Gauge, History, Plus, RotateCcw, TriangleAlert } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -12,6 +14,7 @@ export default function GaragePage() {
   const { data, locale, resetDemo } = useApp();
   const vehicle = data.vehicles[0];
   const records = data.records.filter((record) => record.vehicleId === vehicle?.id);
+  const journals = getOwnJournals(data).filter((journal) => journal.vehicleId === vehicle?.id);
   const ja = locale === "ja";
   if (!vehicle) return null;
 
@@ -50,6 +53,20 @@ export default function GaragePage() {
       <section>
         <div className="section-heading"><div><span className="eyebrow">HISTORY</span><h2>{translate(locale, "recentRecords")}</h2></div></div>
         <div className="record-grid">{records.slice(0, 3).map((record) => <RecordCard key={record.id} record={record} locale={locale} />)}</div>
+      </section>
+
+      <section>
+        <div className="section-heading">
+          <div><span className="eyebrow">GARAGE JOURNAL</span><h2>{ja ? "このクルマのJournal" : "Journal for this car"}</h2></div>
+          <Link href="/journal/new" className="secondary-action"><Plus size={17} />{translate(locale, "addJournal")}</Link>
+        </div>
+        {journals.length ? (
+          <div className="journal-grid">
+            {journals.map((journal) => <JournalCard key={journal.id} journal={journal} author={data.profiles.find((profile) => profile.id === journal.authorProfileId)} record={data.records.find((record) => record.id === journal.linkedRecordId)} locale={locale} />)}
+          </div>
+        ) : (
+          <div className="empty-state"><BookOpenText size={28} /><h3>{ja ? "まだJournalはありません" : "No journal yet"}</h3><p>{ja ? "整備の経緯や、その日に感じたことを自分の言葉で残せます。" : "Keep the experience and what you felt in your own words."}</p></div>
+        )}
       </section>
     </div>
   );

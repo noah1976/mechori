@@ -3,7 +3,12 @@
 import {
   cloneDemoData,
   applyRecordDraftToData,
+  addJournalToData,
+  toggleFollowInData,
   type AppData,
+  type FollowTargetType,
+  type GarageJournalPost,
+  type JournalDraft,
   type Locale,
   type MaintenanceRecord,
   type RecordDraft,
@@ -26,6 +31,8 @@ interface AppContextValue {
   setLocale(locale: Locale): void;
   addRecord(draft: RecordDraft): MaintenanceRecord;
   updateRecord(id: string, draft: RecordDraft): MaintenanceRecord | null;
+  addJournal(draft: JournalDraft): GarageJournalPost;
+  toggleFollow(targetType: FollowTargetType, targetId: string): void;
   resetDemo(): Promise<void>;
 }
 
@@ -88,14 +95,50 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [data, persist],
   );
 
+  const addJournal = useCallback(
+    (draft: JournalDraft) => {
+      const result = addJournalToData(data, draft, locale);
+      persist(result.data);
+      return result.journal;
+    },
+    [data, locale, persist],
+  );
+
+  const toggleFollow = useCallback(
+    (targetType: FollowTargetType, targetId: string) => {
+      persist(toggleFollowInData(data, targetType, targetId));
+    },
+    [data, persist],
+  );
+
   const resetDemo = useCallback(async () => {
     await dataProvider.reset();
     setData(cloneDemoData());
   }, []);
 
   const value = useMemo(
-    () => ({ data, locale, hydrated, setLocale, addRecord, updateRecord, resetDemo }),
-    [data, locale, hydrated, setLocale, addRecord, updateRecord, resetDemo],
+    () => ({
+      data,
+      locale,
+      hydrated,
+      setLocale,
+      addRecord,
+      updateRecord,
+      addJournal,
+      toggleFollow,
+      resetDemo,
+    }),
+    [
+      data,
+      locale,
+      hydrated,
+      setLocale,
+      addRecord,
+      updateRecord,
+      addJournal,
+      toggleFollow,
+      resetDemo,
+    ],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

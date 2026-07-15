@@ -140,7 +140,9 @@ test("migrates legacy local data into actions and an odometer episode", () => {
   delete records[0]?.odometerReading;
 
   const migrated = migrateAppData(legacy);
-  assert.equal(migrated?.schemaVersion, 2);
+  assert.equal(migrated?.schemaVersion, 3);
   assert.equal(migrated?.vehicles[0]?.odometerEpisodes.length, 1);
   assert.equal(migrated?.records[0]?.actions.length, 1);
+  assert.ok(migrated?.profiles.length);
+  assert.ok(migrated?.journals.length);
 });

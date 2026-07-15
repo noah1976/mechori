@@ -4,9 +4,9 @@ import { translate, type TranslationKey } from "@mechory/i18n";
 import {
   BookOpenText,
   CarFront,
-  FileInput,
   House,
   Languages,
+  Newspaper,
   Plus,
   Search,
 } from "lucide-react";
@@ -21,10 +21,10 @@ const navItems: Array<{
   icon: typeof House;
 }> = [
   { href: "/", label: "home", icon: House },
+  { href: "/feed", label: "feed", icon: Newspaper },
   { href: "/garage", label: "garage", icon: CarFront },
   { href: "/records", label: "records", icon: BookOpenText },
   { href: "/search", label: "search", icon: Search },
-  { href: "/import", label: "import", icon: FileInput },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
