@@ -1,7 +1,7 @@
 "use client";
 
 import { useApp } from "@/lib/app-context";
-import { classifyJournalForKnowledge } from "@mechory/core";
+import { classifyJournalForKnowledge } from "@mechori/core";
 import {
   ArrowLeft,
   BookOpen,

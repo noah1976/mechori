@@ -5,8 +5,8 @@ import { JournalCard } from "@/components/journal-card";
 import { JournalMedia } from "@/components/journal-media";
 import { RecordCard } from "@/components/record-card";
 import { useApp } from "@/lib/app-context";
-import { getFollowingFeed } from "@mechory/core";
-import { translate } from "@mechory/i18n";
+import { getFollowingFeed } from "@mechori/core";
+import { translate } from "@mechori/i18n";
 import {
   ArrowRight,
   BookOpenText,

@@ -1,4 +1,4 @@
-import type { Locale } from "@mechory/core";
+import type { Locale } from "@mechori/core";
 
 const ja = {
   tagline: "直して、シェアして、また走ろう。",
@@ -17,6 +17,9 @@ const ja = {
   followersOnly: "フォロワー限定",
   recentRecords: "最近の整備記録",
   vehicleOverview: "登録車両",
+  vehicleAge: "車齢（年式基準）",
+  ownershipHistory: "オーナー歴",
+  ownerVehicleIdentity: "オーナー / 愛車",
   private: "非公開",
   pending_review: "運営確認待ち",
   public: "公開",
@@ -61,7 +64,7 @@ const ja = {
   draftReady: "非公開下書きの準備ができました",
   draftNotReady: "すべての項目を確認または除外してください",
   resetReview: "確認をやり直す",
-  noResults: "条件に一致する公開候補はありません。検索範囲を広げても、MECHORYは原因を生成しません。",
+  noResults: "条件に一致する公開候補はありません。検索範囲を広げても、MECHORIは原因を生成しません。",
 } as const;
 
 const en: Record<keyof typeof ja, string> = {
@@ -81,6 +84,9 @@ const en: Record<keyof typeof ja, string> = {
   followersOnly: "Followers only",
   recentRecords: "Recent records",
   vehicleOverview: "Registered vehicle",
+  vehicleAge: "Vehicle age (model year)",
+  ownershipHistory: "Ownership history",
+  ownerVehicleIdentity: "Owner / vehicle",
   private: "Private",
   pending_review: "Pending review",
   public: "Public",
@@ -125,7 +131,7 @@ const en: Record<keyof typeof ja, string> = {
   draftReady: "Private draft is ready",
   draftNotReady: "Confirm or exclude every field",
   resetReview: "Restart review",
-  noResults: "No shared candidate matches these filters. MECHORY will not invent a cause when no record exists.",
+  noResults: "No shared candidate matches these filters. MECHORI will not invent a cause when no record exists.",
 };
 
 export const dictionaries = { ja, en };

@@ -192,7 +192,7 @@ export function createFollowTargets(data: AppData): FollowTargetSummary[] {
         return {
           type: "vehicle" as const,
           id: journal.vehicleTargetId!,
-          label: `${journal.vehicleLabel} · ${owner?.displayName ?? "DEMO"}`,
+          label: `${owner?.displayName ?? "DEMO"} / ${journal.vehicleLabel}`,
           description: "DEMO individual vehicle",
           isDemo: journal.isDemo,
         };

@@ -31,7 +31,7 @@ export interface VehicleHistorySnapshot {
 }
 
 export interface AppDataExport {
-  exportFormat: "mechory-owner-data";
+  exportFormat: "mechori-owner-data";
   exportVersion: 1;
   exportedAt: string;
   notice: string;
@@ -133,14 +133,14 @@ export function buildHistoryShareText(
   snapshot: VehicleHistorySnapshot,
 ): string {
   if (locale === "en") {
-    return `I organized ${snapshot.recordCount} maintenance records for my ${vehicle.make} ${vehicle.model} with MECHORY. Fix. Share. Drive on. #MECHORY`;
+    return `I organized ${snapshot.recordCount} maintenance records for my ${vehicle.make} ${vehicle.model} with MECHORI. Fix. Share. Drive on. #MECHORI`;
   }
-  return `MECHORYで${vehicle.make} ${vehicle.model}の整備履歴を${snapshot.recordCount}件整理しました。直して、シェアして、また走ろう。 #MECHORY`;
+  return `MECHORIで${vehicle.make} ${vehicle.model}の整備履歴を${snapshot.recordCount}件整理しました。直して、シェアして、また走ろう。 #MECHORI`;
 }
 
 export function createAppDataExport(data: AppData, exportedAt: string): AppDataExport {
   return {
-    exportFormat: "mechory-owner-data",
+    exportFormat: "mechori-owner-data",
     exportVersion: 1,
     exportedAt,
     notice: "This export contains owner-controlled prototype data. Review it before sharing.",

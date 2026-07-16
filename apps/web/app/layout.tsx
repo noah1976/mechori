@@ -5,7 +5,7 @@ import { AppProvider } from "@/lib/app-context";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "MECHORY Prototype",
+  title: "MECHORI Prototype",
   description: "Local-only vehicle maintenance knowledge prototype",
 };
 

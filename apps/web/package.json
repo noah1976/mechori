@@ -1,5 +1,5 @@
 {
-  "name": "@mechory/web",
+  "name": "@mechori/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,9 +9,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@mechory/core": "*",
-    "@mechory/i18n": "*",
-    "@mechory/shared": "*",
+    "@mechori/core": "*",
+    "@mechori/i18n": "*",
+    "@mechori/shared": "*",
     "lucide-react": "^0.468.0",
     "next": "16.2.10",
     "react": "^19.0.0",

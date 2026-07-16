@@ -7,8 +7,8 @@ import {
   getImportReviewProgress,
   reviewFieldAssertion,
   type FieldAssertion,
-} from "@mechory/core";
-import { translate } from "@mechory/i18n";
+} from "@mechori/core";
+import { translate } from "@mechori/i18n";
 import { ArrowLeft, Check, CircleAlert, RotateCcw, ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";

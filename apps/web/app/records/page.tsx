@@ -3,7 +3,7 @@
 import { DemoNotice } from "@/components/demo-notice";
 import { RecordCard } from "@/components/record-card";
 import { useApp } from "@/lib/app-context";
-import { translate } from "@mechory/i18n";
+import { translate } from "@mechori/i18n";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 

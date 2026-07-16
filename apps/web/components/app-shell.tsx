@@ -1,6 +1,6 @@
 "use client";
 
-import { translate, type TranslationKey } from "@mechory/i18n";
+import { translate, type TranslationKey } from "@mechori/i18n";
 import {
   BookOpenText,
   CarFront,
@@ -34,10 +34,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="app-frame">
       <aside className="side-nav" aria-label="Primary navigation">
-        <Link href="/" className="brand-block" aria-label="MECHORY home">
+        <Link href="/" className="brand-block" aria-label="MECHORI home">
           <span className="brand-mark">M</span>
           <span>
-            <strong>MECHORY</strong>
+            <strong>MECHORI</strong>
             <small>{translate(locale, "tagline")}</small>
           </span>
         </Link>
@@ -61,7 +61,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="content-column">
         <header className="top-bar">
-          <Link href="/" className="mobile-brand">MECHORY</Link>
+          <Link href="/" className="mobile-brand">MECHORI</Link>
           <button
             className="icon-text-button"
             type="button"

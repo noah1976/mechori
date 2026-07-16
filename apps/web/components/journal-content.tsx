@@ -1,4 +1,4 @@
-import type { GarageJournalPost, Locale } from "@mechory/core";
+import type { GarageJournalPost, Locale } from "@mechori/core";
 import { JournalMedia } from "@/components/journal-media";
 
 export function JournalContent({

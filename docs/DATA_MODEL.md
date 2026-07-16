@@ -2,9 +2,9 @@
 
 ## 文書の目的
 
-MECHORYの初期MVPで必要な概念、関係、状態を、特定DBやProviderに固定せず定義します。物理テーブル、インデックス、Supabase RLSは外部接続前に別途設計します。
+MECHORIの初期MVPで必要な概念、関係、状態を、特定DBやProviderに固定せず定義します。物理テーブル、インデックス、Supabase RLSは外部接続前に別途設計します。
 
-現行プロトタイプの型は操作確認用です。localStorageの試作スキーマv5では、整備記録に加えてプロフィール、順序付きブロックを持つGarage Journal、メディア参照、フォロー関係を保持します。メディア本体はIndexedDBへ分離します。この文書を初期MVPの概念モデルの正とし、実物の整備記録で検証してから物理モデルへ進みます。
+現行プロトタイプの型は操作確認用です。localStorageの試作スキーマv6では、整備記録に加えてプロフィール、オーナーと愛車の関係、順序付きブロックを持つGarage Journal、メディア参照、フォロー関係を保持します。メディア本体はIndexedDBへ分離します。この文書を初期MVPの概念モデルの正とし、実物の整備記録で検証してから物理モデルへ進みます。
 
 ## モデルの中心
 
@@ -159,6 +159,9 @@ AI抽出だけでMaintenanceEventやKnowledgeCaseを更新しません。
 - `steeringPosition`
 - `marketRegion`
 - `variantDescriptor`
+- `relationshipType`: 現在所有、過去所有、家族所有、共同管理
+- `ownershipStartedYear` / `ownershipStartedMonth`: 日は保持せず、不明を許容
+- `ownershipEndedYear` / `ownershipEndedMonth`: 過去所有時のみ。不明を許容
 - `specificationState`: 確認済み、ユーザー入力、不明
 - `visibility`: 初期値は非公開
 - `createdAt` / `updatedAt`
@@ -168,6 +171,8 @@ AI抽出だけでMaintenanceEventやKnowledgeCaseを更新しません。
 - VIN・車台番号全文、ナンバープレート、正確な保管場所、常時位置情報
 
 将来、車種マスタを追加する場合は、ユーザー車両の入力原文を失わずに参照IDを追加します。未確認仕様をマスタ値で自動補完しません。
+
+公開プロフィールでは`オーナー表示名 / 車両`を一つの発信単位として扱います。所有期間は本人が公開を選んだ場合だけ表示し、信頼度や整備能力の評価へ利用しません。車齢は初度登録日がない限りモデル年からの概算であることを明示します。
 
 ### OdometerEpisode
 

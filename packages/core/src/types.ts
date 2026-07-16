@@ -24,6 +24,11 @@ export type PrototypeOdometerSequenceAssessment =
   | "new_episode"
   | "unit_changed"
   | "needs_context";
+export type VehicleRelationshipType =
+  | "owned"
+  | "previously_owned"
+  | "family"
+  | "shared";
 
 export interface PrototypeOdometerEpisode {
   id: string;
@@ -42,9 +47,15 @@ export interface PrototypeOdometerReading {
 
 export interface Vehicle {
   id: string;
+  ownerProfileId: string;
   make: string;
   model: string;
   year: number;
+  ownershipType: VehicleRelationshipType;
+  ownershipStartedYear?: number;
+  ownershipStartedMonth?: number;
+  ownershipEndedYear?: number;
+  ownershipEndedMonth?: number;
   engine: string;
   steering: string;
   transmission: string;
@@ -247,7 +258,7 @@ export interface JournalDraft {
 }
 
 export interface AppData {
-  schemaVersion: 5;
+  schemaVersion: 6;
   vehicles: Vehicle[];
   records: MaintenanceRecord[];
   profiles: SocialProfile[];

@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: workspaceRoot,
   },
-  transpilePackages: ["@mechory/core", "@mechory/shared", "@mechory/i18n"],
+  transpilePackages: ["@mechori/core", "@mechori/shared", "@mechori/i18n"],
 };
 
 export default nextConfig;

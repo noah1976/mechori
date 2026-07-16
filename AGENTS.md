@@ -1,6 +1,6 @@
-# MECHORY Codex 作業ルール
+# MECHORI Codex 作業ルール
 
-MECHORY（メカリィ）は、車両メンテナンス記録を構造化し、同型車・同年式・同仕様の整備事例を検索できるナレッジサービスです。一般的な車SNS、写真共有SNS、故障診断サービスではありません。
+MECHORI（メカリィ）は、車両メンテナンス記録を構造化し、同型車・同年式・同仕様の整備事例を検索できるナレッジサービスです。一般的な車SNS、写真共有SNS、故障診断サービスではありません。
 
 ## 最重要原則
 
@@ -44,6 +44,10 @@ MECHORY（メカリィ）は、車両メンテナンス記録を構造化し、�
 - セキュリティ: `docs/SECURITY.md`
 - AI方針: `docs/AI_POLICY.md`
 - 収益化・費用: `docs/MONETIZATION.md`
+- 事業成長・初期獲得・検証指標: `docs/BUSINESS_GROWTH.md`
+- 初期検証の計測定義: `docs/MEASUREMENT_PLAN.md`
+- 招待制ベータ運用: `docs/BETA_PLAYBOOK.md`
+- Professional課題検証: `docs/PROFESSIONAL_DISCOVERY.md`
 - 日本税務準備: `docs/TAX_READINESS_JP.md`
 - デザイン: `docs/DESIGN_DIRECTION.md`
 - 決定記録: `docs/DECISIONS.md`

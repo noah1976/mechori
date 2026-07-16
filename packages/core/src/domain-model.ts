@@ -51,6 +51,11 @@ export interface VehicleProfile {
   steeringPosition?: string;
   marketRegion?: string;
   variantDescriptor?: string;
+  relationshipType: "owned" | "previously_owned" | "family" | "shared";
+  ownershipStartedYear?: number;
+  ownershipStartedMonth?: number;
+  ownershipEndedYear?: number;
+  ownershipEndedMonth?: number;
   specificationState: SpecificationState;
   visibility: "private";
   createdAt: string;

@@ -2,7 +2,7 @@
 
 import { DemoNotice } from "@/components/demo-notice";
 import { useApp } from "@/lib/app-context";
-import { translate } from "@mechory/i18n";
+import { translate } from "@mechori/i18n";
 import { ArrowLeft, CircleAlert, Gauge, Printer, ShieldAlert, Wrench } from "lucide-react";
 import Link from "next/link";
 
@@ -26,7 +26,7 @@ export default function ServiceBriefPage() {
       </div>
 
       <header className="service-brief-header">
-        <div><span className="eyebrow">MECHORY VEHICLE HISTORY · DEMO</span><h1>{translate(locale, "serviceBrief")}</h1><p>{translate(locale, "serviceBriefIntro")}</p></div>
+        <div><span className="eyebrow">MECHORI VEHICLE HISTORY · DEMO</span><h1>{translate(locale, "serviceBrief")}</h1><p>{translate(locale, "serviceBriefIntro")}</p></div>
         <div className="service-brief-vehicle"><strong>{vehicle.make} {vehicle.model}</strong><span>{vehicle.year} · {vehicle.engine} · {vehicle.transmission} · {vehicle.steering}</span></div>
       </header>
 
@@ -55,7 +55,7 @@ export default function ServiceBriefPage() {
         </div>
       </section>
 
-      <p className="service-brief-footer">MECHORY · Fix. Share. Drive on. · DEMO / SAMPLE</p>
+      <p className="service-brief-footer">MECHORI · Fix. Share. Drive on. · DEMO / SAMPLE</p>
     </div>
   );
 }

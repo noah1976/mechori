@@ -8,7 +8,7 @@ import {
   type JournalMediaAttachment,
   type JournalTextBlockStyle,
   type JournalVisibility,
-} from "@mechory/core";
+} from "@mechori/core";
 import {
   AlignLeft,
   ChevronDown,

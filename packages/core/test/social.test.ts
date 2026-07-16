@@ -186,8 +186,8 @@ test("vehicle follow targets identify their owners and exclude the current vehic
   assert.deepEqual(
     vehicleTargets.map((target) => target.label),
     [
-      "FIAT Barchetta · Luca / DEMO",
-      "FIAT Barchetta · Officina Verde / DEMO",
+      "Luca / DEMO / FIAT Barchetta",
+      "Officina Verde / DEMO / FIAT Barchetta",
     ],
   );
 });

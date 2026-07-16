@@ -1,4 +1,4 @@
-# MECHORY Nightly Report
+# MECHORI Nightly Report
 
 ## 作業日
 

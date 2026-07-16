@@ -6,7 +6,7 @@ import {
   assessMediaPublishability,
   type MediaPrivacyState,
   type MediaPublishBlockReason,
-} from "@mechory/core";
+} from "@mechori/core";
 import { ArrowLeft, Check, Eye, RotateCcw, ScanLine, ShieldAlert } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";

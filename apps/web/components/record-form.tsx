@@ -8,7 +8,7 @@ import {
   type RecordActionDraft,
   type RecordDraft,
   type Vehicle,
-} from "@mechory/core";
+} from "@mechori/core";
 import {
   AlertTriangle,
   Check,
@@ -258,7 +258,7 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
       {[draft.hazardLevel, ...draft.additionalActions.map((action) => action.hazardLevel)].includes("CRITICAL") && (
         <div className="critical-warning" role="alert">
           <AlertTriangle size={22} />
-          <div><strong>{ja ? "安全に関わる可能性があります" : "This may involve safety-critical work"}</strong><p>{ja ? "MECHORYは診断や修理指示を行いません。実車とメーカー資料を確認し、専門整備工場へ相談してください。" : "MECHORY does not diagnose or instruct repairs. Check the vehicle and manufacturer material, and consult a qualified workshop."}</p></div>
+          <div><strong>{ja ? "安全に関わる可能性があります" : "This may involve safety-critical work"}</strong><p>{ja ? "MECHORIは診断や修理指示を行いません。実車とメーカー資料を確認し、専門整備工場へ相談してください。" : "MECHORI does not diagnose or instruct repairs. Check the vehicle and manufacturer material, and consult a qualified workshop."}</p></div>
         </div>
       )}
 

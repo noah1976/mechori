@@ -131,6 +131,8 @@ button { cursor: pointer; }
 .garage-feature { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.55fr); min-height: 460px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
 .garage-photo { position: relative; min-height: 420px; background: #d9dfdc; }
 .vehicle-specs { padding: 28px; display: flex; flex-direction: column; }
+.vehicle-identity-labels { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.relationship-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 2px 8px; color: #604d0c; background: var(--accent-soft); border: 1px solid #e2c66f; border-radius: 4px; font-size: 11px; font-weight: 800; }
 .vehicle-specs dl { display: grid; gap: 0; margin: 22px 0; }
 .vehicle-specs dl div { display: flex; justify-content: space-between; gap: 20px; padding: 12px 0; border-bottom: 1px solid var(--line); }
 .vehicle-specs dt { color: var(--muted); }

@@ -4,8 +4,8 @@ import type {
   ResolutionStatus,
   VerificationStatus,
   Visibility,
-} from "@mechory/core";
-import { translate } from "@mechory/i18n";
+} from "@mechori/core";
+import { translate } from "@mechori/i18n";
 import { CheckCircle2, CircleAlert, Eye, EyeOff, ShieldAlert } from "lucide-react";
 
 export function HazardBadge({ level }: { level: HazardLevel }) {

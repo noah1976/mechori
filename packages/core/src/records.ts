@@ -286,7 +286,7 @@ export function applyRecordDraftToData(
     record,
     data: {
       ...data,
-      schemaVersion: 5,
+      schemaVersion: 6,
       vehicles: data.vehicles.map((item) => (item.id === vehicleId ? nextVehicle : item)),
       records,
     },
@@ -306,8 +306,31 @@ export function migrateAppData(input: unknown): AppData | null {
 
   const vehicles = source.vehicles.filter(hasVehicleIdentity).map((vehicle) => {
     const legacyEpisodeId = `episode-${vehicle.id}-legacy`;
+    const matchingDemoVehicle = vehicle.isDemo
+      ? demoData.vehicles.find((item) => item.id === vehicle.id)
+      : undefined;
     return {
       ...vehicle,
+      ownerProfileId:
+        typeof vehicle.ownerProfileId === "string"
+          ? vehicle.ownerProfileId
+          : typeof source.currentProfileId === "string"
+            ? source.currentProfileId
+            : demoData.currentProfileId,
+      ownershipType:
+        vehicle.ownershipType === "previously_owned" ||
+        vehicle.ownershipType === "family" ||
+        vehicle.ownershipType === "shared"
+          ? vehicle.ownershipType
+          : "owned",
+      ownershipStartedYear:
+        vehicle.ownershipStartedYear ?? matchingDemoVehicle?.ownershipStartedYear,
+      ownershipStartedMonth:
+        vehicle.ownershipStartedMonth ?? matchingDemoVehicle?.ownershipStartedMonth,
+      ownershipEndedYear:
+        vehicle.ownershipEndedYear ?? matchingDemoVehicle?.ownershipEndedYear,
+      ownershipEndedMonth:
+        vehicle.ownershipEndedMonth ?? matchingDemoVehicle?.ownershipEndedMonth,
       odometerKm: vehicle.odometerKm ?? 0,
       odometerEpisodes:
         vehicle.odometerEpisodes?.length
@@ -353,7 +376,7 @@ export function migrateAppData(input: unknown): AppData | null {
   });
 
   return {
-    schemaVersion: 5,
+    schemaVersion: 6,
     vehicles,
     records,
     profiles: Array.isArray(source.profiles)

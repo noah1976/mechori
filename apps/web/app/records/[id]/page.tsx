@@ -62,7 +62,7 @@ export default function RecordDetailPage() {
         <ShieldCheck size={30} />
       </section>
 
-      <p className="legal-note">{ja ? "MECHORYは整備書、診断機器、専門家の代替ではなく、情報の正確性・適合性・作業結果を保証しません。" : "MECHORY does not replace service manuals, diagnostic equipment, or qualified professionals, and does not guarantee accuracy, fitment, or repair outcomes."}</p>
+      <p className="legal-note">{ja ? "MECHORIは整備書、診断機器、専門家の代替ではなく、情報の正確性・適合性・作業結果を保証しません。" : "MECHORI does not replace service manuals, diagnostic equipment, or qualified professionals, and does not guarantee accuracy, fitment, or repair outcomes."}</p>
     </div>
   );
 }

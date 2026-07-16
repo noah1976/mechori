@@ -1,6 +1,6 @@
 "use client";
 
-import type { JournalMediaAttachment, Locale } from "@mechory/core";
+import type { JournalMediaAttachment, Locale } from "@mechori/core";
 import { ImageIcon, LoaderCircle, Video } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";

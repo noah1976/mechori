@@ -8,8 +8,8 @@ import {
   getFollowingFeed,
   isFollowing,
   type FollowTargetSummary,
-} from "@mechory/core";
-import { translate } from "@mechory/i18n";
+} from "@mechori/core";
+import { translate } from "@mechori/i18n";
 import { BookOpenText, CarFront, Plus, UserRound, Wrench } from "lucide-react";
 import Link from "next/link";
 

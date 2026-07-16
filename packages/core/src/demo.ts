@@ -1,13 +1,17 @@
 import type { AppData } from "./types.ts";
 
 export const demoData: AppData = {
-  schemaVersion: 5,
+  schemaVersion: 6,
   vehicles: [
     {
       id: "vehicle-demo-barchetta",
+      ownerProfileId: "profile-demo-current",
       make: "FIAT",
       model: "Barchetta",
       year: 1997,
+      ownershipType: "owned",
+      ownershipStartedYear: 2014,
+      ownershipStartedMonth: 4,
       engine: "1.8 16V",
       steering: "LHD",
       transmission: "5MT",

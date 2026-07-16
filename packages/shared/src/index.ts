@@ -1,4 +1,4 @@
-import { migrateAppData, type AppData } from "@mechory/core";
+import { migrateAppData, type AppData } from "@mechori/core";
 
 export interface DataProvider {
   load(): Promise<AppData | null>;
@@ -15,6 +15,7 @@ export interface MediaBlobProvider {
 
 export class IndexedDbMediaProvider implements MediaBlobProvider {
   constructor(
+    // Keep the legacy prototype database name so existing local Journal media remains available.
     private readonly databaseName = "mechory.prototype.media",
     private readonly storeName = "blobs",
   ) {}
@@ -65,20 +66,30 @@ export class IndexedDbMediaProvider implements MediaBlobProvider {
 }
 
 export class LocalStorageDataProvider implements DataProvider {
-  constructor(private readonly storageKey = "mechory.prototype.v1") {}
+  constructor(
+    private readonly storageKey = "mechori.prototype.v1",
+    private readonly legacyStorageKeys = ["mechory.prototype.v1"],
+  ) {}
 
   async load(): Promise<AppData | null> {
-    const raw = window.localStorage.getItem(this.storageKey);
+    const sourceKey = [this.storageKey, ...this.legacyStorageKeys].find(
+      (key) => window.localStorage.getItem(key) !== null,
+    );
+    const raw = sourceKey ? window.localStorage.getItem(sourceKey) : null;
     if (!raw) return null;
     try {
       const migrated = migrateAppData(JSON.parse(raw));
       if (!migrated) throw new Error("invalid_local_data");
-      if (JSON.stringify(migrated) !== raw) {
-        window.localStorage.setItem(this.storageKey, JSON.stringify(migrated));
+      const serialized = JSON.stringify(migrated);
+      if (sourceKey !== this.storageKey || serialized !== raw) {
+        window.localStorage.setItem(this.storageKey, serialized);
+      }
+      if (sourceKey && sourceKey !== this.storageKey) {
+        window.localStorage.removeItem(sourceKey);
       }
       return migrated;
     } catch {
-      window.localStorage.removeItem(this.storageKey);
+      if (sourceKey) window.localStorage.removeItem(sourceKey);
       return null;
     }
   }
@@ -89,5 +100,6 @@ export class LocalStorageDataProvider implements DataProvider {
 
   async reset(): Promise<void> {
     window.localStorage.removeItem(this.storageKey);
+    this.legacyStorageKeys.forEach((key) => window.localStorage.removeItem(key));
   }
 }

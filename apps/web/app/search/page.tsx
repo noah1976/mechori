@@ -4,8 +4,8 @@ import { DemoNotice } from "@/components/demo-notice";
 import { RecordCard } from "@/components/record-card";
 import { KnowledgeSynthesisPanel } from "@/components/knowledge-synthesis-panel";
 import { useApp } from "@/lib/app-context";
-import { buildKnowledgeSynthesis, demoKnowledgeCases, filterKnowledgeCasesByText, filterRecords, type HazardLevel, type ResolutionStatus } from "@mechory/core";
-import { translate } from "@mechory/i18n";
+import { buildKnowledgeSynthesis, demoKnowledgeCases, filterKnowledgeCasesByText, filterRecords, type HazardLevel, type ResolutionStatus } from "@mechori/core";
+import { translate } from "@mechori/i18n";
 import { Search } from "lucide-react";
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -27,7 +27,7 @@ function SearchContent() {
     );
   }, [keyword, symptom]);
 
-  return <div className="page-stack"><DemoNotice /><header className="page-header"><div><span className="eyebrow">KNOWLEDGE SEARCH</span><h1>{translate(locale, "search")}</h1><p>{ja ? "同型車の投稿や整備記録をまとめて読み、考えられる確認箇所や対応例を出典つきで整理します。" : "MECHORY reads matching posts and records together, then organizes reported checks and responses with source links."}</p></div></header>
+  return <div className="page-stack"><DemoNotice /><header className="page-header"><div><span className="eyebrow">KNOWLEDGE SEARCH</span><h1>{translate(locale, "search")}</h1><p>{ja ? "同型車の投稿や整備記録をまとめて読み、考えられる確認箇所や対応例を出典つきで整理します。" : "MECHORI reads matching posts and records together, then organizes reported checks and responses with source links."}</p></div></header>
     <section className="search-panel">
       <label className="search-main"><Search size={20} /><input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={ja ? "キーワード" : "Keyword"} /></label>
       <div className="filter-grid">

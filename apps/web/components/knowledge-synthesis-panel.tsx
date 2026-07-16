@@ -3,7 +3,7 @@ import type {
   KnowledgeSynthesis,
   Locale,
   VehicleMatchLevel,
-} from "@mechory/core";
+} from "@mechori/core";
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -67,7 +67,7 @@ export function KnowledgeSynthesisPanel({
         <SearchCheck size={24} />
         <div>
           <strong>{ja ? "公開ナレッジに一致する根拠がありません" : "No matching public evidence"}</strong>
-          <p>{ja ? "検索範囲を広げても、見つからないことを隠しません。" : "MECHORY does not hide an evidence gap with a generated answer."}</p>
+          <p>{ja ? "検索範囲を広げても、見つからないことを隠しません。" : "MECHORI does not hide an evidence gap with a generated answer."}</p>
         </div>
       </section>
     );

@@ -1,6 +1,6 @@
 "use client";
 
-import { translate } from "@mechory/i18n";
+import { translate } from "@mechori/i18n";
 import { FlaskConical } from "lucide-react";
 import { useApp } from "@/lib/app-context";
 

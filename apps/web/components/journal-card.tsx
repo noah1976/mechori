@@ -5,8 +5,8 @@ import type {
   Locale,
   MaintenanceRecord,
   SocialProfile,
-} from "@mechory/core";
-import { translate } from "@mechory/i18n";
+} from "@mechori/core";
+import { translate } from "@mechori/i18n";
 import { ArrowRight, BookOpen, Heart, Link2, Lock, Users } from "lucide-react";
 import Link from "next/link";
 import { JournalMedia } from "@/components/journal-media";
@@ -30,9 +30,9 @@ export function JournalCard({
           {(author?.displayName ?? "M").slice(0, 1).toLocaleUpperCase()}
         </span>
         <div>
-          <strong>{author?.displayName ?? (ja ? "不明な投稿者" : "Unknown author")}</strong>
+          <strong>{author?.displayName ?? (ja ? "不明な投稿者" : "Unknown author")} / {journal.vehicleLabel}</strong>
           <small>
-            {journal.vehicleLabel} · {formatDate(journal.publishedAt ?? journal.createdAt, locale)}
+            {formatDate(journal.publishedAt ?? journal.createdAt, locale)}
           </small>
         </div>
         {journal.isDemo && <span className="demo-label">DEMO</span>}

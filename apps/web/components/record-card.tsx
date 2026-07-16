@@ -1,6 +1,6 @@
 "use client";
 
-import type { Locale, MaintenanceRecord } from "@mechory/core";
+import type { Locale, MaintenanceRecord } from "@mechori/core";
 import { ArrowUpRight, Gauge } from "lucide-react";
 import Link from "next/link";
 import { HazardBadge, ResolutionBadge, VisibilityBadge } from "./status-badges";

@@ -8,8 +8,8 @@ import {
   summarizeVehicleHistory,
   type HistoryLevelCode,
   type HistoryMilestoneCode,
-} from "@mechory/core";
-import { translate } from "@mechory/i18n";
+} from "@mechori/core";
+import { translate } from "@mechori/i18n";
 import {
   Archive,
   ArrowLeft,
@@ -87,7 +87,7 @@ export default function HistorySummaryPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `mechory-owner-data-${exportedAt.slice(0, 10)}.json`;
+    link.download = `mechori-owner-data-${exportedAt.slice(0, 10)}.json`;
     link.click();
     URL.revokeObjectURL(url);
   }

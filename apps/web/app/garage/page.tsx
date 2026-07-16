@@ -4,8 +4,12 @@ import { DemoNotice } from "@/components/demo-notice";
 import { JournalCard } from "@/components/journal-card";
 import { RecordCard } from "@/components/record-card";
 import { useApp } from "@/lib/app-context";
-import { getOwnJournals } from "@mechory/core";
-import { translate } from "@mechory/i18n";
+import {
+  formatOwnershipDuration,
+  getOwnJournals,
+  summarizeVehicleRelationship,
+} from "@mechori/core";
+import { translate } from "@mechori/i18n";
 import { BookOpenText, FileClock, Gauge, History, Plus, RotateCcw, TriangleAlert } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,16 +17,20 @@ import Link from "next/link";
 export default function GaragePage() {
   const { data, locale, resetDemo } = useApp();
   const vehicle = data.vehicles[0];
+  const owner = data.profiles.find((profile) => profile.id === vehicle?.ownerProfileId);
   const records = data.records.filter((record) => record.vehicleId === vehicle?.id);
   const journals = getOwnJournals(data).filter((journal) => journal.vehicleId === vehicle?.id);
   const ja = locale === "ja";
   if (!vehicle) return null;
+  const relationship = summarizeVehicleRelationship(vehicle);
+  const ownershipDuration = formatOwnershipDuration(locale, relationship);
+  const vehicleLabel = `${vehicle.make} ${vehicle.model}`;
 
   return (
     <div className="page-stack">
       <DemoNotice />
       <header className="page-header">
-        <div><span className="eyebrow">MY GARAGE</span><h1>{vehicle.make} {vehicle.model}</h1><p>{ja ? "愛車の仕様と整備履歴を、ひとつの場所で。" : "Vehicle identity and maintenance history in one place."}</p></div>
+        <div><span className="eyebrow">MY GARAGE</span><h1>{owner?.displayName ?? (ja ? "オーナー" : "Owner")} / {vehicleLabel}</h1><p>{ja ? "オーナーと一台の関係、仕様、整備履歴をひとつの場所で。" : "One owner-and-vehicle story, specifications, and maintenance history in one place."}</p></div>
         <div className="page-header-actions">
           <Link href="/garage/history" className="primary-action"><FileClock size={17} />{translate(locale, "historySummary")}</Link>
           <button className="secondary-action" type="button" onClick={() => void resetDemo()}><RotateCcw size={17} />{translate(locale, "resetDemo")}</button>
@@ -32,15 +40,26 @@ export default function GaragePage() {
       <section className="garage-feature">
         <div className="garage-photo"><Image src={vehicle.imagePath} alt={ja ? "DEMO用の汎用ロードスター" : "Generic demo roadster"} fill sizes="(max-width: 900px) 100vw, 55vw" priority /></div>
         <div className="vehicle-specs">
-          <span className="demo-label">DEMO VEHICLE</span>
+          <div className="vehicle-identity-labels">
+            <span className="demo-label">DEMO VEHICLE</span>
+            {relationship.ownershipMilestoneYears && (
+              <span className="relationship-badge">
+                {ja
+                  ? `${relationship.ownershipMilestoneYears}年オーナー`
+                  : `${relationship.ownershipMilestoneYears}-year owner`}
+              </span>
+            )}
+          </div>
           <dl>
             <div><dt>{ja ? "年式" : "Year"}</dt><dd>{vehicle.year}</dd></div>
+            <div><dt>{translate(locale, "vehicleAge")}</dt><dd>{relationship.vehicleAgeYears}{ja ? "年" : " years"}</dd></div>
+            <div><dt>{translate(locale, "ownershipHistory")}</dt><dd>{ownershipDuration ?? (ja ? "未登録" : "Not set")}</dd></div>
             <div><dt>{ja ? "エンジン" : "Engine"}</dt><dd>{vehicle.engine}</dd></div>
             <div><dt>{ja ? "ハンドル" : "Steering"}</dt><dd>{vehicle.steering}</dd></div>
             <div><dt>{ja ? "トランスミッション" : "Transmission"}</dt><dd>{vehicle.transmission}</dd></div>
           </dl>
           <div className="odometer"><Gauge size={22} /><span><small>{ja ? "現在の走行距離" : "Current odometer"}</small><strong>{vehicle.currentOdometerReading.displayedValue.toLocaleString()} {vehicle.currentOdometerReading.unit}</strong></span></div>
-          <p className="privacy-caption">{ja ? "VIN・ナンバープレート・正確な保管場所は保持しません。" : "VIN, registration plate, and precise storage location are not retained."}</p>
+          <p className="privacy-caption">{ja ? "車齢は年式からの概算です。所有歴は人気や整備情報の信頼度を決めません。VIN・ナンバープレート・正確な保管場所は保持しません。" : "Vehicle age is estimated from model year. Ownership length never changes knowledge trust. VIN, registration plate, and precise storage location are not retained."}</p>
         </div>
       </section>
 

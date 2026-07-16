@@ -13,8 +13,8 @@ import {
   type Locale,
   type MaintenanceRecord,
   type RecordDraft,
-} from "@mechory/core";
-import { LocalStorageDataProvider } from "@mechory/shared";
+} from "@mechori/core";
+import { LocalStorageDataProvider } from "@mechori/shared";
 import { journalMediaStore } from "@/lib/media-store";
 import {
   createContext,
@@ -48,7 +48,8 @@ export interface JournalMediaUpload {
 
 const AppContext = createContext<AppContextValue | null>(null);
 const dataProvider = new LocalStorageDataProvider();
-const localeKey = "mechory.prototype.locale";
+const localeKey = "mechori.prototype.locale";
+const legacyLocaleKey = "mechory.prototype.locale";
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<AppData>(() => cloneDemoData());
@@ -59,12 +60,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let active = true;
     Promise.all([
       dataProvider.load(),
-      Promise.resolve(window.localStorage.getItem(localeKey)),
+      Promise.resolve(
+        window.localStorage.getItem(localeKey) ??
+          window.localStorage.getItem(legacyLocaleKey),
+      ),
     ]).then(([storedData, storedLocale]) => {
       if (!active) return;
       if (storedData) setData(storedData);
       if (storedLocale === "ja" || storedLocale === "en") {
         setLocaleState(storedLocale);
+        window.localStorage.setItem(localeKey, storedLocale);
+        window.localStorage.removeItem(legacyLocaleKey);
       }
       setHydrated(true);
     });
