@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { JournalMedia } from "@/components/journal-media";
+import { JournalContent } from "@/components/journal-content";
 
 export default function JournalDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -85,13 +85,7 @@ export default function JournalDetailPage() {
           </div>
         </header>
 
-        <JournalMedia attachments={journal.media} locale={locale} />
-
-        <div className="journal-prose">
-          {journal.bodyOriginal.split("\n").map((paragraph, index) => (
-            <p key={`${index}-${paragraph.slice(0, 12)}`}>{paragraph || "\u00a0"}</p>
-          ))}
-        </div>
+        <JournalContent journal={journal} locale={locale} />
       </article>
 
       {record && (

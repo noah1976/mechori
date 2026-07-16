@@ -19,7 +19,10 @@ export type JournalKnowledgeClassification =
 export function validateJournalDraft(draft: JournalDraft): JournalValidationResult {
   const errors: JournalValidationResult["errors"] = {};
   if (!draft.title.trim()) errors.title = "required";
-  if (!draft.bodyOriginal.trim()) errors.bodyOriginal = "required";
+  const hasContent = draft.contentBlocks.some((block) =>
+    block.type === "media" ? true : Boolean(block.text.trim()),
+  );
+  if (!hasContent && !draft.linkedRecordId) errors.bodyOriginal = "required";
   if (
     draft.visibility !== "private" &&
     draft.media.some((attachment) => attachment.privacyState !== "public_ready")
@@ -37,6 +40,11 @@ export function createJournalPost(
 ): GarageJournalPost {
   const vehicle = data.vehicles.find((item) => item.id === draft.vehicleId);
   if (!vehicle) throw new Error("vehicle_required");
+  const bodyOriginal = draft.contentBlocks
+    .filter((block) => block.type === "text")
+    .map((block) => block.text)
+    .filter((text) => text.trim())
+    .join("\n\n");
 
   return {
     id: `journal-${crypto.randomUUID()}`,
@@ -46,12 +54,13 @@ export function createJournalPost(
     vehicleLabel: `${vehicle.make} ${vehicle.model}`,
     modelTargetId: modelTargetId(vehicle.make, vehicle.model),
     title: draft.title.trim(),
-    bodyOriginal: draft.bodyOriginal,
+    bodyOriginal,
     sourceLanguage,
     visibility: draft.visibility,
     linkedRecordId: draft.linkedRecordId || undefined,
     displayFields: draft.linkedRecordId ? [...draft.displayFields] : [],
     media: draft.media.map((attachment) => ({ ...attachment })),
+    contentBlocks: draft.contentBlocks.map((block) => ({ ...block })),
     knowledgeExtractionConsent: draft.knowledgeExtractionConsent,
     appreciationCount: 0,
     createdAt: now,

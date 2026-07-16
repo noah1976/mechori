@@ -155,6 +155,22 @@ export type JournalDisplayField = "service_date" | "odometer" | "actions";
 export type JournalMediaKind = "image" | "video";
 export type JournalMediaSource = "local_blob" | "demo_asset";
 export type JournalMediaPrivacyState = "private_only" | "public_ready";
+export type JournalTextBlockStyle = "paragraph" | "heading" | "quote";
+
+export interface JournalTextBlock {
+  id: string;
+  type: "text";
+  style: JournalTextBlockStyle;
+  text: string;
+}
+
+export interface JournalMediaBlock {
+  id: string;
+  type: "media";
+  mediaId: string;
+}
+
+export type JournalContentBlock = JournalTextBlock | JournalMediaBlock;
 
 export interface JournalMediaAttachment {
   id: string;
@@ -193,6 +209,7 @@ export interface GarageJournalPost {
   linkedRecordId?: string;
   displayFields: JournalDisplayField[];
   media: JournalMediaAttachment[];
+  contentBlocks: JournalContentBlock[];
   knowledgeExtractionConsent: boolean;
   appreciationCount: number;
   createdAt: string;
@@ -224,12 +241,13 @@ export interface JournalDraft {
   linkedRecordId: string;
   displayFields: JournalDisplayField[];
   media: JournalMediaAttachment[];
+  contentBlocks: JournalContentBlock[];
   visibility: JournalVisibility;
   knowledgeExtractionConsent: boolean;
 }
 
 export interface AppData {
-  schemaVersion: 4;
+  schemaVersion: 5;
   vehicles: Vehicle[];
   records: MaintenanceRecord[];
   profiles: SocialProfile[];

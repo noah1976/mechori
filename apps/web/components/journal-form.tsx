@@ -2,25 +2,37 @@
 
 import {
   validateJournalDraft,
+  type JournalContentBlock,
   type JournalDisplayField,
   type JournalDraft,
   type JournalMediaAttachment,
+  type JournalTextBlockStyle,
   type JournalVisibility,
 } from "@mechory/core";
 import {
-  BookOpenText,
-  FileImage,
-  ImageIcon,
+  AlignLeft,
+  ChevronDown,
+  ChevronUp,
+  Heading2,
+  ImagePlus,
   Link2,
+  Plus,
+  Quote,
   Save,
   ShieldAlert,
   ShieldCheck,
-  Upload,
-  Video,
-  X,
+  Trash2,
+  Wrench,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import { useApp } from "@/lib/app-context";
 
 const maxMediaCount = 6;
@@ -43,6 +55,15 @@ const displayFieldOptions: Array<{
   { value: "actions", ja: "整備箇所・作業", en: "Maintenance actions" },
 ];
 
+function newTextBlock(style: JournalTextBlockStyle = "paragraph"): JournalContentBlock {
+  return {
+    id: `journal-block-${crypto.randomUUID()}`,
+    type: "text",
+    style,
+    text: "",
+  };
+}
+
 export function JournalForm() {
   const { data, locale, addJournal } = useApp();
   const router = useRouter();
@@ -55,6 +76,7 @@ export function JournalForm() {
     linkedRecordId: "",
     displayFields: ["service_date", "odometer", "actions"],
     media: [],
+    contentBlocks: [newTextBlock()],
     visibility: "private",
     knowledgeExtractionConsent: false,
   });
@@ -62,7 +84,9 @@ export function JournalForm() {
   const [saving, setSaving] = useState(false);
   const [mediaError, setMediaError] = useState("");
   const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([]);
+  const [insertAfterBlockId, setInsertAfterBlockId] = useState<string | null>(null);
   const pendingMediaRef = useRef<PendingMedia[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const validation = validateJournalDraft(draft);
   const missingMediaDescription = pendingMedia.some(
     ({ attachment }) => !attachment.altText.trim(),
@@ -97,17 +121,52 @@ export function JournalForm() {
     }
   }
 
-  function setVisibility(visibility: JournalVisibility) {
-    setDraft((current) => ({ ...current, visibility }));
-  }
-
-  function toggleDisplayField(field: JournalDisplayField) {
+  function updateBlock(id: string, patch: Partial<JournalContentBlock>) {
     setDraft((current) => ({
       ...current,
-      displayFields: current.displayFields.includes(field)
-        ? current.displayFields.filter((item) => item !== field)
-        : [...current.displayFields, field],
+      contentBlocks: current.contentBlocks.map((block) =>
+        block.id === id ? ({ ...block, ...patch } as JournalContentBlock) : block,
+      ),
     }));
+  }
+
+  function insertBlock(afterId: string | null, block: JournalContentBlock) {
+    setDraft((current) => {
+      const index = afterId
+        ? current.contentBlocks.findIndex((item) => item.id === afterId) + 1
+        : current.contentBlocks.length;
+      const blocks = [...current.contentBlocks];
+      blocks.splice(Math.max(0, index), 0, block);
+      return { ...current, contentBlocks: blocks };
+    });
+  }
+
+  function addText(afterId: string | null, style: JournalTextBlockStyle) {
+    insertBlock(afterId, newTextBlock(style));
+  }
+
+  function moveBlock(id: string, direction: -1 | 1) {
+    setDraft((current) => {
+      const index = current.contentBlocks.findIndex((block) => block.id === id);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= current.contentBlocks.length) return current;
+      const blocks = [...current.contentBlocks];
+      [blocks[index], blocks[target]] = [blocks[target]!, blocks[index]!];
+      return { ...current, contentBlocks: blocks };
+    });
+  }
+
+  function removeBlock(block: JournalContentBlock) {
+    if (block.type === "media") removeMedia(block.mediaId);
+    setDraft((current) => ({
+      ...current,
+      contentBlocks: current.contentBlocks.filter((item) => item.id !== block.id),
+    }));
+  }
+
+  function openMediaPicker(afterId: string | null) {
+    setInsertAfterBlockId(afterId);
+    fileInputRef.current?.click();
   }
 
   function selectMedia(event: ChangeEvent<HTMLInputElement>) {
@@ -122,7 +181,6 @@ export function JournalForm() {
       );
       return;
     }
-
     const unsupported = files.find(
       (file) => !file.type.startsWith("image/") && !file.type.startsWith("video/"),
     );
@@ -165,10 +223,23 @@ export function JournalForm() {
       };
     });
     setPendingMedia((current) => [...current, ...additions]);
-    setDraft((current) => ({
-      ...current,
-      media: [...current.media, ...additions.map(({ attachment }) => attachment)],
-    }));
+    setDraft((current) => {
+      const mediaBlocks = additions.map(({ attachment }) => ({
+        id: `journal-block-${crypto.randomUUID()}`,
+        type: "media" as const,
+        mediaId: attachment.id,
+      }));
+      const index = insertAfterBlockId
+        ? current.contentBlocks.findIndex((block) => block.id === insertAfterBlockId) + 1
+        : current.contentBlocks.length;
+      const blocks = [...current.contentBlocks];
+      blocks.splice(Math.max(0, index), 0, ...mediaBlocks);
+      return {
+        ...current,
+        media: [...current.media, ...additions.map(({ attachment }) => attachment)],
+        contentBlocks: blocks,
+      };
+    });
   }
 
   function describeMedia(id: string, altText: string) {
@@ -181,9 +252,7 @@ export function JournalForm() {
     );
     setDraft((current) => ({
       ...current,
-      media: current.media.map((item) =>
-        item.id === id ? { ...item, altText } : item,
-      ),
+      media: current.media.map((item) => (item.id === id ? { ...item, altText } : item)),
     }));
   }
 
@@ -194,272 +263,176 @@ export function JournalForm() {
     setDraft((current) => ({
       ...current,
       media: current.media.filter((item) => item.id !== id),
+      contentBlocks: current.contentBlocks.filter(
+        (item) => item.type !== "media" || item.mediaId !== id,
+      ),
+    }));
+  }
+
+  function toggleDisplayField(field: JournalDisplayField) {
+    setDraft((current) => ({
+      ...current,
+      displayFields: current.displayFields.includes(field)
+        ? current.displayFields.filter((item) => item !== field)
+        : [...current.displayFields, field],
     }));
   }
 
   return (
-    <form className="journal-form" onSubmit={submit} noValidate>
-      <section className="journal-writing-surface">
-        <div className="journal-writing-heading">
-          <BookOpenText size={22} aria-hidden="true" />
+    <form className="journal-form note-editor-form" onSubmit={submit} noValidate>
+      <section className="note-editor-shell">
+        <header className="note-editor-header">
           <div>
-            <strong>{ja ? "あなたの言葉で書く" : "Write in your own words"}</strong>
+            <span className="eyebrow">YOUR GARAGE STORY</span>
+            <strong>{ja ? "その日の出来事を、好きな形で" : "Tell the story your way"}</strong>
             <small>
               {ja
-                ? "AIによる本文生成や書き換えは行いません。"
-                : "AI will not generate or rewrite your journal."}
+                ? "壊れた日も、路上で止まった日も、直って走れた日も。AIは本文を代筆しません。"
+                : "Breakdowns, roadside stops, and the first drive after a fix. AI will not write it for you."}
             </small>
           </div>
-        </div>
-        <label className={submitted && validation.errors.title ? "field has-error" : "field"}>
-          {ja ? "タイトル" : "Title"}
+          <Link href="/records/new" className="secondary-action">
+            <Wrench size={17} aria-hidden="true" />
+            {ja ? "整備記録だけ残す" : "Maintenance record only"}
+          </Link>
+        </header>
+
+        <label className={submitted && validation.errors.title ? "note-title has-error" : "note-title"}>
+          <span className="sr-only">{ja ? "タイトル" : "Title"}</span>
           <input
             value={draft.title}
-            onChange={(event) =>
-              setDraft((current) => ({ ...current, title: event.target.value }))
-            }
-            placeholder={ja ? "今日、愛車とあったこと" : "What happened with your car today"}
+            onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))}
+            placeholder={ja ? "タイトル" : "Title"}
           />
           {submitted && validation.errors.title && (
             <small>{ja ? "タイトルを入力してください" : "Enter a title"}</small>
           )}
         </label>
-        <label className={submitted && validation.errors.bodyOriginal ? "field has-error" : "field"}>
-          {ja ? "本文" : "Journal"}
-          <textarea
-            className="journal-body-input"
-            value={draft.bodyOriginal}
-            onChange={(event) =>
-              setDraft((current) => ({ ...current, bodyOriginal: event.target.value }))
-            }
-            placeholder={
-              ja
-                ? "工場へ持ち込んだ経緯、直ってうれしかったこと、まだ気になることなど、自由に書いてください。"
-                : "Write freely about the visit, what felt good afterward, or what still concerns you."
-            }
-          />
-          {submitted && validation.errors.bodyOriginal && (
-            <small>{ja ? "本文を入力してください" : "Write your journal"}</small>
-          )}
-        </label>
-      </section>
 
-      <section className="journal-settings journal-media-editor">
-        <div className="section-heading compact">
-          <div>
-            <span className="eyebrow">PHOTO &amp; VIDEO</span>
-            <h2>{ja ? "写真・動画を添える" : "Add photos and videos"}</h2>
-          </div>
-          <FileImage size={21} aria-hidden="true" />
+        <div className="note-block-list">
+          {draft.contentBlocks.map((block, index) => {
+            const media = block.type === "media"
+              ? pendingMedia.find((item) => item.attachment.id === block.mediaId)
+              : undefined;
+            return (
+              <div className="note-block-wrap" key={block.id}>
+                <article className={`note-block note-block-${block.type}`}>
+                  <div className="note-block-actions" aria-label={ja ? "ブロック操作" : "Block controls"}>
+                    <button type="button" className="icon-action" onClick={() => moveBlock(block.id, -1)} disabled={index === 0} title={ja ? "上へ" : "Move up"} aria-label={ja ? "上へ移動" : "Move block up"}><ChevronUp size={16} /></button>
+                    <button type="button" className="icon-action" onClick={() => moveBlock(block.id, 1)} disabled={index === draft.contentBlocks.length - 1} title={ja ? "下へ" : "Move down"} aria-label={ja ? "下へ移動" : "Move block down"}><ChevronDown size={16} /></button>
+                    <button type="button" className="icon-action danger-icon" onClick={() => removeBlock(block)} title={ja ? "削除" : "Remove"} aria-label={ja ? "ブロックを削除" : "Remove block"}><Trash2 size={16} /></button>
+                  </div>
+                  {block.type === "text" ? (
+                    <div className={`note-text-block is-${block.style}`}>
+                      <div className="note-text-style" role="group" aria-label={ja ? "文章スタイル" : "Text style"}>
+                        {([
+                          ["paragraph", AlignLeft, ja ? "本文" : "Text"],
+                          ["heading", Heading2, ja ? "見出し" : "Heading"],
+                          ["quote", Quote, ja ? "引用" : "Quote"],
+                        ] as const).map(([style, Icon, label]) => (
+                          <button type="button" className={block.style === style ? "is-selected" : ""} aria-pressed={block.style === style} onClick={() => updateBlock(block.id, { style })} title={label} key={style}><Icon size={16} aria-hidden="true" /><span>{label}</span></button>
+                        ))}
+                      </div>
+                      <textarea
+                        value={block.text}
+                        onChange={(event) => updateBlock(block.id, { text: event.target.value })}
+                        placeholder={
+                          block.style === "heading"
+                            ? ja ? "見出し" : "Heading"
+                            : block.style === "quote"
+                              ? ja ? "その時の言葉や印象に残った一言" : "A memorable line or thought"
+                              : ja ? "ここから自由に書く…" : "Start writing here…"
+                        }
+                        aria-label={ja ? "記事本文" : "Article text"}
+                      />
+                    </div>
+                  ) : media ? (
+                    <div className="note-media-block">
+                      <div className="note-media-preview">
+                        {media.attachment.kind === "image" ? (
+                          // Browser-local preview; it is never sent externally.
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={media.previewUrl} alt="" />
+                        ) : (
+                          <video src={media.previewUrl} controls preload="metadata" />
+                        )}
+                      </div>
+                      <label className={submitted && !media.attachment.altText.trim() ? "field has-error" : "field"}>
+                        {ja ? "写真・動画の説明" : "Media description"}
+                        <input value={media.attachment.altText} onChange={(event) => describeMedia(media.attachment.id, event.target.value)} placeholder={ja ? "何が写っているか、ひとこと添える" : "Add a short description"} />
+                        {submitted && !media.attachment.altText.trim() && <small>{ja ? "説明を入力してください" : "Add a description"}</small>}
+                      </label>
+                    </div>
+                  ) : null}
+                </article>
+                <BlockInsertMenu
+                  ja={ja}
+                  onText={(style) => addText(block.id, style)}
+                  onMedia={() => openMediaPicker(block.id)}
+                  mediaDisabled={pendingMedia.length >= maxMediaCount}
+                />
+              </div>
+            );
+          })}
+          {draft.contentBlocks.length === 0 && (
+            <div className="note-empty-editor">
+              <p>{ja ? "文章でも写真でも、好きなところから始められます。" : "Begin with words or media."}</p>
+              <BlockInsertMenu ja={ja} onText={(style) => addText(null, style)} onMedia={() => openMediaPicker(null)} mediaDisabled={false} />
+            </div>
+          )}
         </div>
-        <p className="journal-media-help">
-          {ja
-            ? "画像は10MB、動画は100MBまで。最大6件をこの端末のブラウザ内だけに保存します。"
-            : "Up to 6 items. Images are limited to 10 MB and videos to 100 MB, stored only in this browser."}
-        </p>
-        <label className="media-upload-action">
-          <Upload size={18} aria-hidden="true" />
-          <span>{ja ? "画像・動画を選ぶ" : "Choose images or videos"}</span>
-          <input
-            type="file"
-            accept="image/*,video/*"
-            multiple
-            onChange={selectMedia}
-            disabled={pendingMedia.length >= maxMediaCount}
-          />
-        </label>
+
+        <input ref={fileInputRef} className="visually-hidden-file" type="file" accept="image/*,video/*" multiple onChange={selectMedia} />
         {mediaError && <p className="media-error" role="alert">{mediaError}</p>}
-        {pendingMedia.length > 0 && (
-          <div className="media-draft-grid">
-            {pendingMedia.map(({ attachment, previewUrl, file }) => (
-              <article className="media-draft-item" key={attachment.id}>
-                <div className="media-draft-preview">
-                  {attachment.kind === "image" ? (
-                    // The preview is a browser-created object URL and is never sent externally.
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={previewUrl} alt="" />
-                  ) : (
-                    <video src={previewUrl} muted preload="metadata" aria-label={file.name} />
-                  )}
-                  <span>
-                    {attachment.kind === "image" ? (
-                      <ImageIcon size={14} aria-hidden="true" />
-                    ) : (
-                      <Video size={14} aria-hidden="true" />
-                    )}
-                    {formatBytes(file.size)}
-                  </span>
-                  <button
-                    type="button"
-                    className="icon-action media-remove"
-                    onClick={() => removeMedia(attachment.id)}
-                    aria-label={ja ? `${file.name}を削除` : `Remove ${file.name}`}
-                    title={ja ? "削除" : "Remove"}
-                  >
-                    <X size={16} aria-hidden="true" />
-                  </button>
-                </div>
-                <label className={submitted && !attachment.altText.trim() ? "field has-error" : "field"}>
-                  {ja ? "内容の説明" : "Description"}
-                  <input
-                    value={attachment.altText}
-                    onChange={(event) => describeMedia(attachment.id, event.target.value)}
-                    placeholder={ja ? "写真・動画に写っているもの" : "What this media shows"}
-                  />
-                  {submitted && !attachment.altText.trim() && (
-                    <small>{ja ? "内容を短く説明してください" : "Add a short description"}</small>
-                  )}
-                </label>
-              </article>
-            ))}
-          </div>
+        {submitted && validation.errors.bodyOriginal && (
+          <p className="media-error" role="alert">
+            {ja ? "文章、写真・動画、または関連する整備記録を追加してください。" : "Add text, media, or a related maintenance record."}
+          </p>
         )}
         {pendingMedia.length > 0 && (
           <div className="media-privacy-notice">
             <ShieldAlert size={20} aria-hidden="true" />
-            <div>
-              <strong>
-                {ja ? "このDEMOでは実ファイル付き投稿は非公開のみ" : "Real media remains private in this demo"}
-              </strong>
-              <p>
-                {ja
-                  ? "ナンバー・顔・位置情報の自動除去が未実装です。公開前処理が完成するまで、端末内の非公開記録として保存します。"
-                  : "Automatic removal of plates, faces, and location metadata is not implemented. Media stays private on this device."}
-              </p>
-            </div>
+            <div><strong>{ja ? "実ファイル付き投稿は現在、非公開のみ" : "Real media remains private for now"}</strong><p>{ja ? "ナンバー・顔・位置情報の公開前処理が完成するまで、端末内の非公開記録として保存します。" : "Until privacy processing is complete, media stays private on this device."}</p></div>
           </div>
         )}
       </section>
 
       <section className="journal-settings">
-        <div className="section-heading compact">
-          <div>
-            <span className="eyebrow">OPTIONAL CONTEXT</span>
-            <h2>{ja ? "整備記録を添える" : "Attach maintenance context"}</h2>
-          </div>
-          <Link2 size={21} aria-hidden="true" />
-        </div>
-        <label className="field">
-          {ja ? "関連する整備記録" : "Related maintenance record"}
-          <select
-            value={draft.linkedRecordId}
-            onChange={(event) =>
-              setDraft((current) => ({
-                ...current,
-                linkedRecordId: event.target.value,
-              }))
-            }
-          >
-            <option value="">{ja ? "関連付けない" : "No linked record"}</option>
-            {data.records.map((record) => (
-              <option key={record.id} value={record.id}>
-                {record.serviceDate} · {record.summary}
-              </option>
-            ))}
-          </select>
-        </label>
-        {draft.linkedRecordId && (
-          <fieldset className="journal-field-options">
-            <legend>{ja ? "Journalに表示する定型情報" : "Structured details to show"}</legend>
-            {displayFieldOptions.map((option) => (
-              <label className="checkbox-row" key={option.value}>
-                <input
-                  type="checkbox"
-                  checked={draft.displayFields.includes(option.value)}
-                  onChange={() => toggleDisplayField(option.value)}
-                />
-                <span>{ja ? option.ja : option.en}</span>
-              </label>
-            ))}
-          </fieldset>
-        )}
+        <div className="section-heading compact"><div><span className="eyebrow">MAINTENANCE CONTEXT</span><h2>{ja ? "整備記録を添える" : "Attach maintenance context"}</h2></div><Link2 size={21} aria-hidden="true" /></div>
+        <label className="field">{ja ? "関連する整備記録" : "Related maintenance record"}<select value={draft.linkedRecordId} onChange={(event) => setDraft((current) => ({ ...current, linkedRecordId: event.target.value }))}><option value="">{ja ? "関連付けない" : "No linked record"}</option>{data.records.map((record) => <option key={record.id} value={record.id}>{record.serviceDate} · {record.summary}</option>)}</select></label>
+        {draft.linkedRecordId && <fieldset className="journal-field-options"><legend>{ja ? "記事に表示する定型情報" : "Structured details to show"}</legend>{displayFieldOptions.map((option) => <label className="checkbox-row" key={option.value}><input type="checkbox" checked={draft.displayFields.includes(option.value)} onChange={() => toggleDisplayField(option.value)} /><span>{ja ? option.ja : option.en}</span></label>)}</fieldset>}
       </section>
 
       <section className="journal-settings">
-        <div className="section-heading compact">
-          <div>
-            <span className="eyebrow">PRIVACY</span>
-            <h2>{ja ? "公開範囲" : "Audience"}</h2>
-          </div>
-          <ShieldCheck size={21} aria-hidden="true" />
-        </div>
-        <div className="segmented-control" role="group" aria-label={ja ? "公開範囲" : "Audience"}>
-          {([
-            ["private", ja ? "非公開" : "Private"],
-            ["followers", ja ? "フォロワー" : "Followers"],
-            ["public", ja ? "公開" : "Public"],
-          ] as Array<[JournalVisibility, string]>).map(([value, label]) => (
-            <button
-              type="button"
-              className={draft.visibility === value ? "is-selected" : ""}
-              aria-pressed={draft.visibility === value}
-              onClick={() => setVisibility(value)}
-              key={value}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-        {validation.errors.media === "private_only" && (
-          <div className="media-publication-gate" role="alert">
-            <ShieldAlert size={19} aria-hidden="true" />
-            <span>
-              {ja
-                ? "実ファイルを添付した投稿は、公開前処理が未実装のため公開できません。"
-                : "Posts with real media cannot be published until privacy processing is implemented."}
-            </span>
-            <button type="button" className="secondary-action" onClick={() => setVisibility("private")}>
-              {ja ? "非公開に戻す" : "Make private"}
-            </button>
-          </div>
-        )}
-        <label className="consent-option">
-          <input
-            type="checkbox"
-            checked={draft.knowledgeExtractionConsent}
-            onChange={(event) =>
-              setDraft((current) => ({
-                ...current,
-                knowledgeExtractionConsent: event.target.checked,
-              }))
-            }
-          />
-          <span>
-            <strong>
-              {ja
-                ? "本文からナレッジ候補を探すことを許可する"
-                : "Allow knowledge candidates to be found in this journal"}
-            </strong>
-            <small>
-              {ja
-                ? "候補は自動確定されません。実AIはこのDEMOに接続されていません。"
-                : "Candidates are never auto-confirmed. No real AI is connected in this demo."}
-            </small>
-          </span>
-        </label>
+        <div className="section-heading compact"><div><span className="eyebrow">PRIVACY</span><h2>{ja ? "公開範囲" : "Audience"}</h2></div><ShieldCheck size={21} aria-hidden="true" /></div>
+        <div className="segmented-control" role="group" aria-label={ja ? "公開範囲" : "Audience"}>{([ ["private", ja ? "非公開" : "Private"], ["followers", ja ? "フォロワー" : "Followers"], ["public", ja ? "公開" : "Public"] ] as Array<[JournalVisibility, string]>).map(([value, label]) => <button type="button" className={draft.visibility === value ? "is-selected" : ""} aria-pressed={draft.visibility === value} onClick={() => setDraft((current) => ({ ...current, visibility: value }))} key={value}>{label}</button>)}</div>
+        {validation.errors.media === "private_only" && <div className="media-publication-gate" role="alert"><ShieldAlert size={19} aria-hidden="true" /><span>{ja ? "実ファイルの公開前処理が未実装です。" : "Privacy processing for real media is not implemented."}</span><button type="button" className="secondary-action" onClick={() => setDraft((current) => ({ ...current, visibility: "private" }))}>{ja ? "非公開に戻す" : "Make private"}</button></div>}
+        <label className="consent-option"><input type="checkbox" checked={draft.knowledgeExtractionConsent} onChange={(event) => setDraft((current) => ({ ...current, knowledgeExtractionConsent: event.target.checked }))} /><span><strong>{ja ? "本文をナレッジ検索の参考候補にする" : "Allow this story to inform knowledge search"}</strong><small>{ja ? "AIは本文を代筆せず、公開後も出典付きの未確認投稿として扱います。" : "AI never writes the story and treats it as cited, unverified owner content."}</small></span></label>
       </section>
 
-      <div className="form-actions">
-        <button type="submit" className="primary-action" disabled={saving}>
-          <Save size={17} aria-hidden="true" />
-          {saving
-            ? ja
-              ? "保存中…"
-              : "Saving…"
-            : draft.visibility === "private"
-            ? ja
-              ? "非公開で保存"
-              : "Save privately"
-            : ja
-              ? "公開範囲を確認して保存"
-              : "Review audience and save"}
-        </button>
-      </div>
+      <div className="form-actions"><button type="submit" className="primary-action" disabled={saving}><Save size={17} aria-hidden="true" />{saving ? ja ? "保存中…" : "Saving…" : draft.visibility === "private" ? ja ? "非公開で保存" : "Save privately" : ja ? "公開範囲を確認して保存" : "Review audience and save"}</button></div>
     </form>
   );
 }
 
-function formatBytes(value: number): string {
-  if (value < 1024 * 1024) return `${Math.max(1, Math.round(value / 1024))} KB`;
-  return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+function BlockInsertMenu({
+  ja,
+  onText,
+  onMedia,
+  mediaDisabled,
+}: {
+  ja: boolean;
+  onText(style: JournalTextBlockStyle): void;
+  onMedia(): void;
+  mediaDisabled: boolean;
+}) {
+  return (
+    <div className="note-insert-row">
+      <span><Plus size={15} aria-hidden="true" /></span>
+      <button type="button" onClick={() => onText("paragraph")}><AlignLeft size={16} aria-hidden="true" />{ja ? "文章" : "Text"}</button>
+      <button type="button" onClick={() => onText("heading")}><Heading2 size={16} aria-hidden="true" />{ja ? "見出し" : "Heading"}</button>
+      <button type="button" onClick={() => onText("quote")}><Quote size={16} aria-hidden="true" />{ja ? "引用" : "Quote"}</button>
+      <button type="button" onClick={onMedia} disabled={mediaDisabled}><ImagePlus size={16} aria-hidden="true" />{ja ? "写真・動画" : "Media"}</button>
+    </div>
+  );
 }

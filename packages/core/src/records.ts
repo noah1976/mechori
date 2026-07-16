@@ -286,7 +286,7 @@ export function applyRecordDraftToData(
     record,
     data: {
       ...data,
-      schemaVersion: 4,
+      schemaVersion: 5,
       vehicles: data.vehicles.map((item) => (item.id === vehicleId ? nextVehicle : item)),
       records,
     },
@@ -353,7 +353,7 @@ export function migrateAppData(input: unknown): AppData | null {
   });
 
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     vehicles,
     records,
     profiles: Array.isArray(source.profiles)
@@ -364,15 +364,32 @@ export function migrateAppData(input: unknown): AppData | null {
         ? source.currentProfileId
         : demoData.currentProfileId,
     journals: Array.isArray(source.journals)
-      ? source.journals.map((journal) => ({
-          ...journal,
-          media:
+      ? source.journals.map((journal) => {
+          const media =
             Array.isArray(journal.media) && journal.media.length > 0
               ? journal.media
               : journal.isDemo
                 ? structuredClone(demoMediaByJournalId.get(journal.id) ?? [])
-                : [],
-        }))
+                : [];
+          const contentBlocks = Array.isArray(journal.contentBlocks)
+            ? journal.contentBlocks
+            : [
+                ...(journal.bodyOriginal
+                  ? [{
+                      id: `journal-block-${journal.id}-legacy-text`,
+                      type: "text" as const,
+                      style: "paragraph" as const,
+                      text: journal.bodyOriginal,
+                    }]
+                  : []),
+                ...media.map((attachment) => ({
+                  id: `journal-block-${attachment.id}-legacy-media`,
+                  type: "media" as const,
+                  mediaId: attachment.id,
+                })),
+              ];
+          return { ...journal, media, contentBlocks };
+        })
       : structuredClone(demoData.journals),
     follows: Array.isArray(source.follows)
       ? source.follows

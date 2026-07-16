@@ -20,6 +20,14 @@ function validDraft(overrides: Partial<JournalDraft> = {}): JournalDraft {
     linkedRecordId: "record-demo-oil",
     displayFields: ["service_date", "odometer", "actions"],
     media: [],
+    contentBlocks: [
+      {
+        id: "journal-block-test",
+        type: "text",
+        style: "paragraph",
+        text: "これは本人が自由に入力したDEMO本文です。",
+      },
+    ],
     visibility: "private",
     knowledgeExtractionConsent: false,
     ...overrides,
@@ -34,8 +42,15 @@ test("requires an owner-written title and body", () => {
 });
 
 test("creates a private journal by default without rewriting the body", () => {
+  const body = "  本人が書いた冒頭です。\n\n改行も含めて保持します。  ";
   const draft = validDraft({
-    bodyOriginal: "  本人が書いた冒頭です。\n\n改行も含めて保持します。  ",
+    bodyOriginal: body,
+    contentBlocks: [{
+      id: "journal-block-owner-text",
+      type: "text",
+      style: "paragraph",
+      text: body,
+    }],
   });
   const result = addJournalToData(
     cloneDemoData(),
@@ -44,11 +59,21 @@ test("creates a private journal by default without rewriting the body", () => {
     "2026-07-15T10:00:00.000Z",
   );
 
-  assert.equal(result.journal.bodyOriginal, draft.bodyOriginal);
+  assert.equal(result.journal.bodyOriginal, body);
   assert.equal(result.journal.visibility, "private");
   assert.equal(result.journal.publishedAt, undefined);
   assert.equal(result.journal.linkedRecordId, "record-demo-oil");
   assert.deepEqual(result.journal.media, []);
+  assert.deepEqual(result.journal.contentBlocks, draft.contentBlocks);
+});
+
+test("allows a linked maintenance record without requiring journal prose", () => {
+  const result = validateJournalDraft(validDraft({
+    bodyOriginal: "",
+    contentBlocks: [],
+    linkedRecordId: "record-demo-oil",
+  }));
+  assert.equal(result.valid, true);
 });
 
 test("preserves media metadata and blocks unprocessed media from publication", () => {

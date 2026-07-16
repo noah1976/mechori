@@ -1,7 +1,7 @@
 import type { AppData } from "./types.ts";
 
 export const demoData: AppData = {
-  schemaVersion: 4,
+  schemaVersion: 5,
   vehicles: [
     {
       id: "vehicle-demo-barchetta",
@@ -214,6 +214,14 @@ export const demoData: AppData = {
       linkedRecordId: "record-demo-oil",
       displayFields: ["service_date", "odometer", "actions"],
       media: [],
+      contentBlocks: [
+        {
+          id: "journal-block-demo-owner-private-text",
+          type: "text",
+          style: "paragraph",
+          text: "紙に残っていた記録を見返しながら、分かる範囲だけ入力している。まずは後から自分が困らない履歴にしたい。",
+        },
+      ],
       knowledgeExtractionConsent: false,
       appreciationCount: 0,
       createdAt: "2026-07-10T09:00:00.000Z",
@@ -246,6 +254,25 @@ export const demoData: AppData = {
           isDemo: true,
         },
       ],
+      contentBlocks: [
+        {
+          id: "journal-block-demo-luca-intro",
+          type: "text",
+          style: "paragraph",
+          text: "整備を終えてから初めての週末。遠くへは行かず、近所をゆっくり走って様子を見た。",
+        },
+        {
+          id: "journal-block-demo-luca-photo",
+          type: "media",
+          mediaId: "media-demo-roadster",
+        },
+        {
+          id: "journal-block-demo-luca-outro",
+          type: "text",
+          style: "paragraph",
+          text: "帰ってから気づいたことを記録へ追記した。止まったことも、直ったことも、このクルマとの続きをつくる一日として残しておく。",
+        },
+      ],
       knowledgeExtractionConsent: true,
       appreciationCount: 14,
       createdAt: "2026-07-12T08:30:00.000Z",
@@ -266,6 +293,14 @@ export const demoData: AppData = {
       visibility: "public",
       displayFields: [],
       media: [],
+      contentBlocks: [
+        {
+          id: "journal-block-demo-workshop-text",
+          type: "text",
+          style: "paragraph",
+          text: "初めて扱う車種でも、過去の作業と未解決事項が整理されていれば、確認の順序を考えやすい。これは操作確認用の文章で、修理方法を示すものではない。",
+        },
+      ],
       knowledgeExtractionConsent: false,
       appreciationCount: 8,
       createdAt: "2026-07-11T11:00:00.000Z",
