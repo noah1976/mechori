@@ -21,10 +21,14 @@ function knowledgeCase(
     causeCandidates: ["報告された原因候補A"],
     reportedChecks: ["報告された確認箇所A"],
     reportedActions: ["報告された対応A"],
+    reportedParts: ["報告された交換部品A"],
     outcome: "improved",
     verificationStatus: "owner_confirmed",
     hazardTags: [],
     hazardLevel: "LOW",
+    sourceTitle: `${id}の投稿`,
+    sourceHref: `/journal/${id}`,
+    sourceKind: "journal",
     ...overrides,
   };
 }
@@ -45,6 +49,11 @@ test("uses only public cases and preserves evidence text", () => {
     ["報告された原因候補A"],
   );
   assert.equal(isSynthesisGrounded(synthesis, cases), true);
+  assert.equal(synthesis.sources[0]?.href, "/journal/public-case");
+  assert.deepEqual(
+    synthesis.reportedParts.map((item) => item.text),
+    ["報告された交換部品A"],
+  );
 });
 
 test("filters evidence before synthesis without inventing fallback cases", () => {

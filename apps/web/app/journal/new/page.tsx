@@ -11,11 +11,11 @@ export default function NewJournalPage() {
       <header className="page-header">
         <div>
           <span className="eyebrow">GARAGE JOURNAL</span>
-          <h1>{ja ? "愛車のことを書く" : "Write about your car"}</h1>
+          <h1>{ja ? "愛車との一日を書く" : "Write a day with your car"}</h1>
           <p>
             {ja
-              ? "うまくまとめなくても大丈夫です。整備の経緯や、その日に感じたことを自分の言葉で残してください。"
-              : "It does not need to sound polished. Keep the experience and what you felt in your own words."}
+              ? "直った日も、路上で止まった日も、あとから愛車の物語になります。文章の好きな場所に写真や動画を添えて、自分の言葉で残してください。"
+              : "A successful repair and a roadside breakdown both become part of your car's story. Place photos and videos wherever they belong and write it in your own words."}
           </p>
         </div>
       </header>

@@ -4,7 +4,7 @@
 
 MECHORYの初期MVPで必要な概念、関係、状態を、特定DBやProviderに固定せず定義します。物理テーブル、インデックス、Supabase RLSは外部接続前に別途設計します。
 
-現行プロトタイプの型は操作確認用です。localStorageの試作スキーマv4では、整備記録に加えてプロフィール、Garage Journal、メディア参照、フォロー関係を保持します。メディア本体はIndexedDBへ分離します。この文書を初期MVPの概念モデルの正とし、実物の整備記録で検証してから物理モデルへ進みます。
+現行プロトタイプの型は操作確認用です。localStorageの試作スキーマv5では、整備記録に加えてプロフィール、順序付きブロックを持つGarage Journal、メディア参照、フォロー関係を保持します。メディア本体はIndexedDBへ分離します。この文書を初期MVPの概念モデルの正とし、実物の整備記録で検証してから物理モデルへ進みます。
 
 ## モデルの中心
 
@@ -90,12 +90,13 @@ GarageJournalPost
 - `id` / `authorUserId`
 - `vehicleId`: 任意。車両個体を公開しない投稿も許容する
 - `title` / `bodyOriginal` / `sourceLanguage`
+- `contentBlocks`: 段落、見出し、引用、メディア参照を順番に保持する本文正本
 - `visibility`: 非公開、フォロワー、公開。初期値は非公開
 - `knowledgeExtractionConsent`: ナレッジ候補抽出を許可するか
 - `createdAt` / `updatedAt` / `publishedAt`
 - `moderationState` / `deletionState`
 
-本文はAI生成を前提にせず、本人の原文を保持します。翻訳やAI抽出結果は別データとし、原文を上書きしません。
+本文はAI生成を前提にせず、本人の原文とブロック順序を保持します。`bodyOriginal`は検索・移行互換用にテキストブロックから導出し、表示順の正本にはしません。翻訳やAI抽出結果は別データとし、原文を上書きしません。
 
 ### JournalMaintenanceLink
 

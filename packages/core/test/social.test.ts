@@ -34,8 +34,13 @@ function validDraft(overrides: Partial<JournalDraft> = {}): JournalDraft {
   };
 }
 
-test("requires an owner-written title and body", () => {
-  const result = validateJournalDraft(validDraft({ title: "", bodyOriginal: "" }));
+test("requires a title and either owner content or a linked record", () => {
+  const result = validateJournalDraft(validDraft({
+    title: "",
+    bodyOriginal: "",
+    contentBlocks: [],
+    linkedRecordId: "",
+  }));
   assert.equal(result.valid, false);
   assert.equal(result.errors.title, "required");
   assert.equal(result.errors.bodyOriginal, "required");

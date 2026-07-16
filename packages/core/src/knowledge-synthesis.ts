@@ -23,10 +23,14 @@ export interface KnowledgeCaseEvidence {
   causeCandidates: string[];
   reportedChecks: string[];
   reportedActions: string[];
+  reportedParts: string[];
   outcome: KnowledgeOutcome;
   verificationStatus: VerificationStatus;
   hazardTags: HazardTagCode[];
   hazardLevel: HazardLevel;
+  sourceTitle: string;
+  sourceHref: string;
+  sourceKind: "journal" | "structured_case" | "official";
 }
 
 export interface EvidenceBoundItem {
@@ -41,11 +45,20 @@ export interface KnowledgeSynthesis {
   reportedCauseCandidates: EvidenceBoundItem[];
   reportedChecks: EvidenceBoundItem[];
   reportedActions: EvidenceBoundItem[];
+  reportedParts: EvidenceBoundItem[];
   outcomes: Record<KnowledgeOutcome, number>;
   unresolvedOrAdverseCaseIds: string[];
   hazardPolicy: HazardPolicy;
   insufficientEvidence: boolean;
   wordingPolicy: "evidence_bound_non_diagnostic";
+  sources: Array<{
+    caseId: string;
+    title: string;
+    href: string;
+    kind: KnowledgeCaseEvidence["sourceKind"];
+    verificationStatus: VerificationStatus;
+    matchLevel: VehicleMatchLevel;
+  }>;
 }
 
 interface AggregatedItem {
@@ -133,6 +146,7 @@ export function buildKnowledgeSynthesis(
     reportedCauseCandidates: aggregateItems(publicCases, (item) => item.causeCandidates),
     reportedChecks: aggregateItems(publicCases, (item) => item.reportedChecks),
     reportedActions: aggregateItems(publicCases, (item) => item.reportedActions),
+    reportedParts: aggregateItems(publicCases, (item) => item.reportedParts),
     outcomes: outcomeCounts,
     unresolvedOrAdverseCaseIds: publicCases
       .filter((knowledgeCase) =>
@@ -143,6 +157,14 @@ export function buildKnowledgeSynthesis(
     hazardPolicy: resolveHazardPolicy(hazardTags, highestDeclaredLevel),
     insufficientEvidence: publicCases.length === 0,
     wordingPolicy: "evidence_bound_non_diagnostic",
+    sources: publicCases.map((knowledgeCase) => ({
+      caseId: knowledgeCase.id,
+      title: knowledgeCase.sourceTitle,
+      href: knowledgeCase.sourceHref,
+      kind: knowledgeCase.sourceKind,
+      verificationStatus: knowledgeCase.verificationStatus,
+      matchLevel: knowledgeCase.matchLevel,
+    })),
   };
 }
 
@@ -162,6 +184,7 @@ export function filterKnowledgeCasesByText(
         ...knowledgeCase.causeCandidates,
         ...knowledgeCase.reportedChecks,
         ...knowledgeCase.reportedActions,
+        ...knowledgeCase.reportedParts,
       ].join(" "),
     );
 
@@ -184,6 +207,7 @@ export function isSynthesisGrounded(
     [synthesis.reportedCauseCandidates, (item) => item.causeCandidates],
     [synthesis.reportedChecks, (item) => item.reportedChecks],
     [synthesis.reportedActions, (item) => item.reportedActions],
+    [synthesis.reportedParts, (item) => item.reportedParts],
   ];
 
   return sections.every(([items, select]) =>

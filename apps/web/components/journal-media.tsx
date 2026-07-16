@@ -10,21 +10,23 @@ export function JournalMedia({
   attachments,
   locale,
   compact = false,
+  priority = false,
 }: {
   attachments: JournalMediaAttachment[];
   locale: Locale;
   compact?: boolean;
+  priority?: boolean;
 }) {
   if (attachments.length === 0) return null;
   const visibleAttachments = compact ? attachments.slice(0, 1) : attachments;
 
   return (
     <div className={compact ? "journal-media compact" : "journal-media"}>
-      {visibleAttachments.map((attachment) => (
+      {visibleAttachments.map((attachment, index) => (
         <JournalMediaItem
           attachment={attachment}
           locale={locale}
-          priority={!compact}
+          priority={priority || (!compact && index === 0)}
           key={attachment.id}
         />
       ))}
