@@ -112,3 +112,4 @@ Supabase、Netlify、OpenAI APIをWeb MVPの採用前提としますが、この
 - Journal本文からのAI候補抽出、コメント、DM、ランキング、推薦アルゴリズムは未実装
 
 詳細な方針は [AGENTS.md](AGENTS.md) と [docs/](docs/) を参照してください。
+# mechori
