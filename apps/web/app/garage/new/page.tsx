@@ -1,20 +1,24 @@
 "use client";
 
 import { useApp } from "@/lib/app-context";
+import { preparePrivateAlphaImage } from "@/lib/image-preparation";
 import {
   createEmptyVehicleDraft,
   validateVehicleDraft,
   type VehicleDraft,
 } from "@mechori/core";
-import { CarFront, Save } from "lucide-react";
+import { Camera, CarFront, ImagePlus, Save, ShieldCheck } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useMemo, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 
 export default function NewVehiclePage() {
   const { addVehicle, locale, isRemoteAlpha } = useApp();
   const [draft, setDraft] = useState<VehicleDraft>(() => createEmptyVehicleDraft());
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [preparingImage, setPreparingImage] = useState(false);
+  const [imageError, setImageError] = useState("");
   const [saveError, setSaveError] = useState(false);
   const validation = useMemo(() => validateVehicleDraft(draft), [draft]);
   const router = useRouter();
@@ -29,15 +33,38 @@ export default function NewVehiclePage() {
     return ja ? "入力内容を確認してください" : "Check this field";
   }
 
+  async function selectPhoto(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setPreparingImage(true);
+    setImageError("");
+    try {
+      const prepared = await preparePrivateAlphaImage(file);
+      setField("imagePath", prepared.dataUrl);
+    } catch {
+      setImageError(
+        ja
+          ? "JPEG・PNG・WebPの写真を選んでください（元画像は12MBまで）。"
+          : "Choose a JPEG, PNG, or WebP image up to 12 MB.",
+      );
+    } finally {
+      setPreparingImage(false);
+    }
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitted(true);
     setSaveError(false);
-    if (!validation.valid || saving) return;
+    if (!draft.imagePath) {
+      setImageError(ja ? "愛車のメイン写真を1枚選んでください。" : "Choose one main vehicle photo.");
+    }
+    if (!validation.valid || !draft.imagePath || saving || preparingImage) return;
     setSaving(true);
     try {
-      await addVehicle(draft);
-      router.push("/garage");
+      const vehicle = await addVehicle(draft);
+      router.push(`/garage/${encodeURIComponent(vehicle.id)}/welcome`);
     } catch {
       setSaveError(true);
       setSaving(false);
@@ -45,78 +72,72 @@ export default function NewVehiclePage() {
   }
 
   return (
-    <div className="page-stack narrow-page">
+    <div className="page-stack narrow-page lovable-onboarding">
       <header className="page-header">
         <div>
-          <span className="eyebrow">ADD VEHICLE</span>
-          <h1>{ja ? "愛車を登録" : "Add a vehicle"}</h1>
+          <span className="eyebrow">YOUR FIRST GARAGE</span>
+          <h1>{ja ? "まず、一番好きな一枚から。" : "Start with a photo you love."}</h1>
           <p>
             {ja
-              ? "メーカーと車種は候補に関係なく入力できます。型式や正確な年式が分からなくても、登録後に追記できます。"
-              : "Enter any make and model, even if it is not in a catalog. Exact year and specifications can be added later."}
+              ? "3分ほどで愛車ページができます。詳しい型式や走行距離は、あとからで大丈夫です。"
+              : "Your vehicle page takes about three minutes. Detailed specifications and mileage can wait."}
           </p>
         </div>
       </header>
 
-      <form className="vehicle-form" onSubmit={submit} noValidate aria-busy={saving}>
-        <section className="form-section">
-          <div className="section-heading compact">
-            <div><span className="eyebrow">01</span><h2>{ja ? "車両名" : "Vehicle identity"}</h2></div>
-            <CarFront size={22} aria-hidden="true" />
+      <form className="vehicle-form lovable-vehicle-form" onSubmit={submit} noValidate aria-busy={saving || preparingImage}>
+        <section className="vehicle-photo-field">
+          <div className="vehicle-photo-preview">
+            {draft.imagePath ? (
+              <Image src={draft.imagePath} alt="" fill sizes="(max-width: 760px) 100vw, 720px" unoptimized priority />
+            ) : (
+              <div><Camera size={44} aria-hidden="true" /><strong>{ja ? "愛車のメイン写真" : "Main vehicle photo"}</strong><span>{ja ? "ナンバーや周囲の写り込みも確認してください" : "Check the plate and surroundings before saving"}</span></div>
+            )}
           </div>
-          <div className="form-grid two-columns">
-            <Field label={ja ? "メーカー *" : "Make *"} error={errorFor("make")}>
-              <input value={draft.make} onChange={(event) => setField("make", event.target.value)} autoComplete="organization" placeholder={ja ? "例：Bertone" : "e.g. Bertone"} />
-            </Field>
-            <Field label={ja ? "車種 *" : "Model *"} error={errorFor("model")}>
-              <input value={draft.model} onChange={(event) => setField("model", event.target.value)} placeholder="X1/9" />
-            </Field>
-          </div>
-          <div className="form-grid two-columns">
-            <Field label={ja ? "年式（分かる場合）" : "Model year (if known)"} error={errorFor("year")}>
-              <input type="number" inputMode="numeric" min="1886" max={new Date().getFullYear() + 2} value={draft.year} onChange={(event) => setField("year", event.target.value)} placeholder={ja ? "未入力でも登録できます" : "Optional"} />
-            </Field>
-            <Field label={ja ? "所有関係" : "Relationship"}>
-              <select value={draft.ownershipType} onChange={(event) => setField("ownershipType", event.target.value as VehicleDraft["ownershipType"])}>
-                <option value="owned">{ja ? "現在所有" : "Owned"}</option>
-                <option value="previously_owned">{ja ? "過去所有" : "Previously owned"}</option>
-                <option value="family">{ja ? "家族所有" : "Family"}</option>
-                <option value="shared">{ja ? "共同管理" : "Shared"}</option>
-              </select>
-            </Field>
-          </div>
+          <label className="photo-pick-action">
+            <ImagePlus size={18} aria-hidden="true" />
+            {preparingImage ? (ja ? "写真を整えています…" : "Preparing photo…") : draft.imagePath ? (ja ? "写真を選び直す" : "Choose another") : (ja ? "写真を選ぶ" : "Choose photo")}
+            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={selectPhoto} disabled={preparingImage || saving} />
+          </label>
+          {imageError && <p className="media-error" role="alert">{imageError}</p>}
+          <p className="image-preparation-note"><ShieldCheck size={15} aria-hidden="true" />{ja ? "元画像は保存せず、位置情報を落とした縮小画像を非公開で保存します。" : "The original is not retained. A smaller copy without location metadata is saved privately."}</p>
         </section>
 
         <section className="form-section">
-          <div className="section-heading compact"><div><span className="eyebrow">02</span><h2>{ja ? "分かる範囲の仕様" : "Known specifications"}</h2></div></div>
-          <div className="form-grid three-columns">
-            <Field label={ja ? "エンジン" : "Engine"}><input value={draft.engine} onChange={(event) => setField("engine", event.target.value)} /></Field>
-            <Field label={ja ? "トランスミッション" : "Transmission"}><input value={draft.transmission} onChange={(event) => setField("transmission", event.target.value)} /></Field>
-            <Field label={ja ? "ハンドル" : "Steering"}><input value={draft.steering} onChange={(event) => setField("steering", event.target.value)} /></Field>
-          </div>
-          <div className="form-grid three-columns">
-            <Field label={ja ? "所有開始年" : "Ownership start year"} error={errorFor("ownershipStartedYear")}><input type="number" inputMode="numeric" value={draft.ownershipStartedYear} onChange={(event) => setField("ownershipStartedYear", event.target.value)} /></Field>
-            <Field label={ja ? "所有開始月" : "Ownership start month"} error={errorFor("ownershipStartedMonth")}><input type="number" inputMode="numeric" min="1" max="12" value={draft.ownershipStartedMonth} onChange={(event) => setField("ownershipStartedMonth", event.target.value)} /></Field>
-            <Field label={ja ? "現在のメーター表示" : "Current odometer"} error={errorFor("odometer")}>
-              <span className="field-with-unit">
-                <input type="number" inputMode="numeric" min="0" value={draft.odometer} onChange={(event) => setField("odometer", event.target.value)} />
-                <select aria-label={ja ? "走行距離の単位" : "Odometer unit"} value={draft.odometerUnit} onChange={(event) => setField("odometerUnit", event.target.value as VehicleDraft["odometerUnit"])}>
-                  <option value="km">km</option><option value="mi">mi</option><option value="unknown">?</option>
-                </select>
-              </span>
+          <div className="section-heading compact"><div><span className="eyebrow">01</span><h2>{ja ? "どんなクルマですか？" : "Which vehicle is yours?"}</h2></div><CarFront size={22} aria-hidden="true" /></div>
+          <div className="form-grid two-columns">
+            <Field label={ja ? "メーカー・ブランド *" : "Make or brand *"} error={errorFor("make")}>
+              <input value={draft.make} onChange={(event) => setField("make", event.target.value)} placeholder={ja ? "例：FIAT / MG / Bertone" : "e.g. FIAT / MG / Bertone"} />
+            </Field>
+            <Field label={ja ? "車名 *" : "Model *"} error={errorFor("model")}>
+              <input value={draft.model} onChange={(event) => setField("model", event.target.value)} placeholder={ja ? "例：Barchetta / MGB / X1/9" : "e.g. Barchetta / MGB / X1/9"} />
             </Field>
           </div>
-          <p className="privacy-caption">
-            {ja
-              ? "VIN、ナンバープレート、正確な保管場所は登録しません。空欄は推測せず、そのままで構いません。"
-              : "VIN, registration plate, and precise storage location are not collected. Leave unknown fields blank."}
-          </p>
+          <p className="catalog-free-note">{ja ? "候補にない希少車や並行輸入車も、その名前のまま登録できます。" : "Rare, imported, and unlisted vehicles can be registered exactly as you call them."}</p>
+        </section>
+
+        <section className="form-section">
+          <div className="section-heading compact"><div><span className="eyebrow">02</span><h2>{ja ? "分かる範囲の年月" : "Approximate dates"}</h2></div></div>
+          <div className="form-grid three-columns">
+            <Field label={ja ? "おおよその年式" : "Approximate model year"} error={errorFor("year")}>
+              <input type="number" inputMode="numeric" min="1886" max={new Date().getFullYear() + 2} value={draft.year} onChange={(event) => setField("year", event.target.value)} placeholder={ja ? "例：1997" : "e.g. 1997"} />
+            </Field>
+            <Field label={ja ? "所有開始年" : "Ownership start year"} error={errorFor("ownershipStartedYear")}>
+              <input type="number" inputMode="numeric" min="1886" max={new Date().getFullYear()} value={draft.ownershipStartedYear} onChange={(event) => setField("ownershipStartedYear", event.target.value)} placeholder={ja ? "例：2018" : "e.g. 2018"} />
+            </Field>
+            <Field label={ja ? "月（任意）" : "Month (optional)"} error={errorFor("ownershipStartedMonth")}>
+              <input type="number" inputMode="numeric" min="1" max="12" value={draft.ownershipStartedMonth} onChange={(event) => setField("ownershipStartedMonth", event.target.value)} placeholder="1–12" />
+            </Field>
+          </div>
+          <Field label={ja ? "このクルマへのひとこと（任意）" : "A short note about this vehicle (optional)"}>
+            <textarea maxLength={160} value={draft.ownerComment} onChange={(event) => setField("ownerComment", event.target.value)} placeholder={ja ? "好きなところや、これから一緒にしたいこと" : "What you love, or where you hope to go together"} />
+          </Field>
         </section>
 
         {saveError && <p className="form-error-summary" role="alert">{isRemoteAlpha ? (ja ? "MECHORIへ保存できませんでした。通信状態を確認してください。" : "Could not save to MECHORI. Check your connection.") : (ja ? "端末へ保存できませんでした。" : "Could not save to this device.")}</p>}
         <div className="form-actions">
           <button type="button" className="secondary-action" onClick={() => router.back()}>{ja ? "戻る" : "Back"}</button>
-          <button type="submit" className="primary-action" disabled={saving}><Save size={18} />{saving ? (ja ? "保存中…" : "Saving…") : (ja ? "愛車を登録" : "Add vehicle")}</button>
+          <button type="submit" className="primary-action" disabled={saving || preparingImage}><Save size={18} />{saving ? (ja ? "Garageに追加中…" : "Adding to Garage…") : (ja ? "愛車ページをつくる" : "Create vehicle page")}</button>
         </div>
       </form>
     </div>
@@ -124,11 +145,5 @@ export default function NewVehiclePage() {
 }
 
 function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
-  return (
-    <label className={`field ${error ? "has-error" : ""}`}>
-      <span>{label}</span>
-      {children}
-      {error && <small>{error}</small>}
-    </label>
-  );
+  return <label className={`field ${error ? "has-error" : ""}`}><span>{label}</span>{children}{error && <small>{error}</small>}</label>;
 }

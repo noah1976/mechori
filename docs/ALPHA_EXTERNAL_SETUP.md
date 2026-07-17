@@ -20,6 +20,7 @@
 - 1人用招待URLの発行画面を`/settings/alpha`へ実装済み
 - 所有者初期化、Googleテストユーザー追加、実アカウント2人の分離確認は未完了
 - MAU最小計測のDBマイグレーションは準備済みだが未適用。適用・環境設定までは送信しない
+- 愛車共有ページ用の最小公開スナップショットマイグレーションは準備済みだが未適用。適用までは共有ボタンから公開を開始しない
 
 ## 順序
 
@@ -63,7 +64,7 @@ Publishable keyはブラウザで使う公開キーですが、RLSなしで安�
 
 ## 3. DBとRLS
 
-対象ファイルは`supabase/migrations/202607170001_remote_alpha.sql`と`supabase/migrations/202607170002_lock_down_alpha_functions.sql`です。SQL Editorへ貼り付けて実行する前に、所有者とCodexで内容、対象プロジェクト、戻し方を確認します。
+初期対象は`supabase/migrations/202607170001_remote_alpha.sql`と`supabase/migrations/202607170002_lock_down_alpha_functions.sql`です。MAU計測は`202607170003_monthly_activity.sql`、愛車共有は`202607170004_public_vehicle_shares.sql`として別承認・別適用にします。SQL Editorへ貼り付けて実行する前に、所有者とCodexで内容、対象プロジェクト、戻し方を確認します。
 
 実行後に必要な確認:
 

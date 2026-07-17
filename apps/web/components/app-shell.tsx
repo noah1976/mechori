@@ -122,19 +122,19 @@ export function AppShell({ children }: { children: ReactNode }) {
             </label>
             {authenticated ? (
               <>
-                <Link href="/settings/privacy" className="icon-text-button">
+                <Link href="/settings/privacy" className="icon-text-button" aria-label={locale === "ja" ? "表示と安全" : "Privacy & safety"} title={locale === "ja" ? "表示と安全" : "Privacy & safety"}>
                   <Settings2 size={18} aria-hidden="true" />
-                  {locale === "ja" ? "表示と安全" : "Privacy & safety"}
+                  <span className="top-bar-action-label">{locale === "ja" ? "表示と安全" : "Privacy & safety"}</span>
                 </Link>
-                <button className="icon-text-button" type="button" onClick={logOut}>
+                <button className="icon-text-button" type="button" onClick={logOut} aria-label={locale === "ja" ? "ログアウト" : "Sign out"} title={locale === "ja" ? "ログアウト" : "Sign out"}>
                   <LogOut size={18} aria-hidden="true" />
-                  {locale === "ja" ? "ログアウト" : "Sign out"}
+                  <span className="top-bar-action-label">{locale === "ja" ? "ログアウト" : "Sign out"}</span>
                 </button>
               </>
             ) : pathname !== "/auth" ? (
-              <Link href="/auth" className="icon-text-button">
+              <Link href="/auth" className="icon-text-button" aria-label={locale === "ja" ? "ログイン" : "Sign in"} title={locale === "ja" ? "ログイン" : "Sign in"}>
                 <LogIn size={18} aria-hidden="true" />
-                {locale === "ja" ? "ログイン" : "Sign in"}
+                <span className="top-bar-action-label">{locale === "ja" ? "ログイン" : "Sign in"}</span>
               </Link>
             ) : null}
           </div>
@@ -204,6 +204,7 @@ function isPublicPath(pathname: string): boolean {
     pathname === "/" ||
     pathname === "/search" ||
     pathname === "/auth" ||
+    pathname.startsWith("/v/") ||
     pathname.startsWith("/profile/") ||
     (pathname.startsWith("/journal/") &&
       pathname !== "/journal/new" &&

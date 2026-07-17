@@ -332,6 +332,8 @@ export function migrateAppData(input: unknown): AppData | null {
         vehicle.ownershipEndedYear ?? matchingDemoVehicle?.ownershipEndedYear,
       ownershipEndedMonth:
         vehicle.ownershipEndedMonth ?? matchingDemoVehicle?.ownershipEndedMonth,
+      ownerComment:
+        typeof vehicle.ownerComment === "string" ? vehicle.ownerComment : undefined,
       odometerKm: vehicle.odometerKm ?? 0,
       odometerEpisodes:
         vehicle.odometerEpisodes?.length

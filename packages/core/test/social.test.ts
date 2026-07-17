@@ -79,6 +79,17 @@ test("creates a private journal by default without rewriting the body", () => {
   assert.deepEqual(result.journal.contentBlocks, draft.contentBlocks);
 });
 
+test("preserves a lightweight vehicle event category", () => {
+  const result = addJournalToData(
+    cloneDemoData(),
+    validDraft({ eventType: "drive", linkedRecordId: "" }),
+    "ja",
+  );
+
+  assert.equal(result.journal.eventType, "drive");
+  assert.equal(result.journal.visibility, "private");
+});
+
 test("allows a linked maintenance record without requiring journal prose", () => {
   const result = validateJournalDraft(validDraft({
     bodyOriginal: "",

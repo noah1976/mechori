@@ -7,6 +7,7 @@ export interface VehicleDraftValidationResult {
 
 export function createEmptyVehicleDraft(): VehicleDraft {
   return {
+    imagePath: "",
     make: "",
     model: "",
     year: "",
@@ -18,6 +19,7 @@ export function createEmptyVehicleDraft(): VehicleDraft {
     transmission: "",
     odometer: "",
     odometerUnit: "km",
+    ownerComment: "",
   };
 }
 
@@ -98,6 +100,8 @@ export function addVehicleToData(
       unit: draft.odometerUnit,
       sequenceAssessment: "consistent_increase",
     },
+    imagePath: draft.imagePath || undefined,
+    ownerComment: draft.ownerComment.trim() || undefined,
     isDemo: false,
   };
 

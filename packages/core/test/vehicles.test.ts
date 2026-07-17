@@ -30,6 +30,20 @@ test("accepts an owner-entered make and model without a vehicle master", () => {
   assert.equal(result.vehicle.isDemo, false);
 });
 
+test("keeps the prepared main photo and optional owner note on the vehicle", () => {
+  const draft = {
+    ...createEmptyVehicleDraft(),
+    imagePath: "data:image/webp;base64,alpha-photo",
+    make: "FIAT",
+    model: "Barchetta",
+    ownerComment: "この先も長く走りたい。",
+  };
+
+  const vehicle = addVehicleToData(cloneDemoData(), draft).vehicle;
+  assert.equal(vehicle.imagePath, draft.imagePath);
+  assert.equal(vehicle.ownerComment, draft.ownerComment);
+});
+
 test("allows registration before the exact model year is known", () => {
   const draft = {
     ...createEmptyVehicleDraft(),

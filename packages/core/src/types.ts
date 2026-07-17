@@ -67,10 +67,12 @@ export interface Vehicle {
   odometerEpisodes: PrototypeOdometerEpisode[];
   currentOdometerReading: PrototypeOdometerReading;
   imagePath?: string;
+  ownerComment?: string;
   isDemo: boolean;
 }
 
 export interface VehicleDraft {
+  imagePath: string;
   make: string;
   model: string;
   year: string;
@@ -82,6 +84,7 @@ export interface VehicleDraft {
   transmission: string;
   odometer: string;
   odometerUnit: PrototypeOdometerUnit;
+  ownerComment: string;
 }
 
 export interface PartReference {
@@ -190,9 +193,23 @@ export type FollowTargetType = "profile" | "vehicle" | "model";
 export type ProfileSafetyRelationType = "mute" | "block";
 export type JournalDisplayField = "service_date" | "odometer" | "actions";
 export type JournalMediaKind = "image" | "video";
-export type JournalMediaSource = "local_blob" | "demo_asset";
+export type JournalMediaSource = "local_blob" | "demo_asset" | "alpha_inline";
 export type JournalMediaPrivacyState = "private_only" | "public_ready";
 export type JournalTextBlockStyle = "paragraph" | "heading" | "quote";
+export type JournalEventType =
+  | "delivery"
+  | "photo"
+  | "drive"
+  | "inspection"
+  | "tire"
+  | "oil"
+  | "breakdown"
+  | "repair"
+  | "part"
+  | "custom"
+  | "event"
+  | "memory"
+  | "other";
 
 export interface JournalTextBlock {
   id: string;
@@ -242,6 +259,7 @@ export interface GarageJournalPost {
   vehicleLabel: string;
   modelTargetId: string;
   title: string;
+  eventType?: JournalEventType;
   bodyOriginal: string;
   sourceLanguage: LanguageTag;
   visibility: JournalVisibility;
@@ -325,6 +343,7 @@ export interface FollowTargetSummary {
 
 export interface JournalDraft {
   title: string;
+  eventType?: JournalEventType;
   bodyOriginal: string;
   vehicleId: string;
   linkedRecordId: string;

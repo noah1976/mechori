@@ -47,7 +47,9 @@ function JournalMediaItem({
   priority: boolean;
 }) {
   const [source, setSource] = useState<string | null>(
-    attachment.source === "demo_asset" ? attachment.assetPath ?? null : null,
+    attachment.source === "demo_asset" || attachment.source === "alpha_inline"
+      ? attachment.assetPath ?? null
+      : null,
   );
   const [loading, setLoading] = useState(attachment.source === "local_blob");
 
@@ -107,7 +109,7 @@ function JournalMediaItem({
           <source src={source} type={attachment.mimeType} />
         </video>
       )}
-      {!attachment.isDemo && (
+      {!attachment.isDemo && attachment.source === "local_blob" && (
         <figcaption>
           {locale === "ja" ? "端末内保存・非公開メディア" : "Stored on this device · private media"}
         </figcaption>

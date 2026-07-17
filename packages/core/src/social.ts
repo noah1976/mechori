@@ -57,6 +57,7 @@ export function createJournalPost(
     vehicleLabel: `${vehicle.make} ${vehicle.model}`,
     modelTargetId: modelTargetId(vehicle.make, vehicle.model),
     title: draft.title.trim(),
+    eventType: draft.eventType,
     bodyOriginal,
     sourceLanguage,
     visibility: draft.visibility,

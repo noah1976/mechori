@@ -11,6 +11,7 @@ import {
   ArrowRight,
   BookOpenText,
   CalendarDays,
+  CarFront,
   FileClock,
   Heart,
   LogIn,
@@ -52,6 +53,21 @@ export default function HomePage() {
   function search(event: FormEvent) {
     event.preventDefault();
     router.push(`/search?q=${encodeURIComponent(query)}`);
+  }
+
+  if (!vehicle && signedIn) {
+    return (
+      <div className="page-stack first-garage-home">
+        <section className="first-garage-invitation">
+          <span className="eyebrow">WELCOME TO MECHORI</span>
+          <CarFront size={42} aria-hidden="true" />
+          <h1>{ja ? "あなたのクルマを、ここから主役に。" : "Put your vehicle at the center."}</h1>
+          <p>{ja ? "写真を一枚選び、車名とおおよその年月を入れるだけ。3分ほどで、最初の愛車ページができます。" : "Choose one photo and add its name and approximate dates. Your first vehicle page takes about three minutes."}</p>
+          <Link href="/garage/new" className="primary-action"><ArrowRight size={18} />{ja ? "愛車ページをつくる" : "Create my vehicle page"}</Link>
+          <small>{ja ? "車種が候補になくても、その場で自由に登録できます。" : "Unlisted and rare vehicles are always welcome."}</small>
+        </section>
+      </div>
+    );
   }
 
   if (!vehicle) return null;
