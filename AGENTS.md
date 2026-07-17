@@ -49,6 +49,8 @@ MECHORI（メカリィ）は、車両メンテナンス記録を構造化し、�
 - 事業成長・初期獲得・検証指標: `docs/BUSINESS_GROWTH.md`
 - 初期検証の計測定義: `docs/MEASUREMENT_PLAN.md`
 - 招待制ベータ運用: `docs/BETA_PLAYBOOK.md`
+- 3〜5人遠隔α運用: `docs/ALPHA_PLAYBOOK.md`
+- 遠隔αの外部基盤設定: `docs/ALPHA_EXTERNAL_SETUP.md`
 - Professional課題検証: `docs/PROFESSIONAL_DISCOVERY.md`
 - 日本税務準備: `docs/TAX_READINESS_JP.md`
 - デザイン: `docs/DESIGN_DIRECTION.md`

@@ -63,10 +63,10 @@ export default function HomePage() {
       <section className="home-community-stage">
         <div className="home-community-intro">
           <span className="eyebrow">{signedIn ? "TODAY IN THE GARAGE" : "PUBLIC GARAGE JOURNAL"}</span>
-          <h1>{ja ? "壊れた日も、また走れた日も。" : "Breakdowns and the drives after them."}</h1>
+          <h1>{ja ? "愛車の整備も、日々の出来事も、一台の履歴に。" : "Breakdowns and the drives after them."}</h1>
           <p>
             {ja
-              ? "路上で止まった話さえ、同じクルマを好きな誰かが読みたくなる。愛車との続きを、写真と言葉で残そう。"
+              ? "整備記録を自分のために残し、困ったときは同型車の事例を探せます。写真や言葉で残した日々も、愛車の履歴につながります。"
               : "Even a roadside breakdown becomes a story another owner wants to read. Keep the next chapter in words and pictures."}
           </p>
           <div className="home-community-actions">
@@ -74,7 +74,7 @@ export default function HomePage() {
               <>
                 <Link href="/journal/new" className="primary-action">
                   <BookOpenText size={19} aria-hidden="true" />
-                  {ja ? "今日のことを書く" : "Write today's story"}
+                  {ja ? "愛車の出来事を書く" : "Write today's story"}
                 </Link>
                 <Link href="/records/new" className="secondary-action">
                   <Wrench size={18} aria-hidden="true" />
@@ -97,8 +97,8 @@ export default function HomePage() {
           <form className="home-knowledge-prompt" onSubmit={search}>
             <Search size={20} aria-hidden="true" />
             <div>
-              <small>{ja ? "みんなの経験から調べる" : "Search shared experience"}</small>
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={ja ? "こんな症状があるんだけど…" : "My car is doing this…"} aria-label={translate(locale, "search")} />
+              <small>{ja ? "公開されている整備事例を調べる" : "Search shared experience"}</small>
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={ja ? "症状や部品名を入力" : "My car is doing this…"} aria-label={translate(locale, "search")} />
             </div>
             <button type="submit" aria-label={translate(locale, "search")}><ArrowRight size={20} aria-hidden="true" /></button>
           </form>

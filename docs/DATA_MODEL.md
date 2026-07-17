@@ -10,6 +10,7 @@ MECHORIの初期MVPで必要な概念、関係、状態を、特定DBやProvider
 
 ```text
 User
+  ├─ InvitationRedemption
   └─ Vehicle
        ├─ OdometerEpisode（メーター個体・連続期間）
        │    └─ OdometerReading（その時点の表示値）
@@ -54,6 +55,20 @@ GarageJournalPost
 - 物理削除、論理的な公開停止、匿名化、法的保全を区別する。
 
 ## 主要概念
+
+### TestInvitation / InvitationRedemption
+
+遠隔α・招待制βの参加者を限定するための招待と、その使用記録です。認証に成功しただけでは非公開領域へ入れず、有効な招待から参加権限を得る必要があります。
+
+- `TestInvitation.id`: 推測困難な内部ID
+- `phase`: α、β
+- `tokenHash`: 十分にランダムな生トークンからサーバー側で作るハッシュ。生トークンは保存しない
+- `createdByUserId` / `createdAt` / `expiresAt`
+- `maxRedemptions`: αの標準は1
+- `revokedAt`: 個別失効
+- `InvitationRedemption.invitationId` / `userId` / `redeemedAt`
+
+同じ利用者による再ログインは新しい使用回数として数えません。使用済み、期限切れ、失効を区別し、招待状態をOAuth Providerのプロフィール属性へ埋め込みません。
 
 ### UserProfile
 

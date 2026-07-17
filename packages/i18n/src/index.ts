@@ -64,7 +64,7 @@ const ja = {
   draftReady: "非公開下書きの準備ができました",
   draftNotReady: "すべての項目を確認または除外してください",
   resetReview: "確認をやり直す",
-  noResults: "条件に一致する公開候補はありません。検索範囲を広げても、MECHORIは原因を生成しません。",
+  noResults: "条件に合う記録は見つかりませんでした。記録がない場合、MECHORIは推測で原因候補を補いません。",
 } as const;
 
 const en: Record<keyof typeof ja, string> = {

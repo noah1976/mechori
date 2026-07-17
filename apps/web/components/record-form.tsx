@@ -260,14 +260,14 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
             <p>{ja ? "上の走行距離には、交換・修理後のメーター表示値を入力します。以前より小さくても異常や虚偽とは判定しません。" : "Enter the displayed value after replacement or repair above. A lower value is not treated as an error or false claim."}</p>
           </div>}
         </div>
-        <Field label={ja ? "入庫・整備イベントのタイトル *" : "Visit or maintenance event title *"} error={errorText("summary")}>
+        <Field label={ja ? "整備記録のタイトル *" : "Visit or maintenance event title *"} error={errorText("summary")}>
           <input value={draft.summary} onChange={(event) => setField("summary", event.target.value)} placeholder={ja ? "例：車検と定期整備" : "e.g. Inspection and routine service"} />
         </Field>
       </section>
 
       <section className="form-section">
         <div className="section-heading compact"><div><span className="eyebrow">02</span><h2>{ja ? "確認した症状" : "Observed symptoms"}</h2></div></div>
-        <Field label={ja ? "この入庫のきっかけ・症状 *" : "Reason for visit or symptoms *"} error={errorText("symptoms")}>
+        <Field label={ja ? "整備のきっかけ・症状 *" : "Reason for visit or symptoms *"} error={errorText("symptoms")}>
           <textarea rows={3} value={draft.symptoms} onChange={(event) => setField("symptoms", event.target.value)} />
         </Field>
       </section>

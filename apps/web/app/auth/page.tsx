@@ -59,7 +59,7 @@ function AuthContent() {
         <p>
           {mode === "signin"
             ? ja ? "自分のGarageと非公開記録へ戻ります。" : "Return to your Garage and private records."
-            : ja ? "招待された方だけが参加できるローカルDEMOです。" : "This local demo is limited to invited participants."}
+            : ja ? "招待URLを受け取った方だけが参加できるDEMOです。" : "This local demo is limited to invited participants."}
         </p>
       </header>
 
@@ -75,7 +75,7 @@ function AuthContent() {
 
         {mode === "signup" && (
           <label className="auth-field">
-            <span>{ja ? "招待コード" : "Invitation code"}</span>
+            <span>{ja ? "招待コード（招待URLから自動入力）" : "Invitation code"}</span>
             <input value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} autoComplete="one-time-code" />
           </label>
         )}
@@ -95,8 +95,8 @@ function AuthContent() {
         <div className="auth-local-note">
           <LockKeyhole size={17} aria-hidden="true" />
           <p>
-            <strong>{ja ? "ローカル認証DEMO" : "Local authentication demo"}</strong>
-            <span>{ja ? "Google認証を想定した画面です。外部サービスには接続しません。" : "This screen models Google sign-in without contacting an external service."}</span>
+            <strong>{ja ? "認証画面のDEMO" : "Local authentication demo"}</strong>
+            <span>{ja ? "現在はGoogleログインの流れだけを再現しています。実際のGoogleアカウントには接続しません。" : "This screen models Google sign-in without contacting an external service."}</span>
           </p>
         </div>
       </section>

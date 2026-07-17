@@ -8,6 +8,7 @@ export * from "./entitlements.ts";
 export * from "./engagement.ts";
 export * from "./hazards.ts";
 export * from "./import-workflow.ts";
+export * from "./invitations.ts";
 export * from "./knowledge-synthesis.ts";
 export * from "./language.ts";
 export * from "./media-privacy.ts";
