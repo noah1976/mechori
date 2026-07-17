@@ -1,3 +1,5 @@
+begin;
+
 create extension if not exists pgcrypto with schema extensions;
 
 create table public.app_user_roles (
@@ -141,7 +143,7 @@ as $$
   );
 $$;
 
-revoke all on function public.is_test_operator(uuid) from public;
+revoke all on function public.is_test_operator(uuid) from public, anon, authenticated;
 
 create or replace function public.create_test_invitation(
   p_token_hash text,
@@ -239,8 +241,16 @@ begin
 end;
 $$;
 
+revoke all on function public.create_test_invitation(text, text, timestamptz, integer)
+  from public, anon, authenticated;
+revoke all on function public.redeem_test_invitation(text)
+  from public, anon, authenticated;
+
+grant execute on function public.is_test_operator(uuid) to authenticated;
 grant execute on function public.create_test_invitation(text, text, timestamptz, integer) to authenticated;
 grant execute on function public.redeem_test_invitation(text) to authenticated;
 
 comment on table public.alpha_private_workspaces is
   'Temporary per-user persistence for the 3-5 person remote alpha. Must be normalized before beta.';
+
+commit;

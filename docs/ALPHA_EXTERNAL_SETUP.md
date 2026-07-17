@@ -6,6 +6,16 @@
 
 秘密情報、データベースパスワード、Google Client Secretをチャット、Git、文書へ貼りません。所有者がパスワード管理ツール、ローカルの`.env.local`、SupabaseまたはNetlifyの環境変数画面へ直接入力します。
 
+## 接続状況（2026-07-17）
+
+- Supabase Freeの`mechori-alpha`を東京リージョンに作成済み
+- Project URLとPublishable keyをGit対象外の`apps/web/.env.local`へ設定済み
+- 初期DBと権限修正の2マイグレーションを適用済み
+- 全6テーブルでRLS有効、未ログイン時の非公開Workspaceは空応答
+- 未ログイン時の招待一覧と招待関数は401拒否
+- Supabase DashboardのGitHub Connectは未使用。GitHub連携はNetlify設定時に行う
+- Google OAuth、招待API、利用者2人の分離確認、Netlifyは未着手
+
 ## 順序
 
 1. SupabaseのFreeアカウントとα用プロジェクトを作る
@@ -48,7 +58,7 @@ Publishable keyはブラウザで使う公開キーですが、RLSなしで安�
 
 ## 3. DBとRLS
 
-対象ファイルは`supabase/migrations/202607170001_remote_alpha.sql`です。SQL Editorへ貼り付けて実行する前に、所有者とCodexで内容、対象プロジェクト、戻し方を確認します。
+対象ファイルは`supabase/migrations/202607170001_remote_alpha.sql`と`supabase/migrations/202607170002_lock_down_alpha_functions.sql`です。SQL Editorへ貼り付けて実行する前に、所有者とCodexで内容、対象プロジェクト、戻し方を確認します。
 
 実行後に必要な確認:
 

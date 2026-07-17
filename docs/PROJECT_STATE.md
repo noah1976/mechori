@@ -4,7 +4,7 @@
 
 2026-07-17時点で、MECHORIは初期設計からローカルプロトタイプ検証へ進みました。
 
-`codex/local-prototype` ブランチに、Next.js、TypeScript、npm workspaces、localStorage DataProviderを使ったモバイルファーストのWebプロトタイプを実装しました。Web MVPはSupabase、Netlify、OpenAI APIを採用前提としましたが、実サービス、OCR、決済、広告、本番環境にはまだ接続していません。
+`codex/local-prototype` ブランチに、Next.js、TypeScript、npm workspaces、localStorage DataProviderを使ったモバイルファーストのWebプロトタイプを実装しました。Web MVPはSupabase、Netlify、OpenAI APIを採用前提とし、遠隔α専用のSupabase Freeプロジェクトだけ接続済みです。Netlify、外部AI、OCR、決済、広告、本番環境にはまだ接続していません。
 
 ## 実装済み
 
@@ -47,7 +47,8 @@
 - 1人1つの期限付き招待を前提に、期限切れ、失効、使用済み、同一利用者の再ログインを区別するProvider非依存の招待判定とテストを追加
 - ホームを整備履歴、同型車事例、日常記録の順で理解できる文言へ戻し、検索の空結果を自然で断定しない日本語へ修正
 - `@supabase/ssr`を追加し、ローカルDEMOとSupabase α環境を環境変数で分離する設定、ブラウザ・サーバーClient、Next.js Proxyを追加
-- `supabase/migrations/202607170001_remote_alpha.sql`に、運営ロール、個別招待、使用記録、α参加権限、利用者プロフィール、α専用非公開WorkspaceとRLSの初期案を追加。未接続・未適用
+- `supabase/migrations/202607170001_remote_alpha.sql`に、運営ロール、個別招待、使用記録、α参加権限、利用者プロフィール、α専用非公開WorkspaceとRLSを追加し、`mechori-alpha`へ適用
+- 全6テーブルのRLS有効化、未ログイン時の非公開Workspace空応答、招待一覧・招待関数の401拒否を確認し、関数の既定公開権限を追加マイグレーションで明示的に閉鎖
 - `docs/ALPHA_EXTERNAL_SETUP.md`に、Supabase、Google OAuth、Netlifyの登録順、秘密情報、無料枠、停止手順を記録
 - lint、型チェック、単体テスト、production buildの成功
 - 390 x 844と1440 x 900での表示確認
@@ -137,7 +138,7 @@
 - `mechori.com`は取得済みだが、DNS、ホスティング、本番公開には未接続。
 - 正式公開前の類似商標確認は未完了。
 - Providerの採用方針は確認済み。アカウント接続、送信データ、RLS、費用上限、秘密情報、本番利用はチェックリストと個別承認までBLOCKED。
-- α用物理スキーマ案とSupabase Client境界は追加済みだが、OAuth callback、招待API、Workspace Adapter、RLS統合テストが未完了。SQLはSupabaseへ未適用。
+- α用物理スキーマとSupabase Client境界は接続済みだが、OAuth callback、招待API、Workspace Adapter、ログイン済み利用者2人によるRLS統合テストが未完了。
 - 実行時依存の監査で、Next.js配下のPostCSS 8.4.31にmoderateのXSS報告がある。利用者入力からCSSを生成する実装はないが、α公開前に修正版への更新経路を再確認する。high・criticalは0件。
 
 ## 作業上の注意
