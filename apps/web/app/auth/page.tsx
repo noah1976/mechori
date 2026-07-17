@@ -1,11 +1,12 @@
 "use client";
 
 import { useApp } from "@/lib/app-context";
+import { alphaAuthErrorMessage } from "@/lib/auth-flow";
 import { sanitizeLocalReturnPath, type AuthProvider } from "@mechori/core";
 import { ArrowRight, LockKeyhole, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState, type FormEvent } from "react";
 
 type AuthMode = "signin" | "signup";
 
@@ -16,12 +17,32 @@ const initialProviders: Array<{ id: AuthProvider; mark: string; ja: string; en: 
 function AuthContent() {
   const params = useSearchParams();
   const router = useRouter();
-  const { locale, signedIn, signIn } = useApp();
+  const { locale, signedIn, signIn, isRemoteAlpha } = useApp();
   const ja = locale === "ja";
-  const [mode, setMode] = useState<AuthMode>(params.get("mode") === "signup" ? "signup" : "signin");
+  const [mode, setMode] = useState<AuthMode>(params.get("mode") === "signup" || params.has("invite") ? "signup" : "signin");
   const [inviteCode, setInviteCode] = useState(params.get("invite") ?? "");
   const [error, setError] = useState("");
   const returnTo = sanitizeLocalReturnPath(params.get("returnTo"));
+  const displayedError = error || alphaAuthErrorMessage(params.get("error"), locale);
+
+  useEffect(() => {
+    const cleanUrl = new URL(window.location.href);
+    const fragmentInvite = new URLSearchParams(cleanUrl.hash.slice(1)).get("invite");
+    if (fragmentInvite) {
+      cleanUrl.hash = "";
+      cleanUrl.searchParams.set("mode", "signup");
+      window.history.replaceState(null, "", `${cleanUrl.pathname}${cleanUrl.search}`);
+      queueMicrotask(() => {
+        setInviteCode(fragmentInvite);
+        setMode("signup");
+      });
+      return;
+    }
+    if (!params.has("invite")) return;
+    cleanUrl.searchParams.delete("invite");
+    cleanUrl.searchParams.set("mode", "signup");
+    window.history.replaceState(null, "", `${cleanUrl.pathname}${cleanUrl.search}`);
+  }, [params]);
 
   function validateInvite(): boolean {
     if (mode === "signin" || inviteCode.trim() === "MECHORI-DEMO") return true;
@@ -34,6 +55,18 @@ function AuthContent() {
     setError("");
     signIn(provider);
     router.replace(returnTo);
+  }
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    if (isRemoteAlpha) {
+      if (mode === "signup" && !inviteCode.trim()) {
+        event.preventDefault();
+        validateInvite();
+      }
+      return;
+    }
+    event.preventDefault();
+    complete("google");
   }
 
   if (signedIn) {
@@ -59,7 +92,9 @@ function AuthContent() {
         <p>
           {mode === "signin"
             ? ja ? "自分のGarageと非公開記録へ戻ります。" : "Return to your Garage and private records."
-            : ja ? "招待URLを受け取った方だけが参加できるDEMOです。" : "This local demo is limited to invited participants."}
+            : isRemoteAlpha
+              ? ja ? "招待URLを受け取った方だけが参加できるα版です。" : "This alpha is limited to invited participants."
+              : ja ? "招待URLを受け取った方だけが参加できるDEMOです。" : "This local demo is limited to invited participants."}
         </p>
       </header>
 
@@ -76,27 +111,45 @@ function AuthContent() {
         {mode === "signup" && (
           <label className="auth-field">
             <span>{ja ? "招待コード（招待URLから自動入力）" : "Invitation code"}</span>
-            <input value={inviteCode} onChange={(event) => setInviteCode(event.target.value)} autoComplete="one-time-code" />
+            <input
+              type={isRemoteAlpha ? "password" : "text"}
+              value={inviteCode}
+              onChange={(event) => setInviteCode(event.target.value)}
+              autoComplete="one-time-code"
+              readOnly={isRemoteAlpha && Boolean(inviteCode)}
+            />
           </label>
         )}
 
-        <div className="auth-provider-list">
+        <form className="auth-provider-list" action="/auth/start" method="post" onSubmit={submit}>
+          <input type="hidden" name="provider" value="google" />
+          <input type="hidden" name="mode" value={mode} />
+          <input type="hidden" name="invite" value={mode === "signup" ? inviteCode : ""} />
+          <input type="hidden" name="returnTo" value={returnTo} />
           {initialProviders.map((provider) => (
-            <button type="button" key={provider.id} onClick={() => complete(provider.id)}>
+            <button type="submit" key={provider.id}>
               <span className={`provider-mark is-${provider.id}`} aria-hidden="true">{provider.mark}</span>
               <strong>{ja ? provider.ja : provider.en}</strong>
               <ArrowRight size={16} aria-hidden="true" />
             </button>
           ))}
-        </div>
+        </form>
 
-        {error && <p className="auth-error" role="alert">{error}</p>}
+        {displayedError && <p className="auth-error" role="alert">{displayedError}</p>}
 
         <div className="auth-local-note">
           <LockKeyhole size={17} aria-hidden="true" />
           <p>
-            <strong>{ja ? "認証画面のDEMO" : "Local authentication demo"}</strong>
-            <span>{ja ? "現在はGoogleログインの流れだけを再現しています。実際のGoogleアカウントには接続しません。" : "This screen models Google sign-in without contacting an external service."}</span>
+            <strong>
+              {isRemoteAlpha
+                ? ja ? "Googleで安全にログイン" : "Secure Google sign-in"
+                : ja ? "認証画面のDEMO" : "Local authentication demo"}
+            </strong>
+            <span>
+              {isRemoteAlpha
+                ? ja ? "MECHORIが受け取るのはログインに必要な最小限の情報だけです。Googleの連絡先やDriveにはアクセスしません。" : "MECHORI requests only the minimum information needed to sign in. It does not access Google contacts or Drive."
+                : ja ? "現在はGoogleログインの流れだけを再現しています。実際のGoogleアカウントには接続しません。" : "This screen models Google sign-in without contacting an external service."}
+            </span>
           </p>
         </div>
       </section>

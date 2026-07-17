@@ -16,7 +16,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export default function GaragePage() {
-  const { data, locale, resetDemo, recordEngagement } = useApp();
+  const { data, locale, isRemoteAlpha, resetDemo, recordEngagement } = useApp();
   const ownVehicles = data.vehicles.filter(
     (item) => item.ownerProfileId === data.currentProfileId,
   );
@@ -27,7 +27,26 @@ export default function GaragePage() {
   const journals = getOwnJournals(data).filter((journal) => journal.vehicleId === vehicle?.id);
   const ja = locale === "ja";
   useEffect(() => recordEngagement("garage_viewed"), [recordEngagement]);
-  if (!vehicle) return null;
+  if (!vehicle) {
+    return (
+      <div className="page-stack">
+        <DemoNotice />
+        <header className="page-header">
+          <div>
+            <span className="eyebrow">MY GARAGE</span>
+            <h1>{ja ? "最初の愛車を登録しましょう" : "Add your first vehicle"}</h1>
+            <p>{ja ? "メーカーと車種が一覧になくても、その場で自由に登録できます。" : "You can enter any make and model, even when it is not listed."}</p>
+          </div>
+        </header>
+        <div className="empty-state">
+          <CarFront size={38} aria-hidden="true" />
+          <h2>{ja ? "Garageはまだ空です" : "Your Garage is empty"}</h2>
+          <p>{ja ? "年式や型式が分からなくても、メーカーと車種だけで始められます。" : "Make and model are enough to begin; year and specifications can be added later."}</p>
+          <Link href="/garage/new" className="primary-action"><Plus size={18} />{ja ? "愛車を登録" : "Add vehicle"}</Link>
+        </div>
+      </div>
+    );
+  }
   const relationship = summarizeVehicleRelationship(vehicle);
   const ownershipDuration = formatOwnershipDuration(locale, relationship);
   const vehicleLabel = `${vehicle.make} ${vehicle.model}`;
@@ -40,7 +59,7 @@ export default function GaragePage() {
         <div className="page-header-actions">
           <Link href="/garage/new" className="secondary-action"><Plus size={17} />{ja ? "愛車を追加" : "Add vehicle"}</Link>
           <Link href={`/garage/history?vehicle=${encodeURIComponent(vehicle.id)}`} className="primary-action"><FileClock size={17} />{translate(locale, "historySummary")}</Link>
-          <button className="secondary-action" type="button" onClick={() => { void resetDemo().catch(() => undefined); }}><RotateCcw size={17} />{translate(locale, "resetDemo")}</button>
+          {!isRemoteAlpha && <button className="secondary-action" type="button" onClick={() => { void resetDemo().catch(() => undefined); }}><RotateCcw size={17} />{translate(locale, "resetDemo")}</button>}
         </div>
       </header>
 

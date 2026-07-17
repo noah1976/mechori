@@ -18,6 +18,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useApp } from "@/lib/app-context";
 import {
@@ -80,16 +81,25 @@ function draftFromRecord(record: MaintenanceRecord | undefined, vehicle: Vehicle
 }
 
 export function RecordForm({ record, vehicleId }: { record?: MaintenanceRecord; vehicleId?: string }) {
-  const { data } = useApp();
+  const { data, locale } = useApp();
   const vehicle = data.vehicles.find((item) => item.id === (record?.vehicleId ?? vehicleId)) ?? data.vehicles[0];
-  if (!vehicle) return null;
+  if (!vehicle) {
+    const ja = locale === "ja";
+    return (
+      <div className="empty-state">
+        <h2>{ja ? "整備記録を付ける愛車がありません" : "No vehicle is available for this record"}</h2>
+        <p>{ja ? "先に愛車を登録すると、その車両の整備履歴として保存できます。" : "Add a vehicle first, then save this as part of its maintenance history."}</p>
+        <Link href="/garage/new" className="primary-action">{ja ? "愛車を登録" : "Add vehicle"}</Link>
+      </div>
+    );
+  }
 
   return <RecordFormWithVehicle key={`${record?.id ?? "new"}-${vehicle.id}`} record={record} vehicle={vehicle} />;
 }
 
 function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord; vehicle: Vehicle }) {
   const router = useRouter();
-  const { addRecord, updateRecord, locale } = useApp();
+  const { addRecord, updateRecord, locale, isRemoteAlpha } = useApp();
   const draftKey = recordLocalDraftKey(record?.id);
   const initialDraft = useMemo(() => draftFromRecord(record, vehicle), [record, vehicle]);
   const [draft, setDraft] = useState<RecordDraft>(initialDraft);
@@ -342,7 +352,11 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
       )}
 
       {!validation.valid && submitted && <p className="form-error-summary" role="alert">{ja ? "必須項目または入力値を確認してください。" : "Review required fields and invalid values."}</p>}
-      {saveError && <p className="form-error-summary" role="alert">{ja ? "端末へ保存できませんでした。入力内容は下書きとして残しています。" : "This record could not be saved. Your input remains in the local draft."}</p>}
+      {saveError && <p className="form-error-summary" role="alert">
+        {isRemoteAlpha
+          ? ja ? "MECHORIへ保存できませんでした。入力内容は端末内の下書きに残しています。" : "This record could not be saved to MECHORI. Your input remains in the local draft."
+          : ja ? "端末へ保存できませんでした。入力内容は下書きとして残しています。" : "This record could not be saved. Your input remains in the local draft."}
+      </p>}
 
       <div className="form-actions">
         <button type="button" className="secondary-action" onClick={() => router.back()}>{ja ? "戻る" : "Back"}</button>

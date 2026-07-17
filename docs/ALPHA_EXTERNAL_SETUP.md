@@ -14,7 +14,12 @@
 - 全6テーブルでRLS有効、未ログイン時の非公開Workspaceは空応答
 - 未ログイン時の招待一覧と招待関数は401拒否
 - Supabase DashboardのGitHub Connectは未使用。GitHub連携はNetlify設定時に行う
-- Google OAuth、招待API、利用者2人の分離確認、Netlifyは未着手
+- Netlify Freeへ`https://mechori-alpha.netlify.app`としてαブランチを接続済み
+- Google OAuth Client、Supabase Google Provider、Site URL、ローカル・Netlify Redirect URLを設定済み
+- Google OAuth callback、招待引換、参加権限確認、ログアウト、利用者別Workspace Adapterを実装済み
+- 1人用招待URLの発行画面を`/settings/alpha`へ実装済み
+- 所有者初期化、Googleテストユーザー追加、実アカウント2人の分離確認は未完了
+- MAU最小計測のDBマイグレーションは準備済みだが未適用。適用・環境設定までは送信しない
 
 ## 順序
 
@@ -22,8 +27,8 @@
 2. ローカルでマイグレーションとRLSを検証する
 3. Google CloudでMECHORI α用OAuthクライアントを作る
 4. Supabase AuthへGoogleのClient IDとSecretを登録する
-5. ローカルで招待、ログイン、利用者分離を確認する
-6. NetlifyへGitHubリポジトリを接続し、α用環境変数を所有者が入力する
+5. NetlifyへGitHubリポジトリを接続し、α用環境変数を所有者が入力する
+6. 所有者を初期化し、招待、ログイン、利用者分離を確認する
 7. 1人目の招待URLで本番相当テストを行う
 8. 問題がなければ残り2〜4人へ個別URLを送る
 
@@ -85,6 +90,10 @@ RLS公式: <https://supabase.com/docs/guides/database/postgres/row-level-securit
 7. Google Client IDとClient SecretをSupabase DashboardのGoogle Providerへ直接入力する。
 8. Client Secretをチャット、Git、Netlifyの公開変数へ貼らない。
 
+初回所有者の設定は`docs/ALPHA_OWNER_BOOTSTRAP.md`に従います。αテスターはGoogle Auth Platformのテストユーザーにも追加し、MECHORIの1人用招待URLと組み合わせます。
+
+MECHORIの招待コードはURLフラグメント（`#invite=...`）で受け取り、画面で取得した直後にアドレス欄から消します。フラグメントは通常のWebリクエストへ送られないため、Netlifyのアクセスログには残りません。Googleへも送らず、OAuth往復中だけ短命のHttpOnly Cookieへ保持します。ログイン後、Supabase上の参加権限を確認できないアカウントは非公開領域へ入れません。
+
 MECHORIはGoogle Drive、連絡先、友人一覧、投稿等へアクセスしません。GoogleのProvider tokenも保存・再利用しません。
 
 ## 5. Netlify
@@ -98,6 +107,14 @@ MECHORIはGoogle Drive、連絡先、友人一覧、投稿等へアクセスし�
 5. Environment variablesへ`apps/web/.env.local`と同じ3項目を所有者が直接入力する。
 6. Deploy Previewと本番相当α URLのどちらを使うかを決め、Google OAuthのOriginとSupabase Redirect allow listへ同じURLを登録する。
 7. デプロイ後、環境変数が画面やビルドログへ出ていないことを確認する。
+
+月次計測を有効にする場合だけ、`202607170003_monthly_activity.sql`を内容確認後に適用し、Netlifyへ次を追加します。
+
+```text
+NEXT_PUBLIC_MECHORI_ACTIVITY_TRACKING=enabled
+```
+
+この値はDB更新前に有効化しません。計測は1利用者・1 UTC月につき1行で、MAU、Value MAU、価値行動名の集合だけを保持します。検索語、車種、記録本文、ページ履歴、滞在時間は保存しません。
 
 Netlifyは現行Next.jsのApp Router、SSR、Route HandlerをOpenNext Adapterで自動対応します。
 

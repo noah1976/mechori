@@ -1,0 +1,70 @@
+import { sanitizeLocalReturnPath } from "@mechori/core";
+import { NextResponse, type NextRequest } from "next/server";
+import { alphaInviteCookieName } from "@/lib/auth-flow";
+import { getMechoriRuntime } from "@/lib/runtime-config";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+const acceptedRedemptionStatuses = new Set(["redeemed", "already_redeemed"]);
+
+export async function GET(request: NextRequest) {
+  if (getMechoriRuntime() !== "alpha") {
+    return new NextResponse("Not found", { status: 404 });
+  }
+
+  const code = request.nextUrl.searchParams.get("code");
+  const returnTo = sanitizeLocalReturnPath(request.nextUrl.searchParams.get("returnTo"));
+  if (!code) return finish(request, "/auth?error=oauth_failed");
+
+  const supabase = await createSupabaseServerClient();
+  const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+  if (exchangeError) return finish(request, "/auth?error=oauth_failed");
+
+  const { data: authData, error: userError } = await supabase.auth.getUser();
+  if (userError || !authData.user) return finish(request, "/auth?error=oauth_failed");
+
+  const invite = request.cookies.get(alphaInviteCookieName)?.value;
+  let accessError: string | undefined;
+
+  if (invite) {
+    const { data, error } = await supabase.rpc("redeem_test_invitation", {
+      p_raw_token: invite,
+    });
+    if (error || !acceptedRedemptionStatuses.has(String(data))) {
+      accessError = error ? "invalid_invitation" : String(data);
+    }
+  } else {
+    const { data: membership, error } = await supabase
+      .from("test_memberships")
+      .select("status")
+      .eq("user_id", authData.user.id)
+      .maybeSingle();
+    if (error || !membership) accessError = "invitation_required";
+    else if (membership.status !== "active") accessError = "membership_inactive";
+  }
+
+  if (accessError) {
+    await supabase.auth.signOut();
+    return finish(request, `/auth?error=${encodeURIComponent(normalizeAccessError(accessError))}`);
+  }
+
+  return finish(request, returnTo);
+}
+
+function normalizeAccessError(value: string): string {
+  return [
+    "invitation_required",
+    "invalid_invitation",
+    "expired",
+    "revoked",
+    "exhausted",
+    "membership_inactive",
+  ].includes(value)
+    ? value
+    : "invalid_invitation";
+}
+
+function finish(request: NextRequest, path: string) {
+  const response = NextResponse.redirect(new URL(path, request.url));
+  response.cookies.set(alphaInviteCookieName, "", { path: "/auth", maxAge: 0 });
+  return response;
+}

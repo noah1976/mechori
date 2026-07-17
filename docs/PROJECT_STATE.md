@@ -4,7 +4,7 @@
 
 2026-07-17時点で、MECHORIは初期設計からローカルプロトタイプ検証へ進みました。
 
-`codex/local-prototype` ブランチに、Next.js、TypeScript、npm workspaces、localStorage DataProviderを使ったモバイルファーストのWebプロトタイプを実装しました。Web MVPはSupabase、Netlify、OpenAI APIを採用前提とし、遠隔α専用のSupabase Freeプロジェクトだけ接続済みです。Netlify、外部AI、OCR、決済、広告、本番環境にはまだ接続していません。
+`codex/remote-alpha-foundation`ブランチに、Next.js、Supabase Auth・Postgres、Netlifyを使う遠隔α基盤を実装しました。ローカルDEMOは従来どおり端末内で動き、公開αだけGoogle OAuthと利用者別の非公開Workspaceへ切り替わります。外部AI、OCR、決済、広告、独自ドメインの一般公開には接続していません。
 
 ## 実装済み
 
@@ -50,6 +50,13 @@
 - `supabase/migrations/202607170001_remote_alpha.sql`に、運営ロール、個別招待、使用記録、α参加権限、利用者プロフィール、α専用非公開WorkspaceとRLSを追加し、`mechori-alpha`へ適用
 - 全6テーブルのRLS有効化、未ログイン時の非公開Workspace空応答、招待一覧・招待関数の401拒否を確認し、関数の既定公開権限を追加マイグレーションで明示的に閉鎖
 - `docs/ALPHA_EXTERNAL_SETUP.md`に、Supabase、Google OAuth、Netlifyの登録順、秘密情報、無料枠、停止手順を記録
+- Netlifyの`https://mechori-alpha.netlify.app`へαブランチを接続し、Supabase Google ProviderとRedirect URLを設定
+- Google OAuth開始・callback、短命HttpOnly招待Cookie、招待引換、有効参加権限の再確認、ログアウトを実装
+- α利用者ごとに`alpha_private_workspaces`へ愛車と整備履歴を保存し、初回はデモ車を持たない空Garageを作成
+- オーナー専用`/settings/alpha`で、ランダムな1回限りの招待URLを発行し、DBにはSHA-256ハッシュだけを保存
+- 月単位・利用者単位のMAU、Value MAUだけを保持するマイグレーションを準備し、DB適用前は無効とする環境ゲートを追加
+- 新規Workspace、愛車、非公開整備記録のJSON往復を含む89件の単体テスト、lint、型チェック、production buildを通過
+- 公開αの認証・招待エラー画面をデスクトップとスマートフォンで確認し、横方向のはみ出しと画面エラーがないことを確認
 - lint、型チェック、単体テスト、production buildの成功
 - 390 x 844と1440 x 900での表示確認
 - 非公開記録の追加、再読み込み後の保持、検索、日英切り替えのブラウザ操作確認
@@ -122,7 +129,7 @@
 
 ## 直近の目的
 
-1. 3〜5人の遠隔αへ進むため、Supabase AuthのGoogle OAuth、Postgres・RLS、個別招待、Netlify検証環境、アカウント復旧、参加停止を実装・確認する。
+1. 所有者アカウントを初期化し、実Googleアカウント2人で招待、愛車・整備履歴保存、再ログイン、RLS分離を確認する。
 2. 所有者自身の実整備記録を10件以上登録し、工場提示、検索、履歴整理の再利用価値を確認する。
 3. 所有者の実整備記録PDFをローカルで確認し、国・言語・発行元・年代による帳票差、修正量、個人情報範囲を検証する。
 4. 遠隔αの重大問題を修正してから、SNSでつながる10〜20人の招待制βの募集文面を承認する。
@@ -130,7 +137,7 @@
 
 ## ブロッカー
 
-- ローカル認証モックはGoogle中心へ更新済み。本番のGoogle OAuth接続、Provider喪失時の復旧、招待失効、将来のApple・X・メール追加条件は未確定。
+- Google OAuthはαへ接続済み。Provider喪失時の復旧、将来のApple・X・メール追加条件は未確定。
 - FIAT Barchettaの仕様分類粒度が未確定。
 - 初期管理者運用が未確定。
 - ロゴ、カラー、タイポグラフィはプロトタイプ用の暫定値で、所有者確認が必要。
@@ -138,7 +145,8 @@
 - `mechori.com`は取得済みだが、DNS、ホスティング、本番公開には未接続。
 - 正式公開前の類似商標確認は未完了。
 - Providerの採用方針は確認済み。アカウント接続、送信データ、RLS、費用上限、秘密情報、本番利用はチェックリストと個別承認までBLOCKED。
-- α用物理スキーマとSupabase Client境界は接続済みだが、OAuth callback、招待API、Workspace Adapter、ログイン済み利用者2人によるRLS統合テストが未完了。
+- OAuth callback、招待API、Workspace Adapterは実装済み。所有者初期化とログイン済み利用者2人によるRLS統合テストが未完了。
+- MAU最小計測マイグレーションは未適用で、Netlifyの計測環境変数も無効のまま。
 - 実行時依存の監査で、Next.js配下のPostCSS 8.4.31にmoderateのXSS報告がある。利用者入力からCSSを生成する実装はないが、α公開前に修正版への更新経路を再確認する。high・criticalは0件。
 
 ## 作業上の注意

@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 
 export default function NewVehiclePage() {
-  const { addVehicle, locale } = useApp();
+  const { addVehicle, locale, isRemoteAlpha } = useApp();
   const [draft, setDraft] = useState<VehicleDraft>(() => createEmptyVehicleDraft());
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -113,7 +113,7 @@ export default function NewVehiclePage() {
           </p>
         </section>
 
-        {saveError && <p className="form-error-summary" role="alert">{ja ? "端末へ保存できませんでした。" : "Could not save to this device."}</p>}
+        {saveError && <p className="form-error-summary" role="alert">{isRemoteAlpha ? (ja ? "MECHORIへ保存できませんでした。通信状態を確認してください。" : "Could not save to MECHORI. Check your connection.") : (ja ? "端末へ保存できませんでした。" : "Could not save to this device.")}</p>}
         <div className="form-actions">
           <button type="button" className="secondary-action" onClick={() => router.back()}>{ja ? "戻る" : "Back"}</button>
           <button type="submit" className="primary-action" disabled={saving}><Save size={18} />{saving ? (ja ? "保存中…" : "Saving…") : (ja ? "愛車を登録" : "Add vehicle")}</button>

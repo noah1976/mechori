@@ -3,6 +3,7 @@
 import {
   cloneDemoData,
   createAuthSession,
+  createEmptyAppData,
   addVehicleToData,
   applyRecordDraftToData,
   addJournalToData,
@@ -36,7 +37,11 @@ import {
   type VehicleDraft,
 } from "@mechori/core";
 import { LocalStorageDataProvider } from "@mechori/shared";
+import { loadAlphaAuthSession, signOutFromAlpha } from "@/lib/alpha-auth";
+import { recordAlphaEngagement } from "@/lib/alpha-engagement";
+import { loadAlphaWorkspace, saveAlphaWorkspace } from "@/lib/alpha-workspace";
 import { journalMediaStore } from "@/lib/media-store";
+import { getMechoriRuntime } from "@/lib/runtime-config";
 import { clearAllLocalDrafts } from "@/lib/local-draft-store";
 import {
   recordLocalEngagement,
@@ -56,12 +61,13 @@ interface AppContextValue {
   data: AppData;
   locale: Locale;
   hydrated: boolean;
+  isRemoteAlpha: boolean;
   authSession: AuthSession;
   signedIn: boolean;
   persistenceError: boolean;
   setLocale(locale: Locale): void;
   signIn(provider: AuthProvider): void;
-  signOut(): void;
+  signOut(): Promise<void>;
   clearPersistenceError(): void;
   addVehicle(draft: VehicleDraft): Promise<Vehicle>;
   addRecord(draft: RecordDraft, vehicleId?: string): Promise<MaintenanceRecord>;
@@ -96,6 +102,8 @@ const dataProvider = new LocalStorageDataProvider();
 const localeKey = "mechori.prototype.locale";
 const legacyLocaleKey = "mechory.prototype.locale";
 const authKey = "mechori.prototype.auth-session";
+const runtime = getMechoriRuntime();
+const isRemoteAlpha = runtime === "alpha";
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<AppData>(() => cloneDemoData());
@@ -106,27 +114,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
-    Promise.all([
-      dataProvider.load(),
-      Promise.resolve(
-        readStorageValue(localeKey) ?? readStorageValue(legacyLocaleKey),
-      ),
-      Promise.resolve(readStoredAuthSession()),
-    ]).then(([storedData, storedLocale, storedAuthSession]) => {
-      if (!active) return;
-      if (storedData) setData(storedData);
-      setAuthSession(storedAuthSession);
-      if (isSupportedUiLocale(storedLocale)) {
-        setLocaleState(storedLocale);
-        try {
-          window.localStorage.setItem(localeKey, storedLocale);
-          window.localStorage.removeItem(legacyLocaleKey);
-        } catch {
-          setPersistenceError(true);
+    async function hydrate() {
+      const storedLocale = readStorageValue(localeKey) ?? readStorageValue(legacyLocaleKey);
+      try {
+        const storedAuthSession = isRemoteAlpha
+          ? await loadAlphaAuthSession()
+          : readStoredAuthSession();
+        const storedData = isRemoteAlpha
+          ? isSignedIn(storedAuthSession)
+            ? await loadAlphaWorkspace(storedAuthSession.profileId)
+            : null
+          : await dataProvider.load();
+
+        if (!active) return;
+        if (storedData) setData(storedData);
+        setAuthSession(storedAuthSession);
+        if (isSupportedUiLocale(storedLocale)) {
+          setLocaleState(storedLocale);
+          try {
+            window.localStorage.setItem(localeKey, storedLocale);
+            window.localStorage.removeItem(legacyLocaleKey);
+          } catch {
+            setPersistenceError(true);
+          }
         }
+      } catch {
+        if (!active) return;
+        setAuthSession(signedOutSession);
+        setData(cloneDemoData());
+        setPersistenceError(true);
+      } finally {
+        if (active) setHydrated(true);
       }
-      setHydrated(true);
-    });
+    }
+    void hydrate();
     return () => {
       active = false;
     };
@@ -135,10 +156,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (hydrated && isSignedIn(authSession)) {
       recordLocalEngagement("session_started");
+      void recordAlphaEngagement("session_started").catch(() => undefined);
     }
   }, [authSession, hydrated]);
 
   useEffect(() => {
+    if (isRemoteAlpha) return;
     function syncAuthSession(event: StorageEvent) {
       if (event.key !== authKey) return;
       setAuthSession(parseStoredAuthSession(event.newValue));
@@ -150,12 +173,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const persist = useCallback(async (nextData: AppData) => {
     try {
-      await dataProvider.save(nextData);
+      if (isRemoteAlpha) await saveAlphaWorkspace(nextData);
+      else await dataProvider.save(nextData);
       setData(nextData);
       setPersistenceError(false);
     } catch {
       setPersistenceError(true);
-      throw new Error("local_persistence_failed");
+      throw new Error("persistence_failed");
     }
   }, []);
 
@@ -169,6 +193,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = useCallback((provider: AuthProvider) => {
+    if (isRemoteAlpha) throw new Error("alpha_oauth_required");
     const nextSession = createAuthSession(provider, data.currentProfileId);
     setAuthSession(nextSession);
     try {
@@ -178,12 +203,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [data.currentProfileId]);
 
-  const signOut = useCallback(() => {
-    setAuthSession(signedOutSession);
+  const signOut = useCallback(async () => {
     try {
-      window.localStorage.setItem(authKey, JSON.stringify(signedOutSession));
+      if (isRemoteAlpha) {
+        await signOutFromAlpha();
+        setData(cloneDemoData());
+      } else {
+        window.localStorage.setItem(authKey, JSON.stringify(signedOutSession));
+      }
+      setAuthSession(signedOutSession);
     } catch {
       setPersistenceError(true);
+      throw new Error("sign_out_failed");
     }
   }, []);
 
@@ -192,6 +223,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const recordEngagement = useCallback((name: EngagementEventName) => {
     if (!isSignedIn(authSession)) return;
     recordLocalEngagement(name);
+    void recordAlphaEngagement(name).catch(() => undefined);
   }, [authSession]);
 
   const addVehicle = useCallback(
@@ -200,6 +232,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const result = addVehicleToData(data, draft);
       await persist(result.data);
       recordLocalEngagement("vehicle_created");
+      void recordAlphaEngagement("vehicle_created").catch(() => undefined);
       return result.vehicle;
     },
     [authSession, data, persist],
@@ -213,6 +246,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const result = applyRecordDraftToData(data, draft, undefined, locale, vehicle.id);
       await persist(result.data);
       recordLocalEngagement("maintenance_saved");
+      void recordAlphaEngagement("maintenance_saved").catch(() => undefined);
       return result.record;
     },
     [authSession, data, locale, persist],
@@ -226,8 +260,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const result = applyRecordDraftToData(data, draft, id, previous.sourceLanguage);
       await persist(result.data);
       recordLocalEngagement("maintenance_saved");
+      void recordAlphaEngagement("maintenance_saved").catch(() => undefined);
       if (previous.resolutionStatus === "unresolved" && result.record.resolutionStatus === "resolved") {
         recordLocalEngagement("result_followed_up");
+        void recordAlphaEngagement("result_followed_up").catch(() => undefined);
       }
       return result.record;
     },
@@ -246,6 +282,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const result = addJournalToData(data, draft, locale);
       await persist(result.data);
       recordLocalEngagement("journal_saved");
+      void recordAlphaEngagement("journal_saved").catch(() => undefined);
       return result.journal;
     },
     [authSession, data, locale, persist],
@@ -306,22 +343,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const resetDemo = useCallback(async () => {
     try {
-      await Promise.all([dataProvider.reset(), journalMediaStore.reset()]);
+      if (isRemoteAlpha && isSignedIn(authSession)) {
+        const emptyData = createEmptyAppData(authSession.profileId);
+        await Promise.all([saveAlphaWorkspace(emptyData), journalMediaStore.reset()]);
+        setData(emptyData);
+      } else {
+        await Promise.all([dataProvider.reset(), journalMediaStore.reset()]);
+        setData(cloneDemoData());
+      }
       if (!clearAllLocalDrafts()) throw new Error("local_draft_reset_failed");
       resetLocalEngagement();
-      setData(cloneDemoData());
       setPersistenceError(false);
     } catch {
       setPersistenceError(true);
       throw new Error("local_reset_failed");
     }
-  }, []);
+  }, [authSession]);
 
   const value = useMemo(
     () => ({
       data,
       locale,
       hydrated,
+      isRemoteAlpha,
       authSession,
       signedIn: isSignedIn(authSession),
       persistenceError,

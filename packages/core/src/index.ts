@@ -20,3 +20,4 @@ export * from "./social.ts";
 export * from "./types.ts";
 export * from "./vehicle-relationship.ts";
 export * from "./vehicles.ts";
+export * from "./workspace.ts";

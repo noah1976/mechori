@@ -9,6 +9,13 @@ export function getMechoriRuntime(): MechoriRuntime {
   return process.env.NEXT_PUBLIC_MECHORI_RUNTIME === "alpha" ? "alpha" : "local";
 }
 
+export function isAlphaActivityTrackingEnabled(): boolean {
+  return (
+    getMechoriRuntime() === "alpha" &&
+    process.env.NEXT_PUBLIC_MECHORI_ACTIVITY_TRACKING === "enabled"
+  );
+}
+
 export function getSupabasePublicConfig(): SupabasePublicConfig | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "";
   const publishableKey =

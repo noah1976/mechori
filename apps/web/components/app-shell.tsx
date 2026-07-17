@@ -42,6 +42,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     setLocale,
     hydrated,
     signedIn,
+    isRemoteAlpha,
     signOut,
     persistenceError,
     clearPersistenceError,
@@ -58,9 +59,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }, [hydrated, pathname, publicPath, router, signedIn]);
 
-  function logOut() {
-    signOut();
-    router.replace("/");
+  async function logOut() {
+    try {
+      await signOut();
+      router.replace("/");
+    } catch {
+      // The shared persistence banner reports the sign-out failure.
+    }
   }
 
   return (
@@ -138,9 +143,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="persistence-error" role="alert">
             <CircleAlert size={19} aria-hidden="true" />
             <span>
-              {locale === "ja"
-                ? "端末へ保存できませんでした。空き容量やブラウザの保存設定を確認してください。"
-                : "Changes could not be saved on this device. Check available storage and browser settings."}
+              {isRemoteAlpha
+                ? locale === "ja"
+                  ? "MECHORIへ保存できませんでした。通信状態を確認して、もう一度お試しください。"
+                  : "Changes could not be saved to MECHORI. Check your connection and try again."
+                : locale === "ja"
+                  ? "端末へ保存できませんでした。空き容量やブラウザの保存設定を確認してください。"
+                  : "Changes could not be saved on this device. Check available storage and browser settings."}
             </span>
             <button
               type="button"
@@ -158,7 +167,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               <LoaderCircle className="spin" size={24} aria-hidden="true" />
               <span>
                 {!hydrated
-                  ? locale === "ja" ? "端末内のデータを確認中" : "Loading data from this device"
+                  ? isRemoteAlpha
+                    ? locale === "ja" ? "Garageを読み込み中" : "Loading your Garage"
+                    : locale === "ja" ? "端末内のデータを確認中" : "Loading data from this device"
                   : locale === "ja" ? "ログイン画面へ移動中" : "Opening sign in"}
               </span>
             </div>
