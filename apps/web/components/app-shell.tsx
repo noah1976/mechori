@@ -175,6 +175,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           )}
         </main>
+        <footer className="site-policy-footer">
+          <Link href="/ai-policy">
+            {locale === "ja" ? "AI学習・データ利用方針" : "AI training & data use policy"}
+          </Link>
+        </footer>
       </div>
 
       <nav className={authenticated ? "bottom-nav" : "bottom-nav signed-out"} aria-label="Mobile navigation">
@@ -204,6 +209,7 @@ function isPublicPath(pathname: string): boolean {
     pathname === "/" ||
     pathname === "/search" ||
     pathname === "/auth" ||
+    pathname === "/ai-policy" ||
     pathname.startsWith("/v/") ||
     pathname.startsWith("/profile/") ||
     (pathname.startsWith("/journal/") &&

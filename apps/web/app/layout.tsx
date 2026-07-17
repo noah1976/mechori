@@ -11,6 +11,18 @@ export const metadata: Metadata = {
   description: remoteAlpha
     ? "愛車と整備履歴を非公開で記録するMECHORI少人数α版"
     : "Local-only vehicle maintenance knowledge prototype",
+  robots: remoteAlpha
+    ? {
+        index: false,
+        follow: false,
+        nocache: true,
+        googleBot: {
+          index: false,
+          follow: false,
+          noimageindex: true,
+        },
+      }
+    : undefined,
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
