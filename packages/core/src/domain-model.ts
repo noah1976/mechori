@@ -1,9 +1,9 @@
 import type {
   HazardLevel,
-  Locale,
   ResolutionStatus,
   VerificationStatus,
 } from "./types.ts";
+import type { LanguageTag } from "./language.ts";
 
 export type UnknownState = "known" | "unknown" | "not_applicable";
 export type SpecificationState = "user_entered" | "confirmed" | "unknown";
@@ -120,7 +120,7 @@ export interface Observation {
   maintenanceEventId: string;
   observationType: ObservationType;
   originalText: string;
-  sourceLanguage: Locale;
+  sourceLanguage: LanguageTag;
   normalizedCode?: string;
   factState: FactState;
 }
@@ -143,7 +143,7 @@ export interface MaintenanceAction {
   maintenanceEventId: string;
   actionType: ActionType;
   originalText: string;
-  sourceLanguage: Locale;
+  sourceLanguage: LanguageTag;
   normalizedCode?: string;
   causeCandidateText?: string;
   checksPerformedText?: string;
@@ -164,7 +164,7 @@ export interface MaintenanceEvent {
   serviceDateState: UnknownState;
   odometerReadingId?: string;
   summary: string;
-  sourceLanguage: Locale;
+  sourceLanguage: LanguageTag;
   providerType: "self" | "repair_shop" | "unknown";
   totalCost?: number;
   currencyCode?: string;
@@ -204,6 +204,37 @@ export type FieldVerificationState =
   | "needs_review"
   | "user_confirmed"
   | "rejected";
+
+export type TranslatableEntityType =
+  | "garage_journal"
+  | "maintenance_event"
+  | "maintenance_action"
+  | "observation"
+  | "knowledge_case";
+export type TranslationMethod = "machine" | "human";
+export type TranslationReviewStatus =
+  | "unreviewed"
+  | "human_reviewed"
+  | "rejected"
+  | "outdated";
+
+export interface ContentTranslation {
+  id: string;
+  entityType: TranslatableEntityType;
+  entityId: string;
+  fieldCode: string;
+  sourceLanguage: LanguageTag;
+  targetLanguage: LanguageTag;
+  translatedText: string;
+  sourceContentVersion: string;
+  method: TranslationMethod;
+  reviewStatus: TranslationReviewStatus;
+  providerReference?: string;
+  modelOrRuleVersion?: string;
+  translatedAt: string;
+  reviewedAt?: string;
+  reviewedByUserId?: string;
+}
 
 export interface FieldAssertion {
   id: string;

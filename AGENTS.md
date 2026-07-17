@@ -16,7 +16,7 @@ MECHORI（メカリィ）は、車両メンテナンス記録を構造化し、�
 ## 今後の実装方針
 
 - Web初期MVPはスマートフォン向けWebアプリを想定する。
-- 想定技術は Next.js、Supabase、Vercel、将来 Expo / React Native。ただし導入・接続は承認後に行う。
+- 採用前提は Next.js、Supabase、Netlify、OpenAI API、将来 Expo / React Native。ただしアカウント作成、導入・接続、課金、本番利用は個別承認後に行う。
 - 業務ロジック、データ型、入力検証、多言語コード、API処理をNext.js固有実装へ密結合しない。
 - 将来のネイティブアプリ、AI、OCR、課金、モデレーション、法的対応を拡張できる構造を優先する。
 
@@ -33,7 +33,9 @@ MECHORI（メカリィ）は、車両メンテナンス記録を構造化し、�
 - ナレッジ要約: `docs/KNOWLEDGE_SYNTHESIS.md`
 - 画像プライバシー: `docs/MEDIA_PRIVACY.md`
 - 日英基本用語: `docs/GLOSSARY_JA_EN.md`
+- 多言語・EU展開: `docs/MULTILINGUAL.md`
 - 外部サービス導入前確認: `docs/EXTERNAL_SERVICE_CHECKLIST.md`
+- 外部基盤・費用: `docs/INFRASTRUCTURE_COST.md`
 - プラン権限: `docs/PLAN_ENTITLEMENTS.md`
 - 入力インセンティブ: `docs/CONTRIBUTION_INCENTIVES.md`
 - ソーシャル・Garage Journal: `docs/SOCIAL_LAYER.md`

@@ -7,19 +7,31 @@ import { useApp } from "@/lib/app-context";
 import { buildKnowledgeSynthesis, demoKnowledgeCases, filterKnowledgeCasesByText, filterRecords, type HazardLevel, type ResolutionStatus } from "@mechori/core";
 import { translate } from "@mechori/i18n";
 import { Search } from "lucide-react";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 function SearchContent() {
   const params = useSearchParams();
-  const { data, locale } = useApp();
+  const { data, locale, signedIn, recordEngagement } = useApp();
   const [keyword, setKeyword] = useState(params.get("q") ?? "");
   const [symptom, setSymptom] = useState("");
   const [partNumber, setPartNumber] = useState("");
   const [resolution, setResolution] = useState<ResolutionStatus | "all">("all");
   const [hazard, setHazard] = useState<HazardLevel | "all">("all");
   const ja = locale === "ja";
-  const results = useMemo(() => filterRecords(data.records, { keyword, symptom, partNumber, resolutionStatus: resolution, hazardLevel: hazard }), [data.records, keyword, symptom, partNumber, resolution, hazard]);
+  const initialQueryTracked = useRef(false);
+  useEffect(() => {
+    if (!initialQueryTracked.current && params.get("q")?.trim()) {
+      recordEngagement("knowledge_searched");
+      initialQueryTracked.current = true;
+    }
+  }, [params, recordEngagement]);
+  const results = useMemo(
+    () => signedIn
+      ? filterRecords(data.records, { keyword, symptom, partNumber, resolutionStatus: resolution, hazardLevel: hazard })
+      : [],
+    [data.records, hazard, keyword, partNumber, resolution, signedIn, symptom],
+  );
   const knowledgeSynthesis = useMemo(() => {
     const knowledgeQuery = `${keyword} ${symptom}`.trim();
     return buildKnowledgeSynthesis(
@@ -39,7 +51,7 @@ function SearchContent() {
       <p className="search-scope">{ja ? "対象車両：FIAT Barchetta 1997 / 1.8 16V（DEMO）" : "Vehicle scope: FIAT Barchetta 1997 / 1.8 16V (DEMO)"}</p>
     </section>
     <KnowledgeSynthesisPanel synthesis={knowledgeSynthesis} locale={locale} />
-    <section><div className="section-heading"><div><span className="eyebrow">YOUR PRIVATE RECORDS · {results.length}</span><h2>{ja ? "自分の整備記録から一致" : "Matches in your own records"}</h2></div></div>{results.length ? <div className="record-grid wide">{results.map((record) => <RecordCard key={record.id} record={record} locale={locale} />)}</div> : <div className="empty-state"><Search size={28} /><h3>{ja ? "自分の記録には一致がありません" : "No match in your own records"}</h3><p>{translate(locale, "noResults")}</p></div>}</section>
+    {signedIn && <section><div className="section-heading"><div><span className="eyebrow">YOUR PRIVATE RECORDS · {results.length}</span><h2>{ja ? "自分の整備記録から一致" : "Matches in your own records"}</h2></div></div>{results.length ? <div className="record-grid wide">{results.map((record) => <RecordCard key={record.id} record={record} locale={locale} />)}</div> : <div className="empty-state"><Search size={28} /><h3>{ja ? "自分の記録には一致がありません" : "No match in your own records"}</h3><p>{translate(locale, "noResults")}</p></div>}</section>}
   </div>;
 }
 

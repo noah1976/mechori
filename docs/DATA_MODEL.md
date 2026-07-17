@@ -4,7 +4,7 @@
 
 MECHORIの初期MVPで必要な概念、関係、状態を、特定DBやProviderに固定せず定義します。物理テーブル、インデックス、Supabase RLSは外部接続前に別途設計します。
 
-現行プロトタイプの型は操作確認用です。localStorageの試作スキーマv6では、整備記録に加えてプロフィール、オーナーと愛車の関係、順序付きブロックを持つGarage Journal、メディア参照、フォロー関係を保持します。メディア本体はIndexedDBへ分離します。この文書を初期MVPの概念モデルの正とし、実物の整備記録で検証してから物理モデルへ進みます。
+現行プロトタイプの型は操作確認用です。localStorageの試作スキーマv8では、整備記録に加えてプロフィール公開範囲、オーナーと愛車の関係、順序付きブロックを持つGarage Journal、メディア参照、フォロー関係、プロフィールの表示安全関係、通報と最小モデレーション履歴を保持します。メディア本体はIndexedDBへ分離します。この文書を初期MVPの概念モデルの正とし、実物の整備記録で検証してから物理モデルへ進みます。
 
 ## モデルの中心
 
@@ -63,10 +63,12 @@ GarageJournalPost
 
 - `id`: 内部ユーザーID
 - `displayName`: 任意の表示名
-- `preferredLocale`: `ja` / `en`
+- `preferredLocale`: 対応UI言語のBCP 47タグ。初期値は`ja` / `en`だが固定列挙をDB制約へ埋め込まない
 - `roleAssignments`: オーナー、運営者等の権限関連
 - `createdAt` / `updatedAt`
 - `deletionState`: 通常、削除申請中、削除済み、法的保全
+- `visibility`: 非公開、プロフィールの直接フォロワー、公開
+- `displayFields`: 役割、自己紹介、愛車一般情報、所有期間、公開Journal件数
 
 保持しない属性:
 
@@ -97,6 +99,21 @@ GarageJournalPost
 - `moderationState` / `deletionState`
 
 本文はAI生成を前提にせず、本人の原文とブロック順序を保持します。`bodyOriginal`は検索・移行互換用にテキストブロックから導出し、表示順の正本にはしません。翻訳やAI抽出結果は別データとし、原文を上書きしません。
+
+### ContentTranslation
+
+Journal、整備記録、Observation、公開KnowledgeCase等の原文から作る派生翻訳です。
+
+- `entityType` / `entityId` / `fieldCode`: 翻訳対象
+- `sourceLanguage` / `targetLanguage`: BCP 47言語タグ
+- `translatedText`: 翻訳文
+- `sourceContentVersion`: 翻訳時点の原文版
+- `method`: 機械翻訳、人間翻訳
+- `reviewStatus`: 未確認、人間確認済み、却下、原文更新により期限切れ
+- `providerReference` / `modelOrRuleVersion`: 外部処理を使った場合の追跡情報
+- `translatedAt` / `reviewedAt` / `reviewedByUserId`
+
+原文更新後も`sourceContentVersion`が一致しない翻訳を現行扱いしません。原文と翻訳を別の独立事例として数えません。
 
 ### JournalMaintenanceLink
 
@@ -147,13 +164,35 @@ AI抽出だけでMaintenanceEventやKnowledgeCaseを更新しません。
 
 フォロー数やフォロワー数は、KnowledgeCaseの信頼度、検索順位、Professional確認へ利用しません。
 
+### ProfileSafetyRelation
+
+利用者本人だけが参照する、プロフィール単位の表示・安全関係です。
+
+- `actorUserId` / `targetUserId`
+- `relationType`: ミュート、ブロック
+- `createdAt`
+
+ミュートはフォローを維持してフィード表示だけを抑止します。ブロックは対象プロフィールと対象者の個別車両へのフォローを解除し、対象者の投稿・候補・直接閲覧を抑止します。車種フォローは維持します。件数や状態を公開プロフィール、ナレッジ信頼度、検索順位へ利用しません。
+
+### ContentReport / ModerationEvent
+
+Journalへの通報と、その後の操作を本文から分離します。
+
+- `reporterUserId` / `targetType` / `targetId`
+- `reason`: 個人情報、危険な断定、嫌がらせ、権利侵害、スパム、その他
+- `details`: 任意、文字数制限付き
+- `status`: 受付、確認中、修正依頼中、一時非公開、問題なし終了
+- `ModerationEvent`: 操作主体、操作種別、日時
+
+操作履歴へJournal本文や通報詳細を複製しません。一時非公開は削除と分け、復元可能な公開停止状態として扱います。本番の運営権限と監査保管は物理DB・RLS設計時に確定します。
+
 ### Vehicle
 
 ユーザーが管理する車両個体です。公開車両マスタとは分離します。
 
 - `id` / `ownerUserId`
-- `makeName` / `modelName`
-- `modelYear`
+- `makeName` / `modelName`: ユーザー入力を正本として必須。マスタ候補の有無を問わない
+- `modelYear`: 不明を許容
 - `engineDescriptor`
 - `transmissionDescriptor`
 - `steeringPosition`
@@ -171,6 +210,8 @@ AI抽出だけでMaintenanceEventやKnowledgeCaseを更新しません。
 - VIN・車台番号全文、ナンバープレート、正確な保管場所、常時位置情報
 
 将来、車種マスタを追加する場合は、ユーザー車両の入力原文を失わずに参照IDを追加します。未確認仕様をマスタ値で自動補完しません。
+
+愛車登録は`makeName`と`modelName`だけで完了でき、車種マスタ参照、型式、正確な年式、エンジン等を完了条件にしません。自由入力車種も登録直後から整備記録、Journal、プロフィール、検索範囲に使用できます。正規化候補の確認状態は検索品質の属性であり、ユーザー車両の有効・無効を表しません。
 
 公開プロフィールでは`オーナー表示名 / 車両`を一つの発信単位として扱います。所有期間は本人が公開を選んだ場合だけ表示し、信頼度や整備能力の評価へ利用しません。車齢は初度登録日がない限りモデル年からの概算であることを明示します。
 

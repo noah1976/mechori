@@ -5,10 +5,13 @@ import { useApp } from "@/lib/app-context";
 import { translate } from "@mechori/i18n";
 import { ArrowLeft, CircleAlert, Gauge, Printer, ShieldAlert, Wrench } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function ServiceBriefPage() {
+function ServiceBriefContent() {
   const { data, locale } = useApp();
-  const vehicle = data.vehicles[0];
+  const params = useSearchParams();
+  const vehicle = data.vehicles.find((item) => item.id === params.get("vehicle")) ?? data.vehicles[0];
   const ja = locale === "ja";
   if (!vehicle) return null;
 
@@ -21,13 +24,13 @@ export default function ServiceBriefPage() {
     <div className="page-stack service-brief-page">
       <div className="print-hidden"><DemoNotice /></div>
       <div className="service-brief-toolbar print-hidden">
-        <Link href="/garage/history" className="back-link"><ArrowLeft size={17} />{ja ? "履歴サマリーへ戻る" : "Back to history summary"}</Link>
+        <Link href={`/garage/history?vehicle=${encodeURIComponent(vehicle.id)}`} className="back-link"><ArrowLeft size={17} />{ja ? "履歴サマリーへ戻る" : "Back to history summary"}</Link>
         <button type="button" className="primary-action" onClick={() => window.print()}><Printer size={17} />{translate(locale, "printBrief")}</button>
       </div>
 
       <header className="service-brief-header">
         <div><span className="eyebrow">MECHORI VEHICLE HISTORY · DEMO</span><h1>{translate(locale, "serviceBrief")}</h1><p>{translate(locale, "serviceBriefIntro")}</p></div>
-        <div className="service-brief-vehicle"><strong>{vehicle.make} {vehicle.model}</strong><span>{vehicle.year} · {vehicle.engine} · {vehicle.transmission} · {vehicle.steering}</span></div>
+        <div className="service-brief-vehicle"><strong>{vehicle.make} {vehicle.model}</strong><span>{[vehicle.year, vehicle.engine, vehicle.transmission, vehicle.steering].filter(Boolean).join(" · ") || (ja ? "仕様未登録" : "Specifications not set")}</span></div>
       </header>
 
       <section className="service-brief-facts" aria-label={ja ? "車両情報" : "Vehicle information"}>
@@ -58,4 +61,8 @@ export default function ServiceBriefPage() {
       <p className="service-brief-footer">MECHORI · Fix. Share. Drive on. · DEMO / SAMPLE</p>
     </div>
   );
+}
+
+export default function ServiceBriefPage() {
+  return <Suspense fallback={<div className="page-stack service-brief-page" />}><ServiceBriefContent /></Suspense>;
 }

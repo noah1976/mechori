@@ -7,17 +7,24 @@ import {
   createFollowTargets,
   getFollowingFeed,
   isFollowing,
+  isProfileBlocked,
+  isProfileMuted,
   type FollowTargetSummary,
 } from "@mechori/core";
 import { translate } from "@mechori/i18n";
-import { BookOpenText, CarFront, Plus, UserRound, Wrench } from "lucide-react";
+import { Ban, BookOpenText, CarFront, Plus, RotateCcw, UserRound, VolumeX, Wrench } from "lucide-react";
 import Link from "next/link";
+import { useEffect } from "react";
 
 export default function FeedPage() {
-  const { data, locale, toggleFollow } = useApp();
+  const { data, locale, toggleFollow, toggleMuteProfile, toggleBlockProfile, recordEngagement } = useApp();
   const ja = locale === "ja";
   const feed = getFollowingFeed(data);
   const targets = createFollowTargets(data);
+  const safetyRelations = data.profileSafetyRelations.filter(
+    (relation) => relation.actorProfileId === data.currentProfileId,
+  );
+  useEffect(() => recordEngagement("feed_viewed"), [recordEngagement]);
 
   return (
     <div className="page-stack">
@@ -48,19 +55,29 @@ export default function FeedPage() {
           </div>
           {feed.length ? (
             <div className="journal-list">
-              {feed.map((journal) => (
-                <JournalCard
-                  key={journal.id}
-                  journal={journal}
-                  author={data.profiles.find(
-                    (profile) => profile.id === journal.authorProfileId,
-                  )}
-                  record={data.records.find(
-                    (record) => record.id === journal.linkedRecordId,
-                  )}
-                  locale={locale}
-                />
-              ))}
+              {feed.map((journal, index) => {
+                const author = data.profiles.find(
+                  (profile) => profile.id === journal.authorProfileId,
+                );
+                return (
+                  <JournalCard
+                    key={journal.id}
+                    journal={journal}
+                    author={author}
+                    record={data.records.find(
+                      (record) => record.id === journal.linkedRecordId,
+                    )}
+                    locale={locale}
+                    mediaPriority={index === 0}
+                    safety={journal.authorProfileId === data.currentProfileId ? undefined : {
+                      muted: isProfileMuted(data, journal.authorProfileId),
+                      blocked: isProfileBlocked(data, journal.authorProfileId),
+                      onToggleMute: () => toggleMuteProfile(journal.authorProfileId),
+                      onToggleBlock: () => toggleBlockProfile(journal.authorProfileId),
+                    }}
+                  />
+                );
+              })}
             </div>
           ) : (
             <div className="empty-state">
@@ -94,6 +111,47 @@ export default function FeedPage() {
               />
             ))}
           </div>
+          {safetyRelations.length > 0 && (
+            <section className="profile-safety-management">
+              <div>
+                <span className="eyebrow">VISIBILITY</span>
+                <h3>{ja ? "表示管理" : "Visibility controls"}</h3>
+              </div>
+              <p>
+                {ja
+                  ? "ミュート・ブロックしたプロフィールは、ここからいつでも解除できます。"
+                  : "Muted and blocked profiles can always be restored here."}
+              </p>
+              <div className="profile-safety-list">
+                {safetyRelations.map((relation) => {
+                  const profile = data.profiles.find(
+                    (item) => item.id === relation.targetProfileId,
+                  );
+                  const Icon = relation.type === "block" ? Ban : VolumeX;
+                  return (
+                    <article key={relation.id}>
+                      <Icon size={16} aria-hidden="true" />
+                      <div>
+                        <small>{relation.type === "block" ? (ja ? "ブロック中" : "Blocked") : (ja ? "ミュート中" : "Muted")}</small>
+                        <strong>{profile?.displayName ?? (ja ? "不明なプロフィール" : "Unknown profile")}</strong>
+                      </div>
+                      <button
+                        type="button"
+                        className="icon-action"
+                        title={ja ? "解除" : "Restore"}
+                        aria-label={`${profile?.displayName ?? "Profile"}: ${ja ? "解除" : "Restore"}`}
+                        onClick={() => relation.type === "block"
+                          ? toggleBlockProfile(relation.targetProfileId)
+                          : toggleMuteProfile(relation.targetProfileId)}
+                      >
+                        <RotateCcw size={16} aria-hidden="true" />
+                      </button>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          )}
         </aside>
       </div>
     </div>

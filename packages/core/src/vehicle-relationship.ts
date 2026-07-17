@@ -1,7 +1,7 @@
 import type { Locale, Vehicle } from "./types.ts";
 
 export interface VehicleRelationshipSnapshot {
-  vehicleAgeYears: number;
+  vehicleAgeYears?: number;
   vehicleAgeIsApproximate: true;
   ownershipYears?: number;
   ownershipMonths?: number;
@@ -13,7 +13,9 @@ export function summarizeVehicleRelationship(
   vehicle: Vehicle,
   asOf = new Date(),
 ): VehicleRelationshipSnapshot {
-  const vehicleAgeYears = Math.max(0, asOf.getUTCFullYear() - vehicle.year);
+  const vehicleAgeYears = vehicle.year === undefined
+    ? undefined
+    : Math.max(0, asOf.getUTCFullYear() - vehicle.year);
   const ownership = calculateElapsedMonths(
     vehicle.ownershipStartedYear,
     vehicle.ownershipStartedMonth,

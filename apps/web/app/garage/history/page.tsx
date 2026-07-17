@@ -23,7 +23,8 @@ import {
   Wrench,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 
 const levelNames: Record<HistoryLevelCode, { ja: string; en: string }> = {
   not_started: { ja: "未登録", en: "Not started" },
@@ -65,15 +66,17 @@ const milestoneCopy: Record<HistoryMilestoneCode, { ja: string; en: string; deta
   },
 };
 
-export default function HistorySummaryPage() {
-  const { data, locale } = useApp();
+function HistorySummaryContent() {
+  const { data, locale, recordEngagement } = useApp();
+  const params = useSearchParams();
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
-  const vehicle = data.vehicles[0];
+  const vehicle = data.vehicles.find((item) => item.id === params.get("vehicle")) ?? data.vehicles[0];
   const ja = locale === "ja";
   const snapshot = useMemo(
     () => (vehicle ? summarizeVehicleHistory(vehicle, data.records) : null),
     [data.records, vehicle],
   );
+  useEffect(() => recordEngagement("history_reused"), [recordEngagement]);
 
   if (!vehicle || !snapshot) return null;
 
@@ -167,7 +170,7 @@ export default function HistorySummaryPage() {
         <article>
           <Wrench size={23} />
           <div><h2>{translate(locale, "serviceBrief")}</h2><p>{translate(locale, "serviceBriefIntro")}</p></div>
-          <Link href="/garage/service-brief" className="primary-action">{ja ? "表示する" : "Open"}</Link>
+          <Link href={`/garage/service-brief?vehicle=${encodeURIComponent(vehicle.id)}`} className="primary-action">{ja ? "表示する" : "Open"}</Link>
         </article>
         <article>
           <Download size={23} />
@@ -182,4 +185,8 @@ export default function HistorySummaryPage() {
       </section>
     </div>
   );
+}
+
+export default function HistorySummaryPage() {
+  return <Suspense fallback={<div className="page-stack" />}><HistorySummaryContent /></Suspense>;
 }

@@ -1,7 +1,7 @@
 import type { AppData } from "./types.ts";
 
 export const demoData: AppData = {
-  schemaVersion: 6,
+  schemaVersion: 8,
   vehicles: [
     {
       id: "vehicle-demo-barchetta",
@@ -181,6 +181,8 @@ export const demoData: AppData = {
       displayName: "DEMO Owner",
       role: "owner",
       bio: "自分の車両履歴を整理しているDEMOプロフィールです。",
+      visibility: "private",
+      displayFields: ["role", "bio", "vehicles", "ownership_duration", "journal_count"],
       isProfessional: false,
       isDemo: true,
     },
@@ -189,6 +191,8 @@ export const demoData: AppData = {
       displayName: "Luca / DEMO",
       role: "owner",
       bio: "Barchettaとの日々を記録するDEMOオーナーです。",
+      visibility: "public",
+      displayFields: ["role", "bio", "vehicles", "ownership_duration", "journal_count"],
       isProfessional: false,
       isDemo: true,
     },
@@ -197,6 +201,8 @@ export const demoData: AppData = {
       displayName: "Officina Verde / DEMO",
       role: "mechanic",
       bio: "車両履歴を確認してから相談を受けるDEMO Professionalです。",
+      visibility: "public",
+      displayFields: ["role", "bio", "journal_count"],
       isProfessional: true,
       isDemo: true,
     },
@@ -215,6 +221,7 @@ export const demoData: AppData = {
         "紙に残っていた記録を見返しながら、分かる範囲だけ入力している。まずは後から自分が困らない履歴にしたい。",
       sourceLanguage: "ja",
       visibility: "private",
+      moderationState: "visible",
       linkedRecordId: "record-demo-oil",
       displayFields: ["service_date", "odometer", "actions"],
       media: [],
@@ -243,6 +250,7 @@ export const demoData: AppData = {
         "整備を終えてから初めての週末。遠くへは行かず、近所をゆっくり走って様子を見た。帰ってから気づいたことを記録へ追記した。",
       sourceLanguage: "ja",
       visibility: "public",
+      moderationState: "visible",
       displayFields: [],
       media: [
         {
@@ -295,6 +303,7 @@ export const demoData: AppData = {
         "初めて扱う車種でも、過去の作業と未解決事項が整理されていれば、確認の順序を考えやすい。これは操作確認用の文章で、修理方法を示すものではない。",
       sourceLanguage: "ja",
       visibility: "public",
+      moderationState: "visible",
       displayFields: [],
       media: [],
       contentBlocks: [
@@ -329,6 +338,8 @@ export const demoData: AppData = {
       createdAt: "2026-07-12T07:00:00.000Z",
     },
   ],
+  profileSafetyRelations: [],
+  contentReports: [],
 };
 
 export function cloneDemoData(): AppData {

@@ -1,0 +1,71 @@
+"use client";
+
+import { JournalCard } from "@/components/journal-card";
+import { useApp } from "@/lib/app-context";
+import {
+  canCurrentProfileViewJournal,
+  canProfileViewProfile,
+  formatOwnershipDuration,
+  isProfileBlocked,
+  isProfileMuted,
+  summarizeVehicleRelationship,
+} from "@mechori/core";
+import { ArrowLeft, BookOpenText, CarFront, LockKeyhole, Settings2, UserRound } from "lucide-react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+
+export default function ProfilePage() {
+  const { id } = useParams<{ id: string }>();
+  const { data, locale, signedIn, toggleBlockProfile, toggleMuteProfile } = useApp();
+  const ja = locale === "ja";
+  const profile = data.profiles.find((item) => item.id === id);
+  const ownProfile = signedIn && id === data.currentProfileId;
+  const canView = profile && canProfileViewProfile(data, id, signedIn ? data.currentProfileId : undefined);
+
+  if (!profile || !canView) {
+    return (
+      <div className="empty-state">
+        <LockKeyhole size={30} aria-hidden="true" />
+        <h1>{ja ? "このプロフィールは表示できません" : "This profile is unavailable"}</h1>
+        <p>{ja ? "プロフィールの公開範囲、フォロー、ブロック状態を確認してください。公開Journalの公開範囲とは別の設定です。" : "Check profile visibility, follows, and block status. This setting is separate from journal visibility."}</p>
+        <Link href={signedIn ? "/feed" : "/"} className="secondary-action">{ja ? "戻る" : "Go back"}</Link>
+      </div>
+    );
+  }
+
+  const fields = new Set(profile.displayFields);
+  const vehicles = data.vehicles.filter((vehicle) => vehicle.ownerProfileId === profile.id);
+  const journals = data.journals.filter((journal) => {
+    if (journal.authorProfileId !== profile.id) return false;
+    if (signedIn) return canCurrentProfileViewJournal(data, journal);
+    return journal.visibility === "public" && journal.moderationState === "visible";
+  });
+  const publicJournalCount = data.journals.filter(
+    (journal) => journal.authorProfileId === profile.id && journal.visibility === "public" && journal.moderationState === "visible",
+  ).length;
+
+  return (
+    <div className="page-stack profile-page">
+      <Link href={signedIn ? "/feed" : "/"} className="back-link"><ArrowLeft size={17} />{ja ? "戻る" : "Back"}</Link>
+      <header className="profile-header">
+        <span className="profile-avatar" aria-hidden="true">{profile.displayName.slice(0, 1).toLocaleUpperCase()}</span>
+        <div><span className="eyebrow">PROFILE</span><h1>{profile.displayName}</h1>{fields.has("role") && <p>{profile.role === "mechanic" ? (ja ? "メカニック" : "Mechanic") : (ja ? "オーナー" : "Owner")}{profile.isProfessional ? " · Professional DEMO" : ""}</p>}</div>
+        {ownProfile && <Link href="/settings/privacy" className="secondary-action"><Settings2 size={17} />{ja ? "公開設定" : "Visibility settings"}</Link>}
+      </header>
+
+      {fields.has("bio") && <section className="profile-bio"><UserRound size={21} aria-hidden="true" /><p>{profile.bio}</p></section>}
+
+      <section className="profile-facts" aria-label={ja ? "公開プロフィール情報" : "Public profile information"}>
+        {fields.has("vehicles") && <div><CarFront size={20} /><span>{ja ? "愛車" : "Vehicles"}</span><strong>{vehicles.length ? vehicles.map((vehicle) => `${vehicle.make} ${vehicle.model}${vehicle.year ? ` (${vehicle.year})` : ""}`).join(" / ") : (ja ? "公開車両なし" : "No visible vehicles")}</strong></div>}
+        {fields.has("ownership_duration") && <div><UserRound size={20} /><span>{ja ? "所有期間" : "Ownership"}</span><strong>{vehicles.map((vehicle) => formatOwnershipDuration(locale, summarizeVehicleRelationship(vehicle))).filter(Boolean).join(" / ") || (ja ? "未登録" : "Not set")}</strong></div>}
+        {fields.has("journal_count") && <div><BookOpenText size={20} /><span>{ja ? "公開Journal" : "Public journals"}</span><strong>{publicJournalCount}</strong></div>}
+      </section>
+
+      <section>
+        <div className="section-heading"><div><span className="eyebrow">GARAGE JOURNAL</span><h2>{ja ? "閲覧できるJournal" : "Visible journals"}</h2></div></div>
+        {journals.length ? <div className="journal-grid">{journals.map((journal) => <JournalCard key={journal.id} journal={journal} author={profile} record={data.records.find((record) => record.id === journal.linkedRecordId)} locale={locale} safety={!ownProfile && signedIn ? { muted: isProfileMuted(data, profile.id), blocked: isProfileBlocked(data, profile.id), onToggleMute: () => toggleMuteProfile(profile.id), onToggleBlock: () => toggleBlockProfile(profile.id) } : undefined} />)}</div> : <div className="empty-state"><BookOpenText size={26} /><h3>{ja ? "表示できるJournalはありません" : "No visible journals"}</h3></div>}
+      </section>
+      <p className="legal-note">{ja ? "所有期間や投稿数は人気、整備能力、ナレッジの信頼度を表しません。" : "Ownership duration and post counts do not indicate popularity, maintenance skill, or knowledge reliability."}</p>
+    </div>
+  );
+}

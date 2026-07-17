@@ -147,7 +147,12 @@ test("migrates legacy local data into actions and an odometer episode", () => {
   delete journals[0]?.contentBlocks;
 
   const migrated = migrateAppData(legacy);
-  assert.equal(migrated?.schemaVersion, 6);
+  assert.equal(migrated?.schemaVersion, 8);
+  assert.deepEqual(migrated?.contentReports, []);
+  assert.equal(
+    migrated?.profiles.find((profile) => profile.id === "profile-demo-luca")?.visibility,
+    "public",
+  );
   assert.equal(migrated?.vehicles[0]?.ownerProfileId, "profile-demo-current");
   assert.equal(migrated?.vehicles[0]?.ownershipType, "owned");
   assert.equal(migrated?.vehicles[0]?.ownershipStartedYear, 2014);
@@ -159,4 +164,5 @@ test("migrates legacy local data into actions and an odometer episode", () => {
   assert.deepEqual(migrated?.journals[0]?.media, []);
   assert.equal(migrated?.journals[0]?.contentBlocks[0]?.type, "text");
   assert.equal(migrated?.journals[1]?.media[0]?.source, "demo_asset");
+  assert.deepEqual(migrated?.profileSafetyRelations, []);
 });

@@ -72,12 +72,13 @@ export class LocalStorageDataProvider implements DataProvider {
   ) {}
 
   async load(): Promise<AppData | null> {
-    const sourceKey = [this.storageKey, ...this.legacyStorageKeys].find(
-      (key) => window.localStorage.getItem(key) !== null,
-    );
-    const raw = sourceKey ? window.localStorage.getItem(sourceKey) : null;
-    if (!raw) return null;
+    let sourceKey: string | undefined;
     try {
+      sourceKey = [this.storageKey, ...this.legacyStorageKeys].find(
+        (key) => window.localStorage.getItem(key) !== null,
+      );
+      const raw = sourceKey ? window.localStorage.getItem(sourceKey) : null;
+      if (!raw) return null;
       const migrated = migrateAppData(JSON.parse(raw));
       if (!migrated) throw new Error("invalid_local_data");
       const serialized = JSON.stringify(migrated);
@@ -89,7 +90,13 @@ export class LocalStorageDataProvider implements DataProvider {
       }
       return migrated;
     } catch {
-      if (sourceKey) window.localStorage.removeItem(sourceKey);
+      if (sourceKey) {
+        try {
+          window.localStorage.removeItem(sourceKey);
+        } catch {
+          // Storage access itself is unavailable; fall back to in-memory demo data.
+        }
+      }
       return null;
     }
   }

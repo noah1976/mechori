@@ -1,7 +1,12 @@
 "use client";
 
 import { useApp } from "@/lib/app-context";
-import { classifyJournalForKnowledge } from "@mechori/core";
+import {
+  canCurrentProfileViewJournal,
+  classifyJournalForKnowledge,
+  isProfileBlocked,
+  isProfileMuted,
+} from "@mechori/core";
 import {
   ArrowLeft,
   BookOpen,
@@ -18,18 +23,50 @@ import {
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { JournalContent } from "@/components/journal-content";
+import { ProfileSafetyMenu } from "@/components/profile-safety-menu";
 
 export default function JournalDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data, locale } = useApp();
+  const { data, locale, signedIn, toggleMuteProfile, toggleBlockProfile } = useApp();
   const ja = locale === "ja";
   const journal = data.journals.find((item) => item.id === id);
-  if (!journal) {
+  const blocked = signedIn && journal ? isProfileBlocked(data, journal.authorProfileId) : false;
+  const canView = journal && (
+    signedIn
+      ? canCurrentProfileViewJournal(data, journal)
+      : journal.visibility === "public" && journal.moderationState === "visible"
+  );
+  if (!journal || !canView) {
     return (
       <div className="empty-state">
-        <h1>{ja ? "Journalが見つかりません" : "Journal not found"}</h1>
-        <Link href="/feed" className="secondary-action">
-          {ja ? "フィードへ戻る" : "Back to feed"}
+        <h1>{ja ? "このJournalは表示できません" : "This journal is unavailable"}</h1>
+        <p>
+          {!journal
+            ? ja ? "Journalが見つからないか、削除されています。" : "The journal could not be found or has been removed."
+            : blocked
+            ? ja ? "ブロック中のプロフィールによる投稿です。" : "This post is from a blocked profile."
+            : !signedIn
+              ? ja ? "公開されていないJournalを見るにはログインが必要です。" : "Sign in to view a journal that is not public."
+            : journal.moderationState === "temporarily_hidden"
+              ? ja ? "このJournalは運営確認により一時非公開です。" : "This journal is temporarily hidden for moderation review."
+            : ja ? "公開範囲または投稿状態を確認してください。" : "Check its audience or publication state."}
+        </p>
+        {blocked && journal && (
+          <button
+            type="button"
+            className="secondary-action"
+            onClick={() => toggleBlockProfile(journal.authorProfileId)}
+          >
+            {ja ? "ブロックを解除" : "Unblock profile"}
+          </button>
+        )}
+        {!signedIn && journal && (
+          <Link href={`/auth?returnTo=${encodeURIComponent(`/journal/${journal.id}`)}`} className="primary-action">
+            {ja ? "ログイン" : "Sign in"}
+          </Link>
+        )}
+        <Link href={signedIn ? "/feed" : "/"} className="secondary-action">
+          {signedIn ? (ja ? "フィードへ戻る" : "Back to feed") : (ja ? "ホームへ戻る" : "Back to home")}
         </Link>
       </div>
     );
@@ -43,10 +80,28 @@ export default function JournalDetailPage() {
 
   return (
     <div className="page-stack journal-detail-page">
-      <Link href="/feed" className="back-link">
+      <Link href={signedIn ? "/feed" : "/"} className="back-link">
         <ArrowLeft size={17} aria-hidden="true" />
-        {ja ? "フォロー中へ戻る" : "Back to following"}
+        {signedIn ? (ja ? "フォロー中へ戻る" : "Back to following") : (ja ? "ホームへ戻る" : "Back to home")}
       </Link>
+
+      {journal.authorProfileId === data.currentProfileId && journal.moderationState !== "visible" && (
+        <div className="moderation-author-notice" role="status">
+          <ShieldCheck size={20} aria-hidden="true" />
+          <div>
+            <strong>
+              {journal.moderationState === "temporarily_hidden"
+                ? ja ? "このJournalは一時非公開です" : "This journal is temporarily hidden"
+                : ja ? "このJournalは運営確認中です" : "This journal is under moderation review"}
+            </strong>
+            <p>
+              {ja
+                ? "投稿者本人には表示されています。ほかの利用者への表示状態とは別です。"
+                : "It remains visible to you as the author. Other viewers may see a different state."}
+            </p>
+          </div>
+        </div>
+      )}
 
       <article className="journal-detail">
         <header>
@@ -55,10 +110,25 @@ export default function JournalDetailPage() {
               {(author?.displayName ?? "M").slice(0, 1).toLocaleUpperCase()}
             </span>
             <div>
-              <strong>{author?.displayName}</strong>
+              <strong>
+                {author && <Link href={`/profile/${author.id}`}>{author.displayName}</Link>}
+              </strong>
               <small>{journal.vehicleLabel}</small>
             </div>
-            {journal.isDemo && <span className="demo-label">DEMO</span>}
+            <div className="journal-author-actions">
+              {journal.isDemo && <span className="demo-label">DEMO</span>}
+              {signedIn && journal.authorProfileId !== data.currentProfileId && author && (
+                <ProfileSafetyMenu
+                  profileName={author.displayName}
+                  muted={isProfileMuted(data, author.id)}
+                  blocked={blocked}
+                  ja={ja}
+                  onToggleMute={() => toggleMuteProfile(author.id)}
+                  onToggleBlock={() => toggleBlockProfile(author.id)}
+                  reportHref={`/journal/${journal.id}/report`}
+                />
+              )}
+            </div>
           </div>
           <h1>{journal.title}</h1>
           <div className="journal-detail-meta">
@@ -122,9 +192,11 @@ export default function JournalDetailPage() {
               </div>
             )}
           </div>
-          <Link href={`/records/${record.id}`} className="text-link">
-            {ja ? "整備記録を確認" : "View maintenance record"}
-          </Link>
+          {signedIn && (
+            <Link href={`/records/${record.id}`} className="text-link">
+              {ja ? "整備記録を確認" : "View maintenance record"}
+            </Link>
+          )}
         </section>
       )}
 

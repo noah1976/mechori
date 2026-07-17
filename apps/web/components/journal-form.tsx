@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  createRestorableJournalDraft,
   validateJournalDraft,
   type JournalContentBlock,
   type JournalDisplayField,
@@ -28,12 +29,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ChangeEvent,
   type FormEvent,
 } from "react";
 import { useApp } from "@/lib/app-context";
+import {
+  clearLocalDraft,
+  journalLocalDraftKey,
+  loadJournalLocalDraft,
+  saveLocalDraft,
+} from "@/lib/local-draft-store";
 
 const maxMediaCount = 6;
 const maxImageBytes = 10 * 1024 * 1024;
@@ -64,29 +72,54 @@ function newTextBlock(style: JournalTextBlockStyle = "paragraph"): JournalConten
   };
 }
 
-export function JournalForm() {
-  const { data, locale, addJournal } = useApp();
-  const router = useRouter();
-  const ja = locale === "ja";
-  const vehicle = data.vehicles[0];
-  const [draft, setDraft] = useState<JournalDraft>({
+function createInitialJournalDraft(vehicleId: string): JournalDraft {
+  return {
     title: "",
     bodyOriginal: "",
-    vehicleId: vehicle?.id ?? "",
+    vehicleId,
     linkedRecordId: "",
     displayFields: ["service_date", "odometer", "actions"],
     media: [],
     contentBlocks: [newTextBlock()],
     visibility: "private",
     knowledgeExtractionConsent: false,
-  });
+  };
+}
+
+function hasMeaningfulJournalDraft(draft: JournalDraft): boolean {
+  return Boolean(
+    draft.title.trim() ||
+    draft.linkedRecordId ||
+    draft.media.length ||
+    draft.contentBlocks.some((block) => block.type === "text" && block.text.trim()) ||
+    draft.visibility !== "private" ||
+    draft.knowledgeExtractionConsent,
+  );
+}
+
+export function JournalForm() {
+  const { data, locale, addJournal } = useApp();
+  const router = useRouter();
+  const ja = locale === "ja";
+  const vehicle = data.vehicles[0];
+  const localDraftKey = journalLocalDraftKey();
+  const initialDraft = useMemo(
+    () => createInitialJournalDraft(vehicle?.id ?? ""),
+    [vehicle?.id],
+  );
+  const [draft, setDraft] = useState<JournalDraft>(initialDraft);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [mediaError, setMediaError] = useState("");
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftStatus, setDraftStatus] = useState<"idle" | "restored" | "saved" | "error">("idle");
+  const [omittedMediaCount, setOmittedMediaCount] = useState(0);
   const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([]);
   const [insertAfterBlockId, setInsertAfterBlockId] = useState<string | null>(null);
   const pendingMediaRef = useRef<PendingMedia[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const validation = validateJournalDraft(draft);
   const missingMediaDescription = pendingMedia.some(
     ({ attachment }) => !attachment.altText.trim(),
@@ -96,6 +129,61 @@ export function JournalForm() {
     pendingMediaRef.current = pendingMedia;
   }, [pendingMedia]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const stored = loadJournalLocalDraft();
+      if (stored) {
+        const storedDraft = stored.value.draft;
+        const vehicleExists = data.vehicles.some((item) => item.id === storedDraft.vehicleId);
+        const recordExists = data.records.some((item) => item.id === storedDraft.linkedRecordId);
+        const restoredDraft = {
+          ...storedDraft,
+          vehicleId: vehicleExists ? storedDraft.vehicleId : vehicle?.id ?? "",
+          linkedRecordId: recordExists ? storedDraft.linkedRecordId : "",
+          contentBlocks: storedDraft.contentBlocks.length
+            ? storedDraft.contentBlocks
+            : [newTextBlock()],
+        };
+        if (hasMeaningfulJournalDraft(restoredDraft)) {
+          setDraft(restoredDraft);
+          setOmittedMediaCount(stored.value.omittedMediaCount);
+          setDraftStatus("restored");
+        } else {
+          clearLocalDraft(localDraftKey);
+        }
+      }
+      setDraftReady(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [data.records, data.vehicles, localDraftKey, vehicle?.id]);
+
+  useEffect(() => {
+    if (!draftReady) return;
+    if (!hasMeaningfulJournalDraft(draft)) {
+      clearLocalDraft(localDraftKey);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      const restorable = createRestorableJournalDraft(draft);
+      setOmittedMediaCount(restorable.omittedMediaCount);
+      setDraftStatus(
+        saveLocalDraft(localDraftKey, restorable) ? "saved" : "error",
+      );
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [draft, draftReady, localDraftKey]);
+
+  function discardDraft() {
+    pendingMediaRef.current.forEach(({ previewUrl }) => URL.revokeObjectURL(previewUrl));
+    clearLocalDraft(localDraftKey);
+    setPendingMedia([]);
+    setDraft(initialDraft);
+    setDraftStatus("idle");
+    setOmittedMediaCount(0);
+    setSubmitted(false);
+    setMediaError("");
+  }
+
   useEffect(() => () => {
     pendingMediaRef.current.forEach(({ previewUrl }) => URL.revokeObjectURL(previewUrl));
   }, []);
@@ -103,19 +191,32 @@ export function JournalForm() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     setSubmitted(true);
-    if (!validation.valid || missingMediaDescription || saving) return;
+    if (!validation.valid || missingMediaDescription) {
+      window.requestAnimationFrame(() => {
+        if (validation.errors.title) {
+          titleInputRef.current?.focus();
+          return;
+        }
+        formRef.current
+          ?.querySelector<HTMLElement>(".has-error input, .has-error textarea, [aria-invalid='true'], .note-text-block textarea")
+          ?.focus();
+      });
+      return;
+    }
+    if (saving) return;
     setSaving(true);
     try {
       const journal = await addJournal(
         draft,
         pendingMedia.map(({ attachment, file }) => ({ attachment, blob: file })),
       );
+      clearLocalDraft(localDraftKey);
       router.push(`/journal/${journal.id}`);
     } catch {
       setMediaError(
         ja
-          ? "メディアを端末内へ保存できませんでした。容量を確認して、もう一度お試しください。"
-          : "Media could not be stored on this device. Check available storage and try again.",
+          ? "端末へ保存できませんでした。入力内容は下書きとして残しています。容量を確認して、もう一度お試しください。"
+          : "This journal could not be saved. Your text remains in the local draft. Check available storage and try again.",
       );
       setSaving(false);
     }
@@ -279,7 +380,7 @@ export function JournalForm() {
   }
 
   return (
-    <form className="journal-form note-editor-form" onSubmit={submit} noValidate>
+    <form ref={formRef} className="journal-form note-editor-form" onSubmit={submit} noValidate aria-busy={saving}>
       <section className="note-editor-shell">
         <header className="note-editor-header">
           <div>
@@ -296,13 +397,21 @@ export function JournalForm() {
             {ja ? "整備記録だけ残す" : "Maintenance record only"}
           </Link>
         </header>
+        <JournalDraftStatus
+          status={draftStatus}
+          omittedMediaCount={omittedMediaCount}
+          ja={ja}
+          onDiscard={discardDraft}
+        />
 
         <label className={submitted && validation.errors.title ? "note-title has-error" : "note-title"}>
           <span className="sr-only">{ja ? "タイトル" : "Title"}</span>
           <input
+            ref={titleInputRef}
             value={draft.title}
             onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))}
             placeholder={ja ? "タイトル" : "Title"}
+            aria-invalid={submitted && Boolean(validation.errors.title)}
           />
           {submitted && validation.errors.title && (
             <small>{ja ? "タイトルを入力してください" : "Enter a title"}</small>
@@ -382,7 +491,7 @@ export function JournalForm() {
           )}
         </div>
 
-        <input ref={fileInputRef} className="visually-hidden-file" type="file" accept="image/*,video/*" multiple onChange={selectMedia} />
+        <input ref={fileInputRef} hidden type="file" accept="image/*,video/*" multiple tabIndex={-1} aria-hidden="true" onChange={selectMedia} />
         {mediaError && <p className="media-error" role="alert">{mediaError}</p>}
         {submitted && validation.errors.bodyOriginal && (
           <p className="media-error" role="alert">
@@ -412,6 +521,41 @@ export function JournalForm() {
 
       <div className="form-actions"><button type="submit" className="primary-action" disabled={saving}><Save size={17} aria-hidden="true" />{saving ? ja ? "保存中…" : "Saving…" : draft.visibility === "private" ? ja ? "非公開で保存" : "Save privately" : ja ? "公開範囲を確認して保存" : "Review audience and save"}</button></div>
     </form>
+  );
+}
+
+function JournalDraftStatus({
+  status,
+  omittedMediaCount,
+  ja,
+  onDiscard,
+}: {
+  status: "idle" | "restored" | "saved" | "error";
+  omittedMediaCount: number;
+  ja: boolean;
+  onDiscard(): void;
+}) {
+  if (status === "idle") return null;
+  const mediaNote = omittedMediaCount > 0
+    ? ja
+      ? ` 写真・動画${omittedMediaCount}件は再選択が必要です。`
+      : ` Re-select ${omittedMediaCount} media file${omittedMediaCount === 1 ? "" : "s"}.`
+    : "";
+  return (
+    <div className={`local-draft-status is-${status}`} role={status === "error" ? "alert" : "status"}>
+      <span>
+        {status === "restored"
+          ? ja ? "端末内の下書きを復元しました。" : "Restored the draft from this device."
+          : status === "saved"
+            ? ja ? "文章と設定を端末内へ下書き保存しました。" : "Text and settings saved on this device."
+            : ja ? "下書きを保存できません。ブラウザの保存設定を確認してください。" : "The draft could not be saved. Check browser storage settings."}
+        {mediaNote}
+      </span>
+      <button type="button" onClick={onDiscard}>
+        <Trash2 size={15} aria-hidden="true" />
+        {ja ? "下書きを破棄" : "Discard draft"}
+      </button>
+    </div>
   );
 }
 

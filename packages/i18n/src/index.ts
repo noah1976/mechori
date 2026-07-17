@@ -1,4 +1,4 @@
-import type { Locale } from "@mechori/core";
+import type { SupportedUiLocale } from "@mechori/core";
 
 const ja = {
   tagline: "直して、シェアして、また走ろう。",
@@ -134,9 +134,20 @@ const en: Record<keyof typeof ja, string> = {
   noResults: "No shared candidate matches these filters. MECHORI will not invent a cause when no record exists.",
 };
 
-export const dictionaries = { ja, en };
 export type TranslationKey = keyof typeof ja;
+type Dictionary = Record<TranslationKey, string>;
 
-export function translate(locale: Locale, key: TranslationKey): string {
+export const dictionaries: Record<SupportedUiLocale, Dictionary> = { ja, en };
+
+export const uiLocaleOptions: ReadonlyArray<{
+  value: SupportedUiLocale;
+  label: string;
+  shortLabel: string;
+}> = [
+  { value: "ja", label: "日本語", shortLabel: "JA" },
+  { value: "en", label: "English", shortLabel: "EN" },
+];
+
+export function translate(locale: SupportedUiLocale, key: TranslationKey): string {
   return dictionaries[locale][key];
 }

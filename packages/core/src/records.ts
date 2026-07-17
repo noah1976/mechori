@@ -196,11 +196,12 @@ export function applyRecordDraftToData(
   draft: RecordDraft,
   existingId?: string,
   sourceLanguage: MaintenanceRecord["sourceLanguage"] = "ja",
+  requestedVehicleId?: string,
 ): { data: AppData; record: MaintenanceRecord } {
   const existingRecord = existingId
     ? data.records.find((record) => record.id === existingId)
     : undefined;
-  const vehicleId = existingRecord?.vehicleId ?? data.vehicles[0]?.id;
+  const vehicleId = existingRecord?.vehicleId ?? requestedVehicleId ?? data.vehicles[0]?.id;
   if (!vehicleId) throw new Error("vehicle_required");
   const vehicle = data.vehicles.find((item) => item.id === vehicleId);
   if (!vehicle) throw new Error("vehicle_not_found");
@@ -286,7 +287,7 @@ export function applyRecordDraftToData(
     record,
     data: {
       ...data,
-      schemaVersion: 6,
+      schemaVersion: 8,
       vehicles: data.vehicles.map((item) => (item.id === vehicleId ? nextVehicle : item)),
       records,
     },
@@ -376,11 +377,25 @@ export function migrateAppData(input: unknown): AppData | null {
   });
 
   return {
-    schemaVersion: 6,
+    schemaVersion: 8,
     vehicles,
     records,
     profiles: Array.isArray(source.profiles)
-      ? source.profiles
+      ? source.profiles.map((profile) => {
+          const matchingDemoProfile = profile.isDemo
+            ? demoData.profiles.find((item) => item.id === profile.id)
+            : undefined;
+          return {
+            ...profile,
+            visibility:
+              profile.visibility === "public" || profile.visibility === "followers"
+                ? profile.visibility
+                : matchingDemoProfile?.visibility ?? "private",
+            displayFields: Array.isArray(profile.displayFields)
+              ? profile.displayFields
+              : matchingDemoProfile?.displayFields ?? ["role", "bio"],
+          };
+        })
       : structuredClone(demoData.profiles),
     currentProfileId:
       typeof source.currentProfileId === "string"
@@ -411,12 +426,23 @@ export function migrateAppData(input: unknown): AppData | null {
                   mediaId: attachment.id,
                 })),
               ];
-          return { ...journal, media, contentBlocks };
+          return {
+            ...journal,
+            moderationState: journal.moderationState ?? "visible",
+            media,
+            contentBlocks,
+          };
         })
       : structuredClone(demoData.journals),
     follows: Array.isArray(source.follows)
       ? source.follows
       : structuredClone(demoData.follows),
+    profileSafetyRelations: Array.isArray(source.profileSafetyRelations)
+      ? source.profileSafetyRelations
+      : [],
+    contentReports: Array.isArray(source.contentReports)
+      ? source.contentReports
+      : [],
   };
 }
 

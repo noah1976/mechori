@@ -10,17 +10,27 @@ import { translate } from "@mechori/i18n";
 import { ArrowRight, BookOpen, Heart, Link2, Lock, Users } from "lucide-react";
 import Link from "next/link";
 import { JournalMedia } from "@/components/journal-media";
+import { ProfileSafetyMenu } from "@/components/profile-safety-menu";
 
 export function JournalCard({
   journal,
   author,
   record,
   locale,
+  safety,
+  mediaPriority = false,
 }: {
   journal: GarageJournalPost;
   author?: SocialProfile;
   record?: MaintenanceRecord;
   locale: Locale;
+  mediaPriority?: boolean;
+  safety?: {
+    muted: boolean;
+    blocked: boolean;
+    onToggleMute(): void;
+    onToggleBlock(): void;
+  };
 }) {
   const ja = locale === "ja";
   return (
@@ -30,14 +40,31 @@ export function JournalCard({
           {(author?.displayName ?? "M").slice(0, 1).toLocaleUpperCase()}
         </span>
         <div>
-          <strong>{author?.displayName ?? (ja ? "不明な投稿者" : "Unknown author")} / {journal.vehicleLabel}</strong>
+          <strong>
+            {author ? (
+              <Link href={`/profile/${author.id}`}>{author.displayName}</Link>
+            ) : ja ? "不明な投稿者" : "Unknown author"} / {journal.vehicleLabel}
+          </strong>
           <small>
             {formatDate(journal.publishedAt ?? journal.createdAt, locale)}
           </small>
         </div>
-        {journal.isDemo && <span className="demo-label">DEMO</span>}
+        <div className="journal-card-actions">
+          {journal.isDemo && <span className="demo-label">DEMO</span>}
+          {safety && author && (
+            <ProfileSafetyMenu
+              profileName={author.displayName}
+              muted={safety.muted}
+              blocked={safety.blocked}
+              ja={ja}
+              onToggleMute={safety.onToggleMute}
+              onToggleBlock={safety.onToggleBlock}
+              reportHref={`/journal/${journal.id}/report`}
+            />
+          )}
+        </div>
       </div>
-      <JournalMedia attachments={journal.media} locale={locale} compact />
+      <JournalMedia attachments={journal.media} locale={locale} compact priority={mediaPriority} />
       <h3>{journal.title}</h3>
       <p>{journal.bodyOriginal}</p>
       {record && (

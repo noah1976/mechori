@@ -1,18 +1,25 @@
 "use client";
 
-import { translate, type TranslationKey } from "@mechori/i18n";
+import { translate, uiLocaleOptions, type TranslationKey } from "@mechori/i18n";
+import type { SupportedUiLocale } from "@mechori/core";
 import {
   BookOpenText,
   CarFront,
+  CircleAlert,
   House,
   Languages,
+  LoaderCircle,
+  LogIn,
+  LogOut,
   Newspaper,
   Plus,
   Search,
+  Settings2,
+  X,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, type ReactNode } from "react";
 import { useApp } from "@/lib/app-context";
 
 const navItems: Array<{
@@ -29,7 +36,32 @@ const navItems: Array<{
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { locale, setLocale } = useApp();
+  const router = useRouter();
+  const {
+    locale,
+    setLocale,
+    hydrated,
+    signedIn,
+    signOut,
+    persistenceError,
+    clearPersistenceError,
+  } = useApp();
+  const publicPath = isPublicPath(pathname);
+  const authenticated = hydrated && signedIn;
+  const visibleNavItems = authenticated
+    ? navItems
+    : navItems.filter((item) => item.href === "/" || item.href === "/search");
+
+  useEffect(() => {
+    if (hydrated && !signedIn && !publicPath) {
+      router.replace(`/auth?returnTo=${encodeURIComponent(pathname)}`);
+    }
+  }, [hydrated, pathname, publicPath, router, signedIn]);
+
+  function logOut() {
+    signOut();
+    router.replace("/");
+  }
 
   return (
     <div className="app-frame">
@@ -42,7 +74,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </span>
         </Link>
         <nav>
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
             const Icon = item.icon;
             return (
@@ -53,30 +85,89 @@ export function AppShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <Link href="/records/new" className="primary-action nav-add">
-          <Plus size={18} aria-hidden="true" />
-          {translate(locale, "addRecord")}
-        </Link>
+        {authenticated ? (
+          <Link href="/records/new" className="primary-action nav-add">
+            <Plus size={18} aria-hidden="true" />
+            {translate(locale, "addRecord")}
+          </Link>
+        ) : (
+          <Link href="/auth" className="primary-action nav-add">
+            <LogIn size={18} aria-hidden="true" />
+            {locale === "ja" ? "ログイン" : "Sign in"}
+          </Link>
+        )}
       </aside>
 
       <div className="content-column">
         <header className="top-bar">
           <Link href="/" className="mobile-brand">MECHORI</Link>
-          <button
-            className="icon-text-button"
-            type="button"
-            onClick={() => setLocale(locale === "ja" ? "en" : "ja")}
-            aria-label={locale === "ja" ? "Switch to English" : "日本語に切り替え"}
-          >
-            <Languages size={18} aria-hidden="true" />
-            {locale === "ja" ? "EN" : "日本語"}
-          </button>
+          <div className="top-bar-actions">
+            <label className="locale-select">
+              <Languages size={18} aria-hidden="true" />
+              <span className="sr-only">{locale === "ja" ? "表示言語" : "Display language"}</span>
+              <select
+                value={locale}
+                onChange={(event) => setLocale(event.target.value as SupportedUiLocale)}
+                aria-label={locale === "ja" ? "表示言語" : "Display language"}
+              >
+                {uiLocaleOptions.map((option) => (
+                  <option value={option.value} key={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+            {authenticated ? (
+              <>
+                <Link href="/settings/privacy" className="icon-text-button">
+                  <Settings2 size={18} aria-hidden="true" />
+                  {locale === "ja" ? "表示と安全" : "Privacy & safety"}
+                </Link>
+                <button className="icon-text-button" type="button" onClick={logOut}>
+                  <LogOut size={18} aria-hidden="true" />
+                  {locale === "ja" ? "ログアウト" : "Sign out"}
+                </button>
+              </>
+            ) : pathname !== "/auth" ? (
+              <Link href="/auth" className="icon-text-button">
+                <LogIn size={18} aria-hidden="true" />
+                {locale === "ja" ? "ログイン" : "Sign in"}
+              </Link>
+            ) : null}
+          </div>
         </header>
-        <main>{children}</main>
+        {persistenceError && (
+          <div className="persistence-error" role="alert">
+            <CircleAlert size={19} aria-hidden="true" />
+            <span>
+              {locale === "ja"
+                ? "端末へ保存できませんでした。空き容量やブラウザの保存設定を確認してください。"
+                : "Changes could not be saved on this device. Check available storage and browser settings."}
+            </span>
+            <button
+              type="button"
+              className="icon-action"
+              onClick={clearPersistenceError}
+              aria-label={locale === "ja" ? "保存エラーを閉じる" : "Dismiss storage error"}
+            >
+              <X size={17} aria-hidden="true" />
+            </button>
+          </div>
+        )}
+        <main>
+          {hydrated && (signedIn || publicPath) ? children : (
+            <div className="app-loading" role="status" aria-live="polite">
+              <LoaderCircle className="spin" size={24} aria-hidden="true" />
+              <span>
+                {!hydrated
+                  ? locale === "ja" ? "端末内のデータを確認中" : "Loading data from this device"
+                  : locale === "ja" ? "ログイン画面へ移動中" : "Opening sign in"}
+              </span>
+            </div>
+          )}
+        </main>
       </div>
 
-      <nav className="bottom-nav" aria-label="Mobile navigation">
-        {navItems.map((item) => {
+      <nav className={authenticated ? "bottom-nav" : "bottom-nav signed-out"} aria-label="Mobile navigation">
+        {visibleNavItems.map((item) => {
           const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
           const Icon = item.icon;
           return (
@@ -86,7 +177,25 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           );
         })}
+        {!authenticated && (
+          <Link href="/auth" className={pathname === "/auth" ? "active" : ""}>
+            <LogIn size={20} aria-hidden="true" />
+            <span>{locale === "ja" ? "ログイン" : "Sign in"}</span>
+          </Link>
+        )}
       </nav>
     </div>
+  );
+}
+
+function isPublicPath(pathname: string): boolean {
+  return (
+    pathname === "/" ||
+    pathname === "/search" ||
+    pathname === "/auth" ||
+    pathname.startsWith("/profile/") ||
+    (pathname.startsWith("/journal/") &&
+      pathname !== "/journal/new" &&
+      !pathname.endsWith("/report"))
   );
 }

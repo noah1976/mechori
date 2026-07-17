@@ -2,20 +2,46 @@
 
 import {
   cloneDemoData,
+  createAuthSession,
+  addVehicleToData,
   applyRecordDraftToData,
   addJournalToData,
+  applyModerationAction,
+  submitContentReport,
+  toggleBlockProfileInData,
   toggleFollowInData,
+  toggleMuteProfileInData,
+  updateCurrentProfilePrivacy,
+  isSignedIn,
+  isSupportedUiLocale,
+  parseStoredAuthSession,
+  signedOutSession,
   type AppData,
+  type AuthProvider,
+  type AuthSession,
+  type ContentReport,
+  type ContentReportDraft,
+  type EngagementEventName,
   type FollowTargetType,
   type GarageJournalPost,
   type JournalDraft,
   type JournalMediaAttachment,
   type Locale,
   type MaintenanceRecord,
+  type ModerationAction,
+  type ProfileDisplayField,
+  type ProfileVisibility,
   type RecordDraft,
+  type Vehicle,
+  type VehicleDraft,
 } from "@mechori/core";
 import { LocalStorageDataProvider } from "@mechori/shared";
 import { journalMediaStore } from "@/lib/media-store";
+import { clearAllLocalDrafts } from "@/lib/local-draft-store";
+import {
+  recordLocalEngagement,
+  resetLocalEngagement,
+} from "@/lib/local-engagement-store";
 import {
   createContext,
   useCallback,
@@ -30,14 +56,33 @@ interface AppContextValue {
   data: AppData;
   locale: Locale;
   hydrated: boolean;
+  authSession: AuthSession;
+  signedIn: boolean;
+  persistenceError: boolean;
   setLocale(locale: Locale): void;
-  addRecord(draft: RecordDraft): MaintenanceRecord;
-  updateRecord(id: string, draft: RecordDraft): MaintenanceRecord | null;
+  signIn(provider: AuthProvider): void;
+  signOut(): void;
+  clearPersistenceError(): void;
+  addVehicle(draft: VehicleDraft): Promise<Vehicle>;
+  addRecord(draft: RecordDraft, vehicleId?: string): Promise<MaintenanceRecord>;
+  updateRecord(id: string, draft: RecordDraft): Promise<MaintenanceRecord | null>;
   addJournal(
     draft: JournalDraft,
     uploads?: JournalMediaUpload[],
   ): Promise<GarageJournalPost>;
   toggleFollow(targetType: FollowTargetType, targetId: string): void;
+  toggleMuteProfile(profileId: string): void;
+  toggleBlockProfile(profileId: string): void;
+  submitReport(draft: ContentReportDraft): Promise<ContentReport>;
+  moderateReport(
+    reportId: string,
+    action: Exclude<ModerationAction, "submitted">,
+  ): Promise<void>;
+  updateProfilePrivacy(
+    visibility: ProfileVisibility,
+    displayFields: ProfileDisplayField[],
+  ): Promise<void>;
+  recordEngagement(name: EngagementEventName): void;
   resetDemo(): Promise<void>;
 }
 
@@ -50,27 +95,35 @@ const AppContext = createContext<AppContextValue | null>(null);
 const dataProvider = new LocalStorageDataProvider();
 const localeKey = "mechori.prototype.locale";
 const legacyLocaleKey = "mechory.prototype.locale";
+const authKey = "mechori.prototype.auth-session";
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<AppData>(() => cloneDemoData());
   const [locale, setLocaleState] = useState<Locale>("ja");
+  const [authSession, setAuthSession] = useState<AuthSession>(signedOutSession);
   const [hydrated, setHydrated] = useState(false);
+  const [persistenceError, setPersistenceError] = useState(false);
 
   useEffect(() => {
     let active = true;
     Promise.all([
       dataProvider.load(),
       Promise.resolve(
-        window.localStorage.getItem(localeKey) ??
-          window.localStorage.getItem(legacyLocaleKey),
+        readStorageValue(localeKey) ?? readStorageValue(legacyLocaleKey),
       ),
-    ]).then(([storedData, storedLocale]) => {
+      Promise.resolve(readStoredAuthSession()),
+    ]).then(([storedData, storedLocale, storedAuthSession]) => {
       if (!active) return;
       if (storedData) setData(storedData);
-      if (storedLocale === "ja" || storedLocale === "en") {
+      setAuthSession(storedAuthSession);
+      if (isSupportedUiLocale(storedLocale)) {
         setLocaleState(storedLocale);
-        window.localStorage.setItem(localeKey, storedLocale);
-        window.localStorage.removeItem(legacyLocaleKey);
+        try {
+          window.localStorage.setItem(localeKey, storedLocale);
+          window.localStorage.removeItem(legacyLocaleKey);
+        } catch {
+          setPersistenceError(true);
+        }
       }
       setHydrated(true);
     });
@@ -79,40 +132,111 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const persist = useCallback((nextData: AppData) => {
-    setData(nextData);
-    void dataProvider.save(nextData);
+  useEffect(() => {
+    if (hydrated && isSignedIn(authSession)) {
+      recordLocalEngagement("session_started");
+    }
+  }, [authSession, hydrated]);
+
+  useEffect(() => {
+    function syncAuthSession(event: StorageEvent) {
+      if (event.key !== authKey) return;
+      setAuthSession(parseStoredAuthSession(event.newValue));
+    }
+
+    window.addEventListener("storage", syncAuthSession);
+    return () => window.removeEventListener("storage", syncAuthSession);
+  }, []);
+
+  const persist = useCallback(async (nextData: AppData) => {
+    try {
+      await dataProvider.save(nextData);
+      setData(nextData);
+      setPersistenceError(false);
+    } catch {
+      setPersistenceError(true);
+      throw new Error("local_persistence_failed");
+    }
   }, []);
 
   const setLocale = useCallback((nextLocale: Locale) => {
     setLocaleState(nextLocale);
-    window.localStorage.setItem(localeKey, nextLocale);
+    try {
+      window.localStorage.setItem(localeKey, nextLocale);
+    } catch {
+      setPersistenceError(true);
+    }
   }, []);
 
+  const signIn = useCallback((provider: AuthProvider) => {
+    const nextSession = createAuthSession(provider, data.currentProfileId);
+    setAuthSession(nextSession);
+    try {
+      window.localStorage.setItem(authKey, JSON.stringify(nextSession));
+    } catch {
+      setPersistenceError(true);
+    }
+  }, [data.currentProfileId]);
+
+  const signOut = useCallback(() => {
+    setAuthSession(signedOutSession);
+    try {
+      window.localStorage.setItem(authKey, JSON.stringify(signedOutSession));
+    } catch {
+      setPersistenceError(true);
+    }
+  }, []);
+
+  const clearPersistenceError = useCallback(() => setPersistenceError(false), []);
+
+  const recordEngagement = useCallback((name: EngagementEventName) => {
+    if (!isSignedIn(authSession)) return;
+    recordLocalEngagement(name);
+  }, [authSession]);
+
+  const addVehicle = useCallback(
+    async (draft: VehicleDraft) => {
+      if (!isSignedIn(authSession)) throw new Error("authentication_required");
+      const result = addVehicleToData(data, draft);
+      await persist(result.data);
+      recordLocalEngagement("vehicle_created");
+      return result.vehicle;
+    },
+    [authSession, data, persist],
+  );
+
   const addRecord = useCallback(
-    (draft: RecordDraft) => {
-      const vehicle = data.vehicles[0];
+    async (draft: RecordDraft, vehicleId?: string) => {
+      if (!isSignedIn(authSession)) throw new Error("authentication_required");
+      const vehicle = data.vehicles.find((item) => item.id === vehicleId) ?? data.vehicles[0];
       if (!vehicle) throw new Error("A demo vehicle is required");
-      const result = applyRecordDraftToData(data, draft, undefined, locale);
-      persist(result.data);
+      const result = applyRecordDraftToData(data, draft, undefined, locale, vehicle.id);
+      await persist(result.data);
+      recordLocalEngagement("maintenance_saved");
       return result.record;
     },
-    [data, locale, persist],
+    [authSession, data, locale, persist],
   );
 
   const updateRecord = useCallback(
-    (id: string, draft: RecordDraft) => {
+    async (id: string, draft: RecordDraft) => {
+      if (!isSignedIn(authSession)) throw new Error("authentication_required");
       const previous = data.records.find((record) => record.id === id);
       if (!previous) return null;
       const result = applyRecordDraftToData(data, draft, id, previous.sourceLanguage);
-      persist(result.data);
+      await persist(result.data);
+      recordLocalEngagement("maintenance_saved");
+      if (previous.resolutionStatus === "unresolved" && result.record.resolutionStatus === "resolved") {
+        recordLocalEngagement("result_followed_up");
+      }
       return result.record;
     },
-    [data, persist],
+    [authSession, data, persist],
   );
 
   const addJournal = useCallback(
     async (draft: JournalDraft, uploads: JournalMediaUpload[] = []) => {
+      if (!isSignedIn(authSession)) throw new Error("authentication_required");
       await Promise.all(
         uploads.map(({ attachment, blob }) => {
           if (!attachment.storageKey) throw new Error("media_storage_key_required");
@@ -120,22 +244,77 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }),
       );
       const result = addJournalToData(data, draft, locale);
-      persist(result.data);
+      await persist(result.data);
+      recordLocalEngagement("journal_saved");
       return result.journal;
     },
-    [data, locale, persist],
+    [authSession, data, locale, persist],
   );
 
   const toggleFollow = useCallback(
     (targetType: FollowTargetType, targetId: string) => {
-      persist(toggleFollowInData(data, targetType, targetId));
+      if (!isSignedIn(authSession)) return;
+      void persist(toggleFollowInData(data, targetType, targetId)).catch(() => undefined);
     },
-    [data, persist],
+    [authSession, data, persist],
+  );
+
+  const toggleMuteProfile = useCallback(
+    (profileId: string) => {
+      if (!isSignedIn(authSession)) return;
+      void persist(toggleMuteProfileInData(data, profileId)).catch(() => undefined);
+    },
+    [authSession, data, persist],
+  );
+
+  const toggleBlockProfile = useCallback(
+    (profileId: string) => {
+      if (!isSignedIn(authSession)) return;
+      void persist(toggleBlockProfileInData(data, profileId)).catch(() => undefined);
+    },
+    [authSession, data, persist],
+  );
+
+  const submitReport = useCallback(
+    async (draft: ContentReportDraft) => {
+      if (!isSignedIn(authSession)) throw new Error("authentication_required");
+      const result = submitContentReport(data, draft);
+      await persist(result.data);
+      return result.report;
+    },
+    [authSession, data, persist],
+  );
+
+  const moderateReport = useCallback(
+    async (
+      reportId: string,
+      action: Exclude<ModerationAction, "submitted">,
+    ) => {
+      if (!isSignedIn(authSession)) throw new Error("authentication_required");
+      await persist(applyModerationAction(data, reportId, action));
+    },
+    [authSession, data, persist],
+  );
+
+  const updateProfilePrivacy = useCallback(
+    async (visibility: ProfileVisibility, displayFields: ProfileDisplayField[]) => {
+      if (!isSignedIn(authSession)) throw new Error("authentication_required");
+      await persist(updateCurrentProfilePrivacy(data, visibility, displayFields));
+    },
+    [authSession, data, persist],
   );
 
   const resetDemo = useCallback(async () => {
-    await Promise.all([dataProvider.reset(), journalMediaStore.reset()]);
-    setData(cloneDemoData());
+    try {
+      await Promise.all([dataProvider.reset(), journalMediaStore.reset()]);
+      if (!clearAllLocalDrafts()) throw new Error("local_draft_reset_failed");
+      resetLocalEngagement();
+      setData(cloneDemoData());
+      setPersistenceError(false);
+    } catch {
+      setPersistenceError(true);
+      throw new Error("local_reset_failed");
+    }
   }, []);
 
   const value = useMemo(
@@ -143,22 +322,47 @@ export function AppProvider({ children }: { children: ReactNode }) {
       data,
       locale,
       hydrated,
+      authSession,
+      signedIn: isSignedIn(authSession),
+      persistenceError,
       setLocale,
+      signIn,
+      signOut,
+      clearPersistenceError,
+      addVehicle,
       addRecord,
       updateRecord,
       addJournal,
       toggleFollow,
+      toggleMuteProfile,
+      toggleBlockProfile,
+      submitReport,
+      moderateReport,
+      updateProfilePrivacy,
+      recordEngagement,
       resetDemo,
     }),
     [
       data,
       locale,
       hydrated,
+      authSession,
+      persistenceError,
       setLocale,
+      signIn,
+      signOut,
+      clearPersistenceError,
+      addVehicle,
       addRecord,
       updateRecord,
       addJournal,
       toggleFollow,
+      toggleMuteProfile,
+      toggleBlockProfile,
+      submitReport,
+      moderateReport,
+      updateProfilePrivacy,
+      recordEngagement,
       resetDemo,
     ],
   );
@@ -170,4 +374,16 @@ export function useApp(): AppContextValue {
   const value = useContext(AppContext);
   if (!value) throw new Error("useApp must be used inside AppProvider");
   return value;
+}
+
+function readStoredAuthSession(): AuthSession {
+  return parseStoredAuthSession(readStorageValue(authKey));
+}
+
+function readStorageValue(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
 }

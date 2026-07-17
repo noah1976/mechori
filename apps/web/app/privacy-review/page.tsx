@@ -6,8 +6,9 @@ import {
   assessMediaPublishability,
   type MediaPrivacyState,
   type MediaPublishBlockReason,
+  type SensitiveRegionKind,
 } from "@mechori/core";
-import { ArrowLeft, Check, Eye, RotateCcw, ScanLine, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Check, Eye, Plus, RotateCcw, ScanLine, ShieldAlert, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -17,32 +18,68 @@ const initialState: MediaPrivacyState = {
   metadataState: "removed",
   detectionState: "completed",
   manualReviewState: "pending",
-  sensitiveRegions: [{ id: "demo-plate", kind: "license_plate", status: "detected" }],
+  sensitiveRegions: [
+    { id: "demo-plate", kind: "license_plate", status: "detected" },
+    { id: "demo-face", kind: "face", status: "detected" },
+  ],
 };
 
 export default function PrivacyReviewPage() {
   const { locale } = useApp();
   const [state, setState] = useState<MediaPrivacyState>(initialState);
+  const [manualKind, setManualKind] = useState<SensitiveRegionKind>("address");
   const ja = locale === "ja";
   const assessment = useMemo(() => assessMediaPublishability(state), [state]);
-  const region = state.sensitiveRegions[0];
-  const redacted = region?.status === "redacted";
+  const unresolvedCount = state.sensitiveRegions.filter((region) => region.status === "detected").length;
+  const allResolved = unresolvedCount === 0;
 
-  function applyMask() {
+  function applyMask(id: string) {
     setState((current) => ({
       ...current,
       assetKind: "redacted_derivative",
       manualReviewState: "pending",
       sensitiveRegions: current.sensitiveRegions.map((item) =>
-        item.id === "demo-plate"
+        item.id === id
           ? { ...item, status: "redacted", redactionMethod: "solid_fill" }
           : item,
       ),
     }));
   }
 
+  function markFalsePositive(id: string) {
+    setState((current) => ({
+      ...current,
+      manualReviewState: "pending",
+      sensitiveRegions: current.sensitiveRegions.map((item) =>
+        item.id === id
+          ? { ...item, status: "user_confirmed_false_positive", redactionMethod: undefined }
+          : item,
+      ),
+    }));
+  }
+
+  function addManualCandidate() {
+    setState((current) => ({
+      ...current,
+      manualReviewState: "pending",
+      sensitiveRegions: [
+        ...current.sensitiveRegions,
+        {
+          id: `demo-manual-${crypto.randomUUID()}`,
+          kind: manualKind,
+          status: "detected",
+        },
+      ],
+    }));
+  }
+
+  function createDerivative() {
+    if (!allResolved) return;
+    setState((current) => ({ ...current, assetKind: "redacted_derivative" }));
+  }
+
   function confirmReview() {
-    if (!redacted) return;
+    if (!allResolved || state.assetKind !== "redacted_derivative") return;
     setState((current) => ({ ...current, manualReviewState: "confirmed_redactions" }));
   }
 
@@ -54,15 +91,31 @@ export default function PrivacyReviewPage() {
     <section className="privacy-review-layout">
       <div className="privacy-preview">
         <Image src="/demo-roadster.png" alt={ja ? "個人情報マスク確認用のDEMOロードスター" : "DEMO roadster for privacy-mask review"} fill sizes="(max-width: 760px) 100vw, 60vw" priority />
-        <div className={`demo-sensitive-region ${redacted ? "is-redacted" : ""}`}><span>{redacted ? (ja ? "マスク済み" : "REDACTED") : (ja ? "DEMO ナンバー候補" : "DEMO PLATE CANDIDATE")}</span></div>
+        {state.sensitiveRegions.map((region, index) => (
+          <div key={region.id} className={`demo-sensitive-region region-${index % 4} ${region.status === "redacted" ? "is-redacted" : ""} ${region.status === "user_confirmed_false_positive" ? "is-false-positive" : ""}`}>
+            <span>{region.status === "redacted" ? (ja ? "マスク済み" : "REDACTED") : region.status === "user_confirmed_false_positive" ? (ja ? "誤検出確認済み" : "FALSE POSITIVE") : regionLabel(region.kind, ja)}</span>
+          </div>
+        ))}
         <span className="simulation-label">SIMULATED REGION</span>
       </div>
 
       <div className="privacy-review-controls">
         <div className="review-status-row"><ScanLine size={20} /><div><strong>{ja ? "候補検出" : "Candidate detection"}</strong><small>{ja ? "DEMO完了 · 実検出なし" : "DEMO completed · No real detection"}</small></div><Check size={18} /></div>
         <div className="review-status-row"><ShieldAlert size={20} /><div><strong>{ja ? "位置情報・EXIF" : "Location and EXIF"}</strong><small>{ja ? "除去済み想定" : "Simulated as removed"}</small></div><Check size={18} /></div>
-        <button type="button" className="primary-action full-action" onClick={applyMask} disabled={redacted}><ShieldAlert size={18} />{redacted ? (ja ? "候補をマスクしました" : "Candidate redacted") : (ja ? "候補にマスクを適用" : "Redact candidate")}</button>
-        <button type="button" className="secondary-action full-action" onClick={confirmReview} disabled={!redacted || state.manualReviewState !== "pending"}><Eye size={18} />{state.manualReviewState === "confirmed_redactions" ? (ja ? "画像全体を確認済み" : "Full image reviewed") : (ja ? "画像全体を目視確認した" : "I reviewed the full image")}</button>
+        <div className="privacy-candidate-list">
+          {state.sensitiveRegions.map((region) => (
+            <article key={region.id}>
+              <div><strong>{regionLabel(region.kind, ja)}</strong><small>{regionStatusLabel(region.status, ja)}</small></div>
+              {region.status === "detected" ? <div className="candidate-actions"><button type="button" className="primary-action" onClick={() => applyMask(region.id)}><ShieldAlert size={15} />{ja ? "塗りつぶす" : "Redact"}</button><button type="button" className="secondary-action" onClick={() => markFalsePositive(region.id)}><X size={15} />{ja ? "誤検出" : "Not sensitive"}</button></div> : <Check size={18} aria-hidden="true" />}
+            </article>
+          ))}
+        </div>
+        <div className="manual-candidate-row">
+          <label><span>{ja ? "見落とし候補を追加" : "Add a missed candidate"}</span><select value={manualKind} onChange={(event) => setManualKind(event.target.value as SensitiveRegionKind)}><option value="address">{ja ? "住所・位置" : "Address or location"}</option><option value="document_personal_data">{ja ? "書類の個人情報" : "Personal data in document"}</option><option value="other_vehicle_plate">{ja ? "背景車両のナンバー" : "Other vehicle plate"}</option><option value="face">{ja ? "顔" : "Face"}</option><option value="other">{ja ? "その他" : "Other"}</option></select></label>
+          <button type="button" className="icon-action" onClick={addManualCandidate} aria-label={ja ? "選択した候補を追加" : "Add selected candidate"}><Plus size={18} /></button>
+        </div>
+        {allResolved && state.assetKind !== "redacted_derivative" && <button type="button" className="primary-action full-action" onClick={createDerivative}><ShieldAlert size={18} />{ja ? "公開用の派生画像を作成" : "Create publishable derivative"}</button>}
+        <button type="button" className="secondary-action full-action" onClick={confirmReview} disabled={!allResolved || state.assetKind !== "redacted_derivative" || state.manualReviewState !== "pending"}><Eye size={18} />{state.manualReviewState === "confirmed_redactions" ? (ja ? "画像全体を確認済み" : "Full image reviewed") : (ja ? "画像全体を目視確認した" : "I reviewed the full image")}</button>
         <p className="review-guidance">{ja ? "自動検出だけでは公開できません。候補のマスク後も、顔・住所・ほかの車両のナンバー等が残っていないか人が確認します。" : "Automatic detection alone never permits publishing. After redaction, a person must check for faces, addresses, and other vehicle plates."}</p>
       </div>
     </section>
@@ -72,6 +125,24 @@ export default function PrivacyReviewPage() {
       {!assessment.publishable && <ul>{assessment.reasons.map((reason) => <li key={reason}>{reasonLabel(reason, ja)}</li>)}</ul>}
     </section>
   </div>;
+}
+
+function regionLabel(kind: SensitiveRegionKind, ja: boolean) {
+  const labels: Record<SensitiveRegionKind, [string, string]> = {
+    license_plate: ["DEMO ナンバー候補", "DEMO plate candidate"],
+    other_vehicle_plate: ["背景車両のナンバー候補", "Other vehicle plate"],
+    face: ["顔の候補", "Face candidate"],
+    address: ["住所・位置の候補", "Address or location"],
+    document_personal_data: ["書類の個人情報候補", "Personal data in document"],
+    other: ["その他の候補", "Other candidate"],
+  };
+  return labels[kind][ja ? 0 : 1];
+}
+
+function regionStatusLabel(status: MediaPrivacyState["sensitiveRegions"][number]["status"], ja: boolean) {
+  if (status === "redacted") return ja ? "不可逆マスクを記録済み" : "Destructive redaction recorded";
+  if (status === "user_confirmed_false_positive") return ja ? "利用者が誤検出として確認" : "User confirmed false positive";
+  return ja ? "処理が必要" : "Action required";
 }
 
 function reasonLabel(reason: MediaPublishBlockReason, ja: boolean) {

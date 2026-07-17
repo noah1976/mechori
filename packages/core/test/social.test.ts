@@ -2,12 +2,19 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   addJournalToData,
+  canProfileViewProfile,
+  canCurrentProfileViewJournal,
   classifyJournalForKnowledge,
   cloneDemoData,
   createFollowTargets,
   getFollowingFeed,
   isFollowing,
+  isProfileBlocked,
+  isProfileMuted,
+  toggleBlockProfileInData,
   toggleFollowInData,
+  toggleMuteProfileInData,
+  updateCurrentProfilePrivacy,
   validateJournalDraft,
   type JournalDraft,
 } from "../src/index.ts";
@@ -153,6 +160,91 @@ test("toggles profile, vehicle, or model follows independently", () => {
   assert.equal(isFollowing(unfollowed, "profile", "profile-demo-workshop"), false);
 });
 
+test("muting hides an author's journals without changing follow state", () => {
+  const data = cloneDemoData();
+  const muted = toggleMuteProfileInData(
+    data,
+    "profile-demo-luca",
+    "2026-07-16T20:00:00.000Z",
+  );
+
+  assert.equal(isProfileMuted(muted, "profile-demo-luca"), true);
+  assert.equal(isFollowing(muted, "profile", "profile-demo-luca"), true);
+  assert.equal(
+    getFollowingFeed(muted).some((journal) => journal.authorProfileId === "profile-demo-luca"),
+    false,
+  );
+
+  const unmuted = toggleMuteProfileInData(muted, "profile-demo-luca");
+  assert.equal(isProfileMuted(unmuted, "profile-demo-luca"), false);
+  assert.equal(isFollowing(unmuted, "profile", "profile-demo-luca"), true);
+});
+
+test("blocking removes profile and vehicle follows but keeps model follows", () => {
+  let data = cloneDemoData();
+  data = toggleFollowInData(data, "vehicle", "vehicle-demo-luca-barchetta");
+  const blocked = toggleBlockProfileInData(
+    data,
+    "profile-demo-luca",
+    "2026-07-16T20:00:00.000Z",
+  );
+
+  assert.equal(isProfileBlocked(blocked, "profile-demo-luca"), true);
+  assert.equal(isFollowing(blocked, "profile", "profile-demo-luca"), false);
+  assert.equal(isFollowing(blocked, "vehicle", "vehicle-demo-luca-barchetta"), false);
+  assert.equal(isFollowing(blocked, "model", "model:fiat:barchetta"), true);
+  assert.equal(
+    getFollowingFeed(blocked).some((journal) => journal.authorProfileId === "profile-demo-luca"),
+    false,
+  );
+  assert.equal(
+    createFollowTargets(blocked).some(
+      (target) =>
+        target.id === "profile-demo-luca" || target.id === "vehicle-demo-luca-barchetta",
+    ),
+    false,
+  );
+});
+
+test("blocking replaces mute and blocks direct journal access until undone", () => {
+  const journal = cloneDemoData().journals.find(
+    (item) => item.authorProfileId === "profile-demo-luca",
+  );
+  assert.ok(journal);
+
+  const muted = toggleMuteProfileInData(cloneDemoData(), "profile-demo-luca");
+  const blocked = toggleBlockProfileInData(muted, "profile-demo-luca");
+  assert.equal(isProfileMuted(blocked, "profile-demo-luca"), false);
+  assert.equal(canCurrentProfileViewJournal(blocked, journal), false);
+
+  const unblocked = toggleBlockProfileInData(blocked, "profile-demo-luca");
+  assert.equal(isProfileBlocked(unblocked, "profile-demo-luca"), false);
+  assert.equal(canCurrentProfileViewJournal(unblocked, journal), true);
+});
+
+test("direct journal access respects private and followers-only visibility", () => {
+  const data = cloneDemoData();
+  const otherJournal = data.journals.find(
+    (item) => item.authorProfileId === "profile-demo-luca",
+  );
+  assert.ok(otherJournal);
+
+  assert.equal(
+    canCurrentProfileViewJournal(data, { ...otherJournal, visibility: "private" }),
+    false,
+  );
+  assert.equal(
+    canCurrentProfileViewJournal(data, { ...otherJournal, visibility: "followers" }),
+    true,
+  );
+
+  const unfollowed = toggleFollowInData(data, "profile", "profile-demo-luca");
+  assert.equal(
+    canCurrentProfileViewJournal(unfollowed, { ...otherJournal, visibility: "followers" }),
+    false,
+  );
+});
+
 test("social popularity never promotes a journal to verified knowledge", () => {
   const journal = cloneDemoData().journals.find(
     (item) => item.id === "journal-demo-luca-drive",
@@ -190,4 +282,53 @@ test("vehicle follow targets identify their owners and exclude the current vehic
       "Officina Verde / DEMO / FIAT Barchetta",
     ],
   );
+});
+
+test("applies profile visibility independently from journal visibility", () => {
+  const data = cloneDemoData();
+  assert.equal(canProfileViewProfile(data, "profile-demo-luca"), true);
+
+  const privateProfileData = {
+    ...data,
+    profiles: data.profiles.map((profile) =>
+      profile.id === "profile-demo-luca"
+        ? { ...profile, visibility: "private" as const }
+        : profile,
+    ),
+  };
+  assert.equal(canProfileViewProfile(privateProfileData, "profile-demo-luca"), false);
+  assert.equal(
+    canProfileViewProfile(privateProfileData, "profile-demo-luca", "profile-demo-luca"),
+    true,
+  );
+});
+
+test("limits a followers-only profile to direct profile followers", () => {
+  const data = cloneDemoData();
+  data.profiles = data.profiles.map((profile) =>
+    profile.id === "profile-demo-luca"
+      ? { ...profile, visibility: "followers" }
+      : profile,
+  );
+  assert.equal(
+    canProfileViewProfile(data, "profile-demo-luca", data.currentProfileId),
+    true,
+  );
+
+  const unfollowed = toggleFollowInData(data, "profile", "profile-demo-luca");
+  assert.equal(
+    canProfileViewProfile(unfollowed, "profile-demo-luca", data.currentProfileId),
+    false,
+  );
+});
+
+test("updates only the current profile's selected public fields", () => {
+  const data = updateCurrentProfilePrivacy(
+    cloneDemoData(),
+    "public",
+    ["bio", "vehicles", "bio"],
+  );
+  const profile = data.profiles.find((item) => item.id === data.currentProfileId);
+  assert.equal(profile?.visibility, "public");
+  assert.deepEqual(profile?.displayFields, ["bio", "vehicles"]);
 });

@@ -18,8 +18,14 @@ import {
   Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useApp } from "@/lib/app-context";
+import {
+  clearLocalDraft,
+  loadRecordLocalDraft,
+  recordLocalDraftKey,
+  saveLocalDraft,
+} from "@/lib/local-draft-store";
 
 const meterChangeReasons: PrototypeOdometerEpisodeReason[] = [
   "replacement",
@@ -73,9 +79,9 @@ function draftFromRecord(record: MaintenanceRecord | undefined, vehicle: Vehicle
   };
 }
 
-export function RecordForm({ record }: { record?: MaintenanceRecord }) {
+export function RecordForm({ record, vehicleId }: { record?: MaintenanceRecord; vehicleId?: string }) {
   const { data } = useApp();
-  const vehicle = data.vehicles.find((item) => item.id === record?.vehicleId) ?? data.vehicles[0];
+  const vehicle = data.vehicles.find((item) => item.id === (record?.vehicleId ?? vehicleId)) ?? data.vehicles[0];
   if (!vehicle) return null;
 
   return <RecordFormWithVehicle key={`${record?.id ?? "new"}-${vehicle.id}`} record={record} vehicle={vehicle} />;
@@ -84,10 +90,62 @@ export function RecordForm({ record }: { record?: MaintenanceRecord }) {
 function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord; vehicle: Vehicle }) {
   const router = useRouter();
   const { addRecord, updateRecord, locale } = useApp();
-  const [draft, setDraft] = useState<RecordDraft>(() => draftFromRecord(record, vehicle));
+  const draftKey = recordLocalDraftKey(record?.id);
+  const initialDraft = useMemo(() => draftFromRecord(record, vehicle), [record, vehicle]);
+  const [draft, setDraft] = useState<RecordDraft>(initialDraft);
   const [submitted, setSubmitted] = useState(false);
+  const [draftReady, setDraftReady] = useState(false);
+  const [draftStatus, setDraftStatus] = useState<"idle" | "restored" | "saved" | "error">("idle");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
   const validation = useMemo(() => validateRecordDraft(draft), [draft]);
   const ja = locale === "ja";
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const stored = loadRecordLocalDraft(draftKey);
+      if (stored) {
+        const episodeExists = vehicle.odometerEpisodes.some(
+          (episode) => episode.id === stored.value.odometerEpisodeId,
+        );
+        const restoredDraft = {
+          ...stored.value,
+          odometerEpisodeId: episodeExists
+            ? stored.value.odometerEpisodeId
+            : vehicle.currentOdometerReading.episodeId,
+        };
+        if (JSON.stringify(restoredDraft) !== JSON.stringify(initialDraft)) {
+          setDraft(restoredDraft);
+          setDraftStatus("restored");
+        } else {
+          clearLocalDraft(draftKey);
+        }
+      }
+      setDraftReady(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [draftKey, initialDraft, vehicle.currentOdometerReading.episodeId, vehicle.odometerEpisodes]);
+
+  useEffect(() => {
+    if (!draftReady) return;
+    if (JSON.stringify(draft) === JSON.stringify(initialDraft)) {
+      clearLocalDraft(draftKey);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setDraftStatus(saveLocalDraft(draftKey, draft) ? "saved" : "error");
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [draft, draftKey, draftReady, initialDraft]);
+
+  function discardDraft() {
+    clearLocalDraft(draftKey);
+    setDraft(initialDraft);
+    setDraftStatus("idle");
+    setSubmitted(false);
+    setSaveError(false);
+  }
 
   function setField<K extends keyof RecordDraft>(key: K, value: RecordDraft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -116,12 +174,32 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
     }));
   }
 
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitted(true);
-    if (!validation.valid) return;
-    const saved = record ? updateRecord(record.id, draft) : addRecord(draft);
-    if (saved) router.push(`/records/${saved.id}`);
+    setSaveError(false);
+    if (!validation.valid) {
+      window.requestAnimationFrame(() => {
+        formRef.current
+          ?.querySelector<HTMLElement>(".has-error input, .has-error textarea, .has-error select")
+          ?.focus();
+      });
+      return;
+    }
+    if (saving) return;
+    setSaving(true);
+    try {
+      const saved = record ? await updateRecord(record.id, draft) : await addRecord(draft, vehicle.id);
+      if (saved) {
+        clearLocalDraft(draftKey);
+        router.push(`/records/${saved.id}`);
+        return;
+      }
+      setSaveError(true);
+    } catch {
+      setSaveError(true);
+    }
+    setSaving(false);
   }
 
   const errorText = (key: keyof RecordDraft) =>
@@ -136,7 +214,8 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
   const hasMeterChange = draft.odometerChangeReason !== "same_episode";
 
   return (
-    <form className="record-form" onSubmit={onSubmit} noValidate>
+    <form ref={formRef} className="record-form" onSubmit={onSubmit} noValidate aria-busy={saving}>
+      <LocalDraftStatus status={draftStatus} ja={ja} onDiscard={discardDraft} />
       <section className="form-section">
         <div className="section-heading compact">
           <div><span className="eyebrow">01</span><h2>{ja ? "基本情報" : "Basics"}</h2></div>
@@ -263,12 +342,40 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
       )}
 
       {!validation.valid && submitted && <p className="form-error-summary" role="alert">{ja ? "必須項目または入力値を確認してください。" : "Review required fields and invalid values."}</p>}
+      {saveError && <p className="form-error-summary" role="alert">{ja ? "端末へ保存できませんでした。入力内容は下書きとして残しています。" : "This record could not be saved. Your input remains in the local draft."}</p>}
 
       <div className="form-actions">
         <button type="button" className="secondary-action" onClick={() => router.back()}>{ja ? "戻る" : "Back"}</button>
-        <button type="submit" className="primary-action"><Save size={18} />{record ? (ja ? "変更を保存" : "Save changes") : (ja ? "非公開で保存" : "Save privately")}{draft.requestSharing && <Check size={16} />}</button>
+        <button type="submit" className="primary-action" disabled={saving}><Save size={18} />{saving ? (ja ? "保存中…" : "Saving…") : record ? (ja ? "変更を保存" : "Save changes") : (ja ? "非公開で保存" : "Save privately")}{draft.requestSharing && <Check size={16} />}</button>
       </div>
     </form>
+  );
+}
+
+function LocalDraftStatus({
+  status,
+  ja,
+  onDiscard,
+}: {
+  status: "idle" | "restored" | "saved" | "error";
+  ja: boolean;
+  onDiscard(): void;
+}) {
+  if (status === "idle") return null;
+  return (
+    <div className={`local-draft-status is-${status}`} role={status === "error" ? "alert" : "status"}>
+      <span>
+        {status === "restored"
+          ? ja ? "端末内の下書きを復元しました。" : "Restored the draft from this device."
+          : status === "saved"
+            ? ja ? "入力内容を端末内へ下書き保存しました。" : "Draft saved on this device."
+            : ja ? "下書きを保存できません。ブラウザの保存設定を確認してください。" : "The draft could not be saved. Check browser storage settings."}
+      </span>
+      <button type="button" onClick={onDiscard}>
+        <Trash2 size={15} aria-hidden="true" />
+        {ja ? "下書きを破棄" : "Discard draft"}
+      </button>
+    </div>
   );
 }
 

@@ -1,4 +1,7 @@
-export type Locale = "ja" | "en";
+import type { LanguageTag, SupportedUiLocale } from "./language.ts";
+
+/** @deprecated Prefer SupportedUiLocale for new UI-facing APIs. */
+export type Locale = SupportedUiLocale;
 export type HazardLevel = "LOW" | "CAUTION" | "CRITICAL";
 export type ResolutionStatus = "resolved" | "unresolved";
 export type Visibility = "private" | "pending_review" | "public";
@@ -50,7 +53,7 @@ export interface Vehicle {
   ownerProfileId: string;
   make: string;
   model: string;
-  year: number;
+  year?: number;
   ownershipType: VehicleRelationshipType;
   ownershipStartedYear?: number;
   ownershipStartedMonth?: number;
@@ -63,8 +66,22 @@ export interface Vehicle {
   odometerKm: number;
   odometerEpisodes: PrototypeOdometerEpisode[];
   currentOdometerReading: PrototypeOdometerReading;
-  imagePath: string;
+  imagePath?: string;
   isDemo: boolean;
+}
+
+export interface VehicleDraft {
+  make: string;
+  model: string;
+  year: string;
+  ownershipType: VehicleRelationshipType;
+  ownershipStartedYear: string;
+  ownershipStartedMonth: string;
+  engine: string;
+  steering: string;
+  transmission: string;
+  odometer: string;
+  odometerUnit: PrototypeOdometerUnit;
 }
 
 export interface PartReference {
@@ -93,7 +110,7 @@ export interface MaintenanceRecord {
   odometerKm: number;
   odometerReading: PrototypeOdometerReading;
   summary: string;
-  sourceLanguage: Locale;
+  sourceLanguage: LanguageTag;
   demoTranslation?: Partial<Record<Locale, string>>;
   symptoms: string;
   causeCandidates: string;
@@ -160,8 +177,17 @@ export interface RecordFilters {
 }
 
 export type JournalVisibility = "private" | "followers" | "public";
+export type JournalModerationState = "visible" | "under_review" | "temporarily_hidden";
 export type SocialProfileRole = "owner" | "mechanic";
+export type ProfileVisibility = "private" | "followers" | "public";
+export type ProfileDisplayField =
+  | "role"
+  | "bio"
+  | "vehicles"
+  | "ownership_duration"
+  | "journal_count";
 export type FollowTargetType = "profile" | "vehicle" | "model";
+export type ProfileSafetyRelationType = "mute" | "block";
 export type JournalDisplayField = "service_date" | "odometer" | "actions";
 export type JournalMediaKind = "image" | "video";
 export type JournalMediaSource = "local_blob" | "demo_asset";
@@ -202,6 +228,8 @@ export interface SocialProfile {
   displayName: string;
   role: SocialProfileRole;
   bio: string;
+  visibility: ProfileVisibility;
+  displayFields: ProfileDisplayField[];
   isProfessional: boolean;
   isDemo: boolean;
 }
@@ -215,8 +243,9 @@ export interface GarageJournalPost {
   modelTargetId: string;
   title: string;
   bodyOriginal: string;
-  sourceLanguage: Locale;
+  sourceLanguage: LanguageTag;
   visibility: JournalVisibility;
+  moderationState: JournalModerationState;
   linkedRecordId?: string;
   displayFields: JournalDisplayField[];
   media: JournalMediaAttachment[];
@@ -235,6 +264,55 @@ export interface FollowRelation {
   targetType: FollowTargetType;
   targetId: string;
   createdAt: string;
+}
+
+export interface ProfileSafetyRelation {
+  id: string;
+  actorProfileId: string;
+  targetProfileId: string;
+  type: ProfileSafetyRelationType;
+  createdAt: string;
+}
+
+export type ContentReportReason =
+  | "personal_information"
+  | "dangerous_claim"
+  | "harassment"
+  | "copyright"
+  | "spam"
+  | "other";
+export type ContentReportStatus =
+  | "submitted"
+  | "under_review"
+  | "action_requested"
+  | "temporarily_hidden"
+  | "closed_no_action";
+export type ModerationAction =
+  | "submitted"
+  | "start_review"
+  | "request_correction"
+  | "hide_temporarily"
+  | "close_no_action"
+  | "restore_content";
+
+export interface ModerationEvent {
+  id: string;
+  actorProfileId: string;
+  action: ModerationAction;
+  createdAt: string;
+}
+
+export interface ContentReport {
+  id: string;
+  reporterProfileId: string;
+  targetType: "journal";
+  targetId: string;
+  reason: ContentReportReason;
+  details?: string;
+  status: ContentReportStatus;
+  events: ModerationEvent[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface FollowTargetSummary {
@@ -258,11 +336,13 @@ export interface JournalDraft {
 }
 
 export interface AppData {
-  schemaVersion: 6;
+  schemaVersion: 8;
   vehicles: Vehicle[];
   records: MaintenanceRecord[];
   profiles: SocialProfile[];
   currentProfileId: string;
   journals: GarageJournalPost[];
   follows: FollowRelation[];
+  profileSafetyRelations: ProfileSafetyRelation[];
+  contentReports: ContentReport[];
 }
