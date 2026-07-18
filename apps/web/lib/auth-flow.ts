@@ -3,6 +3,39 @@ import { translate } from "@mechori/i18n";
 
 export const alphaInviteCookieName = "mechori_alpha_invite";
 
+export function resolvePublicOrigin({
+  fallbackOrigin,
+  configuredOrigin,
+  forwardedHost,
+  forwardedProto,
+  host,
+}: {
+  fallbackOrigin: string;
+  configuredOrigin?: string | null;
+  forwardedHost?: string | null;
+  forwardedProto?: string | null;
+  host?: string | null;
+}): string {
+  const protocol = firstForwardedValue(forwardedProto) || new URL(fallbackOrigin).protocol.slice(0, -1);
+  const forwardedOrigin = firstForwardedValue(forwardedHost)
+    ? `${protocol}://${firstForwardedValue(forwardedHost)}`
+    : undefined;
+  const hostOrigin = firstForwardedValue(host)
+    ? `${protocol}://${firstForwardedValue(host)}`
+    : undefined;
+
+  for (const candidate of [configuredOrigin, forwardedOrigin, hostOrigin, fallbackOrigin]) {
+    if (!candidate) continue;
+    try {
+      const parsed = new URL(candidate);
+      if (parsed.protocol === "https:" || parsed.protocol === "http:") return parsed.origin;
+    } catch {
+      // Ignore malformed proxy headers and fall back to the request URL.
+    }
+  }
+  return new URL(fallbackOrigin).origin;
+}
+
 export function authContinuationUrl(
   origin: string,
   mode: "signin" | "signup",
@@ -49,4 +82,8 @@ export function authCallbackUrl(
   url.searchParams.set("returnTo", sanitizeLocalReturnPath(returnTo));
   url.searchParams.set("mode", mode);
   return url.toString();
+}
+
+function firstForwardedValue(value: string | null | undefined): string {
+  return value?.split(",")[0]?.trim() ?? "";
 }

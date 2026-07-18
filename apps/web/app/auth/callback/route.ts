@@ -1,6 +1,7 @@
 import { sanitizeLocalReturnPath } from "@mechori/core";
 import { NextResponse, type NextRequest } from "next/server";
 import { alphaInviteCookieName } from "@/lib/auth-flow";
+import { getPublicRequestOrigin } from "@/lib/public-origin";
 import { getMechoriRuntime } from "@/lib/runtime-config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -74,7 +75,7 @@ function normalizeAccessError(value: string): string {
 }
 
 function finish(request: NextRequest, path: string) {
-  const response = NextResponse.redirect(new URL(path, request.url));
+  const response = NextResponse.redirect(new URL(path, getPublicRequestOrigin(request)));
   response.cookies.set(alphaInviteCookieName, "", { path: "/auth", maxAge: 0 });
   return response;
 }

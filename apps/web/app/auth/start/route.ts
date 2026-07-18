@@ -5,6 +5,7 @@ import {
   authCallbackUrl,
   authContinuationUrl,
 } from "@/lib/auth-flow";
+import { getPublicRequestOrigin } from "@/lib/public-origin";
 import { getMechoriRuntime } from "@/lib/runtime-config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -15,8 +16,9 @@ export async function POST(request: NextRequest) {
     return new NextResponse("Not found", { status: 404 });
   }
 
+  const publicOrigin = getPublicRequestOrigin(request);
   const requestOrigin = request.headers.get("origin");
-  if (requestOrigin && requestOrigin !== request.nextUrl.origin) {
+  if (requestOrigin && requestOrigin !== publicOrigin) {
     return new NextResponse("Invalid origin", { status: 403 });
   }
 
@@ -36,7 +38,7 @@ export async function POST(request: NextRequest) {
 
   const authMode = mode === "signup" ? "signup" : "signin";
   const response = NextResponse.redirect(
-    authContinuationUrl(request.nextUrl.origin, authMode, returnTo),
+    authContinuationUrl(publicOrigin, authMode, returnTo),
     303,
   );
   if (invite) {
@@ -67,7 +69,7 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: authCallbackUrl(request.nextUrl.origin, returnTo, mode),
+      redirectTo: authCallbackUrl(getPublicRequestOrigin(request), returnTo, mode),
       queryParams: { prompt: "select_account" },
     },
   });
@@ -86,7 +88,7 @@ function authErrorRedirect(
   mode: string,
   returnTo: string,
 ) {
-  const url = new URL("/auth", request.url);
+  const url = new URL("/auth", getPublicRequestOrigin(request));
   url.searchParams.set("error", error);
   url.searchParams.set("mode", mode === "signup" ? "signup" : "signin");
   if (returnTo !== "/") url.searchParams.set("returnTo", returnTo);

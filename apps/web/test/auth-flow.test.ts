@@ -4,6 +4,7 @@ import {
   alphaAuthErrorMessage,
   authCallbackUrl,
   authContinuationUrl,
+  resolvePublicOrigin,
 } from "../lib/auth-flow.ts";
 
 const origin = "https://mechori-alpha.netlify.app";
@@ -30,6 +31,29 @@ test("sanitizes external return paths in OAuth continuation and callback URLs", 
   assert.equal(continuation.searchParams.has("returnTo"), false);
   assert.equal(callback.searchParams.get("returnTo"), "/");
   assert.equal(callback.searchParams.get("mode"), "signup");
+});
+
+test("prefers the configured public site over a Netlify branch origin", () => {
+  assert.equal(
+    resolvePublicOrigin({
+      fallbackOrigin: "https://codex-remote-alpha-foundation--mechori-alpha.netlify.app",
+      configuredOrigin: origin,
+      forwardedHost: "codex-remote-alpha-foundation--mechori-alpha.netlify.app",
+      forwardedProto: "https",
+    }),
+    origin,
+  );
+});
+
+test("uses the forwarded public host when no site URL is configured", () => {
+  assert.equal(
+    resolvePublicOrigin({
+      fallbackOrigin: "http://internal:3000",
+      forwardedHost: "mechori.com, internal:3000",
+      forwardedProto: "https, http",
+    }),
+    "https://mechori.com",
+  );
 });
 
 test("keeps the alpha membership error specific and localized", () => {
