@@ -1,6 +1,7 @@
 "use client";
 
 import { DemoNotice } from "@/components/demo-notice";
+import { recordOdometerLabel } from "@/components/record-card";
 import { useApp } from "@/lib/app-context";
 import { getPreferredVehicle } from "@mechori/core";
 import { translate } from "@mechori/i18n";
@@ -52,7 +53,7 @@ function ServiceBriefContent() {
         <div className="brief-history-list">
           {records.map((record) => (
             <article key={record.id}>
-              <header><div><time>{record.serviceDate}</time><h3>{record.summary}</h3></div><span>{record.odometerReading.displayedValue.toLocaleString()} {record.odometerReading.unit}</span></header>
+              <header><div><time>{record.serviceDate}</time><h3>{record.summary}</h3></div><span>{recordOdometerLabel(record, locale)}</span></header>
               <ul>{record.actions.map((action) => <li key={action.id}><strong>{action.summary}</strong><span>{action.workPerformed || (ja ? "作業内容の記録なし" : "No work details recorded")}</span><small>{action.result || (ja ? "結果の記録なし" : "No result recorded")}</small></li>)}</ul>
             </article>
           ))}

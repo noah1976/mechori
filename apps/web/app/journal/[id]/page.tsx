@@ -24,6 +24,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { JournalContent } from "@/components/journal-content";
 import { ProfileSafetyMenu } from "@/components/profile-safety-menu";
+import { recordOdometerLabel } from "@/components/record-card";
 
 export default function JournalDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -179,9 +180,7 @@ export default function JournalDetailPage() {
               <div>
                 <Gauge size={18} aria-hidden="true" />
                 <span>{ja ? "走行距離" : "Odometer"}</span>
-                <strong>
-                  {record.odometerReading.displayedValue.toLocaleString()} {record.odometerReading.unit}
-                </strong>
+                <strong>{recordOdometerLabel(record, locale)}</strong>
               </div>
             )}
             {journal.displayFields.includes("actions") && (

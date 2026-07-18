@@ -1,6 +1,6 @@
 "use client";
 
-import { recordTitle } from "@/components/record-card";
+import { recordOdometerLabel, recordTitle } from "@/components/record-card";
 import { HazardBadge, ResolutionBadge, VerificationBadge, VisibilityBadge } from "@/components/status-badges";
 import { useApp } from "@/lib/app-context";
 import { AlertTriangle, ArrowLeft, FilePenLine, Gauge, ShieldCheck } from "lucide-react";
@@ -14,9 +14,10 @@ export default function RecordDetailPage() {
   const vehicle = data.vehicles.find((item) => item.id === record?.vehicleId);
   const ja = locale === "ja";
   if (!record) return <div className="empty-state"><h1>{ja ? "記録が見つかりません" : "Record not found"}</h1><Link href="/records" className="secondary-action">{ja ? "履歴へ戻る" : "Back to history"}</Link></div>;
-  const odometerEpisode = vehicle?.odometerEpisodes.find(
-    (episode) => episode.id === record.odometerReading.episodeId,
-  );
+  const odometerReading = record.odometerReading;
+  const odometerEpisode = odometerReading ? vehicle?.odometerEpisodes.find(
+    (episode) => episode.id === odometerReading.episodeId,
+  ) : undefined;
   const meterChangeLabel =
     odometerEpisode &&
     odometerEpisode.reason !== "initial" &&
@@ -30,14 +31,14 @@ export default function RecordDetailPage() {
       <header className="detail-header">
         <div className="record-card-topline"><span>{record.serviceDate}</span>{record.isDemo && <span className="demo-label">DEMO</span>}</div>
         <h1>{recordTitle(record, locale)}</h1>
-        <div className="detail-summary"><span><Gauge size={16} />{record.odometerReading.displayedValue.toLocaleString()} {record.odometerReading.unit}</span><span>{record.matchScope}</span>{meterChangeLabel && <span>{meterChangeLabel}</span>}</div>
+        <div className="detail-summary"><span><Gauge size={16} />{recordOdometerLabel(record, locale)}</span><span>{record.matchScope}</span>{meterChangeLabel && <span>{meterChangeLabel}</span>}</div>
         <div className="badge-row"><ResolutionBadge value={record.resolutionStatus} locale={locale} /><VisibilityBadge value={record.visibility} locale={locale} /><HazardBadge level={record.hazardLevel} /><VerificationBadge value={record.verificationStatus} locale={locale} /></div>
         <Link href={`/records/${record.id}/edit`} className="secondary-action"><FilePenLine size={17} />{ja ? "編集" : "Edit"}</Link>
       </header>
 
       {record.hazardLevel === "CRITICAL" && <div className="critical-warning" role="alert"><AlertTriangle size={22} /><div><strong>{ja ? "安全に関わる可能性がある参考情報です" : "This reference may involve safety-critical systems"}</strong><p>{ja ? "実車の診断結果ではありません。作業を進めず、メーカー資料と専門整備工場へ確認してください。" : "This is not a diagnosis. Do not proceed based on this record alone; consult manufacturer material and a qualified workshop."}</p></div></div>}
 
-      {record.odometerReading.sequenceAssessment === "needs_context" && <div className="context-notice"><Gauge size={20} /><div><strong>{ja ? "表示値が前回より小さい記録です" : "This reading is lower than the previous one"}</strong><p>{ja ? "メーター交換・修理・入力時期などの背景確認が必要な状態です。虚偽や誤りとは判定していません。" : "Meter replacement, repair, or record timing may explain it. This is not classified as false or incorrect."}</p></div></div>}
+      {odometerReading?.sequenceAssessment === "needs_context" && <div className="context-notice"><Gauge size={20} /><div><strong>{ja ? "表示値が前回より小さい記録です" : "This reading is lower than the previous one"}</strong><p>{ja ? "メーター交換・修理・入力時期などの背景確認が必要な状態です。虚偽や誤りとは判定していません。" : "Meter replacement, repair, or record timing may explain it. This is not classified as false or incorrect."}</p></div></div>}
 
       <section className="knowledge-flow">
         <DetailBlock number="01" title={ja ? "入庫のきっかけ・症状" : "Reason for visit and symptoms"} value={record.symptoms} />

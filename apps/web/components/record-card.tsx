@@ -9,6 +9,14 @@ export function recordTitle(record: MaintenanceRecord, locale: Locale): string {
   return record.demoTranslation?.[locale] ?? record.summary;
 }
 
+export function recordOdometerLabel(record: MaintenanceRecord, locale: Locale): string {
+  return record.odometerReading
+    ? `${record.odometerReading.displayedValue.toLocaleString()} ${record.odometerReading.unit}`
+    : locale === "ja"
+      ? "走行距離未記録"
+      : "Odometer not recorded";
+}
+
 export function RecordCard({ record, locale }: { record: MaintenanceRecord; locale: Locale }) {
   return (
     <Link href={`/records/${record.id}`} className="record-card">
@@ -19,7 +27,7 @@ export function RecordCard({ record, locale }: { record: MaintenanceRecord; loca
       <h3>{recordTitle(record, locale)}</h3>
       <p className="record-excerpt">{record.symptoms}</p>
       <div className="record-meta">
-        <span><Gauge size={15} />{record.odometerReading.displayedValue.toLocaleString()} {record.odometerReading.unit}</span>
+        <span><Gauge size={15} />{recordOdometerLabel(record, locale)}</span>
         {record.actions.length > 1 && <span>{locale === "ja" ? `${record.actions.length}作業` : `${record.actions.length} actions`}</span>}
       </div>
       <div className="badge-row">

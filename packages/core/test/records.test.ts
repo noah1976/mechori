@@ -57,6 +57,29 @@ test("requires the core manual-entry fields", () => {
   assert.equal(result.errors.summary, "required");
 });
 
+test("allows a maintenance record when the historical odometer is unknown", () => {
+  const original = cloneDemoData();
+  const currentReading = structuredClone(original.vehicles[0]!.currentOdometerReading);
+  const result = applyRecordDraftToData(original, validDraft({
+    odometerKm: "",
+    evidenceBasis: "recalled_later",
+  }));
+
+  assert.equal(result.record.odometerReading, undefined);
+  assert.equal(result.record.odometerKm, undefined);
+  assert.deepEqual(result.data.vehicles[0]?.currentOdometerReading, currentReading);
+});
+
+test("still requires a reading when recording a meter change", () => {
+  const result = validateRecordDraft(validDraft({
+    odometerKm: "",
+    odometerChangeReason: "replacement",
+  }));
+
+  assert.equal(result.valid, false);
+  assert.equal(result.errors.odometerKm, "invalid");
+});
+
 test("keeps multiple actions under one maintenance visit", () => {
   const result = applyRecordDraftToData(cloneDemoData(), validDraft({
     summary: "DEMO: 車検と複数作業",
@@ -109,14 +132,14 @@ test("editing a saved meter-change record does not create another episode", () =
     validDraft({
       summary: "DEMO: 編集済みのメーター交換記録",
       odometerKm: "260",
-      odometerEpisodeId: created.record.odometerReading.episodeId,
+      odometerEpisodeId: created.record.odometerReading!.episodeId,
       odometerChangeReason: "replacement",
     }),
     created.record.id,
   );
 
   assert.equal(edited.data.vehicles[0]?.odometerEpisodes.length, episodeCount);
-  assert.equal(edited.record.odometerReading.episodeId, created.record.odometerReading.episodeId);
+  assert.equal(edited.record.odometerReading!.episodeId, created.record.odometerReading!.episodeId);
 });
 
 test("flags a lower reading in the same meter episode for context, not rejection", () => {
@@ -127,7 +150,7 @@ test("flags a lower reading in the same meter episode for context, not rejection
     odometerChangeReason: "same_episode",
   }));
 
-  assert.equal(result.record.odometerReading.sequenceAssessment, "needs_context");
+  assert.equal(result.record.odometerReading!.sequenceAssessment, "needs_context");
 });
 
 test("migrates legacy local data into actions and an odometer episode", () => {

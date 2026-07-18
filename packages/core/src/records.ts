@@ -19,11 +19,15 @@ export interface ValidationResult {
 
 export function validateRecordDraft(draft: RecordDraft): ValidationResult {
   const errors: ValidationResult["errors"] = {};
-  const odometer = Number(draft.odometerKm);
+  const hasOdometer = draft.odometerKm.trim() !== "";
+  const odometer = hasOdometer ? Number(draft.odometerKm) : undefined;
 
   if (!draft.serviceDate) errors.serviceDate = "required";
   if (!draft.summary.trim()) errors.summary = "required";
-  if (!draft.odometerKm || !Number.isFinite(odometer) || odometer < 0) {
+  if (
+    (hasOdometer && (!Number.isFinite(odometer) || odometer! < 0)) ||
+    (!hasOdometer && draft.odometerChangeReason !== "same_episode")
+  ) {
     errors.odometerKm = "invalid";
   }
   if (!draft.symptoms.trim()) errors.symptoms = "required";
@@ -115,6 +119,7 @@ export function createRecordFromDraft(
   sourceLanguage: MaintenanceRecord["sourceLanguage"] = "ja",
 ): MaintenanceRecord {
   const now = new Date().toISOString();
+  const hasOdometer = draft.odometerKm.trim() !== "";
   const primaryAction = actionFromDraft(
     {
       clientId: "primary",
@@ -136,13 +141,15 @@ export function createRecordFromDraft(
     ...draft.additionalActions.map((action) => actionFromDraft(action)),
   ];
   const episodeId = draft.odometerEpisodeId || "episode-prototype";
-  const odometerReading: PrototypeOdometerReading = {
-    episodeId,
-    displayedValue: Number(draft.odometerKm),
-    unit: draft.odometerUnit,
-    sequenceAssessment:
-      draft.odometerChangeReason === "same_episode" ? "consistent_increase" : "new_episode",
-  };
+  const odometerReading: PrototypeOdometerReading | undefined = hasOdometer
+    ? {
+        episodeId,
+        displayedValue: Number(draft.odometerKm),
+        unit: draft.odometerUnit,
+        sequenceAssessment:
+          draft.odometerChangeReason === "same_episode" ? "consistent_increase" : "new_episode",
+      }
+    : undefined;
   const resolutionStatus = actions.every((action) => action.resolutionStatus === "resolved")
     ? "resolved"
     : "unresolved";
@@ -152,8 +159,9 @@ export function createRecordFromDraft(
     id: existingId ?? `record-${crypto.randomUUID()}`,
     vehicleId,
     serviceDate: draft.serviceDate,
-    odometerKm: Number(draft.odometerKm),
-    odometerReading,
+    ...(odometerReading
+      ? { odometerKm: odometerReading.displayedValue, odometerReading }
+      : {}),
     summary: draft.summary.trim(),
     sourceLanguage,
     symptoms: draft.symptoms.trim(),
@@ -200,6 +208,9 @@ export function applyRecordDraftToData(
   sourceLanguage: MaintenanceRecord["sourceLanguage"] = "ja",
   requestedVehicleId?: string,
 ): { data: AppData; record: MaintenanceRecord } {
+  const validation = validateRecordDraft(draft);
+  if (!validation.valid) throw new Error("invalid_record_draft");
+  const hasOdometer = draft.odometerKm.trim() !== "";
   const existingRecord = existingId
     ? data.records.find((record) => record.id === existingId)
     : undefined;
@@ -207,27 +218,28 @@ export function applyRecordDraftToData(
   if (!vehicleId) throw new Error("vehicle_required");
   const vehicle = data.vehicles.find((item) => item.id === vehicleId);
   if (!vehicle) throw new Error("vehicle_not_found");
+  const existingReading = existingRecord?.odometerReading;
 
   const newEpisodeReason =
     draft.odometerChangeReason === "same_episode"
       ? undefined
       : draft.odometerChangeReason;
-  const existingEpisode = existingRecord
+  const existingEpisode = existingReading
     ? vehicle.odometerEpisodes.find(
-        (episode) => episode.id === existingRecord.odometerReading.episodeId,
+        (episode) => episode.id === existingReading.episodeId,
       )
     : undefined;
   const reusingRecordedChange = Boolean(
     newEpisodeReason &&
-      existingRecord &&
+      existingReading &&
       existingEpisode &&
       existingEpisode.reason !== "initial" &&
       existingEpisode.startedAt === existingRecord.serviceDate,
   );
   const creatingEpisode = newEpisodeReason !== undefined && !reusingRecordedChange;
   const currentEpisodeId =
-    reusingRecordedChange && existingRecord
-      ? existingRecord.odometerReading.episodeId
+    reusingRecordedChange && existingReading
+      ? existingReading.episodeId
       : draft.odometerEpisodeId || vehicle.currentOdometerReading.episodeId;
   const episodeId = creatingEpisode
     ? `episode-${crypto.randomUUID()}`
@@ -241,23 +253,25 @@ export function applyRecordDraftToData(
       }
     : undefined;
 
-  const previousReading = [...data.records]
+  const previousReading = hasOdometer ? [...data.records]
     .filter(
       (record) =>
         record.id !== existingId &&
-        record.odometerReading.episodeId === episodeId &&
+        record.odometerReading?.episodeId === episodeId &&
         record.serviceDate <= draft.serviceDate,
     )
     .sort((left, right) => right.serviceDate.localeCompare(left.serviceDate))[0]
-    ?.odometerReading;
-  const odometerReading: PrototypeOdometerReading = {
-    episodeId,
-    displayedValue: Number(draft.odometerKm),
-    unit: draft.odometerUnit,
-    sequenceAssessment: newEpisodeReason
-      ? "new_episode"
-      : assessPrototypeOdometer(previousReading, Number(draft.odometerKm), draft.odometerUnit),
-  };
+    ?.odometerReading : undefined;
+  const odometerReading: PrototypeOdometerReading | undefined = hasOdometer
+    ? {
+        episodeId,
+        displayedValue: Number(draft.odometerKm),
+        unit: draft.odometerUnit,
+        sequenceAssessment: newEpisodeReason
+          ? "new_episode"
+          : assessPrototypeOdometer(previousReading, Number(draft.odometerKm), draft.odometerUnit),
+      }
+    : undefined;
 
   const created = createRecordFromDraft(
     { ...draft, odometerEpisodeId: episodeId },
@@ -266,24 +280,33 @@ export function applyRecordDraftToData(
     existingRecord?.sourceLanguage ?? sourceLanguage,
   );
   const record: MaintenanceRecord = existingRecord
-    ? { ...created, createdAt: existingRecord.createdAt, isDemo: existingRecord.isDemo, odometerReading }
-    : { ...created, odometerReading };
+    ? { ...created, createdAt: existingRecord.createdAt, isDemo: existingRecord.isDemo }
+    : created;
+  if (odometerReading) {
+    record.odometerReading = odometerReading;
+    record.odometerKm = odometerReading.displayedValue;
+  } else {
+    delete record.odometerReading;
+    delete record.odometerKm;
+  }
   const records = existingRecord
     ? data.records.map((item) => (item.id === existingId ? record : item))
     : [record, ...data.records];
   const latestVehicleRecord = records
-    .filter((item) => item.vehicleId === vehicleId)
+    .filter((item) => item.vehicleId === vehicleId && item.odometerReading)
     .sort((left, right) => right.serviceDate.localeCompare(left.serviceDate))[0];
-  const nextVehicle: Vehicle = {
-    ...vehicle,
-    odometerEpisodes: nextEpisode
-      ? [...vehicle.odometerEpisodes, nextEpisode]
-      : vehicle.odometerEpisodes,
-    currentOdometerReading:
-      latestVehicleRecord?.odometerReading ?? vehicle.currentOdometerReading,
-    odometerKm:
-      latestVehicleRecord?.odometerReading.displayedValue ?? vehicle.odometerKm,
-  };
+  const nextVehicle: Vehicle = hasOdometer
+    ? {
+        ...vehicle,
+        odometerEpisodes: nextEpisode
+          ? [...vehicle.odometerEpisodes, nextEpisode]
+          : vehicle.odometerEpisodes,
+        currentOdometerReading:
+          latestVehicleRecord?.odometerReading ?? vehicle.currentOdometerReading,
+        odometerKm:
+          latestVehicleRecord?.odometerReading?.displayedValue ?? vehicle.odometerKm,
+      }
+    : vehicle;
 
   return {
     record,
@@ -383,14 +406,19 @@ export function migrateAppData(input: unknown): AppData | null {
     };
     return {
       ...record,
-      odometerKm: record.odometerKm ?? 0,
-      odometerReading:
-        record.odometerReading ?? {
-          episodeId,
-          displayedValue: record.odometerKm ?? 0,
-          unit: "km" as const,
-          sequenceAssessment: "consistent_increase" as const,
-        },
+      ...(record.odometerReading
+        ? { odometerKm: record.odometerReading.displayedValue, odometerReading: record.odometerReading }
+        : typeof record.odometerKm === "number"
+          ? {
+              odometerKm: record.odometerKm,
+              odometerReading: {
+                episodeId,
+                displayedValue: record.odometerKm,
+                unit: "km" as const,
+                sequenceAssessment: "consistent_increase" as const,
+              },
+            }
+          : {}),
       actions: record.actions?.length ? record.actions : [primaryAction],
       evidenceBasis:
         record.evidenceBasis === "contemporaneous" ||

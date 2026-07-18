@@ -141,8 +141,8 @@ export interface MaintenanceRecord {
   vehicleId: string;
   serviceDate: string;
   /** @deprecated Use odometerReading. */
-  odometerKm: number;
-  odometerReading: PrototypeOdometerReading;
+  odometerKm?: number;
+  odometerReading?: PrototypeOdometerReading;
   summary: string;
   sourceLanguage: LanguageTag;
   demoTranslation?: Partial<Record<Locale, string>>;

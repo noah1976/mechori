@@ -41,8 +41,9 @@ const meterChangeReasons: PrototypeOdometerEpisodeReason[] = [
 
 function draftFromRecord(record: MaintenanceRecord | undefined, vehicle: Vehicle): RecordDraft {
   const primaryAction = record?.actions[0];
-  const recordedEpisode = record
-    ? vehicle.odometerEpisodes.find((episode) => episode.id === record.odometerReading.episodeId)
+  const recordedReading = record?.odometerReading;
+  const recordedEpisode = recordedReading
+    ? vehicle.odometerEpisodes.find((episode) => episode.id === recordedReading.episodeId)
     : undefined;
   const recordedMeterChange =
     recordedEpisode &&
@@ -50,9 +51,13 @@ function draftFromRecord(record: MaintenanceRecord | undefined, vehicle: Vehicle
     recordedEpisode.startedAt === record?.serviceDate;
   return {
     serviceDate: record?.serviceDate ?? new Date().toISOString().slice(0, 10),
-    odometerKm: (record?.odometerReading.displayedValue ?? vehicle.currentOdometerReading.displayedValue).toString(),
-    odometerUnit: record?.odometerReading.unit ?? vehicle.currentOdometerReading.unit,
-    odometerEpisodeId: record?.odometerReading.episodeId ?? vehicle.currentOdometerReading.episodeId,
+    odometerKm: record
+      ? recordedReading?.displayedValue.toString() ?? ""
+      : vehicle.ownershipType === "previously_owned" || vehicle.currentOdometerReading.displayedValue === 0
+        ? ""
+        : vehicle.currentOdometerReading.displayedValue.toString(),
+    odometerUnit: recordedReading?.unit ?? vehicle.currentOdometerReading.unit,
+    odometerEpisodeId: recordedReading?.episodeId ?? vehicle.currentOdometerReading.episodeId,
     odometerChangeReason: recordedMeterChange ? recordedEpisode.reason : "same_episode",
     summary: record?.summary ?? "",
     symptoms: record?.symptoms ?? "",
@@ -237,7 +242,7 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
           <Field label={translate(locale, "serviceDateRequired")} error={errorText("serviceDate")}>
             <input type="date" value={draft.serviceDate} onChange={(event) => setField("serviceDate", event.target.value)} />
           </Field>
-          <Field label={translate(locale, hasMeterChange ? "odometerAfterChangeRequired" : "odometerRequired")} error={errorText("odometerKm")}>
+          <Field label={translate(locale, hasMeterChange ? "odometerAfterChangeRequired" : "odometerOptional")} error={errorText("odometerKm")}>
             <input type="number" min="0" inputMode="numeric" value={draft.odometerKm} onChange={(event) => setField("odometerKm", event.target.value)} />
           </Field>
           <Field label={translate(locale, "displayUnit")}>
