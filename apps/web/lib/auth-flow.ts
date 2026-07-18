@@ -3,6 +3,19 @@ import { translate } from "@mechori/i18n";
 
 export const alphaInviteCookieName = "mechori_alpha_invite";
 
+export function authContinuationUrl(
+  origin: string,
+  mode: "signin" | "signup",
+  returnTo: string,
+): string {
+  const url = new URL("/auth/start", origin);
+  url.searchParams.set("continue", "google");
+  url.searchParams.set("mode", mode);
+  const safeReturnTo = sanitizeLocalReturnPath(returnTo);
+  if (safeReturnTo !== "/") url.searchParams.set("returnTo", safeReturnTo);
+  return url.toString();
+}
+
 export function alphaAuthErrorMessage(
   code: string | null,
   locale: "ja" | "en",
@@ -27,8 +40,13 @@ export function alphaAuthErrorMessage(
   }
 }
 
-export function authCallbackUrl(origin: string, returnTo: string): string {
+export function authCallbackUrl(
+  origin: string,
+  returnTo: string,
+  mode: "signin" | "signup" = "signin",
+): string {
   const url = new URL("/auth/callback", origin);
   url.searchParams.set("returnTo", sanitizeLocalReturnPath(returnTo));
+  url.searchParams.set("mode", mode);
   return url.toString();
 }

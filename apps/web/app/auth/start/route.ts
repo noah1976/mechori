@@ -1,6 +1,10 @@
 import { sanitizeLocalReturnPath } from "@mechori/core";
 import { NextResponse, type NextRequest } from "next/server";
-import { alphaInviteCookieName, authCallbackUrl } from "@/lib/auth-flow";
+import {
+  alphaInviteCookieName,
+  authCallbackUrl,
+  authContinuationUrl,
+} from "@/lib/auth-flow";
 import { getMechoriRuntime } from "@/lib/runtime-config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -30,18 +34,11 @@ export async function POST(request: NextRequest) {
     return authErrorRedirect(request, "invalid_invitation", mode, returnTo);
   }
 
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: authCallbackUrl(request.nextUrl.origin, returnTo),
-      queryParams: { prompt: "select_account" },
-    },
-  });
-
-  if (error || !data.url) return authErrorRedirect(request, "oauth_failed", mode, returnTo);
-
-  const response = NextResponse.redirect(data.url, 303);
+  const authMode = mode === "signup" ? "signup" : "signin";
+  const response = NextResponse.redirect(
+    authContinuationUrl(request.nextUrl.origin, authMode, returnTo),
+    303,
+  );
   if (invite) {
     response.cookies.set(alphaInviteCookieName, invite, {
       httpOnly: true,
@@ -54,6 +51,29 @@ export async function POST(request: NextRequest) {
     response.cookies.set(alphaInviteCookieName, "", { path: "/auth", maxAge: 0 });
   }
   return response;
+}
+
+export async function GET(request: NextRequest) {
+  if (getMechoriRuntime() !== "alpha") {
+    return new NextResponse("Not found", { status: 404 });
+  }
+
+  const provider = request.nextUrl.searchParams.get("continue");
+  const mode = request.nextUrl.searchParams.get("mode") === "signup" ? "signup" : "signin";
+  const returnTo = sanitizeLocalReturnPath(request.nextUrl.searchParams.get("returnTo"));
+  if (provider !== "google") return authErrorRedirect(request, "oauth_failed", mode, returnTo);
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: authCallbackUrl(request.nextUrl.origin, returnTo, mode),
+      queryParams: { prompt: "select_account" },
+    },
+  });
+
+  if (error || !data.url) return authErrorRedirect(request, "oauth_failed", mode, returnTo);
+  return NextResponse.redirect(data.url, 303);
 }
 
 function isPlausibleInvite(value: string): boolean {

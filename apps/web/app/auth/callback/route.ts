@@ -12,15 +12,16 @@ export async function GET(request: NextRequest) {
   }
 
   const code = request.nextUrl.searchParams.get("code");
+  const mode = request.nextUrl.searchParams.get("mode") === "signup" ? "signup" : "signin";
   const returnTo = sanitizeLocalReturnPath(request.nextUrl.searchParams.get("returnTo"));
-  if (!code) return finish(request, "/auth?error=oauth_failed");
+  if (!code) return finish(request, authErrorPath("oauth_failed", mode, returnTo));
 
   const supabase = await createSupabaseServerClient();
   const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-  if (exchangeError) return finish(request, "/auth?error=oauth_failed");
+  if (exchangeError) return finish(request, authErrorPath("oauth_failed", mode, returnTo));
 
   const { data: authData, error: userError } = await supabase.auth.getUser();
-  if (userError || !authData.user) return finish(request, "/auth?error=oauth_failed");
+  if (userError || !authData.user) return finish(request, authErrorPath("oauth_failed", mode, returnTo));
 
   const invite = request.cookies.get(alphaInviteCookieName)?.value;
   let accessError: string | undefined;
@@ -44,10 +45,19 @@ export async function GET(request: NextRequest) {
 
   if (accessError) {
     await supabase.auth.signOut();
-    return finish(request, `/auth?error=${encodeURIComponent(normalizeAccessError(accessError))}`);
+    return finish(
+      request,
+      authErrorPath(normalizeAccessError(accessError), mode, returnTo),
+    );
   }
 
   return finish(request, returnTo);
+}
+
+function authErrorPath(error: string, mode: "signin" | "signup", returnTo: string): string {
+  const params = new URLSearchParams({ error, mode });
+  if (returnTo !== "/") params.set("returnTo", returnTo);
+  return `/auth?${params.toString()}`;
 }
 
 function normalizeAccessError(value: string): string {
