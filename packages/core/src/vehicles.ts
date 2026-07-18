@@ -1,4 +1,9 @@
-import type { AppData, Vehicle, VehicleDraft } from "./types.ts";
+import type {
+  AppData,
+  Vehicle,
+  VehicleDraft,
+  VehicleRelationshipType,
+} from "./types.ts";
 
 export interface VehicleDraftValidationResult {
   valid: boolean;
@@ -8,17 +13,27 @@ export interface VehicleDraftValidationResult {
 export function createEmptyVehicleDraft(): VehicleDraft {
   return {
     imagePath: "",
+    vehicleCategory: "car",
     make: "",
     model: "",
     year: "",
+    grade: "",
+    modelCode: "",
+    nickname: "",
     ownershipType: "owned",
     ownershipStartedYear: "",
     ownershipStartedMonth: "",
+    ownershipEndedYear: "",
+    ownershipEndedMonth: "",
+    ownershipPeriodNote: "",
+    primaryUse: "",
+    dispositionReason: "",
     engine: "",
     steering: "",
     transmission: "",
     odometer: "",
     odometerUnit: "km",
+    odometerContext: "current",
     ownerComment: "",
   };
 }
@@ -35,10 +50,22 @@ export function validateVehicleDraft(
   const ownershipStartedMonth = draft.ownershipStartedMonth
     ? Number(draft.ownershipStartedMonth)
     : undefined;
+  const ownershipEndedYear = draft.ownershipEndedYear
+    ? Number(draft.ownershipEndedYear)
+    : undefined;
+  const ownershipEndedMonth = draft.ownershipEndedMonth
+    ? Number(draft.ownershipEndedMonth)
+    : undefined;
   const odometer = draft.odometer ? Number(draft.odometer) : undefined;
 
   if (!draft.make.trim()) errors.make = "required";
   if (!draft.model.trim()) errors.model = "required";
+  if (!(["car", "motorcycle", "moped", "other"] as const).includes(draft.vehicleCategory)) {
+    errors.vehicleCategory = "invalid";
+  }
+  if (!(["owned", "previously_owned", "unknown", "family", "shared"] as const).includes(draft.ownershipType)) {
+    errors.ownershipType = "invalid";
+  }
   if (year !== undefined && (!Number.isInteger(year) || year < 1886 || year > currentYear + 2)) {
     errors.year = "invalid";
   }
@@ -58,6 +85,34 @@ export function validateVehicleDraft(
   }
   if (ownershipStartedMonth !== undefined && ownershipStartedYear === undefined) {
     errors.ownershipStartedYear = "required";
+  }
+  if (
+    ownershipEndedYear !== undefined &&
+    (!Number.isInteger(ownershipEndedYear) ||
+      ownershipEndedYear < 1886 ||
+      ownershipEndedYear > currentYear)
+  ) {
+    errors.ownershipEndedYear = "invalid";
+  }
+  if (
+    ownershipEndedMonth !== undefined &&
+    (!Number.isInteger(ownershipEndedMonth) || ownershipEndedMonth < 1 || ownershipEndedMonth > 12)
+  ) {
+    errors.ownershipEndedMonth = "invalid";
+  }
+  if (ownershipEndedMonth !== undefined && ownershipEndedYear === undefined) {
+    errors.ownershipEndedYear = "required";
+  }
+  if (
+    ownershipStartedYear !== undefined &&
+    ownershipEndedYear !== undefined &&
+    (ownershipEndedYear < ownershipStartedYear ||
+      (ownershipEndedYear === ownershipStartedYear &&
+        ownershipStartedMonth !== undefined &&
+        ownershipEndedMonth !== undefined &&
+        ownershipEndedMonth < ownershipStartedMonth))
+  ) {
+    errors.ownershipEndedYear = "invalid";
   }
   if (odometer !== undefined && (!Number.isFinite(odometer) || odometer < 0)) {
     errors.odometer = "invalid";
@@ -79,9 +134,13 @@ export function addVehicleToData(
   const vehicle: Vehicle = {
     id: `vehicle-${crypto.randomUUID()}`,
     ownerProfileId: data.currentProfileId,
+    vehicleCategory: draft.vehicleCategory,
     make: draft.make.trim(),
     model: draft.model.trim(),
     year: draft.year ? Number(draft.year) : undefined,
+    grade: draft.grade.trim() || undefined,
+    modelCode: draft.modelCode.trim() || undefined,
+    nickname: draft.nickname.trim() || undefined,
     ownershipType: draft.ownershipType,
     ownershipStartedYear: draft.ownershipStartedYear
       ? Number(draft.ownershipStartedYear)
@@ -89,6 +148,15 @@ export function addVehicleToData(
     ownershipStartedMonth: draft.ownershipStartedMonth
       ? Number(draft.ownershipStartedMonth)
       : undefined,
+    ownershipEndedYear: draft.ownershipEndedYear
+      ? Number(draft.ownershipEndedYear)
+      : undefined,
+    ownershipEndedMonth: draft.ownershipEndedMonth
+      ? Number(draft.ownershipEndedMonth)
+      : undefined,
+    ownershipPeriodNote: draft.ownershipPeriodNote.trim() || undefined,
+    primaryUse: draft.primaryUse.trim() || undefined,
+    dispositionReason: draft.dispositionReason.trim() || undefined,
     engine: draft.engine.trim(),
     steering: draft.steering.trim(),
     transmission: draft.transmission.trim(),
@@ -100,6 +168,7 @@ export function addVehicleToData(
       unit: draft.odometerUnit,
       sequenceAssessment: "consistent_increase",
     },
+    odometerContext: draft.odometerContext,
     imagePath: draft.imagePath || undefined,
     ownerComment: draft.ownerComment.trim() || undefined,
     isDemo: false,
@@ -109,4 +178,104 @@ export function addVehicleToData(
     vehicle,
     data: { ...data, vehicles: [vehicle, ...data.vehicles] },
   };
+}
+
+export interface VehicleOwnershipUpdate {
+  ownershipType: Extract<VehicleRelationshipType, "owned" | "previously_owned" | "unknown">;
+  ownershipEndedYear?: number;
+  ownershipEndedMonth?: number;
+  ownershipPeriodNote?: string;
+  dispositionReason?: string;
+}
+
+export function updateVehicleOwnershipInData(
+  data: AppData,
+  vehicleId: string,
+  update: VehicleOwnershipUpdate,
+): { data: AppData; vehicle: Vehicle } {
+  const vehicle = data.vehicles.find((item) => item.id === vehicleId);
+  if (!vehicle) throw new Error("vehicle_not_found");
+  if (vehicle.ownerProfileId !== data.currentProfileId) {
+    throw new Error("vehicle_not_owned_by_current_profile");
+  }
+  validateOwnershipUpdate(vehicle, update);
+
+  const vehicleUpdate = update.ownershipType === "owned"
+    ? {
+        ownershipType: "owned" as const,
+        ownershipEndedYear: undefined,
+        ownershipEndedMonth: undefined,
+        dispositionReason: undefined,
+        odometerContext: "current" as const,
+      }
+    : {
+        ownershipType: update.ownershipType,
+        ownershipEndedYear: update.ownershipEndedYear,
+        ownershipEndedMonth: update.ownershipEndedMonth,
+        dispositionReason: update.dispositionReason?.trim() || undefined,
+        odometerContext:
+          update.ownershipType === "previously_owned"
+            ? "at_ownership_end" as const
+            : "unknown" as const,
+      };
+  const nextVehicle: Vehicle = {
+    ...vehicle,
+    ...vehicleUpdate,
+    ownershipPeriodNote:
+      update.ownershipType === "owned"
+        ? undefined
+        : update.ownershipPeriodNote?.trim() || vehicle.ownershipPeriodNote,
+  };
+
+  return {
+    vehicle: nextVehicle,
+    data: {
+      ...data,
+      schemaVersion: 9,
+      vehicles: data.vehicles.map((item) => item.id === vehicleId ? nextVehicle : item),
+    },
+  };
+}
+
+export function groupVehiclesByOwnership(vehicles: Vehicle[]): {
+  current: Vehicle[];
+  previous: Vehicle[];
+  other: Vehicle[];
+} {
+  return {
+    current: vehicles.filter((vehicle) => vehicle.ownershipType === "owned"),
+    previous: vehicles.filter((vehicle) => vehicle.ownershipType === "previously_owned"),
+    other: vehicles.filter(
+      (vehicle) => vehicle.ownershipType !== "owned" && vehicle.ownershipType !== "previously_owned",
+    ),
+  };
+}
+
+export function getPreferredVehicle(vehicles: Vehicle[]): Vehicle | undefined {
+  const grouped = groupVehiclesByOwnership(vehicles);
+  return grouped.current[0] ?? grouped.previous[0] ?? grouped.other[0];
+}
+
+function validateOwnershipUpdate(vehicle: Vehicle, update: VehicleOwnershipUpdate): void {
+  const nowYear = new Date().getUTCFullYear();
+  const endYear = update.ownershipEndedYear;
+  const endMonth = update.ownershipEndedMonth;
+  if (endYear !== undefined && (!Number.isInteger(endYear) || endYear < 1886 || endYear > nowYear)) {
+    throw new Error("invalid_ownership_end");
+  }
+  if (endMonth !== undefined && (!Number.isInteger(endMonth) || endMonth < 1 || endMonth > 12)) {
+    throw new Error("invalid_ownership_end");
+  }
+  if (endMonth !== undefined && endYear === undefined) throw new Error("invalid_ownership_end");
+  if (
+    vehicle.ownershipStartedYear !== undefined &&
+    endYear !== undefined &&
+    (endYear < vehicle.ownershipStartedYear ||
+      (endYear === vehicle.ownershipStartedYear &&
+        vehicle.ownershipStartedMonth !== undefined &&
+        endMonth !== undefined &&
+        endMonth < vehicle.ownershipStartedMonth))
+  ) {
+    throw new Error("invalid_ownership_end");
+  }
 }

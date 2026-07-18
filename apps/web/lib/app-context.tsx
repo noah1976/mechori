@@ -12,8 +12,10 @@ import {
   toggleBlockProfileInData,
   toggleFollowInData,
   toggleMuteProfileInData,
+  updateVehicleOwnershipInData,
   updateCurrentProfilePrivacy,
   isSignedIn,
+  getPreferredVehicle,
   isSupportedUiLocale,
   parseStoredAuthSession,
   signedOutSession,
@@ -35,6 +37,7 @@ import {
   type RecordDraft,
   type Vehicle,
   type VehicleDraft,
+  type VehicleOwnershipUpdate,
 } from "@mechori/core";
 import { LocalStorageDataProvider } from "@mechori/shared";
 import { loadAlphaAuthSession, signOutFromAlpha } from "@/lib/alpha-auth";
@@ -70,6 +73,7 @@ interface AppContextValue {
   signOut(): Promise<void>;
   clearPersistenceError(): void;
   addVehicle(draft: VehicleDraft): Promise<Vehicle>;
+  updateVehicleOwnership(vehicleId: string, update: VehicleOwnershipUpdate): Promise<Vehicle>;
   addRecord(draft: RecordDraft, vehicleId?: string): Promise<MaintenanceRecord>;
   updateRecord(id: string, draft: RecordDraft): Promise<MaintenanceRecord | null>;
   addJournal(
@@ -238,10 +242,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [authSession, data, persist],
   );
 
+  const updateVehicleOwnership = useCallback(
+    async (vehicleId: string, update: VehicleOwnershipUpdate) => {
+      if (!isSignedIn(authSession)) throw new Error("authentication_required");
+      const result = updateVehicleOwnershipInData(data, vehicleId, update);
+      await persist(result.data);
+      return result.vehicle;
+    },
+    [authSession, data, persist],
+  );
+
   const addRecord = useCallback(
     async (draft: RecordDraft, vehicleId?: string) => {
       if (!isSignedIn(authSession)) throw new Error("authentication_required");
-      const vehicle = data.vehicles.find((item) => item.id === vehicleId) ?? data.vehicles[0];
+      const vehicle = data.vehicles.find((item) => item.id === vehicleId) ?? getPreferredVehicle(data.vehicles);
       if (!vehicle) throw new Error("A demo vehicle is required");
       const result = applyRecordDraftToData(data, draft, undefined, locale, vehicle.id);
       await persist(result.data);
@@ -374,6 +388,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       signOut,
       clearPersistenceError,
       addVehicle,
+      updateVehicleOwnership,
       addRecord,
       updateRecord,
       addJournal,
@@ -397,6 +412,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       signOut,
       clearPersistenceError,
       addVehicle,
+      updateVehicleOwnership,
       addRecord,
       updateRecord,
       addJournal,

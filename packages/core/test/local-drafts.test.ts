@@ -27,6 +27,7 @@ const recordDraft: RecordDraft = {
   cost: "",
   resolutionStatus: "unresolved",
   hazardLevel: "LOW",
+  evidenceBasis: "contemporaneous",
   additionalActions: [{ ...createEmptyActionDraft(), clientId: "action-demo" }],
   requestSharing: false,
 };

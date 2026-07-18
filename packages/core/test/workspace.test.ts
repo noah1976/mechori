@@ -65,6 +65,7 @@ test("round-trips a tester vehicle and maintenance record through workspace JSON
       cost: "12000",
       resolutionStatus: "resolved",
       hazardLevel: "LOW",
+      evidenceBasis: "invoice_or_receipt",
       additionalActions: [],
       requestSharing: false,
     },

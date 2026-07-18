@@ -6,6 +6,7 @@ import type {
   JournalVisibility,
   PrototypeOdometerEpisodeReason,
   PrototypeOdometerUnit,
+  RecordEvidenceBasis,
   RecordActionDraft,
   RecordDraft,
   ResolutionStatus,
@@ -27,7 +28,17 @@ export function serializeLocalDraft<T>(value: T, savedAt = new Date().toISOStrin
 }
 
 export function parseRecordLocalDraft(raw: string | null): LocalDraftEnvelope<RecordDraft> | null {
-  return parseLocalDraft(raw, isRecordDraft);
+  const parsed = parseLocalDraft(raw, isRecordDraft);
+  if (!parsed) return null;
+  return {
+    ...parsed,
+    value: {
+      ...parsed.value,
+      evidenceBasis: isRecordEvidenceBasis(parsed.value.evidenceBasis)
+        ? parsed.value.evidenceBasis
+        : "unknown",
+    },
+  };
 }
 
 export function parseJournalLocalDraft(
@@ -88,6 +99,16 @@ function isRecordDraft(value: unknown): value is RecordDraft {
     Array.isArray(value.additionalActions) &&
     value.additionalActions.every(isRecordActionDraft)
   );
+}
+
+function isRecordEvidenceBasis(value: unknown): value is RecordEvidenceBasis {
+  return [
+    "contemporaneous",
+    "invoice_or_receipt",
+    "photo_or_service_book",
+    "recalled_later",
+    "unknown",
+  ].includes(String(value));
 }
 
 function isRecordActionDraft(value: unknown): value is RecordActionDraft {

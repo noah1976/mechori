@@ -2,6 +2,7 @@
 
 import {
   createEmptyActionDraft,
+  getPreferredVehicle,
   validateRecordDraft,
   type MaintenanceRecord,
   type PrototypeOdometerEpisodeReason,
@@ -62,6 +63,9 @@ function draftFromRecord(record: MaintenanceRecord | undefined, vehicle: Vehicle
     cost: record?.cost?.toString() ?? "",
     resolutionStatus: primaryAction?.resolutionStatus ?? record?.resolutionStatus ?? "unresolved",
     hazardLevel: primaryAction?.hazardLevel ?? record?.hazardLevel ?? "LOW",
+    evidenceBasis:
+      record?.evidenceBasis ??
+      (vehicle.ownershipType === "previously_owned" ? "recalled_later" : "contemporaneous"),
     additionalActions:
       record?.actions.slice(1).map((action) => ({
         clientId: action.id,
@@ -82,7 +86,7 @@ function draftFromRecord(record: MaintenanceRecord | undefined, vehicle: Vehicle
 
 export function RecordForm({ record, vehicleId }: { record?: MaintenanceRecord; vehicleId?: string }) {
   const { data, locale } = useApp();
-  const vehicle = data.vehicles.find((item) => item.id === (record?.vehicleId ?? vehicleId)) ?? data.vehicles[0];
+  const vehicle = data.vehicles.find((item) => item.id === (record?.vehicleId ?? vehicleId)) ?? getPreferredVehicle(data.vehicles);
   if (!vehicle) {
     const ja = locale === "ja";
     return (
@@ -272,6 +276,18 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
         </div>
         <Field label={ja ? "整備記録のタイトル *" : "Visit or maintenance event title *"} error={errorText("summary")}>
           <input value={draft.summary} onChange={(event) => setField("summary", event.target.value)} placeholder={ja ? "例：車検と定期整備" : "e.g. Inspection and routine service"} />
+        </Field>
+        <Field label={ja ? "この記録のもと" : "Basis for this record"}>
+          <select
+            value={draft.evidenceBasis}
+            onChange={(event) => setField("evidenceBasis", event.target.value as RecordDraft["evidenceBasis"])}
+          >
+            <option value="contemporaneous">{ja ? "作業当時に記録" : "Recorded at the time"}</option>
+            <option value="invoice_or_receipt">{ja ? "明細・領収書をもとに登録" : "From an invoice or receipt"}</option>
+            <option value="photo_or_service_book">{ja ? "写真・整備記録簿をもとに登録" : "From photos or a service book"}</option>
+            <option value="recalled_later">{ja ? "記憶をもとに後から登録" : "Recalled and added later"}</option>
+            <option value="unknown">{ja ? "情報源は不明" : "Source unknown"}</option>
+          </select>
         </Field>
       </section>
 

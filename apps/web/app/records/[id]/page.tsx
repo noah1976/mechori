@@ -58,7 +58,7 @@ export default function RecordDetailPage() {
       </section>
 
       <section className="detail-band">
-        <div><span className="eyebrow">SOURCE</span><h2>{ja ? "出典と確認状態" : "Source and verification"}</h2><p>{record.sourceType === "demo" ? (ja ? "操作確認用に作成されたDEMOデータ" : "DEMO data created for interaction testing") : (ja ? "オーナー自身の記録" : "Owner-provided record")}</p></div>
+        <div><span className="eyebrow">SOURCE</span><h2>{ja ? "出典と確認状態" : "Source and verification"}</h2><p>{record.sourceType === "demo" ? (ja ? "操作確認用に作成されたDEMOデータ" : "DEMO data created for interaction testing") : `${ja ? "オーナー自身の記録" : "Owner-provided record"} · ${evidenceBasisLabel(record.evidenceBasis, ja)}`}</p></div>
         <ShieldCheck size={30} />
       </section>
 
@@ -81,4 +81,16 @@ function episodeReasonLabel(reason: string, ja: boolean) {
     unknown: ["メーター変更", "Odometer changed"],
   };
   return (labels[reason] ?? ["メーター変更", "Odometer changed"])[ja ? 0 : 1];
+}
+
+function evidenceBasisLabel(value: string, ja: boolean): string {
+  const labels: Record<string, [string, string]> = {
+    contemporaneous: ["作業当時に記録", "recorded at the time"],
+    invoice_or_receipt: ["明細・領収書に基づく", "based on an invoice or receipt"],
+    photo_or_service_book: ["写真・整備記録簿に基づく", "based on photos or a service book"],
+    recalled_later: ["記憶をもとに後から登録", "recalled and added later"],
+    unknown: ["情報源不明", "source unknown"],
+  };
+  const label = labels[value] ?? labels.unknown!;
+  return ja ? label[0] : label[1];
 }

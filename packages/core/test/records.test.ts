@@ -27,6 +27,7 @@ function validDraft(overrides: Partial<RecordDraft> = {}): RecordDraft {
     cost: "",
     resolutionStatus: "unresolved",
     hazardLevel: "LOW",
+    evidenceBasis: "contemporaneous",
     additionalActions: [],
     requestSharing: false,
     ...overrides,
@@ -147,7 +148,7 @@ test("migrates legacy local data into actions and an odometer episode", () => {
   delete journals[0]?.contentBlocks;
 
   const migrated = migrateAppData(legacy);
-  assert.equal(migrated?.schemaVersion, 8);
+  assert.equal(migrated?.schemaVersion, 9);
   assert.deepEqual(migrated?.contentReports, []);
   assert.equal(
     migrated?.profiles.find((profile) => profile.id === "profile-demo-luca")?.visibility,
@@ -155,6 +156,8 @@ test("migrates legacy local data into actions and an odometer episode", () => {
   );
   assert.equal(migrated?.vehicles[0]?.ownerProfileId, "profile-demo-current");
   assert.equal(migrated?.vehicles[0]?.ownershipType, "owned");
+  assert.equal(migrated?.vehicles[0]?.vehicleCategory, "car");
+  assert.equal(migrated?.records[0]?.evidenceBasis, "unknown");
   assert.equal(migrated?.vehicles[0]?.ownershipStartedYear, 2014);
   assert.equal(migrated?.vehicles[0]?.ownershipStartedMonth, 4);
   assert.equal(migrated?.vehicles[0]?.odometerEpisodes.length, 1);

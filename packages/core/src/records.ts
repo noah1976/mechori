@@ -10,6 +10,7 @@ import type {
   Vehicle,
 } from "./types.ts";
 import { demoData } from "./demo.ts";
+import { getPreferredVehicle } from "./vehicles.ts";
 
 export interface ValidationResult {
   valid: boolean;
@@ -166,6 +167,7 @@ export function createRecordFromDraft(
     visibility: draft.requestSharing ? "pending_review" : "private",
     verificationStatus: "owner_confirmed",
     sourceType: "owner_record",
+    evidenceBasis: draft.evidenceBasis,
     matchScope: "登録車両の記録",
     result: primaryAction.result,
     actions,
@@ -201,7 +203,7 @@ export function applyRecordDraftToData(
   const existingRecord = existingId
     ? data.records.find((record) => record.id === existingId)
     : undefined;
-  const vehicleId = existingRecord?.vehicleId ?? requestedVehicleId ?? data.vehicles[0]?.id;
+  const vehicleId = existingRecord?.vehicleId ?? requestedVehicleId ?? getPreferredVehicle(data.vehicles)?.id;
   if (!vehicleId) throw new Error("vehicle_required");
   const vehicle = data.vehicles.find((item) => item.id === vehicleId);
   if (!vehicle) throw new Error("vehicle_not_found");
@@ -287,7 +289,7 @@ export function applyRecordDraftToData(
     record,
     data: {
       ...data,
-      schemaVersion: 8,
+      schemaVersion: 9,
       vehicles: data.vehicles.map((item) => (item.id === vehicleId ? nextVehicle : item)),
       records,
     },
@@ -320,10 +322,17 @@ export function migrateAppData(input: unknown): AppData | null {
             : demoData.currentProfileId,
       ownershipType:
         vehicle.ownershipType === "previously_owned" ||
+        vehicle.ownershipType === "unknown" ||
         vehicle.ownershipType === "family" ||
         vehicle.ownershipType === "shared"
           ? vehicle.ownershipType
           : "owned",
+      vehicleCategory:
+        vehicle.vehicleCategory === "motorcycle" ||
+        vehicle.vehicleCategory === "moped" ||
+        vehicle.vehicleCategory === "other"
+          ? vehicle.vehicleCategory
+          : "car",
       ownershipStartedYear:
         vehicle.ownershipStartedYear ?? matchingDemoVehicle?.ownershipStartedYear,
       ownershipStartedMonth:
@@ -334,6 +343,14 @@ export function migrateAppData(input: unknown): AppData | null {
         vehicle.ownershipEndedMonth ?? matchingDemoVehicle?.ownershipEndedMonth,
       ownerComment:
         typeof vehicle.ownerComment === "string" ? vehicle.ownerComment : undefined,
+      odometerContext:
+        vehicle.odometerContext === "at_ownership_end" ||
+        vehicle.odometerContext === "during_ownership" ||
+        vehicle.odometerContext === "unknown"
+          ? vehicle.odometerContext
+          : vehicle.ownershipType === "previously_owned"
+            ? "at_ownership_end"
+            : "current",
       odometerKm: vehicle.odometerKm ?? 0,
       odometerEpisodes:
         vehicle.odometerEpisodes?.length
@@ -375,11 +392,18 @@ export function migrateAppData(input: unknown): AppData | null {
           sequenceAssessment: "consistent_increase" as const,
         },
       actions: record.actions?.length ? record.actions : [primaryAction],
+      evidenceBasis:
+        record.evidenceBasis === "contemporaneous" ||
+        record.evidenceBasis === "invoice_or_receipt" ||
+        record.evidenceBasis === "photo_or_service_book" ||
+        record.evidenceBasis === "recalled_later"
+          ? record.evidenceBasis
+          : "unknown",
     } as MaintenanceRecord;
   });
 
   return {
-    schemaVersion: 8,
+    schemaVersion: 9,
     vehicles,
     records,
     profiles: Array.isArray(source.profiles)

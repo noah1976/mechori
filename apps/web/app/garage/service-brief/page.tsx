@@ -2,6 +2,7 @@
 
 import { DemoNotice } from "@/components/demo-notice";
 import { useApp } from "@/lib/app-context";
+import { getPreferredVehicle } from "@mechori/core";
 import { translate } from "@mechori/i18n";
 import { ArrowLeft, CircleAlert, Gauge, Printer, ShieldAlert, Wrench } from "lucide-react";
 import Link from "next/link";
@@ -11,7 +12,7 @@ import { Suspense } from "react";
 function ServiceBriefContent() {
   const { data, locale } = useApp();
   const params = useSearchParams();
-  const vehicle = data.vehicles.find((item) => item.id === params.get("vehicle")) ?? data.vehicles[0];
+  const vehicle = data.vehicles.find((item) => item.id === params.get("vehicle")) ?? getPreferredVehicle(data.vehicles);
   const ja = locale === "ja";
   if (!vehicle) return null;
 

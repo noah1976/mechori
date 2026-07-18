@@ -4,6 +4,8 @@ import { AppShell } from "@/components/app-shell";
 import { AppProvider } from "@/lib/app-context";
 import "./globals.css";
 
+/* eslint-disable @next/next/next-script-for-ga -- MECHORI uses the owner-supplied GTM container snippet verbatim. */
+
 const remoteAlpha = process.env.NEXT_PUBLIC_MECHORI_RUNTIME === "alpha";
 const googleTagManagerId = "GTM-M54GKLLL";
 const analyticsEnabled = process.env.NODE_ENV === "production";

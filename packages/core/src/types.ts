@@ -30,8 +30,21 @@ export type PrototypeOdometerSequenceAssessment =
 export type VehicleRelationshipType =
   | "owned"
   | "previously_owned"
+  | "unknown"
   | "family"
   | "shared";
+export type VehicleCategory = "car" | "motorcycle" | "moped" | "other";
+export type VehicleOdometerContext =
+  | "current"
+  | "at_ownership_end"
+  | "during_ownership"
+  | "unknown";
+export type RecordEvidenceBasis =
+  | "contemporaneous"
+  | "invoice_or_receipt"
+  | "photo_or_service_book"
+  | "recalled_later"
+  | "unknown";
 
 export interface PrototypeOdometerEpisode {
   id: string;
@@ -51,14 +64,21 @@ export interface PrototypeOdometerReading {
 export interface Vehicle {
   id: string;
   ownerProfileId: string;
+  vehicleCategory: VehicleCategory;
   make: string;
   model: string;
   year?: number;
+  grade?: string;
+  modelCode?: string;
+  nickname?: string;
   ownershipType: VehicleRelationshipType;
   ownershipStartedYear?: number;
   ownershipStartedMonth?: number;
   ownershipEndedYear?: number;
   ownershipEndedMonth?: number;
+  ownershipPeriodNote?: string;
+  primaryUse?: string;
+  dispositionReason?: string;
   engine: string;
   steering: string;
   transmission: string;
@@ -66,6 +86,7 @@ export interface Vehicle {
   odometerKm: number;
   odometerEpisodes: PrototypeOdometerEpisode[];
   currentOdometerReading: PrototypeOdometerReading;
+  odometerContext: VehicleOdometerContext;
   imagePath?: string;
   ownerComment?: string;
   isDemo: boolean;
@@ -73,17 +94,27 @@ export interface Vehicle {
 
 export interface VehicleDraft {
   imagePath: string;
+  vehicleCategory: VehicleCategory;
   make: string;
   model: string;
   year: string;
+  grade: string;
+  modelCode: string;
+  nickname: string;
   ownershipType: VehicleRelationshipType;
   ownershipStartedYear: string;
   ownershipStartedMonth: string;
+  ownershipEndedYear: string;
+  ownershipEndedMonth: string;
+  ownershipPeriodNote: string;
+  primaryUse: string;
+  dispositionReason: string;
   engine: string;
   steering: string;
   transmission: string;
   odometer: string;
   odometerUnit: PrototypeOdometerUnit;
+  odometerContext: VehicleOdometerContext;
   ownerComment: string;
 }
 
@@ -126,6 +157,7 @@ export interface MaintenanceRecord {
   visibility: Visibility;
   verificationStatus: VerificationStatus;
   sourceType: SourceType;
+  evidenceBasis: RecordEvidenceBasis;
   matchScope: string;
   result: string;
   actions: MaintenanceRecordAction[];
@@ -165,6 +197,7 @@ export interface RecordDraft {
   cost: string;
   resolutionStatus: ResolutionStatus;
   hazardLevel: HazardLevel;
+  evidenceBasis: RecordEvidenceBasis;
   additionalActions: RecordActionDraft[];
   requestSharing: boolean;
 }
@@ -355,7 +388,7 @@ export interface JournalDraft {
 }
 
 export interface AppData {
-  schemaVersion: 8;
+  schemaVersion: 9;
   vehicles: Vehicle[];
   records: MaintenanceRecord[];
   profiles: SocialProfile[];

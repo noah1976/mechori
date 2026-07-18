@@ -1,11 +1,12 @@
 import type { AppData } from "./types.ts";
 
 export const demoData: AppData = {
-  schemaVersion: 8,
+  schemaVersion: 9,
   vehicles: [
     {
       id: "vehicle-demo-barchetta",
       ownerProfileId: "profile-demo-current",
+      vehicleCategory: "car",
       make: "FIAT",
       model: "Barchetta",
       year: 1997,
@@ -28,6 +29,7 @@ export const demoData: AppData = {
         unit: "km",
         sequenceAssessment: "consistent_increase",
       },
+      odometerContext: "current",
       imagePath: "/demo-roadster.png",
       isDemo: true,
     },
@@ -58,6 +60,7 @@ export const demoData: AppData = {
       visibility: "private",
       verificationStatus: "owner_confirmed",
       sourceType: "demo",
+      evidenceBasis: "unknown",
       matchScope: "DEMO vehicle only",
       result: "デモ表示用の完了状態です。実在する整備結果ではありません。",
       actions: [
@@ -112,6 +115,7 @@ export const demoData: AppData = {
       visibility: "pending_review",
       verificationStatus: "owner_confirmed",
       sourceType: "demo",
+      evidenceBasis: "unknown",
       matchScope: "DEMO vehicle only",
       result: "確認済み表示を試すためのサンプルです。",
       actions: [
@@ -155,6 +159,7 @@ export const demoData: AppData = {
       visibility: "private",
       verificationStatus: "unconfirmed",
       sourceType: "demo",
+      evidenceBasis: "unknown",
       matchScope: "DEMO vehicle only",
       result: "未解決。専門家への相談を促す表示確認用です。",
       actions: [

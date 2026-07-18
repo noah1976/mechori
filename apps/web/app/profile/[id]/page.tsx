@@ -6,11 +6,13 @@ import {
   canCurrentProfileViewJournal,
   canProfileViewProfile,
   formatOwnershipDuration,
+  formatOwnershipPeriod,
+  groupVehiclesByOwnership,
   isProfileBlocked,
   isProfileMuted,
   summarizeVehicleRelationship,
 } from "@mechori/core";
-import { ArrowLeft, BookOpenText, CarFront, LockKeyhole, Settings2, UserRound } from "lucide-react";
+import { ArrowLeft, Bike, BookOpenText, CarFront, History, LockKeyhole, Settings2, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -35,6 +37,7 @@ export default function ProfilePage() {
 
   const fields = new Set(profile.displayFields);
   const vehicles = data.vehicles.filter((vehicle) => vehicle.ownerProfileId === profile.id);
+  const groupedVehicles = groupVehiclesByOwnership(vehicles);
   const journals = data.journals.filter((journal) => {
     if (journal.authorProfileId !== profile.id) return false;
     if (signedIn) return canCurrentProfileViewJournal(data, journal);
@@ -56,10 +59,23 @@ export default function ProfilePage() {
       {fields.has("bio") && <section className="profile-bio"><UserRound size={21} aria-hidden="true" /><p>{profile.bio}</p></section>}
 
       <section className="profile-facts" aria-label={ja ? "公開プロフィール情報" : "Public profile information"}>
-        {fields.has("vehicles") && <div><CarFront size={20} /><span>{ja ? "愛車" : "Vehicles"}</span><strong>{vehicles.length ? vehicles.map((vehicle) => `${vehicle.make} ${vehicle.model}${vehicle.year ? ` (${vehicle.year})` : ""}`).join(" / ") : (ja ? "公開車両なし" : "No visible vehicles")}</strong></div>}
+        {fields.has("vehicles") && <div><CarFront size={20} /><span>{ja ? "愛車歴" : "Vehicle history"}</span><strong>{vehicles.length ? `${vehicles.length}${ja ? "台" : " vehicles"}` : (ja ? "公開車両なし" : "No visible vehicles")}</strong></div>}
         {fields.has("ownership_duration") && <div><UserRound size={20} /><span>{ja ? "所有期間" : "Ownership"}</span><strong>{vehicles.map((vehicle) => formatOwnershipDuration(locale, summarizeVehicleRelationship(vehicle))).filter(Boolean).join(" / ") || (ja ? "未登録" : "Not set")}</strong></div>}
         {fields.has("journal_count") && <div><BookOpenText size={20} /><span>{ja ? "公開Journal" : "Public journals"}</span><strong>{publicJournalCount}</strong></div>}
       </section>
+
+      {fields.has("vehicles") && vehicles.length > 0 && (
+        <section className="profile-vehicle-history">
+          <div className="profile-vehicle-group">
+            <div className="section-heading compact"><div><span className="eyebrow">CURRENT</span><h2>{ja ? "現在のガレージ" : "Current Garage"}</h2></div><CarFront size={21} aria-hidden="true" /></div>
+            {groupedVehicles.current.length ? <div className="profile-vehicle-lines">{groupedVehicles.current.map((vehicle) => <ProfileVehicleLine key={vehicle.id} vehicle={vehicle} period={formatOwnershipPeriod(vehicle, locale)} />)}</div> : <p>{ja ? "現在所有中の公開車両はありません。" : "No currently owned public vehicle."}</p>}
+          </div>
+          <div className="profile-vehicle-group">
+            <div className="section-heading compact"><div><span className="eyebrow">HISTORY</span><h2>{ja ? "これまでの愛車" : "Previous Vehicles"}</h2></div><History size={21} aria-hidden="true" /></div>
+            {groupedVehicles.previous.length ? <div className="profile-vehicle-lines">{groupedVehicles.previous.map((vehicle) => <ProfileVehicleLine key={vehicle.id} vehicle={vehicle} period={formatOwnershipPeriod(vehicle, locale)} />)}</div> : <p>{ja ? "これまでの愛車はまだ公開されていません。" : "No previous vehicle is public yet."}</p>}
+          </div>
+        </section>
+      )}
 
       <section>
         <div className="section-heading"><div><span className="eyebrow">GARAGE JOURNAL</span><h2>{ja ? "閲覧できるJournal" : "Visible journals"}</h2></div></div>
@@ -68,4 +84,9 @@ export default function ProfilePage() {
       <p className="legal-note">{ja ? "所有期間や投稿数は人気、整備能力、ナレッジの信頼度を表しません。" : "Ownership duration and post counts do not indicate popularity, maintenance skill, or knowledge reliability."}</p>
     </div>
   );
+}
+
+function ProfileVehicleLine({ vehicle, period }: { vehicle: ReturnType<typeof groupVehiclesByOwnership>["current"][number]; period: string }) {
+  const VehicleIcon = vehicle.vehicleCategory === "motorcycle" || vehicle.vehicleCategory === "moped" ? Bike : CarFront;
+  return <div><VehicleIcon size={18} aria-hidden="true" /><span><strong>{vehicle.year ? `${vehicle.year} ` : ""}{vehicle.make} {vehicle.model}</strong><small>{period}</small></span></div>;
 }

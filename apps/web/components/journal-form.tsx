@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  getPreferredVehicle,
   createRestorableJournalDraft,
   validateJournalDraft,
   type JournalContentBlock,
@@ -101,7 +102,7 @@ export function JournalForm() {
   const { data, locale, addJournal } = useApp();
   const router = useRouter();
   const ja = locale === "ja";
-  const vehicle = data.vehicles[0];
+  const vehicle = getPreferredVehicle(data.vehicles);
   const localDraftKey = journalLocalDraftKey();
   const initialDraft = useMemo(
     () => createInitialJournalDraft(vehicle?.id ?? ""),

@@ -5,7 +5,7 @@ import { JournalCard } from "@/components/journal-card";
 import { JournalMedia } from "@/components/journal-media";
 import { RecordCard } from "@/components/record-card";
 import { useApp } from "@/lib/app-context";
-import { buildMonthlyOwnerSummary, getFollowingFeed } from "@mechori/core";
+import { buildMonthlyOwnerSummary, getFollowingFeed, getPreferredVehicle } from "@mechori/core";
 import { translate } from "@mechori/i18n";
 import {
   ArrowRight,
@@ -26,7 +26,7 @@ import { useState, type FormEvent } from "react";
 
 export default function HomePage() {
   const { data, locale, signedIn } = useApp();
-  const vehicle = data.vehicles[0];
+  const vehicle = getPreferredVehicle(data.vehicles);
   const recent = [...data.records]
     .sort((a, b) => b.serviceDate.localeCompare(a.serviceDate))
     .slice(0, 2);
