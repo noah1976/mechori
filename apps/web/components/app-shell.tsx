@@ -69,7 +69,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="app-frame">
+    <div className="app-frame" data-clarity-mask="true">
       <aside className="side-nav" aria-label="Primary navigation">
         <Link href="/" className="brand-block" aria-label="MECHORI home">
           <span className="brand-mark">M</span>

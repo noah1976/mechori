@@ -12,6 +12,7 @@
 - 旧`mechory`のlocalStorageデータを新`mechori`キーへ自動移行し、既存Journalメディアの保存領域を維持
 - `docs/BUSINESS_GROWTH.md`に、初期100人の獲得仮説、M0〜M4、初回価値・再利用・検索・課金の合格条件を定義
 - `docs/MEASUREMENT_PLAN.md`に、指標の算出式、最小イベント、M0手動計測、M1週次レビューを定義
+- Netlify配信の全ページへGTMを設置し、GA4・Clarityの補助計測を接続できる状態にした。ローカル開発では読み込まず、Clarity対象のアプリ画面は全体を明示マスクする
 - MAU、Value MAU、Value MAU Rate、3か月連続Value Returnを定義し、DAUと連続ログインを成長目標から除外
 - 外部送信なしで匿名端末ID、イベント名、日時、アプリ版だけを保持するローカル月次計測を追加
 - `docs/BETA_PLAYBOOK.md`に、最初の10〜20人の構成、募集文、初回操作、7日・30日確認、安全対応を定義
