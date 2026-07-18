@@ -1,4 +1,5 @@
 import { sanitizeLocalReturnPath } from "@mechori/core";
+import { translate } from "@mechori/i18n";
 
 export const alphaInviteCookieName = "mechori_alpha_invite";
 
@@ -6,22 +7,21 @@ export function alphaAuthErrorMessage(
   code: string | null,
   locale: "ja" | "en",
 ): string {
-  const ja = locale === "ja";
   switch (code) {
     case "invitation_required":
-      return ja ? "このα版への参加には、有効な招待URLが必要です。" : "A valid invitation link is required for this alpha.";
+      return translate(locale, "alphaMembershipRequired");
     case "invalid_invitation":
-      return ja ? "招待URLを確認できませんでした。新しい招待URLを受け取ってください。" : "This invitation could not be verified. Ask for a new invitation link.";
+      return translate(locale, "invitationInvalid");
     case "expired":
-      return ja ? "招待URLの有効期限が切れています。" : "This invitation has expired.";
+      return translate(locale, "invitationExpired");
     case "revoked":
-      return ja ? "この招待URLは無効になっています。" : "This invitation has been revoked.";
+      return translate(locale, "invitationRevoked");
     case "exhausted":
-      return ja ? "この招待URLはすでに使用されています。" : "This invitation has already been used.";
+      return translate(locale, "invitationUsed");
     case "membership_inactive":
-      return ja ? "このαアカウントは現在利用できません。" : "This alpha account is not currently active.";
+      return translate(locale, "membershipInactive");
     case "oauth_failed":
-      return ja ? "Googleログインを完了できませんでした。もう一度お試しください。" : "Google sign-in could not be completed. Please try again.";
+      return translate(locale, "oauthFailed");
     default:
       return "";
   }

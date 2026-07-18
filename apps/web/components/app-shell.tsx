@@ -98,7 +98,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         ) : (
           <Link href="/auth" className="primary-action nav-add">
             <LogIn size={18} aria-hidden="true" />
-            {locale === "ja" ? "ログイン" : "Sign in"}
+            {translate(locale, "signIn")}
           </Link>
         )}
       </aside>
@@ -109,11 +109,11 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="top-bar-actions">
             <label className="locale-select">
               <Languages size={18} aria-hidden="true" />
-              <span className="sr-only">{locale === "ja" ? "表示言語" : "Display language"}</span>
+              <span className="sr-only">{translate(locale, "displayLanguage")}</span>
               <select
                 value={locale}
                 onChange={(event) => setLocale(event.target.value as SupportedUiLocale)}
-                aria-label={locale === "ja" ? "表示言語" : "Display language"}
+                aria-label={translate(locale, "displayLanguage")}
               >
                 {uiLocaleOptions.map((option) => (
                   <option value={option.value} key={option.value}>{option.label}</option>
@@ -122,19 +122,19 @@ export function AppShell({ children }: { children: ReactNode }) {
             </label>
             {authenticated ? (
               <>
-                <Link href="/settings/privacy" className="icon-text-button" aria-label={locale === "ja" ? "表示と安全" : "Privacy & safety"} title={locale === "ja" ? "表示と安全" : "Privacy & safety"}>
+                <Link href="/settings/privacy" className="icon-text-button" aria-label={translate(locale, "privacyAndSafety")} title={translate(locale, "privacyAndSafety")}>
                   <Settings2 size={18} aria-hidden="true" />
-                  <span className="top-bar-action-label">{locale === "ja" ? "表示と安全" : "Privacy & safety"}</span>
+                  <span className="top-bar-action-label">{translate(locale, "privacyAndSafety")}</span>
                 </Link>
-                <button className="icon-text-button" type="button" onClick={logOut} aria-label={locale === "ja" ? "ログアウト" : "Sign out"} title={locale === "ja" ? "ログアウト" : "Sign out"}>
+                <button className="icon-text-button" type="button" onClick={logOut} aria-label={translate(locale, "signOut")} title={translate(locale, "signOut")}>
                   <LogOut size={18} aria-hidden="true" />
-                  <span className="top-bar-action-label">{locale === "ja" ? "ログアウト" : "Sign out"}</span>
+                  <span className="top-bar-action-label">{translate(locale, "signOut")}</span>
                 </button>
               </>
             ) : pathname !== "/auth" ? (
-              <Link href="/auth" className="icon-text-button" aria-label={locale === "ja" ? "ログイン" : "Sign in"} title={locale === "ja" ? "ログイン" : "Sign in"}>
+              <Link href="/auth" className="icon-text-button" aria-label={translate(locale, "signIn")} title={translate(locale, "signIn")}>
                 <LogIn size={18} aria-hidden="true" />
-                <span className="top-bar-action-label">{locale === "ja" ? "ログイン" : "Sign in"}</span>
+                <span className="top-bar-action-label">{translate(locale, "signIn")}</span>
               </Link>
             ) : null}
           </div>
@@ -143,19 +143,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="persistence-error" role="alert">
             <CircleAlert size={19} aria-hidden="true" />
             <span>
-              {isRemoteAlpha
-                ? locale === "ja"
-                  ? "MECHORIへ保存できませんでした。通信状態を確認して、もう一度お試しください。"
-                  : "Changes could not be saved to MECHORI. Check your connection and try again."
-                : locale === "ja"
-                  ? "端末へ保存できませんでした。空き容量やブラウザの保存設定を確認してください。"
-                  : "Changes could not be saved on this device. Check available storage and browser settings."}
+              {translate(locale, isRemoteAlpha ? "remoteSaveError" : "localSaveError")}
             </span>
             <button
               type="button"
               className="icon-action"
               onClick={clearPersistenceError}
-              aria-label={locale === "ja" ? "保存エラーを閉じる" : "Dismiss storage error"}
+              aria-label={translate(locale, "dismissStorageError")}
             >
               <X size={17} aria-hidden="true" />
             </button>
@@ -168,16 +162,16 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span>
                 {!hydrated
                   ? isRemoteAlpha
-                    ? locale === "ja" ? "Garageを読み込み中" : "Loading your Garage"
-                    : locale === "ja" ? "端末内のデータを確認中" : "Loading data from this device"
-                  : locale === "ja" ? "ログイン画面へ移動中" : "Opening sign in"}
+                    ? translate(locale, "loadingGarage")
+                    : translate(locale, "loadingDeviceData")
+                  : translate(locale, "openingSignIn")}
               </span>
             </div>
           )}
         </main>
         <footer className="site-policy-footer">
           <Link href="/ai-policy">
-            {locale === "ja" ? "AI学習・データ利用方針" : "AI training & data use policy"}
+            {translate(locale, "aiTrainingPolicy")}
           </Link>
         </footer>
       </div>
@@ -196,7 +190,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {!authenticated && (
           <Link href="/auth" className={pathname === "/auth" ? "active" : ""}>
             <LogIn size={20} aria-hidden="true" />
-            <span>{locale === "ja" ? "ログイン" : "Sign in"}</span>
+            <span>{translate(locale, "signIn")}</span>
           </Link>
         )}
       </nav>
