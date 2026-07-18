@@ -3,26 +3,27 @@
 import { useApp } from "@/lib/app-context";
 import { preparePrivateAlphaImage, type PreparedImage } from "@/lib/image-preparation";
 import type { JournalEventType, JournalDraft, JournalMediaAttachment } from "@mechori/core";
+import { translate, type TranslationKey } from "@mechori/i18n";
 import { Camera, ImagePlus, Save, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState, type ChangeEvent, type FormEvent } from "react";
 
-const eventTypes: Array<{ value: JournalEventType; ja: string; en: string }> = [
-  { value: "delivery", ja: "納車・購入", en: "Delivery / purchase" },
-  { value: "photo", ja: "今日の一枚", en: "Photo of the day" },
-  { value: "drive", ja: "ドライブ", en: "Drive" },
-  { value: "inspection", ja: "車検・点検", en: "Inspection" },
-  { value: "tire", ja: "タイヤ交換", en: "Tires" },
-  { value: "oil", ja: "オイル交換", en: "Oil change" },
-  { value: "breakdown", ja: "故障", en: "Breakdown" },
-  { value: "repair", ja: "修理", en: "Repair" },
-  { value: "part", ja: "部品交換", en: "Parts" },
-  { value: "custom", ja: "カスタム", en: "Custom" },
-  { value: "event", ja: "イベント参加", en: "Event" },
-  { value: "memory", ja: "思い出", en: "Memory" },
-  { value: "other", ja: "その他", en: "Other" },
+const eventTypes: Array<{ value: JournalEventType; label: TranslationKey }> = [
+  { value: "delivery", label: "eventDelivery" },
+  { value: "photo", label: "eventPhoto" },
+  { value: "drive", label: "eventDrive" },
+  { value: "inspection", label: "eventInspection" },
+  { value: "tire", label: "eventTire" },
+  { value: "oil", label: "eventOil" },
+  { value: "breakdown", label: "eventBreakdown" },
+  { value: "repair", label: "eventRepair" },
+  { value: "part", label: "eventPart" },
+  { value: "custom", label: "eventCustom" },
+  { value: "event", label: "eventEvent" },
+  { value: "memory", label: "eventMemory" },
+  { value: "other", label: "eventOther" },
 ];
 
 export default function QuickVehicleEventPage() {
@@ -32,13 +33,12 @@ export default function QuickVehicleEventPage() {
   const [eventType, setEventType] = useState<JournalEventType>("photo");
   const [note, setNote] = useState("");
   const [image, setImage] = useState<PreparedImage | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<TranslationKey | "">("");
   const [saving, setSaving] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const router = useRouter();
-  const ja = locale === "ja";
 
-  if (!vehicle) return <div className="empty-state"><h1>{ja ? "愛車が見つかりません" : "Vehicle not found"}</h1><Link href="/garage" className="primary-action">{ja ? "Garageへ" : "Open Garage"}</Link></div>;
+  if (!vehicle) return <div className="empty-state"><h1>{translate(locale, "vehicleNotFound")}</h1><Link href="/garage" className="primary-action">{translate(locale, "openGarage")}</Link></div>;
   const currentVehicle = vehicle;
 
   async function selectPhoto(event: ChangeEvent<HTMLInputElement>) {
@@ -50,7 +50,7 @@ export default function QuickVehicleEventPage() {
     try {
       setImage(await preparePrivateAlphaImage(file, { maxDimension: 1400, maxOutputBytes: 460 * 1024 }));
     } catch {
-      setError(ja ? "JPEG・PNG・WebPの写真を選んでください（元画像は12MBまで）。" : "Choose a JPEG, PNG, or WebP image up to 12 MB.");
+      setError("vehicleImageInvalid");
     } finally {
       setPreparing(false);
     }
@@ -59,7 +59,7 @@ export default function QuickVehicleEventPage() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!note.trim()) {
-      setError(ja ? "この出来事を、一言で残してください。" : "Add one sentence about this moment.");
+      setError("momentNoteRequired");
       return;
     }
     if (saving || preparing) return;
@@ -81,7 +81,7 @@ export default function QuickVehicleEventPage() {
         isDemo: false,
       } : undefined;
       const draft: JournalDraft = {
-        title: ja ? selectedType.ja : selectedType.en,
+        title: translate(locale, selectedType.label),
         eventType,
         bodyOriginal: note.trim(),
         vehicleId: currentVehicle.id,
@@ -98,24 +98,24 @@ export default function QuickVehicleEventPage() {
       await addJournal(draft);
       router.push(`/garage?moment=added&vehicle=${encodeURIComponent(currentVehicle.id)}`);
     } catch {
-      setError(ja ? "保存できませんでした。通信状態を確認して、もう一度お試しください。" : "Could not save this moment. Check your connection and try again.");
+      setError("momentSaveError");
       setSaving(false);
     }
   }
 
   return (
     <div className="page-stack narrow-page quick-event-page">
-      <header className="page-header"><div><span className="eyebrow">ADD A MOMENT</span><h1>{ja ? `${currentVehicle.model}との出来事` : `A moment with ${currentVehicle.model}`}</h1><p>{ja ? "写真と一言だけで、このクルマの時間軸が育ちます。" : "A photo and one sentence add to this vehicle's timeline."}</p></div></header>
+      <header className="page-header"><div><span className="eyebrow">ADD A MOMENT</span><h1>{translate(locale, "momentWithVehicle", { vehicle: currentVehicle.model })}</h1><p>{translate(locale, "momentTimelineIntro")}</p></div></header>
       <form className="quick-event-form" onSubmit={submit}>
         <section className="quick-event-photo">
-          {image ? <Image src={image.dataUrl} alt="" fill sizes="(max-width: 760px) 100vw, 680px" unoptimized /> : <div><Camera size={38} /><strong>{ja ? "写真はなくても保存できます" : "A photo is optional"}</strong><span>{ja ? "今日の一枚なら、ここから追加" : "Add today's photo here"}</span></div>}
+          {image ? <Image src={image.dataUrl} alt="" fill sizes="(max-width: 760px) 100vw, 680px" unoptimized /> : <div><Camera size={38} /><strong>{translate(locale, "photoOptional")}</strong><span>{translate(locale, "addTodaysPhoto")}</span></div>}
         </section>
-        <label className="photo-pick-action"><ImagePlus size={18} />{preparing ? (ja ? "写真を整えています…" : "Preparing photo…") : image ? (ja ? "写真を選び直す" : "Choose another") : (ja ? "写真を追加" : "Add photo")}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={selectPhoto} disabled={preparing || saving} /></label>
-        <p className="image-preparation-note"><ShieldCheck size={15} />{ja ? "この記録はまず非公開で保存されます。" : "This moment is saved privately first."}</p>
-        <fieldset className="event-type-picker"><legend>{ja ? "どんな出来事ですか？" : "What kind of moment?"}</legend>{eventTypes.map((item) => <button type="button" key={item.value} className={eventType === item.value ? "is-selected" : ""} aria-pressed={eventType === item.value} onClick={() => setEventType(item.value)}>{ja ? item.ja : item.en}</button>)}</fieldset>
-        <label className="field quick-note-field"><span>{ja ? "一言で残す *" : "One sentence *"}</span><textarea autoFocus maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} placeholder={ja ? "例：朱鞠内湖まで、今年最初の長距離ドライブ。" : "e.g. Our first long drive of the year."} /></label>
-        {error && <p className="form-error-summary" role="alert">{error}</p>}
-        <div className="form-actions"><Link href="/garage" className="secondary-action">{ja ? "あとで" : "Later"}</Link><button className="primary-action" type="submit" disabled={saving || preparing}><Save size={17} />{saving ? (ja ? "記録を追加中…" : "Adding…") : (ja ? "この出来事を残す" : "Save this moment")}</button></div>
+        <label className="photo-pick-action"><ImagePlus size={18} />{preparing ? translate(locale, "preparingPhoto") : image ? translate(locale, "chooseAnotherPhoto") : translate(locale, "addPhoto")}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={selectPhoto} disabled={preparing || saving} /></label>
+        <p className="image-preparation-note"><ShieldCheck size={15} />{translate(locale, "momentPrivateFirst")}</p>
+        <fieldset className="event-type-picker"><legend>{translate(locale, "momentKindQuestion")}</legend>{eventTypes.map((item) => <button type="button" key={item.value} className={eventType === item.value ? "is-selected" : ""} aria-pressed={eventType === item.value} onClick={() => setEventType(item.value)}>{translate(locale, item.label)}</button>)}</fieldset>
+        <label className="field quick-note-field"><span>{translate(locale, "oneSentenceRequired")}</span><textarea autoFocus maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} placeholder={translate(locale, "momentPlaceholder")} /></label>
+        {error && <p className="form-error-summary" role="alert">{translate(locale, error)}</p>}
+        <div className="form-actions"><Link href="/garage" className="secondary-action">{translate(locale, "later")}</Link><button className="primary-action" type="submit" disabled={saving || preparing}><Save size={17} />{translate(locale, saving ? "addingMoment" : "saveMoment")}</button></div>
       </form>
     </div>
   );
