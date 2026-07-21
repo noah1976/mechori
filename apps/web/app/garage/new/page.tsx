@@ -4,6 +4,8 @@ import { useApp } from "@/lib/app-context";
 import { preparePrivateAlphaImage } from "@/lib/image-preparation";
 import {
   createEmptyVehicleDraft,
+  equivalentMarketNames,
+  resolveVehicleIdentity,
   validateVehicleDraft,
   type VehicleDraft,
 } from "@mechori/core";
@@ -32,6 +34,16 @@ function NewVehicleContent() {
   const [imageError, setImageError] = useState("");
   const [saveError, setSaveError] = useState(false);
   const validation = useMemo(() => validateVehicleDraft(draft), [draft]);
+  const identity = useMemo(
+    () => resolveVehicleIdentity(draft.make, draft.model),
+    [draft.make, draft.model],
+  );
+  const identityNames = useMemo(
+    () => identity.modelFamilyId
+      ? equivalentMarketNames(identity.modelFamilyId, locale)
+      : [],
+    [identity.modelFamilyId, locale],
+  );
   const router = useRouter();
 
   function setField<K extends keyof VehicleDraft>(key: K, value: VehicleDraft[K]) {
@@ -129,6 +141,23 @@ function NewVehicleContent() {
               <input value={draft.model} onChange={(event) => setField("model", event.target.value)} placeholder={translate(locale, "modelExample")} />
             </Field>
           </div>
+          {draft.make.trim() && <div className="vehicle-identity-match" aria-live="polite">
+            {identity.brandId && identity.canonicalMake !== draft.make.trim() && (
+              <p>{translate(locale, "canonicalBrandNotice", {
+                input: draft.make.trim(),
+                canonical: identity.canonicalMake,
+              })}</p>
+            )}
+            {identity.modelFamilyId && identityNames.length > 0 && (
+              <p>{translate(locale, "modelFamilyNotice", {
+                model: draft.model.trim(),
+                names: identityNames.join(" / "),
+              })}</p>
+            )}
+            {draft.model.trim() && identity.matchStatus !== "matched_alias" && (
+              <p>{translate(locale, "unmatchedIdentityNotice")}</p>
+            )}
+          </div>}
           <p className="catalog-free-note">{translate(locale, "catalogFreeNotice")}</p>
           {isPrevious && <div className="form-grid three-columns optional-vehicle-details">
             <Field label={translate(locale, "gradeOptional")}><input value={draft.grade} onChange={(event) => setField("grade", event.target.value)} /></Field>

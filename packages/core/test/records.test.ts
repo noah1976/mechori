@@ -185,7 +185,7 @@ test("migrates legacy local data into actions and an odometer episode", () => {
   delete journals[0]?.contentBlocks;
 
   const migrated = migrateAppData(legacy);
-  assert.equal(migrated?.schemaVersion, 9);
+  assert.equal(migrated?.schemaVersion, 10);
   assert.deepEqual(migrated?.contentReports, []);
   assert.equal(
     migrated?.profiles.find((profile) => profile.id === "profile-demo-luca")?.visibility,

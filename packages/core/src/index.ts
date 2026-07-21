@@ -19,5 +19,6 @@ export * from "./records.ts";
 export * from "./social.ts";
 export * from "./types.ts";
 export * from "./vehicle-relationship.ts";
+export * from "./vehicle-catalog.ts";
 export * from "./vehicles.ts";
 export * from "./workspace.ts";

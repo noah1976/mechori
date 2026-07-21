@@ -39,6 +39,10 @@ export type VehicleOdometerContext =
   | "at_ownership_end"
   | "during_ownership"
   | "unknown";
+export type VehicleIdentityMatchStatus =
+  | "matched_alias"
+  | "brand_only"
+  | "unmatched";
 export type RecordEvidenceBasis =
   | "contemporaneous"
   | "invoice_or_receipt"
@@ -67,6 +71,15 @@ export interface Vehicle {
   vehicleCategory: VehicleCategory;
   make: string;
   model: string;
+  /** Owner-entered values are retained even when a catalog alias is matched. */
+  makeInput?: string;
+  modelInput?: string;
+  brandId?: string;
+  modelFamilyId?: string;
+  generationId?: string;
+  marketNameId?: string;
+  marketRegion?: string;
+  identityMatchStatus: VehicleIdentityMatchStatus;
   year?: number;
   grade?: string;
   modelCode?: string;
@@ -399,7 +412,7 @@ export interface JournalDraft {
 }
 
 export interface AppData {
-  schemaVersion: 9;
+  schemaVersion: 10;
   vehicles: Vehicle[];
   records: MaintenanceRecord[];
   profiles: SocialProfile[];

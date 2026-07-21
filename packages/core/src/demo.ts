@@ -1,7 +1,7 @@
 import type { AppData } from "./types.ts";
 
 export const demoData: AppData = {
-  schemaVersion: 9,
+  schemaVersion: 10,
   vehicles: [
     {
       id: "vehicle-demo-barchetta",
@@ -9,6 +9,13 @@ export const demoData: AppData = {
       vehicleCategory: "car",
       make: "FIAT",
       model: "Barchetta",
+      makeInput: "FIAT",
+      modelInput: "Barchetta",
+      brandId: "fiat",
+      modelFamilyId: "fiat-barchetta",
+      marketNameId: "fiat-barchetta-global",
+      marketRegion: "global",
+      identityMatchStatus: "matched_alias",
       year: 1997,
       ownershipType: "owned",
       ownershipStartedYear: 2014,
@@ -220,7 +227,7 @@ export const demoData: AppData = {
       vehicleId: "vehicle-demo-barchetta",
       vehicleTargetId: "vehicle-demo-barchetta",
       vehicleLabel: "FIAT Barchetta",
-      modelTargetId: "model:fiat:barchetta",
+      modelTargetId: "model-family:fiat-barchetta",
       title: "DEMO: 今年の記録を整理しはじめた",
       bodyOriginal:
         "紙に残っていた記録を見返しながら、分かる範囲だけ入力している。まずは後から自分が困らない履歴にしたい。",
@@ -249,7 +256,7 @@ export const demoData: AppData = {
       authorProfileId: "profile-demo-luca",
       vehicleTargetId: "vehicle-demo-luca-barchetta",
       vehicleLabel: "FIAT Barchetta",
-      modelTargetId: "model:fiat:barchetta",
+      modelTargetId: "model-family:fiat-barchetta",
       title: "DEMO: 雨上がりの短いドライブ",
       bodyOriginal:
         "整備を終えてから初めての週末。遠くへは行かず、近所をゆっくり走って様子を見た。帰ってから気づいたことを記録へ追記した。",
@@ -302,7 +309,7 @@ export const demoData: AppData = {
       authorProfileId: "profile-demo-workshop",
       vehicleTargetId: "vehicle-demo-workshop-barchetta",
       vehicleLabel: "FIAT Barchetta",
-      modelTargetId: "model:fiat:barchetta",
+      modelTargetId: "model-family:fiat-barchetta",
       title: "DEMO: 入庫前に履歴が見えると助かること",
       bodyOriginal:
         "初めて扱う車種でも、過去の作業と未解決事項が整理されていれば、確認の順序を考えやすい。これは操作確認用の文章で、修理方法を示すものではない。",
@@ -339,7 +346,7 @@ export const demoData: AppData = {
       id: "follow-demo-model-barchetta",
       followerProfileId: "profile-demo-current",
       targetType: "model",
-      targetId: "model:fiat:barchetta",
+      targetId: "model-family:fiat-barchetta",
       createdAt: "2026-07-12T07:00:00.000Z",
     },
   ],

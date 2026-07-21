@@ -4,6 +4,7 @@ import type {
   VehicleDraft,
   VehicleRelationshipType,
 } from "./types.ts";
+import { resolveVehicleIdentity } from "./vehicle-catalog.ts";
 
 export interface VehicleDraftValidationResult {
   valid: boolean;
@@ -131,12 +132,21 @@ export function addVehicleToData(
 
   const odometer = draft.odometer ? Number(draft.odometer) : 0;
   const episodeId = `episode-${crypto.randomUUID()}`;
+  const identity = resolveVehicleIdentity(draft.make, draft.model);
   const vehicle: Vehicle = {
     id: `vehicle-${crypto.randomUUID()}`,
     ownerProfileId: data.currentProfileId,
     vehicleCategory: draft.vehicleCategory,
-    make: draft.make.trim(),
+    make: identity.canonicalMake,
     model: draft.model.trim(),
+    makeInput: identity.makeInput,
+    modelInput: identity.modelInput,
+    brandId: identity.brandId,
+    modelFamilyId: identity.modelFamilyId,
+    generationId: identity.generationId,
+    marketNameId: identity.marketNameId,
+    marketRegion: identity.marketRegion,
+    identityMatchStatus: identity.matchStatus,
     year: draft.year ? Number(draft.year) : undefined,
     grade: draft.grade.trim() || undefined,
     modelCode: draft.modelCode.trim() || undefined,
@@ -231,7 +241,7 @@ export function updateVehicleOwnershipInData(
     vehicle: nextVehicle,
     data: {
       ...data,
-      schemaVersion: 9,
+      schemaVersion: 10,
       vehicles: data.vehicles.map((item) => item.id === vehicleId ? nextVehicle : item),
     },
   };

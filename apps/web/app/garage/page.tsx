@@ -7,6 +7,7 @@ import { useApp } from "@/lib/app-context";
 import {
   formatOwnershipDuration,
   formatOwnershipPeriod,
+  displayVehicleModel,
   getOwnJournals,
   groupVehiclesByOwnership,
   journalOccurrenceDate,
@@ -81,7 +82,8 @@ function GarageContent() {
   }
   const relationship = summarizeVehicleRelationship(vehicle);
   const ownershipDuration = formatOwnershipDuration(locale, relationship);
-  const vehicleLabel = `${vehicle.make} ${vehicle.model}`;
+  const vehicleModel = displayVehicleModel(vehicle, locale);
+  const vehicleLabel = `${vehicle.make} ${vehicleModel}`;
   const isPreviousVehicle = vehicle.ownershipType === "previously_owned";
   const ownershipPeriod = formatOwnershipPeriod(vehicle, locale);
   const timeline = [
@@ -133,7 +135,7 @@ function GarageContent() {
           <div className="garage-collection-heading"><div><span className="eyebrow">CURRENT</span><h2>{ja ? "現在のガレージ" : "Current Garage"}</h2></div><Link href="/garage/new" className="text-link"><Plus size={16} />{ja ? "追加" : "Add"}</Link></div>
           {groupedVehicles.current.length ? (
             <div className="garage-vehicle-switcher">
-              {groupedVehicles.current.map((item) => <VehicleSwitchButton key={item.id} item={item} selected={item.id === vehicle.id} ja={ja} onSelect={() => setSelectedVehicleId(item.id)} />)}
+              {groupedVehicles.current.map((item) => <VehicleSwitchButton key={item.id} item={item} selected={item.id === vehicle.id} locale={locale} onSelect={() => setSelectedVehicleId(item.id)} />)}
             </div>
           ) : <p className="garage-collection-empty">{ja ? "現在所有中の車両はまだ登録されていません。" : "No currently owned vehicle is registered."}</p>}
         </div>
@@ -144,7 +146,7 @@ function GarageContent() {
               {previousVehicles.map((item) => (
                 <button key={item.id} type="button" className={item.id === vehicle.id ? "is-selected" : ""} aria-pressed={item.id === vehicle.id} onClick={() => setSelectedVehicleId(item.id)}>
                   {item.vehicleCategory === "motorcycle" || item.vehicleCategory === "moped" ? <Bike size={18} aria-hidden="true" /> : <CarFront size={18} aria-hidden="true" />}
-                  <span><strong>{item.year ? `${item.year} ` : ""}{item.make} {item.model}</strong><small>{formatOwnershipPeriod(item, locale)}</small></span>
+                  <span><strong>{item.year ? `${item.year} ` : ""}{item.make} {displayVehicleModel(item, locale)}</strong><small>{formatOwnershipPeriod(item, locale)}</small></span>
                 </button>
               ))}
             </div>
@@ -154,18 +156,18 @@ function GarageContent() {
       {groupedVehicles.other.length > 0 && (
         <section className="garage-unclassified">
           <div><span className="eyebrow">UNSET</span><h2>{ja ? "所有状態を確認する車両" : "Vehicles needing ownership status"}</h2></div>
-          <div className="garage-vehicle-switcher">{groupedVehicles.other.map((item) => <VehicleSwitchButton key={item.id} item={item} selected={item.id === vehicle.id} ja={ja} onSelect={() => setSelectedVehicleId(item.id)} />)}</div>
+          <div className="garage-vehicle-switcher">{groupedVehicles.other.map((item) => <VehicleSwitchButton key={item.id} item={item} selected={item.id === vehicle.id} locale={locale} onSelect={() => setSelectedVehicleId(item.id)} />)}</div>
         </section>
       )}
 
       <section className={`garage-feature${isPreviousVehicle && !vehicle.imagePath ? " is-past-without-photo" : ""}`}>
         <div className="garage-photo">
           {vehicle.imagePath ? (
-            <Image src={vehicle.imagePath} alt={vehicle.isDemo ? (ja ? "DEMO用の汎用ロードスター" : "Generic demo roadster") : `${vehicle.make} ${vehicle.model}`} fill sizes="(max-width: 900px) 100vw, 55vw" unoptimized={vehicle.imagePath.startsWith("data:")} priority />
+            <Image src={vehicle.imagePath} alt={vehicle.isDemo ? (ja ? "DEMO用の汎用ロードスター" : "Generic demo roadster") : vehicleLabel} fill sizes="(max-width: 900px) 100vw, 55vw" unoptimized={vehicle.imagePath.startsWith("data:")} priority />
           ) : (
             <div className="garage-photo-placeholder">
               {vehicle.vehicleCategory === "motorcycle" || vehicle.vehicleCategory === "moped" ? <Bike size={36} aria-hidden="true" /> : <CarFront size={36} aria-hidden="true" />}
-              <span>{vehicle.year ? `${vehicle.year} ` : ""}{vehicle.make} {vehicle.model}</span>
+              <span>{vehicle.year ? `${vehicle.year} ` : ""}{vehicleLabel}</span>
               {isPreviousVehicle && <small>{ownershipPeriod}</small>}
             </div>
           )}
@@ -266,21 +268,22 @@ function formatTimelineDate(value: string, locale: "ja" | "en"): string {
 function VehicleSwitchButton({
   item,
   selected,
-  ja,
+  locale,
   onSelect,
 }: {
   item: Vehicle;
   selected: boolean;
-  ja: boolean;
+  locale: "ja" | "en";
   onSelect(): void;
 }) {
+  const ja = locale === "ja";
   const VehicleIcon = item.vehicleCategory === "motorcycle" || item.vehicleCategory === "moped"
     ? Bike
     : CarFront;
   return (
     <button type="button" className={selected ? "is-selected" : ""} aria-pressed={selected} onClick={onSelect}>
       <VehicleIcon size={17} aria-hidden="true" />
-      <span><strong>{item.make} {item.model}</strong><small>{item.year ?? (ja ? "年式未登録" : "Year not set")}</small></span>
+      <span><strong>{item.make} {displayVehicleModel(item, locale)}</strong><small>{item.year ?? (ja ? "年式未登録" : "Year not set")}</small></span>
     </button>
   );
 }

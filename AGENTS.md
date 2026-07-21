@@ -27,6 +27,7 @@ MECHORI（メカリィ）は、車両メンテナンス記録を構造化し、�
 - アーキテクチャ: `docs/ARCHITECTURE.md`
 - 主要画面: `docs/SCREENS.md`
 - 初期データモデル: `docs/DATA_MODEL.md`
+- 車両名・市場名の正規化: `docs/VEHICLE_IDENTITY.md`
 - 取込パイプライン: `docs/IMPORT_PIPELINE.md`
 - 信頼性と確認: `docs/TRUST_AND_VERIFICATION.md`
 - 危険領域タグ: `docs/HAZARD_TAGS.md`

@@ -309,7 +309,10 @@ button { cursor: pointer; }
 .photo-pick-action:has(input:disabled) { opacity: 0.55; cursor: wait; }
 .image-preparation-note { display: flex; align-items: flex-start; gap: 7px; margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .image-preparation-note svg { flex: 0 0 auto; margin-top: 1px; color: var(--brand); }
-.catalog-free-note { margin: 4px 0 0; padding: 11px 13px; color: #375b4b; background: #edf4f0; border-left: 3px solid var(--brand); font-size: 12px; line-height: 1.5; }
+.catalog-free-note { margin: 4px 0 0; padding: 11px 13px; color: var(--muted); background: var(--surface-soft); border-left: 3px solid var(--line); font-size: 12px; line-height: 1.5; }
+.vehicle-identity-match { padding: 11px 13px; color: #264f72; background: #f0f5f8; border-left: 3px solid var(--info); font-size: 12px; line-height: 1.5; }
+.vehicle-identity-match p { margin: 0; }
+.vehicle-identity-match p + p { margin-top: 5px; }
 .optional-vehicle-details { margin-top: 15px; }
 .vehicle-photo-field.is-optional-past-photo .vehicle-photo-preview { min-height: 180px; }
 .ownership-transition-panel { grid-template-columns: auto minmax(0, 1fr); align-items: start; }

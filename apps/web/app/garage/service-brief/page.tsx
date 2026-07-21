@@ -3,7 +3,7 @@
 import { DemoNotice } from "@/components/demo-notice";
 import { recordOdometerLabel } from "@/components/record-card";
 import { useApp } from "@/lib/app-context";
-import { getPreferredVehicle } from "@mechori/core";
+import { displayVehicleModel, getPreferredVehicle } from "@mechori/core";
 import { translate } from "@mechori/i18n";
 import { ArrowLeft, CircleAlert, Gauge, Printer, ShieldAlert, Wrench } from "lucide-react";
 import Link from "next/link";
@@ -16,6 +16,7 @@ function ServiceBriefContent() {
   const vehicle = data.vehicles.find((item) => item.id === params.get("vehicle")) ?? getPreferredVehicle(data.vehicles);
   const ja = locale === "ja";
   if (!vehicle) return null;
+  const vehicleModel = displayVehicleModel(vehicle, locale);
 
   const records = data.records
     .filter((record) => record.vehicleId === vehicle.id)
@@ -32,7 +33,7 @@ function ServiceBriefContent() {
 
       <header className="service-brief-header">
         <div><span className="eyebrow">MECHORI VEHICLE HISTORY · DEMO</span><h1>{translate(locale, "serviceBrief")}</h1><p>{translate(locale, "serviceBriefIntro")}</p></div>
-        <div className="service-brief-vehicle"><strong>{vehicle.make} {vehicle.model}</strong><span>{[vehicle.year, vehicle.engine, vehicle.transmission, vehicle.steering].filter(Boolean).join(" · ") || (ja ? "仕様未登録" : "Specifications not set")}</span></div>
+        <div className="service-brief-vehicle"><strong>{vehicle.make} {vehicleModel}</strong><span>{[vehicle.year, vehicle.engine, vehicle.transmission, vehicle.steering].filter(Boolean).join(" · ") || (ja ? "仕様未登録" : "Specifications not set")}</span></div>
       </header>
 
       <section className="service-brief-facts" aria-label={ja ? "車両情報" : "Vehicle information"}>

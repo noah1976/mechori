@@ -11,6 +11,7 @@ import type {
   ProfileSafetyRelation,
   ProfileVisibility,
 } from "./types.ts";
+import { canonicalModelTargetId, resolveVehicleIdentity } from "./vehicle-catalog.ts";
 
 export interface JournalValidationResult {
   valid: boolean;
@@ -76,7 +77,7 @@ export function createJournalPost(
     vehicleId: vehicle.id,
     vehicleTargetId: vehicle.id,
     vehicleLabel: `${vehicle.make} ${vehicle.model}`,
-    modelTargetId: modelTargetId(vehicle.make, vehicle.model),
+    modelTargetId: canonicalModelTargetId(vehicle),
     title: draft.title.trim(),
     eventType: draft.eventType,
     bodyOriginal,
@@ -565,7 +566,12 @@ function hasProfileSafetyRelation(
 }
 
 export function modelTargetId(make: string, model: string): string {
-  return `model:${make.trim().toLocaleLowerCase()}:${model.trim().toLocaleLowerCase()}`;
+  const identity = resolveVehicleIdentity(make, model);
+  return canonicalModelTargetId({
+    make: identity.canonicalMake,
+    model: identity.modelInput,
+    modelFamilyId: identity.modelFamilyId,
+  });
 }
 
 function journalMatchesFollow(

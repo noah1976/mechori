@@ -4,6 +4,7 @@ import { useApp } from "@/lib/app-context";
 import { localDateInputValue } from "@/lib/date-input";
 import { preparePrivateAlphaImage, type PreparedImage } from "@/lib/image-preparation";
 import {
+  displayVehicleModel,
   journalToDraft,
   validateJournalDraft,
   type GarageJournalPost,
@@ -71,6 +72,7 @@ export function QuickEventForm({
   const [preparing, setPreparing] = useState(false);
   const router = useRouter();
   const existingAttachment = journal?.media[0];
+  const vehicleModel = displayVehicleModel(vehicle, locale);
 
   async function selectPhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -106,7 +108,7 @@ export function QuickEventForm({
         assetPath: image.dataUrl,
         mimeType: image.mimeType,
         sizeBytes: image.sizeBytes,
-        altText: `${vehicle.make} ${vehicle.model}`,
+        altText: `${vehicle.make} ${vehicleModel}`,
         privacyState: "private_only",
         createdAt: new Date().toISOString(),
         isDemo: false,
@@ -148,7 +150,7 @@ export function QuickEventForm({
 
   return (
     <div className="page-stack narrow-page quick-event-page">
-      <header className="page-header"><div><span className="eyebrow">{editing ? "EDIT A MOMENT" : "ADD A MOMENT"}</span><h1>{editing ? (locale === "ja" ? "短い記録を編集" : "Edit quick record") : translate(locale, "momentWithVehicle", { vehicle: vehicle.model })}</h1><p>{locale === "ja" ? "写真と一言で残す、短い愛車記録です。日付や内容はあとから直せます。" : "A quick vehicle record with a photo and a short note. You can edit it later."}</p></div></header>
+      <header className="page-header"><div><span className="eyebrow">{editing ? "EDIT A MOMENT" : "ADD A MOMENT"}</span><h1>{editing ? (locale === "ja" ? "短い記録を編集" : "Edit quick record") : translate(locale, "momentWithVehicle", { vehicle: vehicleModel })}</h1><p>{locale === "ja" ? "写真と一言で残す、短い愛車記録です。日付や内容はあとから直せます。" : "A quick vehicle record with a photo and a short note. You can edit it later."}</p></div></header>
       <form className="quick-event-form" onSubmit={submit}>
         <section className="quick-event-photo">
           {image ? <Image src={image.dataUrl} alt="" fill sizes="(max-width: 760px) 100vw, 680px" unoptimized /> : existingImageSource ? <Image src={existingImageSource} alt={existingAttachment?.altText ?? ""} fill sizes="(max-width: 760px) 100vw, 680px" unoptimized /> : <div><Camera size={38} /><strong>{translate(locale, "photoOptional")}</strong><span>{translate(locale, "addTodaysPhoto")}</span></div>}

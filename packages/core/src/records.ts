@@ -11,6 +11,10 @@ import type {
 } from "./types.ts";
 import { demoData } from "./demo.ts";
 import { getPreferredVehicle } from "./vehicles.ts";
+import {
+  canonicalizeLegacyModelTargetId,
+  normalizeVehicle,
+} from "./vehicle-catalog.ts";
 
 export interface ValidationResult {
   valid: boolean;
@@ -312,7 +316,7 @@ export function applyRecordDraftToData(
     record,
     data: {
       ...data,
-      schemaVersion: 9,
+      schemaVersion: 10,
       vehicles: data.vehicles.map((item) => (item.id === vehicleId ? nextVehicle : item)),
       records,
     },
@@ -335,7 +339,7 @@ export function migrateAppData(input: unknown): AppData | null {
     const matchingDemoVehicle = vehicle.isDemo
       ? demoData.vehicles.find((item) => item.id === vehicle.id)
       : undefined;
-    return {
+    return normalizeVehicle({
       ...vehicle,
       ownerProfileId:
         typeof vehicle.ownerProfileId === "string"
@@ -386,7 +390,7 @@ export function migrateAppData(input: unknown): AppData | null {
           unit: "km" as const,
           sequenceAssessment: "consistent_increase" as const,
         },
-    } as Vehicle;
+    } as Vehicle);
   });
   const episodeByVehicle = new Map(
     vehicles.map((vehicle) => [vehicle.id, vehicle.odometerEpisodes[0]?.id ?? "episode-legacy"]),
@@ -431,7 +435,7 @@ export function migrateAppData(input: unknown): AppData | null {
   });
 
   return {
-    schemaVersion: 9,
+    schemaVersion: 10,
     vehicles,
     records,
     profiles: Array.isArray(source.profiles)
@@ -482,6 +486,7 @@ export function migrateAppData(input: unknown): AppData | null {
               ];
           return {
             ...journal,
+            modelTargetId: canonicalizeLegacyModelTargetId(journal.modelTargetId),
             moderationState: journal.moderationState ?? "visible",
             occurredOn:
               typeof journal.occurredOn === "string" && isValidDateOnly(journal.occurredOn)
@@ -511,7 +516,9 @@ export function migrateAppData(input: unknown): AppData | null {
         })
       : structuredClone(demoData.journals),
     follows: Array.isArray(source.follows)
-      ? source.follows
+      ? source.follows.map((follow) => follow.targetType === "model"
+          ? { ...follow, targetId: canonicalizeLegacyModelTargetId(follow.targetId) }
+          : follow)
       : structuredClone(demoData.follows),
     profileSafetyRelations: Array.isArray(source.profileSafetyRelations)
       ? source.profileSafetyRelations

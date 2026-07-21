@@ -309,7 +309,7 @@ test("toggles profile, vehicle, or model follows independently", () => {
   const data = cloneDemoData();
   const followed = toggleFollowInData(data, "profile", "profile-demo-workshop");
   assert.equal(isFollowing(followed, "profile", "profile-demo-workshop"), true);
-  assert.equal(isFollowing(followed, "model", "model:fiat:barchetta"), true);
+  assert.equal(isFollowing(followed, "model", "model-family:fiat-barchetta"), true);
 
   const unfollowed = toggleFollowInData(
     followed,
@@ -351,7 +351,7 @@ test("blocking removes profile and vehicle follows but keeps model follows", () 
   assert.equal(isProfileBlocked(blocked, "profile-demo-luca"), true);
   assert.equal(isFollowing(blocked, "profile", "profile-demo-luca"), false);
   assert.equal(isFollowing(blocked, "vehicle", "vehicle-demo-luca-barchetta"), false);
-  assert.equal(isFollowing(blocked, "model", "model:fiat:barchetta"), true);
+  assert.equal(isFollowing(blocked, "model", "model-family:fiat-barchetta"), true);
   assert.equal(
     getFollowingFeed(blocked).some((journal) => journal.authorProfileId === "profile-demo-luca"),
     false,

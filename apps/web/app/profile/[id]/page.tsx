@@ -5,6 +5,7 @@ import { useApp } from "@/lib/app-context";
 import {
   canCurrentProfileViewJournal,
   canProfileViewProfile,
+  displayVehicleModel,
   formatOwnershipDuration,
   formatOwnershipPeriod,
   groupVehiclesByOwnership,
@@ -68,11 +69,11 @@ export default function ProfilePage() {
         <section className="profile-vehicle-history">
           <div className="profile-vehicle-group">
             <div className="section-heading compact"><div><span className="eyebrow">CURRENT</span><h2>{ja ? "現在のガレージ" : "Current Garage"}</h2></div><CarFront size={21} aria-hidden="true" /></div>
-            {groupedVehicles.current.length ? <div className="profile-vehicle-lines">{groupedVehicles.current.map((vehicle) => <ProfileVehicleLine key={vehicle.id} vehicle={vehicle} period={formatOwnershipPeriod(vehicle, locale)} />)}</div> : <p>{ja ? "現在所有中の公開車両はありません。" : "No currently owned public vehicle."}</p>}
+            {groupedVehicles.current.length ? <div className="profile-vehicle-lines">{groupedVehicles.current.map((vehicle) => <ProfileVehicleLine key={vehicle.id} vehicle={vehicle} period={formatOwnershipPeriod(vehicle, locale)} locale={locale} />)}</div> : <p>{ja ? "現在所有中の公開車両はありません。" : "No currently owned public vehicle."}</p>}
           </div>
           <div className="profile-vehicle-group">
             <div className="section-heading compact"><div><span className="eyebrow">HISTORY</span><h2>{ja ? "これまでの愛車" : "Previous Vehicles"}</h2></div><History size={21} aria-hidden="true" /></div>
-            {groupedVehicles.previous.length ? <div className="profile-vehicle-lines">{groupedVehicles.previous.map((vehicle) => <ProfileVehicleLine key={vehicle.id} vehicle={vehicle} period={formatOwnershipPeriod(vehicle, locale)} />)}</div> : <p>{ja ? "これまでの愛車はまだ公開されていません。" : "No previous vehicle is public yet."}</p>}
+            {groupedVehicles.previous.length ? <div className="profile-vehicle-lines">{groupedVehicles.previous.map((vehicle) => <ProfileVehicleLine key={vehicle.id} vehicle={vehicle} period={formatOwnershipPeriod(vehicle, locale)} locale={locale} />)}</div> : <p>{ja ? "これまでの愛車はまだ公開されていません。" : "No previous vehicle is public yet."}</p>}
           </div>
         </section>
       )}
@@ -86,7 +87,7 @@ export default function ProfilePage() {
   );
 }
 
-function ProfileVehicleLine({ vehicle, period }: { vehicle: ReturnType<typeof groupVehiclesByOwnership>["current"][number]; period: string }) {
+function ProfileVehicleLine({ vehicle, period, locale }: { vehicle: ReturnType<typeof groupVehiclesByOwnership>["current"][number]; period: string; locale: "ja" | "en" }) {
   const VehicleIcon = vehicle.vehicleCategory === "motorcycle" || vehicle.vehicleCategory === "moped" ? Bike : CarFront;
-  return <div><VehicleIcon size={18} aria-hidden="true" /><span><strong>{vehicle.year ? `${vehicle.year} ` : ""}{vehicle.make} {vehicle.model}</strong><small>{period}</small></span></div>;
+  return <div><VehicleIcon size={18} aria-hidden="true" /><span><strong>{vehicle.year ? `${vehicle.year} ` : ""}{vehicle.make} {displayVehicleModel(vehicle, locale)}</strong><small>{period}</small></span></div>;
 }

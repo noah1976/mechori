@@ -1,7 +1,7 @@
 "use client";
 
 import { useApp } from "@/lib/app-context";
-import { formatOwnershipDuration, summarizeVehicleRelationship } from "@mechori/core";
+import { displayVehicleModel, formatOwnershipDuration, summarizeVehicleRelationship } from "@mechori/core";
 import { translate } from "@mechori/i18n";
 import { ArrowRight, Camera, CarFront, CheckCircle2, Plus } from "lucide-react";
 import Image from "next/image";
@@ -19,15 +19,16 @@ export default function VehicleWelcomePage() {
   }
 
   const relationship = summarizeVehicleRelationship(vehicle);
+  const vehicleModel = displayVehicleModel(vehicle, locale);
   const ownership = formatOwnershipDuration(locale, relationship);
   const vehicleSummary = ja
     ? [
-        `${vehicle.year ? `${vehicle.year}年式の` : ""}${vehicle.make} ${vehicle.model}。`,
+        `${vehicle.year ? `${vehicle.year}年式の` : ""}${vehicle.make} ${vehicleModel}。`,
         relationship.vehicleAgeYears !== undefined ? `${relationship.vehicleAgeYears}歳のクルマです。` : "",
         ownership ? `一緒に過ごして${ownership}。` : "",
       ].join("")
     : [
-        `${vehicle.year ? `${vehicle.year} ` : ""}${vehicle.make} ${vehicle.model}.`,
+        `${vehicle.year ? `${vehicle.year} ` : ""}${vehicle.make} ${vehicleModel}.`,
         relationship.vehicleAgeYears !== undefined ? ` ${relationship.vehicleAgeYears} years old.` : "",
         ownership ? ` Together for ${ownership}.` : "",
       ].join("");
@@ -35,11 +36,11 @@ export default function VehicleWelcomePage() {
   return (
     <div className="vehicle-welcome-page">
       <section className="vehicle-welcome-photo">
-        {vehicle.imagePath && <Image src={vehicle.imagePath} alt={`${vehicle.make} ${vehicle.model}`} fill sizes="100vw" unoptimized priority />}
+        {vehicle.imagePath && <Image src={vehicle.imagePath} alt={`${vehicle.make} ${vehicleModel}`} fill sizes="100vw" unoptimized priority />}
         <div className="vehicle-welcome-shade" />
         <div className="vehicle-welcome-copy">
           <span className="welcome-check"><CheckCircle2 size={18} />{translate(locale, "vehiclePageReady")}</span>
-          <h1>{translate(locale, "vehicleJoinedGarage", { vehicle: vehicle.model })}</h1>
+          <h1>{translate(locale, "vehicleJoinedGarage", { vehicle: vehicleModel })}</h1>
           <p>{vehicleSummary}</p>
           {vehicle.ownerComment && <blockquote>{vehicle.ownerComment}</blockquote>}
         </div>

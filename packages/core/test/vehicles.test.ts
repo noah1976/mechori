@@ -27,8 +27,10 @@ test("accepts an owner-entered make and model without a vehicle master", () => {
     "2026-07-17T00:00:00.000Z",
   );
 
-  assert.equal(result.vehicle.make, "Bertone");
+  assert.equal(result.vehicle.make, "BERTONE");
+  assert.equal(result.vehicle.makeInput, "Bertone");
   assert.equal(result.vehicle.model, "X1/9");
+  assert.equal(result.vehicle.modelFamilyId, "fiat-x1-9");
   assert.equal(result.vehicle.year, 1985);
   assert.equal(result.data.vehicles[0]?.id, result.vehicle.id);
   assert.equal(result.vehicle.isDemo, false);
@@ -101,7 +103,7 @@ test("registers an owner-entered motorcycle without a vehicle master", () => {
 
   const vehicle = addVehicleToData(cloneDemoData(), draft).vehicle;
   assert.equal(vehicle.vehicleCategory, "motorcycle");
-  assert.equal(vehicle.make, "Vespa");
+  assert.equal(vehicle.make, "VESPA");
   assert.equal(vehicle.model, "150 Sprint");
 });
 
@@ -163,7 +165,7 @@ test("migrates an existing vehicle to a current car without hiding it", () => {
   delete vehicles[0]?.odometerContext;
 
   const migrated = migrateAppData(legacy);
-  assert.equal(migrated?.schemaVersion, 9);
+  assert.equal(migrated?.schemaVersion, 10);
   assert.equal(migrated?.vehicles[0]?.vehicleCategory, "car");
   assert.equal(migrated?.vehicles[0]?.ownershipType, "owned");
   assert.equal(groupVehiclesByOwnership(migrated?.vehicles ?? []).current.length, 1);

@@ -8,7 +8,7 @@ import {
   type PublicVehicleShare,
 } from "@/lib/public-vehicle-share";
 import { getMechoriRuntime } from "@/lib/runtime-config";
-import { formatOwnershipDuration, summarizeVehicleRelationship } from "@mechori/core";
+import { displayVehicleModel, formatOwnershipDuration, summarizeVehicleRelationship } from "@mechori/core";
 import { Check, Copy, ExternalLink, Eye, Link2, Share2, ShieldCheck, Unlink } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -39,6 +39,7 @@ export default function VehicleSharePage() {
   }, [remoteAlpha, vehicle]);
 
   if (!vehicle) return <div className="empty-state"><h1>{ja ? "愛車が見つかりません" : "Vehicle not found"}</h1><Link href="/garage" className="primary-action">{ja ? "Garageへ" : "Open Garage"}</Link></div>;
+  const vehicleModel = displayVehicleModel(vehicle, locale);
   const relationship = summarizeVehicleRelationship(vehicle);
   const ownership = formatOwnershipDuration(locale, relationship);
   const shareUrl = share && typeof window !== "undefined" ? `${window.location.origin}/v/${share.slug}` : "";
@@ -56,7 +57,7 @@ export default function VehicleSharePage() {
 
   async function copyOrShare() {
     if (!shareUrl || !share) return;
-    const title = `${vehicle!.make} ${vehicle!.model} | MECHORI`;
+    const title = `${vehicle!.make} ${vehicleModel} | MECHORI`;
     if (navigator.share) {
       await navigator.share({ title, text: ja ? "MECHORIでつくった愛車ページ" : "My vehicle page on MECHORI", url: shareUrl });
       return;
@@ -79,11 +80,11 @@ export default function VehicleSharePage() {
 
   return (
     <div className="page-stack share-builder-page">
-      <header className="page-header"><div><span className="eyebrow">SHOW YOUR VEHICLE</span><h1>{ja ? `${vehicle.model}を見せる` : `Show your ${vehicle.model}`}</h1><p>{ja ? "非公開のGarageから、見せてもよい情報だけを別の共有ページへ写します。" : "A separate public page receives only the details you choose to show."}</p></div></header>
+      <header className="page-header"><div><span className="eyebrow">SHOW YOUR VEHICLE</span><h1>{ja ? `${vehicleModel}を見せる` : `Show your ${vehicleModel}`}</h1><p>{ja ? "非公開のGarageから、見せてもよい情報だけを別の共有ページへ写します。" : "A separate public page receives only the details you choose to show."}</p></div></header>
       <div className="share-builder-grid">
         <section className="public-vehicle-card preview">
-          <div className="public-vehicle-photo">{vehicle.imagePath && <Image src={vehicle.imagePath} alt={`${vehicle.make} ${vehicle.model}`} fill sizes="(max-width: 900px) 100vw, 58vw" unoptimized={vehicle.imagePath.startsWith("data:")} priority />}</div>
-          <div className="public-vehicle-copy"><span className="eyebrow">MECHORI GARAGE</span><h2>{vehicle.year ? `${vehicle.year} ` : ""}{vehicle.make} {vehicle.model}</h2><p className="public-vehicle-years">{relationship.vehicleAgeYears !== undefined ? (ja ? `${relationship.vehicleAgeYears}歳のクルマ` : `${relationship.vehicleAgeYears} years old`) : (ja ? "年式未登録" : "Year not set")}{ownership ? ` · ${ownership}` : ""}</p>{vehicle.ownerComment && <blockquote>{vehicle.ownerComment}</blockquote>}</div>
+          <div className="public-vehicle-photo">{vehicle.imagePath && <Image src={vehicle.imagePath} alt={`${vehicle.make} ${vehicleModel}`} fill sizes="(max-width: 900px) 100vw, 58vw" unoptimized={vehicle.imagePath.startsWith("data:")} priority />}</div>
+          <div className="public-vehicle-copy"><span className="eyebrow">MECHORI GARAGE</span><h2>{vehicle.year ? `${vehicle.year} ` : ""}{vehicle.make} {vehicleModel}</h2><p className="public-vehicle-years">{relationship.vehicleAgeYears !== undefined ? (ja ? `${relationship.vehicleAgeYears}歳のクルマ` : `${relationship.vehicleAgeYears} years old`) : (ja ? "年式未登録" : "Year not set")}{ownership ? ` · ${ownership}` : ""}</p>{vehicle.ownerComment && <blockquote>{vehicle.ownerComment}</blockquote>}</div>
         </section>
         <aside className="share-controls">
           <div className="section-heading compact"><div><span className="eyebrow">PRIVACY CHECK</span><h2>{ja ? "共有される内容" : "What will be shared"}</h2></div><ShieldCheck size={21} /></div>

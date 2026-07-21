@@ -1,6 +1,7 @@
 "use client";
 
 import { useApp } from "@/lib/app-context";
+import { displayVehicleModel } from "@mechori/core";
 import { translate, type TranslationKey } from "@mechori/i18n";
 import { ArrowLeft, ArrowLeftRight, CarFront, History, Save } from "lucide-react";
 import Link from "next/link";
@@ -56,6 +57,7 @@ export default function VehicleOwnershipPage() {
   }
 
   const isPrevious = vehicle.ownershipType === "previously_owned";
+  const vehicleModel = displayVehicleModel(vehicle, locale);
 
   return (
     <div className="page-stack narrow-page ownership-page">
@@ -63,7 +65,7 @@ export default function VehicleOwnershipPage() {
       <header className="page-header">
         <div>
           <span className="eyebrow">OWNERSHIP</span>
-          <h1>{vehicle.make} {vehicle.model}</h1>
+          <h1>{vehicle.make} {vehicleModel}</h1>
           <p>{translate(locale, "ownershipChangeIntro")}</p>
         </div>
       </header>
