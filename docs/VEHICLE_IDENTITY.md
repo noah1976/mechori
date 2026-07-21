@@ -16,10 +16,26 @@
 1. `brandId`: 世界共通のメーカー・ブランド
 2. `modelFamilyId`: 市場名をまたいで関連付ける車系統
 3. `generationId`: 年式、型式等で区別する世代。特定できなければ空
-4. `marketNameId`: 販売国・地域で使用された車名
-5. `marketRegion`: 市場名が使われる国・地域
+4. `variantId`: 同一世代内で機関・駆動系等が大きく異なる仕様系統。特定できなければ空
+5. `grade`: ユーザーが入力した個別グレード名。正規IDに置き換えず保持
+6. `marketNameId`: 販売国・地域で使用された車名
+7. `marketRegion`: 市場名が使われる国・地域
 
-同じ車名でも世代や市場仕様が異なる場合があるため、名前だけで`generationId`を確定しません。年式・型式が不足する場合は`modelFamilyId`までの接続を許容します。
+同じ車名でも世代や市場仕様が異なる場合があるため、名前だけで`generationId`や`variantId`を確定しません。年式・型式が不足する場合は`modelFamilyId`までの接続を許容します。グレード名だけで複数世代に存在し得る場合も世代を推測しません。
+
+### 同一世代内の仕様差
+
+整備ナレッジでは、同じ車名・同じ世代でも仕様系統を分けます。例としてR33スカイラインでは、日産公式資料上、GTS25t Type Mは`ECR33`・`RB25DET`、GT-R V-specは`BCNR33`・`RB26DETT`であり、同世代だからといって完全一致事例にはできません。
+
+- 型式が確認できた場合: `confirmed_model_code`
+- 世代を含むグレード表記だけの場合: `grade_candidate`
+- 世代まで候補化できる場合: `generation_candidate`
+- グレードと型式が矛盾する場合: `conflicting_inputs`
+- 特定できない場合: `unmatched`
+
+検索・AI整理の一致範囲は、`exact_variant`、`same_generation_other_variant`、`same_family_other_generation`、`same_family_unspecified`へ分けます。仕様不明の事例を完全一致件数へ昇格しません。
+
+R33の初期辞書は、[日産 GTS25t Type M](https://www2.nissan.co.jp/HERITAGE/DETAIL/426.html)と[日産 GT-R V-spec](https://www.nissan.co.jp/HERITAGE/DETAIL/211.html)を根拠にしています。辞書は例示的な小規模集合であり、全グレードを網羅した車種マスタではありません。
 
 ## メーカーをまたぐ関係
 
@@ -43,7 +59,8 @@
 2. 既知の別名と一致した場合、正規メーカー表記と車系統候補をその場で表示する。
 3. 確実な別名一致だけを`matched_alias`として保存する。
 4. メーカーだけ一致した場合は`brand_only`、不明なら`unmatched`とする。
-5. 候補がなくても入力原文で登録を完了し、後から正規IDへ接続できる。
+5. 任意のグレード・型式から世代と仕様系統を段階的に候補化する。矛盾時は保存を妨げず警告する。
+6. 候補がなくても入力原文で登録を完了し、登録後の車両情報編集から正規IDへ接続できる。
 
 車種フォローと集合知の関連付けには、利用できる場合は`modelFamilyId`を使います。市場名が違う記録を同じ世代・仕様だと断定せず、検索結果では「同一世代」「別市場名」「同じ車系統・別世代」等を分けます。
 

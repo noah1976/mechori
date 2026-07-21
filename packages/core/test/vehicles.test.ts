@@ -9,6 +9,7 @@ import {
   getPreferredVehicle,
   migrateAppData,
   updateVehicleOwnershipInData,
+  updateVehicleSpecificationInData,
   validateVehicleDraft,
 } from "../src/index.ts";
 
@@ -151,6 +152,44 @@ test("does not allow the current profile to change another owner's vehicle", () 
   assert.throws(
     () => updateVehicleOwnershipInData(data, data.vehicles[0]!.id, {
       ownershipType: "previously_owned",
+    }),
+    /vehicle_not_owned_by_current_profile/,
+  );
+});
+
+test("updates a vehicle specification without losing records, image, or ownership history", () => {
+  const data = cloneDemoData();
+  const vehicle = data.vehicles[0]!;
+  const originalRecords = structuredClone(data.records);
+  const updated = updateVehicleSpecificationInData(data, vehicle.id, {
+    vehicleCategory: "car",
+    make: "Nissan",
+    model: "Skyline",
+    year: 1997,
+    grade: "GT-R V-spec",
+    modelCode: "BCNR33",
+    engine: "RB26DETT",
+    transmission: "5MT",
+    steering: "right",
+  });
+
+  assert.equal(updated.vehicle.make, "NISSAN");
+  assert.equal(updated.vehicle.generationId, "nissan-skyline-r33");
+  assert.equal(updated.vehicle.variantId, "nissan-skyline-r33-gtr");
+  assert.equal(updated.vehicle.specificationMatchStatus, "confirmed_model_code");
+  assert.equal(updated.vehicle.imagePath, vehicle.imagePath);
+  assert.equal(updated.vehicle.ownershipType, vehicle.ownershipType);
+  assert.deepEqual(updated.data.records, originalRecords);
+});
+
+test("does not allow the current profile to edit another owner's specification", () => {
+  const data = cloneDemoData();
+  data.currentProfileId = "profile-someone-else";
+  assert.throws(
+    () => updateVehicleSpecificationInData(data, data.vehicles[0]!.id, {
+      vehicleCategory: "car",
+      make: "NISSAN",
+      model: "SKYLINE",
     }),
     /vehicle_not_owned_by_current_profile/,
   );

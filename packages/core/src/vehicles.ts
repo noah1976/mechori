@@ -4,7 +4,10 @@ import type {
   VehicleDraft,
   VehicleRelationshipType,
 } from "./types.ts";
-import { resolveVehicleIdentity } from "./vehicle-catalog.ts";
+import {
+  resolveVehicleIdentity,
+  resolveVehicleSpecification,
+} from "./vehicle-catalog.ts";
 
 export interface VehicleDraftValidationResult {
   valid: boolean;
@@ -133,6 +136,7 @@ export function addVehicleToData(
   const odometer = draft.odometer ? Number(draft.odometer) : 0;
   const episodeId = `episode-${crypto.randomUUID()}`;
   const identity = resolveVehicleIdentity(draft.make, draft.model);
+  const specification = resolveVehicleSpecification(identity.modelFamilyId, draft);
   const vehicle: Vehicle = {
     id: `vehicle-${crypto.randomUUID()}`,
     ownerProfileId: data.currentProfileId,
@@ -143,10 +147,12 @@ export function addVehicleToData(
     modelInput: identity.modelInput,
     brandId: identity.brandId,
     modelFamilyId: identity.modelFamilyId,
-    generationId: identity.generationId,
+    generationId: specification.generationId ?? identity.generationId,
+    variantId: specification.variantId,
     marketNameId: identity.marketNameId,
     marketRegion: identity.marketRegion,
     identityMatchStatus: identity.matchStatus,
+    specificationMatchStatus: specification.matchStatus,
     year: draft.year ? Number(draft.year) : undefined,
     grade: draft.grade.trim() || undefined,
     modelCode: draft.modelCode.trim() || undefined,
@@ -187,6 +193,71 @@ export function addVehicleToData(
   return {
     vehicle,
     data: { ...data, vehicles: [vehicle, ...data.vehicles] },
+  };
+}
+
+export interface VehicleSpecificationUpdate {
+  vehicleCategory: Vehicle["vehicleCategory"];
+  make: string;
+  model: string;
+  year?: number;
+  grade?: string;
+  modelCode?: string;
+  engine?: string;
+  steering?: string;
+  transmission?: string;
+}
+
+export function updateVehicleSpecificationInData(
+  data: AppData,
+  vehicleId: string,
+  update: VehicleSpecificationUpdate,
+): { data: AppData; vehicle: Vehicle } {
+  const vehicle = data.vehicles.find((item) => item.id === vehicleId);
+  if (!vehicle) throw new Error("vehicle_not_found");
+  if (vehicle.ownerProfileId !== data.currentProfileId) {
+    throw new Error("vehicle_not_owned_by_current_profile");
+  }
+  if (!update.make.trim() || !update.model.trim()) throw new Error("invalid_vehicle_specification");
+  const currentYear = new Date().getUTCFullYear();
+  if (
+    update.year !== undefined &&
+    (!Number.isInteger(update.year) || update.year < 1886 || update.year > currentYear + 2)
+  ) {
+    throw new Error("invalid_vehicle_specification");
+  }
+
+  const identity = resolveVehicleIdentity(update.make, update.model);
+  const specification = resolveVehicleSpecification(identity.modelFamilyId, update);
+  const nextVehicle: Vehicle = {
+    ...vehicle,
+    vehicleCategory: update.vehicleCategory,
+    make: identity.canonicalMake,
+    model: update.model.trim(),
+    makeInput: identity.makeInput,
+    modelInput: identity.modelInput,
+    brandId: identity.brandId,
+    modelFamilyId: identity.modelFamilyId,
+    generationId: specification.generationId,
+    variantId: specification.variantId,
+    marketNameId: identity.marketNameId,
+    marketRegion: identity.marketRegion,
+    identityMatchStatus: identity.matchStatus,
+    specificationMatchStatus: specification.matchStatus,
+    year: update.year,
+    grade: update.grade?.trim() || undefined,
+    modelCode: update.modelCode?.trim() || undefined,
+    engine: update.engine?.trim() ?? "",
+    steering: update.steering?.trim() ?? "",
+    transmission: update.transmission?.trim() ?? "",
+  };
+
+  return {
+    vehicle: nextVehicle,
+    data: {
+      ...data,
+      vehicles: data.vehicles.map((item) => item.id === vehicleId ? nextVehicle : item),
+    },
   };
 }
 

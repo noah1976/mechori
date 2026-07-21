@@ -13,6 +13,7 @@ import {
   toggleFollowInData,
   toggleMuteProfileInData,
   updateVehicleOwnershipInData,
+  updateVehicleSpecificationInData,
   updateCurrentProfilePrivacy,
   updateJournalInData,
   isSignedIn,
@@ -39,6 +40,7 @@ import {
   type Vehicle,
   type VehicleDraft,
   type VehicleOwnershipUpdate,
+  type VehicleSpecificationUpdate,
 } from "@mechori/core";
 import { LocalStorageDataProvider } from "@mechori/shared";
 import { loadAlphaAuthSession, signOutFromAlpha } from "@/lib/alpha-auth";
@@ -75,6 +77,7 @@ interface AppContextValue {
   clearPersistenceError(): void;
   addVehicle(draft: VehicleDraft): Promise<Vehicle>;
   updateVehicleOwnership(vehicleId: string, update: VehicleOwnershipUpdate): Promise<Vehicle>;
+  updateVehicleSpecification(vehicleId: string, update: VehicleSpecificationUpdate): Promise<Vehicle>;
   addRecord(draft: RecordDraft, vehicleId?: string): Promise<MaintenanceRecord>;
   updateRecord(id: string, draft: RecordDraft): Promise<MaintenanceRecord | null>;
   addJournal(
@@ -258,6 +261,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [authSession, data, persist],
   );
 
+  const updateVehicleSpecification = useCallback(
+    async (vehicleId: string, update: VehicleSpecificationUpdate) => {
+      if (!isSignedIn(authSession)) throw new Error("authentication_required");
+      const result = updateVehicleSpecificationInData(data, vehicleId, update);
+      await persist(result.data);
+      return result.vehicle;
+    },
+    [authSession, data, persist],
+  );
+
   const addRecord = useCallback(
     async (draft: RecordDraft, vehicleId?: string) => {
       if (!isSignedIn(authSession)) throw new Error("authentication_required");
@@ -424,6 +437,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       clearPersistenceError,
       addVehicle,
       updateVehicleOwnership,
+      updateVehicleSpecification,
       addRecord,
       updateRecord,
       addJournal,
@@ -449,6 +463,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       clearPersistenceError,
       addVehicle,
       updateVehicleOwnership,
+      updateVehicleSpecification,
       addRecord,
       updateRecord,
       addJournal,

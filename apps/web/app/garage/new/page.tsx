@@ -6,6 +6,7 @@ import {
   createEmptyVehicleDraft,
   relatedVehicleIdentities,
   resolveVehicleIdentity,
+  resolveVehicleSpecification,
   validateVehicleDraft,
   type VehicleDraft,
 } from "@mechori/core";
@@ -41,6 +42,10 @@ function NewVehicleContent() {
   const relatedIdentities = useMemo(
     () => relatedVehicleIdentities(identity.marketNameId, locale),
     [identity.marketNameId, locale],
+  );
+  const specification = useMemo(
+    () => resolveVehicleSpecification(identity.modelFamilyId, draft, locale),
+    [draft, identity.modelFamilyId, locale],
   );
   const router = useRouter();
 
@@ -157,13 +162,26 @@ function NewVehicleContent() {
             {draft.model.trim() && identity.matchStatus !== "matched_alias" && (
               <p>{translate(locale, "unmatchedIdentityNotice")}</p>
             )}
+            {specification.generationId && (
+              <p>{translate(locale, specification.matchStatus === "confirmed_model_code"
+                ? "confirmedSpecificationNotice"
+                : "candidateSpecificationNotice", {
+                generation: specification.generationLabel ?? "",
+                variant: specification.variantLabel ?? translate(locale, "variantUnspecified"),
+              })}</p>
+            )}
+            {specification.conflict && <p className="specification-conflict">{translate(locale, "specificationConflictNotice")}</p>}
           </div>}
           <p className="catalog-free-note">{translate(locale, "catalogFreeNotice")}</p>
-          {isPrevious && <div className="form-grid three-columns optional-vehicle-details">
-            <Field label={translate(locale, "gradeOptional")}><input value={draft.grade} onChange={(event) => setField("grade", event.target.value)} /></Field>
-            <Field label={translate(locale, "modelCodeOptional")}><input value={draft.modelCode} onChange={(event) => setField("modelCode", event.target.value)} /></Field>
-            <Field label={translate(locale, "nicknameOptional")}><input value={draft.nickname} onChange={(event) => setField("nickname", event.target.value)} /></Field>
-          </div>}
+          <details className="optional-specification" open={isPrevious || undefined}>
+            <summary>{translate(locale, "detailedSpecificationOptional")}</summary>
+            <p>{translate(locale, "detailedSpecificationHelp")}</p>
+            <div className="form-grid two-columns optional-vehicle-details">
+              <Field label={translate(locale, "gradeOptional")}><input value={draft.grade} onChange={(event) => setField("grade", event.target.value)} placeholder={translate(locale, "gradeExample")} /></Field>
+              <Field label={translate(locale, "modelCodeOptional")}><input value={draft.modelCode} onChange={(event) => setField("modelCode", event.target.value)} placeholder={translate(locale, "modelCodeExample")} /></Field>
+            </div>
+            {isPrevious && <Field label={translate(locale, "nicknameOptional")}><input value={draft.nickname} onChange={(event) => setField("nickname", event.target.value)} /></Field>}
+          </details>
         </section>
 
         <section className="form-section">

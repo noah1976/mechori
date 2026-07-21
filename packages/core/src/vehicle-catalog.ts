@@ -2,6 +2,7 @@ import type {
   Locale,
   Vehicle,
   VehicleIdentityMatchStatus,
+  VehicleSpecificationMatchStatus,
 } from "./types.ts";
 
 export interface VehicleIdentityCandidate {
@@ -33,6 +34,23 @@ export interface RelatedVehicleIdentity {
   relationType: VehicleIdentityRelationType;
 }
 
+export interface VehicleSpecificationCandidate {
+  generationId?: string;
+  generationLabel?: string;
+  variantId?: string;
+  variantLabel?: string;
+  matchStatus: VehicleSpecificationMatchStatus;
+  matchedBy?: "model_code" | "grade";
+  conflict?: "grade_model_code_mismatch";
+}
+
+export type VehicleApplicabilityLevel =
+  | "exact_variant"
+  | "same_generation_other_variant"
+  | "same_family_other_generation"
+  | "same_family_unspecified"
+  | "different_family";
+
 interface BrandDefinition {
   id: string;
   canonicalName: string;
@@ -52,6 +70,22 @@ interface MarketNameRelationDefinition {
   leftMarketNameId: string;
   rightMarketNameId: string;
   relationType: VehicleIdentityRelationType;
+}
+
+interface GenerationDefinition {
+  id: string;
+  familyId: string;
+  labels: Record<Locale, string>;
+  modelCodeFragments: string[];
+  gradeAliases?: string[];
+}
+
+interface VariantDefinition {
+  id: string;
+  generationId: string;
+  labels: Record<Locale, string>;
+  modelCodes: string[];
+  gradeAliases: string[];
 }
 
 const BRANDS: BrandDefinition[] = [
@@ -228,6 +262,35 @@ const MARKET_NAME_RELATIONS: MarketNameRelationDefinition[] = [
   { leftMarketNameId: "lotus-seven-global", rightMarketNameId: "birkin-s3-global", relationType: "inspired_derivative" },
 ];
 
+// This catalog is intentionally small. It proves the hierarchy without pretending
+// MECHORI already has an exhaustive worldwide grade database.
+const GENERATIONS: GenerationDefinition[] = [
+  {
+    id: "nissan-skyline-r33",
+    familyId: "nissan-skyline",
+    labels: { ja: "R33", en: "R33" },
+    modelCodeFragments: ["R33"],
+    gradeAliases: ["R33"],
+  },
+];
+
+const VARIANTS: VariantDefinition[] = [
+  {
+    id: "nissan-skyline-r33-gts25t",
+    generationId: "nissan-skyline-r33",
+    labels: { ja: "GTS25t系", en: "GTS25t family" },
+    modelCodes: ["ECR33"],
+    gradeAliases: ["GTS25T", "GTS25T TYPE M", "GTS25T TYPEM"],
+  },
+  {
+    id: "nissan-skyline-r33-gtr",
+    generationId: "nissan-skyline-r33",
+    labels: { ja: "GT-R系", en: "GT-R family" },
+    modelCodes: ["BCNR33"],
+    gradeAliases: ["GT-R", "GTR", "GT-R V-SPEC", "GTR VSPEC"],
+  },
+];
+
 function aliasKey(value: string): string {
   return value
     .normalize("NFKC")
@@ -241,6 +304,129 @@ function unknownCanonicalMake(value: string): string {
   const usesLatinAlphabet = characters.some((character) => /\p{Script=Latin}/u.test(character)) &&
     !characters.some((character) => /\p{Letter}/u.test(character) && !/\p{Script=Latin}/u.test(character));
   return usesLatinAlphabet ? trimmed.toLocaleUpperCase("en") : trimmed;
+}
+
+function normalizedSpecificationText(value: string): string {
+  return value
+    .normalize("NFKC")
+    .toLocaleUpperCase("en")
+    .replace(/[‐‑‒–—―]/g, "-")
+    .replace(/[^A-Z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function normalizedModelCode(value: string): string {
+  return normalizedSpecificationText(value).replace(/\s+/g, "");
+}
+
+export function resolveVehicleSpecification(
+  modelFamilyId: string | undefined,
+  details: { grade?: string; modelCode?: string },
+  locale: Locale = "ja",
+): VehicleSpecificationCandidate {
+  if (!modelFamilyId) return { matchStatus: "unmatched" };
+
+  const modelCode = normalizedModelCode(details.modelCode ?? "");
+  const grade = normalizedSpecificationText(details.grade ?? "");
+
+  if (modelCode) {
+    const variant = VARIANTS.find((item) =>
+      item.modelCodes.some((code) => modelCode.endsWith(normalizedModelCode(code))),
+    );
+    if (variant) {
+      const generation = GENERATIONS.find((item) => item.id === variant.generationId);
+      if (generation?.familyId === modelFamilyId) {
+        const gradeVariant = grade
+          ? VARIANTS.find(
+              (item) =>
+                item.generationId === generation.id &&
+                item.gradeAliases.some((alias) => grade.includes(normalizedSpecificationText(alias))),
+            )
+          : undefined;
+        const conflict = gradeVariant && gradeVariant.id !== variant.id
+          ? "grade_model_code_mismatch" as const
+          : undefined;
+        return {
+          generationId: generation.id,
+          generationLabel: generation.labels[locale],
+          variantId: variant.id,
+          variantLabel: variant.labels[locale],
+          matchStatus: conflict ? "conflicting_inputs" : "confirmed_model_code",
+          matchedBy: "model_code",
+          conflict,
+        };
+      }
+    }
+
+    const generation = GENERATIONS.find(
+      (item) =>
+        item.familyId === modelFamilyId &&
+        item.modelCodeFragments.some((fragment) => modelCode.includes(normalizedModelCode(fragment))),
+    );
+    if (generation) {
+      return {
+        generationId: generation.id,
+        generationLabel: generation.labels[locale],
+        matchStatus: "generation_candidate",
+        matchedBy: "model_code",
+      };
+    }
+  }
+
+  if (grade) {
+    const generation = GENERATIONS.find(
+      (item) =>
+        item.familyId === modelFamilyId &&
+        item.gradeAliases?.some((alias) => grade.includes(normalizedSpecificationText(alias))),
+    );
+    const variant = VARIANTS.find((item) =>
+      item.generationId === generation?.id &&
+      item.gradeAliases.some((alias) => grade.includes(normalizedSpecificationText(alias))),
+    );
+    if (variant) {
+      if (generation?.familyId === modelFamilyId) {
+        return {
+          generationId: generation.id,
+          generationLabel: generation.labels[locale],
+          variantId: variant.id,
+          variantLabel: variant.labels[locale],
+          matchStatus: "grade_candidate",
+          matchedBy: "grade",
+        };
+      }
+    }
+
+    if (generation) {
+      return {
+        generationId: generation.id,
+        generationLabel: generation.labels[locale],
+        matchStatus: "generation_candidate",
+        matchedBy: "grade",
+      };
+    }
+  }
+
+  return { matchStatus: "unmatched" };
+}
+
+export function compareVehicleApplicability(
+  target: Pick<Vehicle, "modelFamilyId" | "generationId" | "variantId" | "specificationMatchStatus">,
+  source: Pick<Vehicle, "modelFamilyId" | "generationId" | "variantId" | "specificationMatchStatus">,
+): VehicleApplicabilityLevel {
+  if (!target.modelFamilyId || target.modelFamilyId !== source.modelFamilyId) {
+    return "different_family";
+  }
+  if (!target.generationId || !source.generationId) return "same_family_unspecified";
+  if (target.generationId !== source.generationId) return "same_family_other_generation";
+  if (!target.variantId || !source.variantId) return "same_family_unspecified";
+  if (
+    target.specificationMatchStatus !== "confirmed_model_code" ||
+    source.specificationMatchStatus !== "confirmed_model_code"
+  ) return "same_family_unspecified";
+  return target.variantId === source.variantId
+    ? "exact_variant"
+    : "same_generation_other_variant";
 }
 
 export function resolveVehicleIdentity(make: string, model: string): VehicleIdentityCandidate {
@@ -281,6 +467,16 @@ export function displayVehicleModel(vehicle: Vehicle, locale: Locale): string {
   return marketName?.names[locale] ?? vehicle.model;
 }
 
+export function displayVehicleSpecification(
+  vehicle: Pick<Vehicle, "generationId" | "variantId">,
+  locale: Locale,
+): { generation?: string; variant?: string } {
+  return {
+    generation: GENERATIONS.find((item) => item.id === vehicle.generationId)?.labels[locale],
+    variant: VARIANTS.find((item) => item.id === vehicle.variantId)?.labels[locale],
+  };
+}
+
 export function canonicalModelTargetId(vehicle: Pick<Vehicle, "make" | "model" | "modelFamilyId">): string {
   if (vehicle.modelFamilyId) return `model-family:${vehicle.modelFamilyId}`;
   return `model:${aliasKey(vehicle.make)}:${aliasKey(vehicle.model)}`;
@@ -301,6 +497,10 @@ export function normalizeVehicle(vehicle: Vehicle): Vehicle {
     vehicle.makeInput ?? vehicle.make,
     vehicle.modelInput ?? vehicle.model,
   );
+  const specification = resolveVehicleSpecification(
+    identity.modelFamilyId ?? vehicle.modelFamilyId,
+    vehicle,
+  );
   return {
     ...vehicle,
     make: identity.canonicalMake,
@@ -308,13 +508,18 @@ export function normalizeVehicle(vehicle: Vehicle): Vehicle {
     modelInput: vehicle.modelInput ?? vehicle.model,
     brandId: identity.brandId ?? vehicle.brandId,
     modelFamilyId: identity.modelFamilyId ?? vehicle.modelFamilyId,
-    generationId: vehicle.generationId ?? identity.generationId,
+    generationId: specification.generationId ?? vehicle.generationId ?? identity.generationId,
+    variantId: specification.variantId ?? vehicle.variantId,
     marketNameId: identity.marketNameId ?? vehicle.marketNameId,
     marketRegion: identity.marketRegion ?? vehicle.marketRegion,
     identityMatchStatus:
       identity.matchStatus !== "unmatched"
         ? identity.matchStatus
         : vehicle.identityMatchStatus ?? identity.matchStatus,
+    specificationMatchStatus:
+      specification.matchStatus !== "unmatched"
+        ? specification.matchStatus
+        : vehicle.specificationMatchStatus ?? specification.matchStatus,
   };
 }
 

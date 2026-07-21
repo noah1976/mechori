@@ -45,6 +45,9 @@ function EvidenceList({
 function matchLabel(level: VehicleMatchLevel, ja: boolean) {
   const labels: Record<VehicleMatchLevel, [string, string]> = {
     exact_specification: ["同一仕様", "Exact specification"],
+    same_generation_other_variant: ["同世代・別仕様", "Same generation, different variant"],
+    same_family_other_generation: ["同車系統・別世代", "Same family, different generation"],
+    same_family_unspecified: ["同車系統・仕様未確認", "Same family, specification unconfirmed"],
     same_model_other_year: ["同車種・別年式", "Same model, other year"],
     shared_engine_or_component: ["共通エンジン・部品", "Shared engine or component"],
     general_symptom: ["一般的な類似症状", "General similar symptom"],

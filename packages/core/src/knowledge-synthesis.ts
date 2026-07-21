@@ -1,11 +1,33 @@
 import { resolveHazardPolicy, type HazardPolicy, type HazardTagCode } from "./hazards.ts";
-import type { HazardLevel, VerificationStatus } from "./types.ts";
+import { compareVehicleApplicability } from "./vehicle-catalog.ts";
+import type { HazardLevel, Vehicle, VerificationStatus } from "./types.ts";
 
 export type VehicleMatchLevel =
   | "exact_specification"
+  | "same_generation_other_variant"
+  | "same_family_other_generation"
+  | "same_family_unspecified"
   | "same_model_other_year"
   | "shared_engine_or_component"
   | "general_symptom";
+
+export function evidenceMatchLevelForVehicles(
+  target: Pick<
+    Vehicle,
+    "modelFamilyId" | "generationId" | "variantId" | "specificationMatchStatus"
+  >,
+  source: Pick<
+    Vehicle,
+    "modelFamilyId" | "generationId" | "variantId" | "specificationMatchStatus"
+  >,
+): VehicleMatchLevel | null {
+  const applicability = compareVehicleApplicability(target, source);
+  if (applicability === "exact_variant") return "exact_specification";
+  if (applicability === "same_generation_other_variant") return "same_generation_other_variant";
+  if (applicability === "same_family_other_generation") return "same_family_other_generation";
+  if (applicability === "same_family_unspecified") return "same_family_unspecified";
+  return null;
+}
 
 export type KnowledgeOutcome =
   | "improved"

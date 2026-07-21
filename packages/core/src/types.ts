@@ -43,6 +43,12 @@ export type VehicleIdentityMatchStatus =
   | "matched_alias"
   | "brand_only"
   | "unmatched";
+export type VehicleSpecificationMatchStatus =
+  | "confirmed_model_code"
+  | "conflicting_inputs"
+  | "grade_candidate"
+  | "generation_candidate"
+  | "unmatched";
 export type RecordEvidenceBasis =
   | "contemporaneous"
   | "invoice_or_receipt"
@@ -77,9 +83,12 @@ export interface Vehicle {
   brandId?: string;
   modelFamilyId?: string;
   generationId?: string;
+  /** Normalized mechanical/specification branch inside a generation. */
+  variantId?: string;
   marketNameId?: string;
   marketRegion?: string;
   identityMatchStatus: VehicleIdentityMatchStatus;
+  specificationMatchStatus?: VehicleSpecificationMatchStatus;
   year?: number;
   grade?: string;
   modelCode?: string;

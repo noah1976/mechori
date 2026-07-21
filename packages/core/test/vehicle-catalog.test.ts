@@ -6,12 +6,14 @@ import {
   canonicalizeLegacyModelTargetId,
   canonicalModelTargetId,
   cloneDemoData,
+  compareVehicleApplicability,
   createEmptyVehicleDraft,
   displayVehicleModel,
   migrateAppData,
   normalizeVehicle,
   relatedVehicleIdentities,
   resolveVehicleIdentity,
+  resolveVehicleSpecification,
 } from "../src/index.ts";
 
 test("standardizes a Japanese make alias while preserving the owner input", () => {
@@ -125,6 +127,81 @@ test("keeps official Latin diacritics while uppercasing an unknown make", () => 
 
   assert.equal(identity.canonicalMake, "CITROËN");
   assert.equal(identity.matchStatus, "unmatched");
+});
+
+test("separates R33 GT-S25t and GT-R as variants within one generation", () => {
+  const identity = resolveVehicleIdentity("NISSAN", "スカイライン");
+  const gts25t = resolveVehicleSpecification(identity.modelFamilyId, {
+    grade: "GTS25t Type M",
+    modelCode: "E-ECR33",
+  });
+  const gtr = resolveVehicleSpecification(identity.modelFamilyId, {
+    grade: "GT-R V-spec",
+    modelCode: "BCNR33",
+  });
+
+  assert.equal(gts25t.generationId, "nissan-skyline-r33");
+  assert.equal(gtr.generationId, gts25t.generationId);
+  assert.equal(gts25t.variantId, "nissan-skyline-r33-gts25t");
+  assert.equal(gtr.variantId, "nissan-skyline-r33-gtr");
+  assert.equal(gtr.matchStatus, "confirmed_model_code");
+  assert.equal(compareVehicleApplicability(
+    {
+      modelFamilyId: identity.modelFamilyId,
+      generationId: gts25t.generationId,
+      variantId: gts25t.variantId,
+      specificationMatchStatus: gts25t.matchStatus,
+    },
+    {
+      modelFamilyId: identity.modelFamilyId,
+      generationId: gtr.generationId,
+      variantId: gtr.variantId,
+      specificationMatchStatus: gtr.matchStatus,
+    },
+  ), "same_generation_other_variant");
+});
+
+test("does not claim an exact variant match when either specification is uncertain", () => {
+  assert.equal(compareVehicleApplicability(
+    {
+      modelFamilyId: "nissan-skyline",
+      generationId: "nissan-skyline-r33",
+      variantId: "nissan-skyline-r33-gtr",
+      specificationMatchStatus: "conflicting_inputs",
+    },
+    {
+      modelFamilyId: "nissan-skyline",
+      generationId: "nissan-skyline-r33",
+      variantId: "nissan-skyline-r33-gtr",
+      specificationMatchStatus: "confirmed_model_code",
+    },
+  ), "same_family_unspecified");
+});
+
+test("requires a generation clue before treating a grade-only variant as a candidate", () => {
+  const familyId = resolveVehicleIdentity("NISSAN", "SKYLINE").modelFamilyId;
+  const gradeOnly = resolveVehicleSpecification(familyId, { grade: "R33 GT-R" });
+  const ambiguousGrade = resolveVehicleSpecification(familyId, { grade: "GT-R" });
+  const unspecified = resolveVehicleSpecification(familyId, {});
+
+  assert.equal(gradeOnly.variantId, "nissan-skyline-r33-gtr");
+  assert.equal(gradeOnly.matchStatus, "grade_candidate");
+  assert.equal(ambiguousGrade.variantId, undefined);
+  assert.equal(unspecified.generationId, undefined);
+  assert.equal(unspecified.variantId, undefined);
+  assert.equal(unspecified.matchStatus, "unmatched");
+});
+
+test("flags a conflicting R33 grade and model code instead of calling it exact", () => {
+  const familyId = resolveVehicleIdentity("NISSAN", "SKYLINE").modelFamilyId;
+  const conflict = resolveVehicleSpecification(familyId, {
+    grade: "R33 GTS25t Type M",
+    modelCode: "BCNR33",
+  });
+
+  assert.equal(conflict.variantId, "nissan-skyline-r33-gtr");
+  assert.equal(conflict.matchStatus, "conflicting_inputs");
+  assert.equal(conflict.conflict, "grade_model_code_mismatch");
 });
 
 test("migrates a known legacy model follow target to its family id", () => {

@@ -314,6 +314,11 @@ button { cursor: pointer; }
 .vehicle-identity-match p { margin: 0; }
 .vehicle-identity-match p + p { margin-top: 5px; }
 .optional-vehicle-details { margin-top: 15px; }
+.optional-specification { border-top: 1px solid var(--line); padding-top: 14px; }
+.optional-specification summary { cursor: pointer; font-weight: 750; color: var(--ink); }
+.optional-specification > p { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.optional-specification[open] summary { margin-bottom: 2px; }
+.optional-specification > .field { margin-top: 15px; }
 .vehicle-photo-field.is-optional-past-photo .vehicle-photo-preview { min-height: 180px; }
 .ownership-transition-panel { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
 .ownership-transition-panel > svg { color: var(--brand); margin-top: 3px; }

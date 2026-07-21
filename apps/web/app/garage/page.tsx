@@ -8,6 +8,7 @@ import {
   formatOwnershipDuration,
   formatOwnershipPeriod,
   displayVehicleModel,
+  displayVehicleSpecification,
   getOwnJournals,
   groupVehiclesByOwnership,
   journalOccurrenceDate,
@@ -17,7 +18,7 @@ import {
   type Vehicle,
 } from "@mechori/core";
 import { translate } from "@mechori/i18n";
-import { ArrowLeftRight, Bike, BookOpenText, CalendarDays, Camera, CarFront, CheckCircle2, Gauge, History, Plus, RotateCcw, Share2, Wrench } from "lucide-react";
+import { ArrowLeftRight, Bike, BookOpenText, CalendarDays, Camera, CarFront, CheckCircle2, Gauge, History, Pencil, Plus, RotateCcw, Share2, Wrench } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -83,6 +84,7 @@ function GarageContent() {
   const relationship = summarizeVehicleRelationship(vehicle);
   const ownershipDuration = formatOwnershipDuration(locale, relationship);
   const vehicleModel = displayVehicleModel(vehicle, locale);
+  const vehicleSpecification = displayVehicleSpecification(vehicle, locale);
   const vehicleLabel = `${vehicle.make} ${vehicleModel}`;
   const isPreviousVehicle = vehicle.ownershipType === "previously_owned";
   const ownershipPeriod = formatOwnershipPeriod(vehicle, locale);
@@ -191,6 +193,7 @@ function GarageContent() {
             <div><dt>{translate(locale, "ownershipHistory")}</dt><dd>{ownershipDuration ?? (ja ? "未登録" : "Not set")}</dd></div>
             {vehicle.grade && <div><dt>{ja ? "グレード" : "Grade"}</dt><dd>{vehicle.grade}</dd></div>}
             {vehicle.modelCode && <div><dt>{ja ? "型式" : "Model code"}</dt><dd>{vehicle.modelCode}</dd></div>}
+            {vehicleSpecification.generation && <div><dt>{ja ? "世代・仕様系統" : "Generation / variant"}</dt><dd>{[vehicleSpecification.generation, vehicleSpecification.variant].filter(Boolean).join(" / ")}</dd></div>}
             {vehicle.primaryUse && <div><dt>{ja ? "主な用途" : "Main use"}</dt><dd>{vehicle.primaryUse}</dd></div>}
             {vehicle.dispositionReason && <div><dt>{ja ? "手放した理由" : "Reason ownership ended"}</dt><dd>{vehicle.dispositionReason}</dd></div>}
             {vehicle.engine && <div><dt>{ja ? "エンジン" : "Engine"}</dt><dd>{vehicle.engine}</dd></div>}
@@ -199,6 +202,7 @@ function GarageContent() {
           </dl>
           {vehicle.currentOdometerReading.displayedValue > 0 && <div className="odometer"><Gauge size={22} /><span><small>{isPreviousVehicle ? (ja ? "手放した時点などの記録値" : "Recorded value around ownership end") : (ja ? "現在の走行距離" : "Current odometer")}</small><strong>{vehicle.currentOdometerReading.displayedValue.toLocaleString()} {vehicle.currentOdometerReading.unit}</strong></span></div>}
           <p className="privacy-caption">{ja ? "車齢と所有年月は登録された年・月からの概算です。" : "Vehicle age and ownership duration are approximate, based on the year and month provided."}</p>
+          <Link href={`/garage/${encodeURIComponent(vehicle.id)}/specification`} className="secondary-action ownership-change-link"><Pencil size={17} />{translate(locale, "editVehicleSpecification")}</Link>
           <Link href={`/garage/${encodeURIComponent(vehicle.id)}/ownership`} className="secondary-action ownership-change-link"><ArrowLeftRight size={17} />{isPreviousVehicle ? (ja ? "現在のガレージへ戻す" : "Move to Current Garage") : (ja ? "所有を終了" : "End ownership")}</Link>
         </div>
       </section>
