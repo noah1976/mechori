@@ -18,6 +18,21 @@ export interface VehicleIdentityCandidate {
   equivalentMarketNames: string[];
 }
 
+export type VehicleIdentityRelationType =
+  | "market_name_variant"
+  | "oem_rebadge"
+  | "brand_transition"
+  | "licensed_continuation"
+  | "inspired_derivative";
+
+export interface RelatedVehicleIdentity {
+  marketNameId: string;
+  modelFamilyId: string;
+  canonicalMake: string;
+  model: string;
+  relationType: VehicleIdentityRelationType;
+}
+
 interface BrandDefinition {
   id: string;
   canonicalName: string;
@@ -27,10 +42,16 @@ interface BrandDefinition {
 interface MarketNameDefinition {
   id: string;
   familyId: string;
-  brandIds: string[];
+  brandId: string;
   region: string;
   names: Record<Locale, string>;
   aliases: string[];
+}
+
+interface MarketNameRelationDefinition {
+  leftMarketNameId: string;
+  rightMarketNameId: string;
+  relationType: VehicleIdentityRelationType;
 }
 
 const BRANDS: BrandDefinition[] = [
@@ -44,13 +65,18 @@ const BRANDS: BrandDefinition[] = [
   { id: "bertone", canonicalName: "BERTONE", aliases: ["BERTONE", "Bertone", "ベルトーネ"] },
   { id: "alfa-romeo", canonicalName: "ALFA ROMEO", aliases: ["ALFA ROMEO", "Alfa Romeo", "アルファロメオ"] },
   { id: "vespa", canonicalName: "VESPA", aliases: ["VESPA", "Vespa", "ベスパ"] },
+  { id: "lotus", canonicalName: "LOTUS", aliases: ["LOTUS", "Lotus", "ロータス"] },
+  { id: "caterham", canonicalName: "CATERHAM", aliases: ["CATERHAM", "Caterham", "ケータハム"] },
+  { id: "birkin", canonicalName: "BIRKIN", aliases: ["BIRKIN", "Birkin", "バーキン"] },
+  { id: "opel", canonicalName: "OPEL", aliases: ["OPEL", "Opel", "オペル"] },
+  { id: "vauxhall", canonicalName: "VAUXHALL", aliases: ["VAUXHALL", "Vauxhall", "ボクスホール"] },
 ];
 
 const MARKET_NAMES: MarketNameDefinition[] = [
   {
     id: "fiat-barchetta-global",
     familyId: "fiat-barchetta",
-    brandIds: ["fiat"],
+    brandId: "fiat",
     region: "global",
     names: { ja: "バルケッタ", en: "Barchetta" },
     aliases: ["Barchetta", "バルケッタ"],
@@ -58,7 +84,15 @@ const MARKET_NAMES: MarketNameDefinition[] = [
   {
     id: "fiat-x1-9-global",
     familyId: "fiat-x1-9",
-    brandIds: ["fiat", "bertone"],
+    brandId: "fiat",
+    region: "global",
+    names: { ja: "X1/9", en: "X1/9" },
+    aliases: ["X1/9", "X1-9", "X 1/9"],
+  },
+  {
+    id: "bertone-x1-9-global",
+    familyId: "fiat-x1-9",
+    brandId: "bertone",
     region: "global",
     names: { ja: "X1/9", en: "X1/9" },
     aliases: ["X1/9", "X1-9", "X 1/9"],
@@ -66,7 +100,7 @@ const MARKET_NAMES: MarketNameDefinition[] = [
   {
     id: "nissan-skyline-global",
     familyId: "nissan-skyline",
-    brandIds: ["nissan"],
+    brandId: "nissan",
     region: "global",
     names: { ja: "スカイライン", en: "SKYLINE" },
     aliases: ["SKYLINE", "Skyline", "スカイライン"],
@@ -74,7 +108,7 @@ const MARKET_NAMES: MarketNameDefinition[] = [
   {
     id: "honda-civic-global",
     familyId: "honda-civic",
-    brandIds: ["honda"],
+    brandId: "honda",
     region: "global",
     names: { ja: "シビック", en: "CIVIC" },
     aliases: ["CIVIC", "Civic", "シビック"],
@@ -82,7 +116,7 @@ const MARKET_NAMES: MarketNameDefinition[] = [
   {
     id: "toyota-vitz-jp",
     familyId: "toyota-yaris-vitz",
-    brandIds: ["toyota"],
+    brandId: "toyota",
     region: "JP",
     names: { ja: "ヴィッツ", en: "Vitz" },
     aliases: ["VITZ", "Vitz", "ヴィッツ"],
@@ -90,7 +124,7 @@ const MARKET_NAMES: MarketNameDefinition[] = [
   {
     id: "toyota-yaris-global",
     familyId: "toyota-yaris-vitz",
-    brandIds: ["toyota"],
+    brandId: "toyota",
     region: "global",
     names: { ja: "ヤリス", en: "YARIS" },
     aliases: ["YARIS", "Yaris", "ヤリス"],
@@ -98,7 +132,7 @@ const MARKET_NAMES: MarketNameDefinition[] = [
   {
     id: "suzuki-jimny-nomade-jp",
     familyId: "suzuki-jimny-nomade",
-    brandIds: ["suzuki"],
+    brandId: "suzuki",
     region: "JP",
     names: { ja: "ジムニー ノマド", en: "JIMNY NOMADE" },
     aliases: ["JIMNY NOMADE", "Jimny Nomade", "ジムニーノマド", "ジムニー ノマド"],
@@ -106,7 +140,7 @@ const MARKET_NAMES: MarketNameDefinition[] = [
   {
     id: "mg-mgb-global",
     familyId: "mg-mgb",
-    brandIds: ["mg"],
+    brandId: "mg",
     region: "global",
     names: { ja: "MGB", en: "MGB" },
     aliases: ["MGB", "MG-B", "MGB Roadster"],
@@ -114,7 +148,7 @@ const MARKET_NAMES: MarketNameDefinition[] = [
   {
     id: "alfa-romeo-145-global",
     familyId: "alfa-romeo-145",
-    brandIds: ["alfa-romeo"],
+    brandId: "alfa-romeo",
     region: "global",
     names: { ja: "145", en: "145" },
     aliases: ["145"],
@@ -122,11 +156,76 @@ const MARKET_NAMES: MarketNameDefinition[] = [
   {
     id: "vespa-150-sprint-global",
     familyId: "vespa-150-sprint",
-    brandIds: ["vespa"],
+    brandId: "vespa",
     region: "global",
     names: { ja: "150 Sprint", en: "150 Sprint" },
     aliases: ["150 Sprint", "150スプリント"],
   },
+  {
+    id: "opel-speedster-eu",
+    familyId: "gm-speedster-vx220",
+    brandId: "opel",
+    region: "EU",
+    names: { ja: "スピードスター", en: "Speedster" },
+    aliases: ["Speedster", "スピードスター"],
+  },
+  {
+    id: "vauxhall-vx220-uk",
+    familyId: "gm-speedster-vx220",
+    brandId: "vauxhall",
+    region: "GB",
+    names: { ja: "VX220", en: "VX220" },
+    aliases: ["VX220", "VX 220", "Speedster", "スピードスター"],
+  },
+  {
+    id: "mazda-az-1-jp",
+    familyId: "mazda-az1-suzuki-cara",
+    brandId: "mazda",
+    region: "JP",
+    names: { ja: "AZ-1", en: "AZ-1" },
+    aliases: ["AZ-1", "AZ1"],
+  },
+  {
+    id: "suzuki-cara-jp",
+    familyId: "mazda-az1-suzuki-cara",
+    brandId: "suzuki",
+    region: "JP",
+    names: { ja: "キャラ", en: "CARA" },
+    aliases: ["CARA", "Cara", "キャラ"],
+  },
+  {
+    id: "lotus-seven-global",
+    familyId: "lotus-seven",
+    brandId: "lotus",
+    region: "global",
+    names: { ja: "セブン", en: "Seven" },
+    aliases: ["Seven", "7", "Super Seven", "セブン", "スーパーセブン"],
+  },
+  {
+    id: "caterham-seven-global",
+    familyId: "caterham-seven",
+    brandId: "caterham",
+    region: "global",
+    names: { ja: "セブン", en: "Seven" },
+    aliases: ["Seven", "7", "Super Seven", "セブン", "スーパーセブン"],
+  },
+  {
+    id: "birkin-s3-global",
+    familyId: "birkin-s3",
+    brandId: "birkin",
+    region: "global",
+    names: { ja: "S3 ロードスター", en: "S3 Roadster" },
+    aliases: ["S3 Roadster", "S3", "Seven", "7", "S3 ロードスター", "セブン"],
+  },
+];
+
+const MARKET_NAME_RELATIONS: MarketNameRelationDefinition[] = [
+  { leftMarketNameId: "toyota-vitz-jp", rightMarketNameId: "toyota-yaris-global", relationType: "market_name_variant" },
+  { leftMarketNameId: "fiat-x1-9-global", rightMarketNameId: "bertone-x1-9-global", relationType: "brand_transition" },
+  { leftMarketNameId: "opel-speedster-eu", rightMarketNameId: "vauxhall-vx220-uk", relationType: "market_name_variant" },
+  { leftMarketNameId: "mazda-az-1-jp", rightMarketNameId: "suzuki-cara-jp", relationType: "oem_rebadge" },
+  { leftMarketNameId: "lotus-seven-global", rightMarketNameId: "caterham-seven-global", relationType: "licensed_continuation" },
+  { leftMarketNameId: "lotus-seven-global", rightMarketNameId: "birkin-s3-global", relationType: "inspired_derivative" },
 ];
 
 function aliasKey(value: string): string {
@@ -153,7 +252,7 @@ export function resolveVehicleIdentity(make: string, model: string): VehicleIden
   const marketName = brand
     ? MARKET_NAMES.find(
         (item) =>
-          item.brandIds.includes(brand.id) &&
+          item.brandId === brand.id &&
           item.aliases.some((alias) => aliasKey(alias) === modelKey),
       )
     : undefined;
@@ -207,11 +306,11 @@ export function normalizeVehicle(vehicle: Vehicle): Vehicle {
     make: identity.canonicalMake,
     makeInput: vehicle.makeInput ?? vehicle.make,
     modelInput: vehicle.modelInput ?? vehicle.model,
-    brandId: vehicle.brandId ?? identity.brandId,
-    modelFamilyId: vehicle.modelFamilyId ?? identity.modelFamilyId,
+    brandId: identity.brandId ?? vehicle.brandId,
+    modelFamilyId: identity.modelFamilyId ?? vehicle.modelFamilyId,
     generationId: vehicle.generationId ?? identity.generationId,
-    marketNameId: vehicle.marketNameId ?? identity.marketNameId,
-    marketRegion: vehicle.marketRegion ?? identity.marketRegion,
+    marketNameId: identity.marketNameId ?? vehicle.marketNameId,
+    marketRegion: identity.marketRegion ?? vehicle.marketRegion,
     identityMatchStatus:
       identity.matchStatus !== "unmatched"
         ? identity.matchStatus
@@ -223,4 +322,34 @@ export function equivalentMarketNames(modelFamilyId: string, locale: Locale): st
   return MARKET_NAMES.filter((item) => item.familyId === modelFamilyId)
     .map((item) => item.names[locale])
     .filter((name, index, names) => names.indexOf(name) === index);
+}
+
+export function relatedVehicleIdentities(
+  marketNameId: string | undefined,
+  locale: Locale,
+): RelatedVehicleIdentity[] {
+  if (!marketNameId) return [];
+
+  return MARKET_NAME_RELATIONS.flatMap((relation) => {
+    const relatedId = relation.leftMarketNameId === marketNameId
+      ? relation.rightMarketNameId
+      : relation.rightMarketNameId === marketNameId
+        ? relation.leftMarketNameId
+        : undefined;
+    if (!relatedId) return [];
+
+    const marketName = MARKET_NAMES.find((item) => item.id === relatedId);
+    const brand = marketName
+      ? BRANDS.find((item) => item.id === marketName.brandId)
+      : undefined;
+    if (!marketName || !brand) return [];
+
+    return [{
+      marketNameId: marketName.id,
+      modelFamilyId: marketName.familyId,
+      canonicalMake: brand.canonicalName,
+      model: marketName.names[locale],
+      relationType: relation.relationType,
+    }];
+  });
 }

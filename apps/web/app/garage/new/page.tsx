@@ -4,7 +4,7 @@ import { useApp } from "@/lib/app-context";
 import { preparePrivateAlphaImage } from "@/lib/image-preparation";
 import {
   createEmptyVehicleDraft,
-  equivalentMarketNames,
+  relatedVehicleIdentities,
   resolveVehicleIdentity,
   validateVehicleDraft,
   type VehicleDraft,
@@ -38,11 +38,9 @@ function NewVehicleContent() {
     () => resolveVehicleIdentity(draft.make, draft.model),
     [draft.make, draft.model],
   );
-  const identityNames = useMemo(
-    () => identity.modelFamilyId
-      ? equivalentMarketNames(identity.modelFamilyId, locale)
-      : [],
-    [identity.modelFamilyId, locale],
+  const relatedIdentities = useMemo(
+    () => relatedVehicleIdentities(identity.marketNameId, locale),
+    [identity.marketNameId, locale],
   );
   const router = useRouter();
 
@@ -148,10 +146,12 @@ function NewVehicleContent() {
                 canonical: identity.canonicalMake,
               })}</p>
             )}
-            {identity.modelFamilyId && identityNames.length > 0 && (
-              <p>{translate(locale, "modelFamilyNotice", {
+            {relatedIdentities.length > 0 && (
+              <p>{translate(locale, "relatedVehicleNotice", {
                 model: draft.model.trim(),
-                names: identityNames.join(" / "),
+                names: relatedIdentities
+                  .map((item) => `${item.canonicalMake} ${item.model}`)
+                  .join(" / "),
               })}</p>
             )}
             {draft.model.trim() && identity.matchStatus !== "matched_alias" && (

@@ -21,6 +21,22 @@
 
 同じ車名でも世代や市場仕様が異なる場合があるため、名前だけで`generationId`を確定しません。年式・型式が不足する場合は`modelFamilyId`までの接続を許容します。
 
+## メーカーをまたぐ関係
+
+メーカー名が違っても関係する車両は、単一メーカー名へ統合せず、ブランドと市場名を保持したまま関係グラフで結びます。
+
+| 関係 | 扱い | 例 |
+|---|---|---|
+| `market_name_variant` | 地域・販売ブランドによる名称差。同じ車系統だが市場仕様は別確認 | OPEL Speedster / VAUXHALL VX220、TOYOTA Vitz / YARIS |
+| `oem_rebadge` | OEM姉妹車。車系統は接続するが専用装備・型式・部品適合は別確認 | MAZDA AZ-1 / SUZUKI CARA |
+| `brand_transition` | 生産・販売ブランドの移管。時期と仕様差を保持 | FIAT X1/9 / BERTONE X1/9 |
+| `licensed_continuation` | 設計・生産権を引き継いだ継承車。別車系統のまま関連付ける | LOTUS Seven / CATERHAM Seven |
+| `inspired_derivative` | 元車を再現・着想した派生。類似事例の参考候補に留める | LOTUS Seven / BIRKIN S3 Roadster |
+
+同じ`modelFamilyId`を持つ場合でも、世代、型式、エンジン、市場仕様を確認せずに部品適合や修理事例を「同一」としません。`licensed_continuation`と`inspired_derivative`は別の`modelFamilyId`を維持し、通常検索の完全一致件数へ混ぜません。
+
+初期関係の根拠は、メーカーまたは正規系統の資料を優先します。[Caterham](https://caterhamcars.com/us/about/history)はLotus Sevenの生産権等を1973年に取得したと説明し、[Suzuki](https://www.suzuki.co.jp/suzuki_digital_library/1_auto/cara.html)はCARAをAZ-1のOEM供給車と説明しています。[Stellantis Media](https://www.media.stellantis.com/it-it/opel/press/21-anni-fa-opel-presentava-la-speedster)はOpel Speedsterの英国市場名をVauxhall VX220と説明しています。Birkinは[正規販売資料](https://www.birkin.com.au/about-birkin.php)がLotus Sevenを基にした再現車と説明しているため、正規継承ではなく派生として扱います。
+
 ## 登録フロー
 
 1. ユーザーはメーカーと車名を自由入力する。

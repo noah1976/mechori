@@ -9,6 +9,8 @@ import {
   createEmptyVehicleDraft,
   displayVehicleModel,
   migrateAppData,
+  normalizeVehicle,
+  relatedVehicleIdentities,
   resolveVehicleIdentity,
 } from "../src/index.ts";
 
@@ -43,6 +45,66 @@ test("links Vitz and Yaris to one family without erasing their market names", ()
     model: vitz.modelInput,
     modelFamilyId: vitz.modelFamilyId,
   }), "model-family:toyota-yaris-vitz");
+});
+
+test("keeps cross-brand X1/9 names distinct while linking their family", () => {
+  const fiat = resolveVehicleIdentity("FIAT", "X1/9");
+  const bertone = resolveVehicleIdentity("ベルトーネ", "X1/9");
+
+  assert.equal(fiat.modelFamilyId, "fiat-x1-9");
+  assert.equal(bertone.modelFamilyId, fiat.modelFamilyId);
+  assert.notEqual(bertone.marketNameId, fiat.marketNameId);
+  assert.deepEqual(relatedVehicleIdentities(fiat.marketNameId, "ja"), [{
+    marketNameId: "bertone-x1-9-global",
+    modelFamilyId: "fiat-x1-9",
+    canonicalMake: "BERTONE",
+    model: "X1/9",
+    relationType: "brand_transition",
+  }]);
+});
+
+test("repairs an earlier cross-brand market id without replacing the vehicle", () => {
+  const vehicle = addVehicleToData(cloneDemoData(), {
+    ...createEmptyVehicleDraft(),
+    make: "BERTONE",
+    model: "X1/9",
+  }).vehicle;
+  const normalized = normalizeVehicle({
+    ...vehicle,
+    marketNameId: "fiat-x1-9-global",
+  });
+
+  assert.equal(normalized.id, vehicle.id);
+  assert.equal(normalized.marketNameId, "bertone-x1-9-global");
+  assert.equal(normalized.modelFamilyId, "fiat-x1-9");
+});
+
+test("links market badges and OEM sister cars without erasing their brands", () => {
+  const speedster = resolveVehicleIdentity("OPEL", "Speedster");
+  const vx220 = resolveVehicleIdentity("VAUXHALL", "VX220");
+  const az1 = resolveVehicleIdentity("MAZDA", "AZ-1");
+  const cara = resolveVehicleIdentity("SUZUKI", "キャラ");
+
+  assert.equal(speedster.modelFamilyId, vx220.modelFamilyId);
+  assert.equal(az1.modelFamilyId, cara.modelFamilyId);
+  assert.equal(
+    relatedVehicleIdentities(az1.marketNameId, "en")[0]?.relationType,
+    "oem_rebadge",
+  );
+});
+
+test("keeps Seven continuations and derivatives in separate model families", () => {
+  const lotus = resolveVehicleIdentity("LOTUS", "Seven");
+  const caterham = resolveVehicleIdentity("CATERHAM", "7");
+  const birkin = resolveVehicleIdentity("BIRKIN", "S3");
+  const related = relatedVehicleIdentities(lotus.marketNameId, "en");
+
+  assert.notEqual(lotus.modelFamilyId, caterham.modelFamilyId);
+  assert.notEqual(lotus.modelFamilyId, birkin.modelFamilyId);
+  assert.deepEqual(
+    related.map((item) => item.relationType),
+    ["licensed_continuation", "inspired_derivative"],
+  );
 });
 
 test("keeps an unknown non-Latin make registerable and marks it unmatched", () => {
