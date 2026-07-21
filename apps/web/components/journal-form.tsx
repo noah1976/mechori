@@ -3,7 +3,9 @@
 import {
   getPreferredVehicle,
   createRestorableJournalDraft,
+  journalToDraft,
   validateJournalDraft,
+  type GarageJournalPost,
   type JournalContentBlock,
   type JournalDisplayField,
   type JournalDraft,
@@ -37,6 +39,9 @@ import {
   type FormEvent,
 } from "react";
 import { useApp } from "@/lib/app-context";
+import { JournalMedia } from "@/components/journal-media";
+import { OccurrenceDateFields } from "@/components/occurrence-date-fields";
+import { localDateInputValue } from "@/lib/date-input";
 import {
   clearLocalDraft,
   journalLocalDraftKey,
@@ -76,6 +81,8 @@ function newTextBlock(style: JournalTextBlockStyle = "paragraph"): JournalConten
 function createInitialJournalDraft(vehicleId: string): JournalDraft {
   return {
     title: "",
+    occurredOn: localDateInputValue(),
+    occurredPrecision: "day",
     bodyOriginal: "",
     vehicleId,
     linkedRecordId: "",
@@ -98,21 +105,35 @@ function hasMeaningfulJournalDraft(draft: JournalDraft): boolean {
   );
 }
 
-export function JournalForm() {
-  const { data, locale, addJournal } = useApp();
+export function JournalForm({
+  journal,
+  vehicleId,
+}: {
+  journal?: GarageJournalPost;
+  vehicleId?: string;
+}) {
+  const { data, locale, addJournal, updateJournal } = useApp();
   const router = useRouter();
   const ja = locale === "ja";
-  const vehicle = getPreferredVehicle(data.vehicles);
+  const vehicle = journal?.vehicleId
+    ? data.vehicles.find((item) => item.id === journal.vehicleId)
+    : data.vehicles.find(
+        (item) => item.id === vehicleId && item.ownerProfileId === data.currentProfileId,
+      ) ?? getPreferredVehicle(
+        data.vehicles.filter((item) => item.ownerProfileId === data.currentProfileId),
+      );
   const localDraftKey = journalLocalDraftKey();
   const initialDraft = useMemo(
-    () => createInitialJournalDraft(vehicle?.id ?? ""),
-    [vehicle?.id],
+    () => journal
+      ? journalToDraft(journal)
+      : createInitialJournalDraft(vehicle?.id ?? ""),
+    [journal, vehicle?.id],
   );
   const [draft, setDraft] = useState<JournalDraft>(initialDraft);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [mediaError, setMediaError] = useState("");
-  const [draftReady, setDraftReady] = useState(false);
+  const [draftReady, setDraftReady] = useState(Boolean(journal));
   const [draftStatus, setDraftStatus] = useState<"idle" | "restored" | "saved" | "error">("idle");
   const [omittedMediaCount, setOmittedMediaCount] = useState(0);
   const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([]);
@@ -122,15 +143,14 @@ export function JournalForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const validation = validateJournalDraft(draft);
-  const missingMediaDescription = pendingMedia.some(
-    ({ attachment }) => !attachment.altText.trim(),
-  );
+  const missingMediaDescription = draft.media.some((attachment) => !attachment.altText.trim());
 
   useEffect(() => {
     pendingMediaRef.current = pendingMedia;
   }, [pendingMedia]);
 
   useEffect(() => {
+    if (journal) return;
     const timer = window.setTimeout(() => {
       const stored = loadJournalLocalDraft();
       if (stored) {
@@ -139,6 +159,11 @@ export function JournalForm() {
         const recordExists = data.records.some((item) => item.id === storedDraft.linkedRecordId);
         const restoredDraft = {
           ...storedDraft,
+          occurredOn:
+            storedDraft.occurredPrecision && storedDraft.occurredPrecision !== "day"
+              ? undefined
+              : storedDraft.occurredOn ?? localDateInputValue(),
+          occurredPrecision: storedDraft.occurredPrecision ?? "day",
           vehicleId: vehicleExists ? storedDraft.vehicleId : vehicle?.id ?? "",
           linkedRecordId: recordExists ? storedDraft.linkedRecordId : "",
           contentBlocks: storedDraft.contentBlocks.length
@@ -156,9 +181,10 @@ export function JournalForm() {
       setDraftReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [data.records, data.vehicles, localDraftKey, vehicle?.id]);
+  }, [data.records, data.vehicles, journal, localDraftKey, vehicle?.id]);
 
   useEffect(() => {
+    if (journal) return;
     if (!draftReady) return;
     if (!hasMeaningfulJournalDraft(draft)) {
       clearLocalDraft(localDraftKey);
@@ -172,7 +198,7 @@ export function JournalForm() {
       );
     }, 600);
     return () => window.clearTimeout(timer);
-  }, [draft, draftReady, localDraftKey]);
+  }, [draft, draftReady, journal, localDraftKey]);
 
   function discardDraft() {
     pendingMediaRef.current.forEach(({ previewUrl }) => URL.revokeObjectURL(previewUrl));
@@ -189,12 +215,14 @@ export function JournalForm() {
     pendingMediaRef.current.forEach(({ previewUrl }) => URL.revokeObjectURL(previewUrl));
   }, []);
 
-  async function submit(event: FormEvent) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const submittedDraft = draft;
+    const submittedValidation = validateJournalDraft(submittedDraft);
     setSubmitted(true);
-    if (!validation.valid || missingMediaDescription) {
+    if (!submittedValidation.valid || missingMediaDescription) {
       window.requestAnimationFrame(() => {
-        if (validation.errors.title) {
+        if (submittedValidation.errors.title) {
           titleInputRef.current?.focus();
           return;
         }
@@ -207,12 +235,18 @@ export function JournalForm() {
     if (saving) return;
     setSaving(true);
     try {
-      const journal = await addJournal(
-        draft,
-        pendingMedia.map(({ attachment, file }) => ({ attachment, blob: file })),
-      );
+      const savedJournal = journal
+        ? await updateJournal(
+            journal.id,
+            submittedDraft,
+            pendingMedia.map(({ attachment, file }) => ({ attachment, blob: file })),
+          )
+        : await addJournal(
+            submittedDraft,
+            pendingMedia.map(({ attachment, file }) => ({ attachment, blob: file })),
+          );
       clearLocalDraft(localDraftKey);
-      router.push(`/journal/${journal.id}`);
+      router.push(`/journal/${savedJournal.id}${journal ? "?updated=1" : ""}`);
     } catch {
       setMediaError(
         ja
@@ -275,7 +309,7 @@ export function JournalForm() {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
     setMediaError("");
-    if (pendingMedia.length + files.length > maxMediaCount) {
+    if (draft.media.length + files.length > maxMediaCount) {
       setMediaError(
         ja
           ? `1投稿につき${maxMediaCount}ファイルまで追加できます。`
@@ -385,12 +419,12 @@ export function JournalForm() {
       <section className="note-editor-shell">
         <header className="note-editor-header">
           <div>
-            <span className="eyebrow">YOUR GARAGE STORY</span>
-            <strong>{ja ? "その日の出来事を、好きな形で" : "Tell the story your way"}</strong>
+            <span className="eyebrow">DETAILED RECORD</span>
+            <strong>{ja ? "愛車の記録を、詳しく残す" : "Keep a detailed vehicle record"}</strong>
             <small>
               {ja
-                ? "壊れた日も、路上で止まった日も、直って走れた日も。AIは本文を代筆しません。"
-                : "Breakdowns, roadside stops, and the first drive after a fix. AI will not write it for you."}
+                ? "タイトル、長文、複数の写真や動画を使えます。写真と一言だけなら「さっと記録」が向いています。"
+                : "Use a title, long-form text, and multiple photos or videos. For a photo and one line, use Quick record."}
             </small>
           </div>
           <Link href="/records/new" className="secondary-action">
@@ -418,6 +452,13 @@ export function JournalForm() {
             <small>{ja ? "タイトルを入力してください" : "Enter a title"}</small>
           )}
         </label>
+
+        <OccurrenceDateFields
+          value={draft}
+          locale={locale}
+          error={submitted && validation.errors.occurredOn ? validation.errors.occurredOn : undefined}
+          onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
+        />
 
         <div className="note-block-list">
           {draft.contentBlocks.map((block, index) => {
@@ -473,7 +514,18 @@ export function JournalForm() {
                         {submitted && !media.attachment.altText.trim() && <small>{ja ? "説明を入力してください" : "Add a description"}</small>}
                       </label>
                     </div>
-                  ) : null}
+                  ) : (() => {
+                    const attachment = draft.media.find((item) => item.id === block.mediaId);
+                    return attachment ? (
+                      <div className="note-media-block">
+                        <JournalMedia attachments={[attachment]} locale={locale} />
+                        <label className={submitted && !attachment.altText.trim() ? "field has-error" : "field"}>
+                          {ja ? "写真・動画の説明" : "Media description"}
+                          <input value={attachment.altText} onChange={(event) => describeMedia(attachment.id, event.target.value)} placeholder={ja ? "何が写っているか、ひとこと添える" : "Add a short description"} />
+                        </label>
+                      </div>
+                    ) : null;
+                  })()}
                 </article>
                 <BlockInsertMenu
                   ja={ja}
@@ -520,7 +572,7 @@ export function JournalForm() {
         <label className="consent-option"><input type="checkbox" checked={draft.knowledgeExtractionConsent} onChange={(event) => setDraft((current) => ({ ...current, knowledgeExtractionConsent: event.target.checked }))} /><span><strong>{ja ? "本文をナレッジ検索の参考候補にする" : "Allow this story to inform knowledge search"}</strong><small>{ja ? "AIは本文を代筆せず、公開後も出典付きの未確認投稿として扱います。" : "AI never writes the story and treats it as cited, unverified owner content."}</small></span></label>
       </section>
 
-      <div className="form-actions"><button type="submit" className="primary-action" disabled={saving}><Save size={17} aria-hidden="true" />{saving ? ja ? "保存中…" : "Saving…" : draft.visibility === "private" ? ja ? "非公開で保存" : "Save privately" : ja ? "公開範囲を確認して保存" : "Review audience and save"}</button></div>
+      <div className="form-actions"><button type="submit" className="primary-action" disabled={saving}><Save size={17} aria-hidden="true" />{saving ? ja ? "保存中…" : "Saving…" : journal ? (ja ? "変更を保存" : "Save changes") : draft.visibility === "private" ? ja ? "詳しい記録を非公開で保存" : "Save detailed record privately" : ja ? "公開範囲を確認して保存" : "Review audience and save"}</button></div>
     </form>
   );
 }

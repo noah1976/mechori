@@ -6,6 +6,7 @@ import {
   classifyJournalForKnowledge,
   isProfileBlocked,
   isProfileMuted,
+  journalOccurrenceLabel,
 } from "@mechori/core";
 import {
   ArrowLeft,
@@ -15,19 +16,21 @@ import {
   Heart,
   Link2,
   Lock,
+  Pencil,
   ShieldCheck,
   Sparkles,
   Users,
   Wrench,
 } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { JournalContent } from "@/components/journal-content";
 import { ProfileSafetyMenu } from "@/components/profile-safety-menu";
 import { recordOdometerLabel } from "@/components/record-card";
 
 export default function JournalDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const { data, locale, signedIn, toggleMuteProfile, toggleBlockProfile } = useApp();
   const ja = locale === "ja";
   const journal = data.journals.find((item) => item.id === id);
@@ -40,16 +43,16 @@ export default function JournalDetailPage() {
   if (!journal || !canView) {
     return (
       <div className="empty-state">
-        <h1>{ja ? "このJournalは表示できません" : "This journal is unavailable"}</h1>
+        <h1>{ja ? "この記録は表示できません" : "This record is unavailable"}</h1>
         <p>
           {!journal
-            ? ja ? "Journalが見つからないか、削除されています。" : "The journal could not be found or has been removed."
+            ? ja ? "記録が見つからないか、削除されています。" : "The record could not be found or has been removed."
             : blocked
             ? ja ? "ブロック中のプロフィールによる投稿です。" : "This post is from a blocked profile."
             : !signedIn
-              ? ja ? "公開されていないJournalを見るにはログインが必要です。" : "Sign in to view a journal that is not public."
+              ? ja ? "公開されていない記録を見るにはログインが必要です。" : "Sign in to view a record that is not public."
             : journal.moderationState === "temporarily_hidden"
-              ? ja ? "このJournalは運営確認により一時非公開です。" : "This journal is temporarily hidden for moderation review."
+              ? ja ? "この記録は運営確認により一時非公開です。" : "This record is temporarily hidden for moderation review."
             : ja ? "公開範囲または投稿状態を確認してください。" : "Check its audience or publication state."}
         </p>
         {blocked && journal && (
@@ -78,6 +81,7 @@ export default function JournalDetailPage() {
   );
   const record = data.records.find((item) => item.id === journal.linkedRecordId);
   const knowledgeClass = classifyJournalForKnowledge(journal);
+  const ownJournal = signedIn && journal.authorProfileId === data.currentProfileId;
 
   return (
     <div className="page-stack journal-detail-page">
@@ -86,14 +90,24 @@ export default function JournalDetailPage() {
         {signedIn ? (ja ? "フォロー中へ戻る" : "Back to following") : (ja ? "ホームへ戻る" : "Back to home")}
       </Link>
 
+      {searchParams.get("updated") === "1" && ownJournal && (
+        <div className="lovable-success" role="status">
+          <ShieldCheck size={22} aria-hidden="true" />
+          <div>
+            <strong>{ja ? "記録を更新しました。" : "Record updated."}</strong>
+            <span>{ja ? "日付や内容の変更を反映しました。" : "Your date and content changes are now saved."}</span>
+          </div>
+        </div>
+      )}
+
       {journal.authorProfileId === data.currentProfileId && journal.moderationState !== "visible" && (
         <div className="moderation-author-notice" role="status">
           <ShieldCheck size={20} aria-hidden="true" />
           <div>
             <strong>
               {journal.moderationState === "temporarily_hidden"
-                ? ja ? "このJournalは一時非公開です" : "This journal is temporarily hidden"
-                : ja ? "このJournalは運営確認中です" : "This journal is under moderation review"}
+                ? ja ? "この記録は一時非公開です" : "This record is temporarily hidden"
+                : ja ? "この記録は運営確認中です" : "This record is under moderation review"}
             </strong>
             <p>
               {ja
@@ -118,6 +132,12 @@ export default function JournalDetailPage() {
             </div>
             <div className="journal-author-actions">
               {journal.isDemo && <span className="demo-label">DEMO</span>}
+              {ownJournal && (
+                <Link href={`/journal/${journal.id}/edit`} className="secondary-action">
+                  <Pencil size={16} aria-hidden="true" />
+                  {ja ? "編集" : "Edit"}
+                </Link>
+              )}
               {signedIn && journal.authorProfileId !== data.currentProfileId && author && (
                 <ProfileSafetyMenu
                   profileName={author.displayName}
@@ -135,9 +155,7 @@ export default function JournalDetailPage() {
           <div className="journal-detail-meta">
             <span>
               <CalendarDays size={16} aria-hidden="true" />
-              {new Intl.DateTimeFormat(ja ? "ja-JP" : "en-US", {
-                dateStyle: "medium",
-              }).format(new Date(journal.createdAt))}
+              {journalOccurrenceLabel(journal, locale)}
             </span>
             <span>
               {journal.visibility === "private" ? (
@@ -217,8 +235,8 @@ export default function JournalDetailPage() {
           </strong>
           <p>
             {ja
-              ? "Journalの人気やAI抽出だけで、確認済みナレッジや原因候補へ昇格することはありません。"
-              : "Popularity or AI extraction alone can never promote a journal to verified knowledge or a confirmed cause."}
+              ? "記録の人気やAI抽出だけで、確認済みナレッジや原因候補へ昇格することはありません。"
+              : "Popularity or AI extraction alone can never promote a record to verified knowledge or a confirmed cause."}
           </p>
         </div>
       </section>

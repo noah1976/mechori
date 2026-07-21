@@ -14,6 +14,7 @@ import {
   toggleMuteProfileInData,
   updateVehicleOwnershipInData,
   updateCurrentProfilePrivacy,
+  updateJournalInData,
   isSignedIn,
   getPreferredVehicle,
   isSupportedUiLocale,
@@ -77,6 +78,11 @@ interface AppContextValue {
   addRecord(draft: RecordDraft, vehicleId?: string): Promise<MaintenanceRecord>;
   updateRecord(id: string, draft: RecordDraft): Promise<MaintenanceRecord | null>;
   addJournal(
+    draft: JournalDraft,
+    uploads?: JournalMediaUpload[],
+  ): Promise<GarageJournalPost>;
+  updateJournal(
+    id: string,
     draft: JournalDraft,
     uploads?: JournalMediaUpload[],
   ): Promise<GarageJournalPost>;
@@ -302,6 +308,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [authSession, data, locale, persist],
   );
 
+  const updateJournal = useCallback(
+    async (id: string, draft: JournalDraft, uploads: JournalMediaUpload[] = []) => {
+      if (!isSignedIn(authSession)) throw new Error("authentication_required");
+      const previous = data.journals.find((journal) => journal.id === id);
+      if (!previous) throw new Error("journal_not_found");
+      await Promise.all(
+        uploads.map(({ attachment, blob }) => {
+          if (!attachment.storageKey) throw new Error("media_storage_key_required");
+          return journalMediaStore.save(attachment.storageKey, blob);
+        }),
+      );
+      const result = updateJournalInData(data, id, draft);
+      await persist(result.data);
+      const retainedStorageKeys = new Set(
+        result.journal.media.map((attachment) => attachment.storageKey).filter(Boolean),
+      );
+      await Promise.all(
+        previous.media
+          .map((attachment) => attachment.storageKey)
+          .filter((key): key is string => Boolean(key) && !retainedStorageKeys.has(key))
+          .map((key) => journalMediaStore.delete(key)),
+      );
+      recordLocalEngagement("journal_saved");
+      void recordAlphaEngagement("journal_saved").catch(() => undefined);
+      return result.journal;
+    },
+    [authSession, data, persist],
+  );
+
   const toggleFollow = useCallback(
     (targetType: FollowTargetType, targetId: string) => {
       if (!isSignedIn(authSession)) return;
@@ -392,6 +427,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addRecord,
       updateRecord,
       addJournal,
+      updateJournal,
       toggleFollow,
       toggleMuteProfile,
       toggleBlockProfile,
@@ -416,6 +452,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addRecord,
       updateRecord,
       addJournal,
+      updateJournal,
       toggleFollow,
       toggleMuteProfile,
       toggleBlockProfile,

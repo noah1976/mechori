@@ -208,6 +208,7 @@ function isPublicPath(pathname: string): boolean {
     pathname.startsWith("/profile/") ||
     (pathname.startsWith("/journal/") &&
       pathname !== "/journal/new" &&
+      !pathname.endsWith("/edit") &&
       !pathname.endsWith("/report"))
   );
 }

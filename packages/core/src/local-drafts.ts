@@ -123,6 +123,13 @@ function isRecordActionDraft(value: unknown): value is RecordActionDraft {
 function isJournalDraft(value: unknown): value is JournalDraft {
   if (!isObject(value) || !hasStringFields(value, journalDraftStringFields)) return false;
   return (
+    (value.occurredOn === undefined ||
+      (typeof value.occurredOn === "string" && isValidDateOnly(value.occurredOn))) &&
+    (value.occurredPrecision === undefined ||
+      ["day", "month", "year", "unknown"].includes(String(value.occurredPrecision))) &&
+    (value.occurredYear === undefined || typeof value.occurredYear === "number") &&
+    (value.occurredMonth === undefined || typeof value.occurredMonth === "number") &&
+    (value.occurredPeriodNote === undefined || typeof value.occurredPeriodNote === "string") &&
     Array.isArray(value.displayFields) &&
     value.displayFields.every(isJournalDisplayField) &&
     Array.isArray(value.media) &&
@@ -132,6 +139,12 @@ function isJournalDraft(value: unknown): value is JournalDraft {
     isJournalVisibility(value.visibility) &&
     typeof value.knowledgeExtractionConsent === "boolean"
   );
+}
+
+function isValidDateOnly(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const timestamp = Date.parse(`${value}T00:00:00Z`);
+  return Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === value;
 }
 
 function isRestorableJournalDraft(value: unknown): value is RestorableJournalDraft {

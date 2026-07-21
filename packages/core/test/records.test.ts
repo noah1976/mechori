@@ -70,6 +70,20 @@ test("allows a maintenance record when the historical odometer is unknown", () =
   assert.deepEqual(result.data.vehicles[0]?.currentOdometerReading, currentReading);
 });
 
+test("adds an older maintenance event to a currently owned vehicle", () => {
+  const original = cloneDemoData();
+  assert.equal(original.vehicles[0]?.ownershipType, "owned");
+  const result = applyRecordDraftToData(original, validDraft({
+    serviceDate: "2018-04-21",
+    odometerKm: "",
+    evidenceBasis: "invoice_or_receipt",
+  }));
+
+  assert.equal(result.record.vehicleId, original.vehicles[0]?.id);
+  assert.equal(result.record.serviceDate, "2018-04-21");
+  assert.equal(result.record.evidenceBasis, "invoice_or_receipt");
+});
+
 test("still requires a reading when recording a meter change", () => {
   const result = validateRecordDraft(validDraft({
     odometerKm: "",

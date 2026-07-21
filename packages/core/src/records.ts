@@ -483,6 +483,28 @@ export function migrateAppData(input: unknown): AppData | null {
           return {
             ...journal,
             moderationState: journal.moderationState ?? "visible",
+            occurredOn:
+              typeof journal.occurredOn === "string" && isValidDateOnly(journal.occurredOn)
+                ? journal.occurredOn
+                : undefined,
+            occurredYear:
+              typeof journal.occurredYear === "number" && Number.isInteger(journal.occurredYear)
+                ? journal.occurredYear
+                : undefined,
+            occurredMonth:
+              typeof journal.occurredMonth === "number" && Number.isInteger(journal.occurredMonth)
+                ? journal.occurredMonth
+                : undefined,
+            occurredPrecision:
+              ["day", "month", "year", "unknown"].includes(String(journal.occurredPrecision))
+                ? journal.occurredPrecision
+                : typeof journal.occurredOn === "string" && isValidDateOnly(journal.occurredOn)
+                  ? "day"
+                  : undefined,
+            occurredPeriodNote:
+              typeof journal.occurredPeriodNote === "string"
+                ? journal.occurredPeriodNote
+                : undefined,
             media,
             contentBlocks,
           };
@@ -498,6 +520,12 @@ export function migrateAppData(input: unknown): AppData | null {
       ? source.contentReports
       : [],
   };
+}
+
+function isValidDateOnly(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const timestamp = Date.parse(`${value}T00:00:00Z`);
+  return Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === value;
 }
 
 function actionFromDraft(

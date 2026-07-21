@@ -213,6 +213,7 @@ export interface RecordFilters {
 }
 
 export type JournalVisibility = "private" | "followers" | "public";
+export type JournalOccurrencePrecision = "day" | "month" | "year" | "unknown";
 export type JournalModerationState = "visible" | "under_review" | "temporarily_hidden";
 export type SocialProfileRole = "owner" | "mechanic";
 export type ProfileVisibility = "private" | "followers" | "public";
@@ -303,6 +304,11 @@ export interface GarageJournalPost {
   contentBlocks: JournalContentBlock[];
   knowledgeExtractionConsent: boolean;
   appreciationCount: number;
+  occurredOn?: string;
+  occurredYear?: number;
+  occurredMonth?: number;
+  occurredPrecision?: JournalOccurrencePrecision;
+  occurredPeriodNote?: string;
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
@@ -377,6 +383,11 @@ export interface FollowTargetSummary {
 export interface JournalDraft {
   title: string;
   eventType?: JournalEventType;
+  occurredOn?: string;
+  occurredYear?: number;
+  occurredMonth?: number;
+  occurredPrecision?: JournalOccurrencePrecision;
+  occurredPeriodNote?: string;
   bodyOriginal: string;
   vehicleId: string;
   linkedRecordId: string;

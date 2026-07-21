@@ -29,7 +29,7 @@ export default function ProfilePage() {
       <div className="empty-state">
         <LockKeyhole size={30} aria-hidden="true" />
         <h1>{ja ? "このプロフィールは表示できません" : "This profile is unavailable"}</h1>
-        <p>{ja ? "プロフィールの公開範囲、フォロー、ブロック状態を確認してください。公開Journalの公開範囲とは別の設定です。" : "Check profile visibility, follows, and block status. This setting is separate from journal visibility."}</p>
+        <p>{ja ? "プロフィールの公開範囲、フォロー、ブロック状態を確認してください。公開した愛車記録の公開範囲とは別の設定です。" : "Check profile visibility, follows, and block status. This setting is separate from vehicle-record visibility."}</p>
         <Link href={signedIn ? "/feed" : "/"} className="secondary-action">{ja ? "戻る" : "Go back"}</Link>
       </div>
     );
@@ -61,7 +61,7 @@ export default function ProfilePage() {
       <section className="profile-facts" aria-label={ja ? "公開プロフィール情報" : "Public profile information"}>
         {fields.has("vehicles") && <div><CarFront size={20} /><span>{ja ? "愛車歴" : "Vehicle history"}</span><strong>{vehicles.length ? `${vehicles.length}${ja ? "台" : " vehicles"}` : (ja ? "公開車両なし" : "No visible vehicles")}</strong></div>}
         {fields.has("ownership_duration") && <div><UserRound size={20} /><span>{ja ? "所有期間" : "Ownership"}</span><strong>{vehicles.map((vehicle) => formatOwnershipDuration(locale, summarizeVehicleRelationship(vehicle))).filter(Boolean).join(" / ") || (ja ? "未登録" : "Not set")}</strong></div>}
-        {fields.has("journal_count") && <div><BookOpenText size={20} /><span>{ja ? "公開Journal" : "Public journals"}</span><strong>{publicJournalCount}</strong></div>}
+        {fields.has("journal_count") && <div><BookOpenText size={20} /><span>{ja ? "公開中の愛車記録" : "Public vehicle records"}</span><strong>{publicJournalCount}</strong></div>}
       </section>
 
       {fields.has("vehicles") && vehicles.length > 0 && (
@@ -78,8 +78,8 @@ export default function ProfilePage() {
       )}
 
       <section>
-        <div className="section-heading"><div><span className="eyebrow">GARAGE JOURNAL</span><h2>{ja ? "閲覧できるJournal" : "Visible journals"}</h2></div></div>
-        {journals.length ? <div className="journal-grid">{journals.map((journal) => <JournalCard key={journal.id} journal={journal} author={profile} record={data.records.find((record) => record.id === journal.linkedRecordId)} locale={locale} safety={!ownProfile && signedIn ? { muted: isProfileMuted(data, profile.id), blocked: isProfileBlocked(data, profile.id), onToggleMute: () => toggleMuteProfile(profile.id), onToggleBlock: () => toggleBlockProfile(profile.id) } : undefined} />)}</div> : <div className="empty-state"><BookOpenText size={26} /><h3>{ja ? "表示できるJournalはありません" : "No visible journals"}</h3></div>}
+        <div className="section-heading"><div><span className="eyebrow">VEHICLE RECORDS</span><h2>{ja ? "閲覧できる愛車記録" : "Visible vehicle records"}</h2></div></div>
+        {journals.length ? <div className="journal-grid">{journals.map((journal) => <JournalCard key={journal.id} journal={journal} author={profile} record={data.records.find((record) => record.id === journal.linkedRecordId)} locale={locale} safety={!ownProfile && signedIn ? { muted: isProfileMuted(data, profile.id), blocked: isProfileBlocked(data, profile.id), onToggleMute: () => toggleMuteProfile(profile.id), onToggleBlock: () => toggleBlockProfile(profile.id) } : undefined} />)}</div> : <div className="empty-state"><BookOpenText size={26} /><h3>{ja ? "表示できる愛車記録はありません" : "No visible vehicle records"}</h3></div>}
       </section>
       <p className="legal-note">{ja ? "所有期間や投稿数は人気、整備能力、ナレッジの信頼度を表しません。" : "Ownership duration and post counts do not indicate popularity, maintenance skill, or knowledge reliability."}</p>
     </div>

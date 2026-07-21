@@ -78,7 +78,7 @@ export default function HomePage() {
 
       <section className="home-community-stage">
         <div className="home-community-intro">
-          <span className="eyebrow">{signedIn ? "TODAY IN THE GARAGE" : "PUBLIC GARAGE JOURNAL"}</span>
+          <span className="eyebrow">{signedIn ? "TODAY IN THE GARAGE" : "PUBLIC VEHICLE RECORDS"}</span>
           <h1>{ja ? "愛車の整備も、日々の出来事も、一台の履歴に。" : "Breakdowns and the drives after them."}</h1>
           <p>
             {ja
@@ -90,7 +90,7 @@ export default function HomePage() {
               <>
                 <Link href="/journal/new" className="primary-action">
                   <BookOpenText size={19} aria-hidden="true" />
-                  {ja ? "愛車の出来事を書く" : "Write today's story"}
+                  {ja ? "詳しく記録する" : "Write a detailed record"}
                 </Link>
                 <Link href="/records/new" className="secondary-action">
                   <Wrench size={18} aria-hidden="true" />
@@ -124,7 +124,7 @@ export default function HomePage() {
           <Link href={`/journal/${featuredJournal.id}`} className="home-featured-journal">
             <JournalMedia attachments={featuredJournal.media} locale={locale} compact priority />
             <div className="home-featured-copy">
-              <span className="eyebrow">{signedIn ? "FROM YOUR FOLLOWING" : "PUBLIC JOURNAL"}</span>
+              <span className="eyebrow">{signedIn ? "FROM YOUR FOLLOWING" : "PUBLIC RECORD"}</span>
               <h2>{featuredJournal.title}</h2>
               <p>{featuredJournal.bodyOriginal}</p>
               <footer><span>{featuredJournal.vehicleLabel}</span><span><Heart size={15} aria-hidden="true" />{featuredJournal.appreciationCount}</span></footer>
@@ -151,7 +151,7 @@ export default function HomePage() {
             </Link>
             <Link href={monthly.journalCount > 0 ? "/garage" : "/journal/new"}>
               <Heart size={19} aria-hidden="true" />
-              <span><strong>{monthly.journalCount}</strong><small>{ja ? "今月残したJournal" : "journals kept this month"}</small></span>
+              <span><strong>{monthly.journalCount}</strong><small>{ja ? "今月残した愛車記録" : "vehicle records this month"}</small></span>
             </Link>
             <Link href="/garage/history">
               <FileClock size={19} aria-hidden="true" />
@@ -164,7 +164,7 @@ export default function HomePage() {
       <section>
         <div className="section-heading">
           <div>
-            <span className="eyebrow">{signedIn ? "FOLLOWING" : "PUBLIC JOURNALS"}</span>
+            <span className="eyebrow">{signedIn ? "FOLLOWING" : "PUBLIC RECORDS"}</span>
             <h2>{signedIn ? (ja ? "気になるクルマの続き" : "Stories you follow") : (ja ? "公開されている愛車の記録" : "Public vehicle stories")}</h2>
           </div>
           {signedIn && (

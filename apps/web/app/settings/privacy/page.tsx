@@ -45,7 +45,7 @@ function PrivacySettingsForm({ profile }: { profile: SocialProfile }) {
   return (
     <div className="page-stack narrow-page">
       <DemoNotice />
-      <header className="page-header"><div><span className="eyebrow">PRIVACY & SAFETY</span><h1>{ja ? "プロフィールの公開範囲" : "Profile visibility"}</h1><p>{ja ? "Journal、整備記録、写真とは別にプロフィールページの見え方を設定します。" : "Control profile-page visibility independently from journals, records, and photos."}</p></div><ShieldCheck size={28} aria-hidden="true" /></header>
+      <header className="page-header"><div><span className="eyebrow">PRIVACY & SAFETY</span><h1>{ja ? "プロフィールの公開範囲" : "Profile visibility"}</h1><p>{ja ? "愛車の記録、整備記録、写真とは別にプロフィールページの見え方を設定します。" : "Control profile-page visibility independently from vehicle records, maintenance records, and photos."}</p></div><ShieldCheck size={28} aria-hidden="true" /></header>
 
       <section className="settings-section">
         <div className="section-heading compact"><div><span className="eyebrow">AUDIENCE</span><h2>{ja ? "プロフィールを見ることができる人" : "Who can view your profile"}</h2></div></div>
@@ -90,13 +90,13 @@ function visibilityLabel(value: ProfileVisibility, ja: boolean) {
 }
 
 function visibilityDescription(value: ProfileVisibility, ja: boolean) {
-  if (value === "private") return ja ? "プロフィールページは自分だけが確認できます。公開Journalの公開範囲は変わりません。" : "Only you can open the profile page. Public journal visibility is unchanged.";
+  if (value === "private") return ja ? "プロフィールページは自分だけが確認できます。公開中の愛車記録の公開範囲は変わりません。" : "Only you can open the profile page. Public vehicle-record visibility is unchanged.";
   if (value === "followers") return ja ? "プロフィールを直接フォローしている利用者だけが確認できます。車種・車両フォローは含みません。" : "Only direct profile followers can view it. Model and vehicle follows do not count.";
   return ja ? "未ログインの閲覧者を含め、公開プロフィールとして表示します。" : "The profile is visible publicly, including to signed-out visitors.";
 }
 
 function fieldLabel(field: ProfileDisplayField, ja: boolean) {
-  const labels: Record<ProfileDisplayField, [string, string]> = { role: ["役割", "Role"], bio: ["自己紹介", "Bio"], vehicles: ["愛車の一般情報", "Vehicle overview"], ownership_duration: ["所有期間", "Ownership duration"], journal_count: ["公開Journal件数", "Public journal count"] };
+  const labels: Record<ProfileDisplayField, [string, string]> = { role: ["役割", "Role"], bio: ["自己紹介", "Bio"], vehicles: ["愛車の一般情報", "Vehicle overview"], ownership_duration: ["所有期間", "Ownership duration"], journal_count: ["公開中の愛車記録数", "Public vehicle record count"] };
   return labels[field][ja ? 0 : 1];
 }
 

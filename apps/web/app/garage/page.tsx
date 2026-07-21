@@ -9,6 +9,8 @@ import {
   formatOwnershipPeriod,
   getOwnJournals,
   groupVehiclesByOwnership,
+  journalOccurrenceDate,
+  journalOccurrenceLabel,
   summarizeVehicleRelationship,
   type JournalEventType,
   type Vehicle,
@@ -86,7 +88,8 @@ function GarageContent() {
     ...journals.map((journal) => ({
       id: journal.id,
       kind: "journal" as const,
-      date: journal.createdAt,
+      date: journalOccurrenceDate(journal),
+      dateLabel: journalOccurrenceLabel(journal, locale),
       title: journal.title,
       body: journal.bodyOriginal,
       eventType: journal.eventType,
@@ -97,6 +100,7 @@ function GarageContent() {
       id: record.id,
       kind: "record" as const,
       date: record.serviceDate,
+      dateLabel: formatTimelineDate(record.serviceDate, locale),
       title: record.summary,
       body: record.result || record.workPerformed,
       href: `/records/${record.id}`,
@@ -119,7 +123,7 @@ function GarageContent() {
           <Link href="/garage/new" className="secondary-action"><Plus size={17} />{ja ? "愛車を追加" : "Add vehicle"}</Link>
           <Link href="/garage/new?ownership=previously_owned" className="secondary-action"><History size={17} />{ja ? "以前の愛車" : "Previous vehicle"}</Link>
           <Link href={`/garage/${encodeURIComponent(vehicle.id)}/share`} className="secondary-action"><Share2 size={17} />{ja ? "見せる・共有" : "Show & share"}</Link>
-          <Link href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`} className="primary-action"><Camera size={17} />{ja ? "出来事を追加" : "Add a moment"}</Link>
+          <Link href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`} className="primary-action"><Camera size={17} />{ja ? "さっと記録" : "Quick record"}</Link>
           {!isRemoteAlpha && <button className="secondary-action" type="button" onClick={() => { void resetDemo().catch(() => undefined); }}><RotateCcw size={17} />{translate(locale, "resetDemo")}</button>}
         </div>
       </header>
@@ -198,13 +202,13 @@ function GarageContent() {
       </section>
 
       <section className="garage-stats">
-        <div><CalendarDays size={21} /><strong>{timeline.length}</strong><span>{ja ? "出来事の合計" : "Moments"}</span></div>
-        <div><Camera size={21} /><strong>{journals.length}</strong><span>{ja ? "写真・日常" : "Stories"}</span></div>
+        <div><CalendarDays size={21} /><strong>{timeline.length}</strong><span>{ja ? "記録の合計" : "All records"}</span></div>
+        <div><Camera size={21} /><strong>{journals.length}</strong><span>{ja ? "写真・文章" : "Photos & stories"}</span></div>
         <div><Wrench size={21} /><strong>{records.length}</strong><span>{ja ? "整備記録" : "Maintenance"}</span></div>
       </section>
 
       <section className="vehicle-timeline-section">
-        <div className="section-heading"><div><span className="eyebrow">VEHICLE TIMELINE</span><h2>{ja ? "このクルマの時間" : "This vehicle's timeline"}</h2></div><Link href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`} className="secondary-action"><Plus size={17} />{ja ? "ひとつ追加" : "Add one"}</Link></div>
+        <div className="section-heading"><div><span className="eyebrow">VEHICLE TIMELINE</span><h2>{ja ? "このクルマの時間" : "This vehicle's timeline"}</h2></div><Link href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`} className="secondary-action"><Plus size={17} />{ja ? "さっと記録" : "Quick record"}</Link></div>
         {timeline.length ? (
           <div className="vehicle-timeline">
             {timeline.slice(0, 8).map((item) => {
@@ -213,14 +217,14 @@ function GarageContent() {
               return (
                 <Link href={item.href} className="vehicle-timeline-item" key={`${item.kind}-${item.id}`}>
                   <span className={`timeline-mark is-${item.kind}`}>{item.kind === "record" ? <Wrench size={16} /> : <Camera size={16} />}</span>
-                  <time>{formatTimelineDate(item.date, locale)}</time>
+                  <time>{item.dateLabel}</time>
                   <div><small>{item.kind === "record" ? (ja ? "整備" : "Maintenance") : eventTypeLabel(item.eventType, ja)}</small><strong>{title}</strong>{description && <p>{description}</p>}</div>
                 </Link>
               );
             })}
           </div>
         ) : (
-          <div className="empty-state timeline-empty"><Camera size={30} /><h3>{isPreviousVehicle ? (ja ? "覚えている出来事から残せます" : "Add what you remember") : (ja ? "最初の一枚から始めましょう" : "Start with the first photo")}</h3><p>{isPreviousVehicle ? (ja ? "故障、修理、ドライブ、手放した日のことなど、分かる範囲で大丈夫です。" : "Maintenance, repairs, drives, and memories can be added with partial details.") : (ja ? "整備がなくても、今日の一枚やドライブの一言を残せます。" : "No maintenance required. A photo or one line from a drive is enough.")}</p><Link href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`} className="primary-action">{ja ? "出来事を追加" : "Add a moment"}</Link></div>
+          <div className="empty-state timeline-empty"><Camera size={30} /><h3>{isPreviousVehicle ? (ja ? "覚えている出来事から残せます" : "Add what you remember") : (ja ? "最初の一枚から始めましょう" : "Start with the first photo")}</h3><p>{isPreviousVehicle ? (ja ? "故障、修理、ドライブ、手放した日のことなど、分かる範囲で大丈夫です。" : "Maintenance, repairs, drives, and memories can be added with partial details.") : (ja ? "整備がなくても、今日の一枚やドライブの一言を残せます。" : "No maintenance required. A photo or one line from a drive is enough.")}</p><Link href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`} className="primary-action">{ja ? "さっと記録" : "Quick record"}</Link></div>
         )}
       </section>
 
@@ -231,15 +235,18 @@ function GarageContent() {
 
       <section>
         <div className="section-heading">
-          <div><span className="eyebrow">GARAGE JOURNAL</span><h2>{ja ? "このクルマのJournal" : "Journal for this car"}</h2></div>
-          <Link href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`} className="secondary-action"><Plus size={17} />{ja ? "写真と一言を追加" : "Add photo & note"}</Link>
+          <div><span className="eyebrow">VEHICLE RECORDS</span><h2>{ja ? "このクルマの写真・文章の記録" : "Photos and stories for this vehicle"}</h2></div>
+          <div className="section-heading-actions">
+            <Link href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`} className="secondary-action"><Camera size={17} />{ja ? "さっと記録" : "Quick record"}</Link>
+            <Link href={`/journal/new?vehicle=${encodeURIComponent(vehicle.id)}`} className="secondary-action"><BookOpenText size={17} />{ja ? "詳しく記録" : "Detailed record"}</Link>
+          </div>
         </div>
         {journals.length ? (
           <div className="journal-grid">
             {journals.map((journal) => <JournalCard key={journal.id} journal={journal} author={data.profiles.find((profile) => profile.id === journal.authorProfileId)} record={data.records.find((record) => record.id === journal.linkedRecordId)} locale={locale} />)}
           </div>
         ) : (
-          <div className="empty-state"><BookOpenText size={28} /><h3>{ja ? "まだJournalはありません" : "No journal yet"}</h3><p>{ja ? "整備の経緯や、その日に感じたことを自分の言葉で残せます。" : "Keep the experience and what you felt in your own words."}</p></div>
+          <div className="empty-state"><BookOpenText size={28} /><h3>{ja ? "写真・文章の記録はまだありません" : "No photo or written records yet"}</h3><p>{ja ? "一言なら「さっと記録」、長く書くなら「詳しく記録」から残せます。どちらも同じ時間軸に並びます。" : "Use Quick record for one line or Detailed record for a longer story. Both appear on the same timeline."}</p></div>
         )}
       </section>
     </div>

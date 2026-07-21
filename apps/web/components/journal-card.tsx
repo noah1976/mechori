@@ -1,5 +1,6 @@
 "use client";
 
+import { journalOccurrenceLabel } from "@mechori/core";
 import type {
   GarageJournalPost,
   Locale,
@@ -46,7 +47,7 @@ export function JournalCard({
             ) : ja ? "不明な投稿者" : "Unknown author"} / {journal.vehicleLabel}
           </strong>
           <small>
-            {formatDate(journal.publishedAt ?? journal.createdAt, locale)}
+            {journalOccurrenceLabel(journal, locale)}
           </small>
         </div>
         <div className="journal-card-actions">
@@ -98,12 +99,4 @@ export function JournalCard({
       </footer>
     </article>
   );
-}
-
-function formatDate(value: string, locale: Locale): string {
-  return new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(new Date(value));
 }

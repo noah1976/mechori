@@ -34,6 +34,8 @@ const recordDraft: RecordDraft = {
 
 const journalDraft: JournalDraft = {
   title: "DEMO story draft",
+  occurredOn: "2020-10-04",
+  occurredPrecision: "day",
   bodyOriginal: "",
   vehicleId: "vehicle-demo-current",
   linkedRecordId: "",
@@ -58,6 +60,23 @@ test("round-trips valid record and journal drafts", () => {
     savedAt,
     value: { draft: journalDraft, omittedMediaCount: 0 },
   });
+});
+
+test("keeps an approximate month in a local journal draft", () => {
+  const { occurredOn: _exactDate, ...journalWithoutExactDate } = journalDraft;
+  const approximate = {
+    ...journalWithoutExactDate,
+    occurredYear: 2004,
+    occurredMonth: 9,
+    occurredPrecision: "month" as const,
+    occurredPeriodNote: "秋ごろ",
+  };
+  const parsed = parseJournalLocalDraft(serializeLocalDraft({
+    draft: approximate,
+    omittedMediaCount: 0,
+  }));
+
+  assert.deepEqual(parsed?.value.draft, approximate);
 });
 
 test("rejects corrupt or incompatible local drafts", () => {

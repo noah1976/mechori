@@ -11,10 +11,14 @@ import {
   isFollowing,
   isProfileBlocked,
   isProfileMuted,
+  journalOccurrenceDate,
+  journalOccurrenceLabel,
+  journalToDraft,
   toggleBlockProfileInData,
   toggleFollowInData,
   toggleMuteProfileInData,
   updateCurrentProfilePrivacy,
+  updateJournalInData,
   validateJournalDraft,
   type JournalDraft,
 } from "../src/index.ts";
@@ -82,12 +86,156 @@ test("creates a private journal by default without rewriting the body", () => {
 test("preserves a lightweight vehicle event category", () => {
   const result = addJournalToData(
     cloneDemoData(),
-    validDraft({ eventType: "drive", linkedRecordId: "" }),
+    validDraft({ eventType: "drive", occurredOn: "2021-09-18", linkedRecordId: "" }),
     "ja",
+    "2026-07-18T10:00:00.000Z",
   );
 
   assert.equal(result.journal.eventType, "drive");
+  assert.equal(result.journal.occurredOn, "2021-09-18");
+  assert.equal(result.journal.createdAt, "2026-07-18T10:00:00.000Z");
   assert.equal(result.journal.visibility, "private");
+});
+
+test("rejects an invalid occurrence date while accepting legacy drafts without one", () => {
+  assert.equal(validateJournalDraft(validDraft({ occurredOn: "2024-02-30" })).errors.occurredOn, "invalid");
+  assert.equal(validateJournalDraft(validDraft({ occurredOn: "" })).errors.occurredOn, "required");
+  assert.equal(validateJournalDraft(validDraft()).errors.occurredOn, undefined);
+});
+
+test("uses the occurrence date for a vehicle timeline and falls back for legacy journals", () => {
+  const current = addJournalToData(
+    cloneDemoData(),
+    validDraft({ occurredOn: "2019-05-03" }),
+    "ja",
+    "2026-07-18T10:00:00.000Z",
+  ).journal;
+  assert.equal(journalOccurrenceDate(current), "2019-05-03");
+  const legacy = { ...current, occurredOn: undefined, occurredPrecision: undefined };
+  assert.equal(journalOccurrenceDate(legacy), "2026-07-18T10:00:00.000Z");
+  assert.equal(journalToDraft(legacy).occurredPrecision, "unknown");
+});
+
+test("keeps an approximate month without inventing an exact day", () => {
+  const journal = addJournalToData(
+    cloneDemoData(),
+    validDraft({
+      occurredOn: undefined,
+      occurredYear: 2007,
+      occurredMonth: 4,
+      occurredPrecision: "month",
+      occurredPeriodNote: "車検の少し前",
+    }),
+    "ja",
+    "2026-07-21T10:00:00.000Z",
+  ).journal;
+
+  assert.equal(journal.occurredOn, undefined);
+  assert.equal(journal.occurredYear, 2007);
+  assert.equal(journal.occurredMonth, 4);
+  assert.equal(journalOccurrenceDate(journal), "2007-04");
+  assert.equal(journalOccurrenceLabel(journal, "ja"), "2007年4月ごろ（車検の少し前）");
+  assert.equal(journalToDraft(journal).occurredPrecision, "month");
+});
+
+test("accepts a year-only or unknown occurrence without fabricating a date", () => {
+  const yearOnly = addJournalToData(
+    cloneDemoData(),
+    validDraft({
+      occurredOn: undefined,
+      occurredYear: 1998,
+      occurredPrecision: "year",
+    }),
+    "ja",
+  ).journal;
+  const unknown = addJournalToData(
+    cloneDemoData(),
+    validDraft({ occurredOn: undefined, occurredPrecision: "unknown" }),
+    "ja",
+  ).journal;
+
+  assert.equal(journalOccurrenceLabel(yearOnly, "ja"), "1998年ごろ");
+  assert.equal(journalOccurrenceLabel(unknown, "ja"), "時期不明");
+  assert.equal(journalOccurrenceDate(unknown), "0000");
+});
+
+test("rejects incomplete approximate occurrence values", () => {
+  assert.equal(validateJournalDraft(validDraft({
+    occurredOn: undefined,
+    occurredPrecision: "month",
+    occurredYear: 2020,
+  })).errors.occurredOn, "required");
+  assert.equal(validateJournalDraft(validDraft({
+    occurredOn: undefined,
+    occurredPrecision: "year",
+    occurredYear: 1800,
+  })).errors.occurredOn, "invalid");
+});
+
+test("lets only the author correct a journal date without replacing its identity", () => {
+  const data = cloneDemoData();
+  const previous = data.journals.find((journal) => journal.id === "journal-demo-owner-private");
+  assert.ok(previous);
+  const result = updateJournalInData(
+    data,
+    previous.id,
+    {
+      ...journalToDraft(previous),
+      occurredOn: "2026-07-09",
+      occurredPrecision: "day",
+      title: "DEMO: 日付を直した記録",
+      contentBlocks: [{
+        id: "journal-block-corrected",
+        type: "text",
+        style: "paragraph",
+        text: "昨日の出来事として修正しました。",
+      }],
+    },
+    "2026-07-21T09:00:00.000Z",
+  );
+
+  assert.equal(result.journal.id, previous.id);
+  assert.equal(result.journal.createdAt, previous.createdAt);
+  assert.equal(result.journal.updatedAt, "2026-07-21T09:00:00.000Z");
+  assert.equal(result.journal.occurredOn, "2026-07-09");
+  assert.equal(result.journal.bodyOriginal, "昨日の出来事として修正しました。");
+  assert.deepEqual(result.journal.media, previous.media);
+});
+
+test("does not let the current profile edit another owner's journal", () => {
+  const data = cloneDemoData();
+  const other = data.journals.find((journal) => journal.authorProfileId !== data.currentProfileId);
+  assert.ok(other);
+  assert.throws(
+    () => updateJournalInData(data, other.id, journalToDraft(other)),
+    /journal_owner_required/,
+  );
+});
+
+test("does not let a journal be moved onto another owner's vehicle", () => {
+  const data = cloneDemoData();
+  const own = data.journals.find((journal) => journal.authorProfileId === data.currentProfileId);
+  const ownVehicle = data.vehicles.find((vehicle) => vehicle.ownerProfileId === data.currentProfileId);
+  const otherProfile = data.profiles.find((profile) => profile.id !== data.currentProfileId);
+  assert.ok(own);
+  assert.ok(ownVehicle);
+  assert.ok(otherProfile);
+  const otherVehicle = {
+    ...structuredClone(ownVehicle),
+    id: "vehicle-other-owner",
+    ownerProfileId: otherProfile.id,
+  };
+  const dataWithOtherVehicle = {
+    ...data,
+    vehicles: [...data.vehicles, otherVehicle],
+  };
+  assert.throws(
+    () => updateJournalInData(dataWithOtherVehicle, own.id, {
+      ...journalToDraft(own),
+      vehicleId: otherVehicle.id,
+    }),
+    /journal_vehicle_owner_required/,
+  );
 });
 
 test("allows a linked maintenance record without requiring journal prose", () => {

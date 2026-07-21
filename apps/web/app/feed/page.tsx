@@ -50,7 +50,7 @@ export default function FeedPage() {
           <div className="section-heading">
             <div>
               <span className="eyebrow">LATEST</span>
-              <h2>{ja ? "新しいJournal" : "Latest journals"}</h2>
+              <h2>{ja ? "新しい愛車の記録" : "Latest vehicle records"}</h2>
             </div>
           </div>
           {feed.length ? (

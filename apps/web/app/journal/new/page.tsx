@@ -2,24 +2,40 @@
 
 import { JournalForm } from "@/components/journal-form";
 import { useApp } from "@/lib/app-context";
+import { Camera } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 export default function NewJournalPage() {
+  return <Suspense fallback={null}><NewJournalContent /></Suspense>;
+}
+
+function NewJournalContent() {
   const { locale } = useApp();
+  const searchParams = useSearchParams();
+  const vehicleId = searchParams.get("vehicle") ?? undefined;
   const ja = locale === "ja";
   return (
     <div className="page-stack narrow-page">
       <header className="page-header">
         <div>
-          <span className="eyebrow">GARAGE JOURNAL</span>
-          <h1>{ja ? "愛車との一日を書く" : "Write a day with your car"}</h1>
+          <span className="eyebrow">DETAILED RECORD</span>
+          <h1>{ja ? "愛車のことを詳しく記録する" : "Write a detailed vehicle record"}</h1>
           <p>
             {ja
-              ? "直った日も、路上で止まった日も、あとから愛車の物語になります。文章の好きな場所に写真や動画を添えて、自分の言葉で残してください。"
-              : "A successful repair and a roadside breakdown both become part of your car's story. Place photos and videos wherever they belong and write it in your own words."}
+              ? "タイトルや長い文章、複数の写真・動画を使いたい記録はこちらです。短い近況は「さっと記録」から残せます。"
+              : "Use this for a title, longer text, and multiple photos or videos. Quick updates can use Quick record."}
           </p>
         </div>
+        {vehicleId && (
+          <Link href={`/garage/${encodeURIComponent(vehicleId)}/event/new`} className="secondary-action">
+            <Camera size={17} aria-hidden="true" />
+            {ja ? "写真と一言で、さっと記録" : "Quick record with a photo"}
+          </Link>
+        )}
       </header>
-      <JournalForm />
+      <JournalForm vehicleId={vehicleId} />
     </div>
   );
 }

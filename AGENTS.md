@@ -54,6 +54,7 @@ MECHORI（メカリィ）は、車両メンテナンス記録を構造化し、�
 - 遠隔αの外部基盤設定: `docs/ALPHA_EXTERNAL_SETUP.md`
 - 遠隔αの初回所有者設定: `docs/ALPHA_OWNER_BOOTSTRAP.md`
 - Professional課題検証: `docs/PROFESSIONAL_DISCOVERY.md`
+- Professional将来基盤・工場DX: `docs/PROFESSIONAL_PLATFORM.md`
 - 日本税務準備: `docs/TAX_READINESS_JP.md`
 - デザイン: `docs/DESIGN_DIRECTION.md`
 - 決定記録: `docs/DECISIONS.md`

@@ -107,13 +107,19 @@ GarageJournalPost
 - `id` / `authorUserId`
 - `vehicleId`: 任意。車両個体を公開しない投稿も許容する
 - `title` / `bodyOriginal` / `sourceLanguage`
+- `occurredOn`: 日まで分かる場合の実際の日付
+- `occurredYear` / `occurredMonth`: 年月または年だけ分かる場合の値
+- `occurredPrecision`: `day`、`month`、`year`、`unknown`
+- `occurredPeriodNote`: 「車検の少し前」「購入して半年後」等、本人が覚えている時期の補足
 - `contentBlocks`: 段落、見出し、引用、メディア参照を順番に保持する本文正本
 - `visibility`: 非公開、フォロワー、公開。初期値は非公開
 - `knowledgeExtractionConsent`: ナレッジ候補抽出を許可するか
 - `createdAt` / `updatedAt` / `publishedAt`
 - `moderationState` / `deletionState`
 
-本文はAI生成を前提にせず、本人の原文とブロック順序を保持します。`bodyOriginal`は検索・移行互換用にテキストブロックから導出し、表示順の正本にはしません。翻訳やAI抽出結果は別データとし、原文を上書きしません。
+本文はAI生成を前提にせず、本人の原文とブロック順序を保持します。`bodyOriginal`は検索・移行互換用にテキストブロックから導出し、表示順の正本にはしません。翻訳やAI抽出結果は別データとし、原文を上書きしません。出来事の時期は、正確な日、年月ごろ、年ごろ、時期不明を区別します。`2021年6月ごろ`を`2021-06-01`として事実保存せず、並び替え用の値と利用者へ示す精度を分離します。既存データの未設定は許容し、表示時のみ`createdAt`へフォールバックします。
+
+ユーザー向けの`さっと記録`と`詳しく記録`は同じ`GarageJournalPost`へ保存します。`eventType`を持つ記録は軽量編集画面、順序付き本文を中心に作成した記録は詳細編集画面を使います。どちらも本人だけが更新でき、更新時は`id`、`authorUserId`、`createdAt`、既存の反応・モデレーション状態を保持して`updatedAt`を更新します。対象車両も本人所有であることを保存処理で確認します。
 
 ### ContentTranslation
 

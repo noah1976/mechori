@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  addJournalToData,
   addVehicleToData,
   applyRecordDraftToData,
   createEmptyAppData,
@@ -74,9 +75,25 @@ test("round-trips a tester vehicle and maintenance record through workspace JSON
     vehicleResult.vehicle.id,
   );
 
-  const restored = migrateAppData(JSON.parse(JSON.stringify(recordResult.data)));
+  const journalResult = addJournalToData(recordResult.data, {
+    title: "An older drive",
+    eventType: "drive",
+    occurredOn: "2008-09-14",
+    bodyOriginal: "Remembered and added later",
+    vehicleId: vehicleResult.vehicle.id,
+    linkedRecordId: "",
+    displayFields: [],
+    media: [],
+    contentBlocks: [{ id: "older-drive-text", type: "text", style: "paragraph", text: "Remembered and added later" }],
+    visibility: "private",
+    knowledgeExtractionConsent: false,
+  }, "en", "2026-07-18T12:00:00.000Z");
+
+  const restored = migrateAppData(JSON.parse(JSON.stringify(journalResult.data)));
   assert.equal(restored?.currentProfileId, "tester-001");
   assert.equal(restored?.vehicles[0]?.model, "MGB");
   assert.equal(restored?.records[0]?.summary, "Owner-entered service note");
   assert.equal(restored?.records[0]?.visibility, "private");
+  assert.equal(restored?.journals[0]?.occurredOn, "2008-09-14");
+  assert.equal(restored?.journals[0]?.createdAt, "2026-07-18T12:00:00.000Z");
 });
