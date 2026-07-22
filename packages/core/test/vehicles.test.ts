@@ -182,6 +182,38 @@ test("updates a vehicle specification without losing records, image, or ownershi
   assert.deepEqual(updated.data.records, originalRecords);
 });
 
+test("stores an owner-reported Peugeot 205 configuration as structured mechanical data", () => {
+  const vehicle = addVehicleToData(cloneDemoData(), {
+    ...createEmptyVehicleDraft(),
+    make: "プジョー",
+    model: "205",
+    grade: "GTI 1.9",
+    engine: "1.9L 8V",
+    engineCode: "XU9",
+    displacementCc: "1905",
+    aspiration: "naturally_aspirated",
+    drivetrain: "fwd",
+    transmission: "5MT",
+  }).vehicle;
+
+  assert.equal(vehicle.make, "PEUGEOT");
+  assert.equal(vehicle.variantId, "peugeot-205-gti");
+  assert.equal(vehicle.configurationId, "peugeot-205-gti-1-9");
+  assert.equal(vehicle.displacementCc, 1905);
+  assert.equal(vehicle.engineCode, "XU9");
+  assert.equal(vehicle.drivetrain, "fwd");
+});
+
+test("rejects an implausible displacement without blocking an unknown displacement", () => {
+  const base = {
+    ...createEmptyVehicleDraft(),
+    make: "PEUGEOT",
+    model: "205",
+  };
+  assert.equal(validateVehicleDraft(base).valid, true);
+  assert.equal(validateVehicleDraft({ ...base, displacementCc: "99999" }).errors.displacementCc, "invalid");
+});
+
 test("does not allow the current profile to edit another owner's specification", () => {
   const data = cloneDemoData();
   data.currentProfileId = "profile-someone-else";

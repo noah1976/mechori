@@ -16,10 +16,13 @@
 1. `brandId`: 世界共通のメーカー・ブランド
 2. `modelFamilyId`: 市場名をまたいで関連付ける車系統
 3. `generationId`: 年式、型式等で区別する世代。特定できなければ空
-4. `variantId`: 同一世代内で機関・駆動系等が大きく異なる仕様系統。特定できなければ空
-5. `grade`: ユーザーが入力した個別グレード名。正規IDに置き換えず保持
-6. `marketNameId`: 販売国・地域で使用された車名
-7. `marketRegion`: 市場名が使われる国・地域
+4. `variantId`: 同一世代内の派生系統。例: 205 GTI系 / 205 Turbo 16系。特定できなければ空
+5. `configurationId`: 派生系統内の具体仕様。例: 205 GTI 1.6 / GTI 1.9。特定できなければ空
+6. `grade`: ユーザーが入力した個別グレード名。正規IDに置き換えず保持
+7. `marketNameId`: 販売国・地域で使用された車名
+8. `marketRegion`: 市場名が使われる国・地域
+
+車両個体には別軸で`engineCode`、`displacementCc`、`aspiration`、`drivetrain`、`transmissionCode`、`specificationNote`を保持します。カタログにない仕様でも機械的な相違を残し、同じ文字列のグレード名だけで整備事例を統合しません。
 
 同じ車名でも世代や市場仕様が異なる場合があるため、名前だけで`generationId`や`variantId`を確定しません。年式・型式が不足する場合は`modelFamilyId`までの接続を許容します。グレード名だけで複数世代に存在し得る場合も世代を推測しません。
 
@@ -33,9 +36,18 @@
 - グレードと型式が矛盾する場合: `conflicting_inputs`
 - 特定できない場合: `unmatched`
 
-検索・AI整理の一致範囲は、`exact_variant`、`same_generation_other_variant`、`same_family_other_generation`、`same_family_unspecified`へ分けます。仕様不明の事例を完全一致件数へ昇格しません。
+検索・AI整理の一致範囲は、確認済み具体仕様、申告仕様一致、同派生系統の別具体仕様、同世代の別派生系統、機械仕様の相違、同車系統の別世代、仕様未確認へ分けます。仕様不明の事例を完全一致件数へ昇格しません。
 
 R33の初期辞書は、[日産 GTS25t Type M](https://www2.nissan.co.jp/HERITAGE/DETAIL/426.html)と[日産 GT-R V-spec](https://www.nissan.co.jp/HERITAGE/DETAIL/211.html)を根拠にしています。辞書は例示的な小規模集合であり、全グレードを網羅した車種マスタではありません。
+
+### 派生系統と具体仕様
+
+- PEUGEOT 205では、GTI系の1.6と1.9を別`configurationId`とし、Turbo 16はGTIとは別`variantId`にする。
+- LANCIA Deltaでは、HF四輪駆動系の中でもHF 4WD、Integrale 8V、Integrale 16V、Evoluzione I、Evoluzione IIを別`configurationId`にする。Martiniなどの限定仕様名は自由記述を失わず、機械仕様との同一性を自動で断定しない。
+- 限定仕様、Phase、シリーズ、販売国仕様等を辞書が網羅していない場合は`specificationNote`へ入力できる。自由記述を確認済みカタログ値へ自動昇格しない。
+- エンジンやミッション換装後の個体は、工場出荷時仕様と現在仕様を将来分離できる構造を前提とする。αでは現在の申告仕様を車両個体に保持する。
+
+PEUGEOT公式は205 GTIの1.6と1.9を別に紹介し、205 Turbo 16を競技系の別モデルとして扱っています。[PEUGEOT公式](https://www.peugeot.co.uk/about-us/brand/peugeot-magazine/new-e-208-gti-when-fans-celebrate-the-heir-to-a-legend.html)および[Stellantis Media](https://www.media.stellantis.com/de-de/peugeot/press/30-jahre-peugeot-205-kleine-kurvenrauber-und-grosse-flugelsturmer)を初期分類の根拠とします。LANCIA公式資料はDelta HF 4WD、HF Integrale、HF Integrale 16V、HF Integrale 16V Evoluzioneを技術的進化として区別しています。[Stellantis Media](https://www.media.stellantis.com/em-en/lancia/press/lancia-synonymous-with-rally-in-the-world)
 
 ## メーカーをまたぐ関係
 
@@ -45,13 +57,13 @@ R33の初期辞書は、[日産 GTS25t Type M](https://www2.nissan.co.jp/HERITAG
 |---|---|---|
 | `market_name_variant` | 地域・販売ブランドによる名称差。同じ車系統だが市場仕様は別確認 | OPEL Speedster / VAUXHALL VX220、TOYOTA Vitz / YARIS |
 | `oem_rebadge` | OEM姉妹車。車系統は接続するが専用装備・型式・部品適合は別確認 | MAZDA AZ-1 / SUZUKI CARA |
-| `brand_transition` | 生産・販売ブランドの移管。時期と仕様差を保持 | FIAT X1/9 / BERTONE X1/9 |
+| `brand_transition` | 生産・販売ブランドの移管。時期と仕様差を保持 | FIAT X1/9 / BERTONE X1/9、PRINCE Skyline / NISSAN Skyline、PRINCE Gloria / NISSAN Gloria |
 | `licensed_continuation` | 設計・生産権を引き継いだ継承車。別車系統のまま関連付ける | LOTUS Seven / CATERHAM Seven |
 | `inspired_derivative` | 元車を再現・着想した派生。類似事例の参考候補に留める | LOTUS Seven / BIRKIN S3 Roadster |
 
 同じ`modelFamilyId`を持つ場合でも、世代、型式、エンジン、市場仕様を確認せずに部品適合や修理事例を「同一」としません。`licensed_continuation`と`inspired_derivative`は別の`modelFamilyId`を維持し、通常検索の完全一致件数へ混ぜません。
 
-初期関係の根拠は、メーカーまたは正規系統の資料を優先します。[Caterham](https://caterhamcars.com/us/about/history)はLotus Sevenの生産権等を1973年に取得したと説明し、[Suzuki](https://www.suzuki.co.jp/suzuki_digital_library/1_auto/cara.html)はCARAをAZ-1のOEM供給車と説明しています。[Stellantis Media](https://www.media.stellantis.com/it-it/opel/press/21-anni-fa-opel-presentava-la-speedster)はOpel Speedsterの英国市場名をVauxhall VX220と説明しています。Birkinは[正規販売資料](https://www.birkin.com.au/about-birkin.php)がLotus Sevenを基にした再現車と説明しているため、正規継承ではなく派生として扱います。
+初期関係の根拠は、メーカーまたは正規系統の資料を優先します。[日産自動車の社史](https://www.nissan-global.com/JP/COMPANY/PROFILE/HERITAGE/1960/)は、1966年のプリンス自動車工業との合併によりスカイラインとグロリアが日産の商品ラインアップへ合流したと説明しています。そのためプリンス期のメーカーをNISSANへ書き換えず、車系統だけをブランド移管として接続します。[Caterham](https://caterhamcars.com/us/about/history)はLotus Sevenの生産権等を1973年に取得したと説明し、[Suzuki](https://www.suzuki.co.jp/suzuki_digital_library/1_auto/cara.html)はCARAをAZ-1のOEM供給車と説明しています。[Stellantis Media](https://www.media.stellantis.com/it-it/opel/press/21-anni-fa-opel-presentava-la-speedster)はOpel Speedsterの英国市場名をVauxhall VX220と説明しています。Birkinは[正規販売資料](https://www.birkin.com.au/about-birkin.php)がLotus Sevenを基にした再現車と説明しているため、正規継承ではなく派生として扱います。
 
 ## 登録フロー
 
@@ -59,7 +71,7 @@ R33の初期辞書は、[日産 GTS25t Type M](https://www2.nissan.co.jp/HERITAG
 2. 既知の別名と一致した場合、正規メーカー表記と車系統候補をその場で表示する。
 3. 確実な別名一致だけを`matched_alias`として保存する。
 4. メーカーだけ一致した場合は`brand_only`、不明なら`unmatched`とする。
-5. 任意のグレード・型式から世代と仕様系統を段階的に候補化する。矛盾時は保存を妨げず警告する。
+5. 任意のグレード・型式・排気量・機械仕様から世代、派生系統、具体仕様を段階的に候補化する。矛盾時は保存を妨げず警告する。
 6. 候補がなくても入力原文で登録を完了し、登録後の車両情報編集から正規IDへ接続できる。
 
 車種フォローと集合知の関連付けには、利用できる場合は`modelFamilyId`を使います。市場名が違う記録を同じ世代・仕様だと断定せず、検索結果では「同一世代」「別市場名」「同じ車系統・別世代」等を分けます。

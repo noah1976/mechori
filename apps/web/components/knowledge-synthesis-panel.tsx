@@ -45,6 +45,10 @@ function EvidenceList({
 function matchLabel(level: VehicleMatchLevel, ja: boolean) {
   const labels: Record<VehicleMatchLevel, [string, string]> = {
     exact_specification: ["同一仕様", "Exact specification"],
+    reported_configuration_match: ["申告仕様が一致", "Reported configuration match"],
+    reported_configuration_conflict: ["機械仕様に相違あり", "Mechanical specification differs"],
+    same_variant_other_configuration: ["同派生系統・別仕様", "Same variant, different configuration"],
+    same_variant_unspecified_configuration: ["同派生系統・詳細未確認", "Same variant, configuration unconfirmed"],
     same_generation_other_variant: ["同世代・別仕様", "Same generation, different variant"],
     same_family_other_generation: ["同車系統・別世代", "Same family, different generation"],
     same_family_unspecified: ["同車系統・仕様未確認", "Same family, specification unconfirmed"],

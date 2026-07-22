@@ -46,9 +46,24 @@ export type VehicleIdentityMatchStatus =
 export type VehicleSpecificationMatchStatus =
   | "confirmed_model_code"
   | "conflicting_inputs"
+  | "configuration_candidate"
   | "grade_candidate"
   | "generation_candidate"
   | "unmatched";
+export type VehicleAspirationType =
+  | "naturally_aspirated"
+  | "turbocharged"
+  | "supercharged"
+  | "electric"
+  | "other"
+  | "unknown";
+export type VehicleDrivetrainType =
+  | "fwd"
+  | "rwd"
+  | "awd"
+  | "four_wheel_drive"
+  | "other"
+  | "unknown";
 export type RecordEvidenceBasis =
   | "contemporaneous"
   | "invoice_or_receipt"
@@ -85,6 +100,8 @@ export interface Vehicle {
   generationId?: string;
   /** Normalized mechanical/specification branch inside a generation. */
   variantId?: string;
+  /** A concrete factory configuration inside a variant, such as GTI 1.6. */
+  configurationId?: string;
   marketNameId?: string;
   marketRegion?: string;
   identityMatchStatus: VehicleIdentityMatchStatus;
@@ -92,6 +109,7 @@ export interface Vehicle {
   year?: number;
   grade?: string;
   modelCode?: string;
+  specificationNote?: string;
   nickname?: string;
   ownershipType: VehicleRelationshipType;
   ownershipStartedYear?: number;
@@ -102,8 +120,13 @@ export interface Vehicle {
   primaryUse?: string;
   dispositionReason?: string;
   engine: string;
+  engineCode?: string;
+  displacementCc?: number;
+  aspiration?: VehicleAspirationType;
+  drivetrain?: VehicleDrivetrainType;
   steering: string;
   transmission: string;
+  transmissionCode?: string;
   /** @deprecated Use currentOdometerReading. */
   odometerKm: number;
   odometerEpisodes: PrototypeOdometerEpisode[];
@@ -122,6 +145,7 @@ export interface VehicleDraft {
   year: string;
   grade: string;
   modelCode: string;
+  specificationNote: string;
   nickname: string;
   ownershipType: VehicleRelationshipType;
   ownershipStartedYear: string;
@@ -132,8 +156,13 @@ export interface VehicleDraft {
   primaryUse: string;
   dispositionReason: string;
   engine: string;
+  engineCode: string;
+  displacementCc: string;
+  aspiration: VehicleAspirationType;
+  drivetrain: VehicleDrivetrainType;
   steering: string;
   transmission: string;
+  transmissionCode: string;
   odometer: string;
   odometerUnit: PrototypeOdometerUnit;
   odometerContext: VehicleOdometerContext;

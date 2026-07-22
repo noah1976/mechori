@@ -193,10 +193,14 @@ function GarageContent() {
             <div><dt>{translate(locale, "ownershipHistory")}</dt><dd>{ownershipDuration ?? (ja ? "未登録" : "Not set")}</dd></div>
             {vehicle.grade && <div><dt>{ja ? "グレード" : "Grade"}</dt><dd>{vehicle.grade}</dd></div>}
             {vehicle.modelCode && <div><dt>{ja ? "型式" : "Model code"}</dt><dd>{vehicle.modelCode}</dd></div>}
-            {vehicleSpecification.generation && <div><dt>{ja ? "世代・仕様系統" : "Generation / variant"}</dt><dd>{[vehicleSpecification.generation, vehicleSpecification.variant].filter(Boolean).join(" / ")}</dd></div>}
+            {vehicleSpecification.generation && <div><dt>{ja ? "世代・仕様系統" : "Generation / specification"}</dt><dd>{[vehicleSpecification.generation, vehicleSpecification.variant, vehicleSpecification.configuration].filter(Boolean).join(" / ")}</dd></div>}
+            {vehicle.specificationNote && <div><dt>{ja ? "仕様補足" : "Specification note"}</dt><dd>{vehicle.specificationNote}</dd></div>}
             {vehicle.primaryUse && <div><dt>{ja ? "主な用途" : "Main use"}</dt><dd>{vehicle.primaryUse}</dd></div>}
             {vehicle.dispositionReason && <div><dt>{ja ? "手放した理由" : "Reason ownership ended"}</dt><dd>{vehicle.dispositionReason}</dd></div>}
             {vehicle.engine && <div><dt>{ja ? "エンジン" : "Engine"}</dt><dd>{vehicle.engine}</dd></div>}
+            {vehicle.engineCode && <div><dt>{ja ? "エンジン型式" : "Engine code"}</dt><dd>{vehicle.engineCode}</dd></div>}
+            {vehicle.displacementCc && <div><dt>{ja ? "排気量" : "Displacement"}</dt><dd>{vehicle.displacementCc.toLocaleString()} cc</dd></div>}
+            {vehicle.drivetrain && vehicle.drivetrain !== "unknown" && <div><dt>{ja ? "駆動方式" : "Drivetrain"}</dt><dd>{vehicle.drivetrain === "four_wheel_drive" ? "4WD" : vehicle.drivetrain.toUpperCase()}</dd></div>}
             {vehicle.steering && <div><dt>{ja ? "ハンドル" : "Steering"}</dt><dd>{vehicle.steering}</dd></div>}
             {vehicle.transmission && <div><dt>{ja ? "トランスミッション" : "Transmission"}</dt><dd>{vehicle.transmission}</dd></div>}
           </dl>

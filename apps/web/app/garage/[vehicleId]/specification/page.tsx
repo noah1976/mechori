@@ -4,7 +4,9 @@ import { useApp } from "@/lib/app-context";
 import {
   resolveVehicleIdentity,
   resolveVehicleSpecification,
+  type VehicleAspirationType,
   type VehicleCategory,
+  type VehicleDrivetrainType,
 } from "@mechori/core";
 import { translate } from "@mechori/i18n";
 import { Bike, CarFront, Save } from "lucide-react";
@@ -23,15 +25,28 @@ export default function VehicleSpecificationPage() {
   const [year, setYear] = useState(ownedVehicle?.year?.toString() ?? "");
   const [grade, setGrade] = useState(ownedVehicle?.grade ?? "");
   const [modelCode, setModelCode] = useState(ownedVehicle?.modelCode ?? "");
+  const [specificationNote, setSpecificationNote] = useState(ownedVehicle?.specificationNote ?? "");
   const [engine, setEngine] = useState(ownedVehicle?.engine ?? "");
+  const [engineCode, setEngineCode] = useState(ownedVehicle?.engineCode ?? "");
+  const [displacementCc, setDisplacementCc] = useState(ownedVehicle?.displacementCc?.toString() ?? "");
+  const [aspiration, setAspiration] = useState<VehicleAspirationType>(ownedVehicle?.aspiration ?? "unknown");
+  const [drivetrain, setDrivetrain] = useState<VehicleDrivetrainType>(ownedVehicle?.drivetrain ?? "unknown");
   const [transmission, setTransmission] = useState(ownedVehicle?.transmission ?? "");
+  const [transmissionCode, setTransmissionCode] = useState(ownedVehicle?.transmissionCode ?? "");
   const [steering, setSteering] = useState(ownedVehicle?.steering ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const identity = useMemo(() => resolveVehicleIdentity(make, model), [make, model]);
   const specification = useMemo(
-    () => resolveVehicleSpecification(identity.modelFamilyId, { grade, modelCode }, locale),
-    [grade, identity.modelFamilyId, locale, modelCode],
+    () => resolveVehicleSpecification(identity.modelFamilyId, {
+      generationId: identity.generationId,
+      modelName: model,
+      grade,
+      modelCode,
+      specificationNote,
+      displacementCc,
+    }, locale),
+    [displacementCc, grade, identity.generationId, identity.modelFamilyId, locale, model, modelCode, specificationNote],
   );
 
   if (!ownedVehicle) {
@@ -43,7 +58,13 @@ export default function VehicleSpecificationPage() {
     event.preventDefault();
     setError("");
     const parsedYear = year ? Number(year) : undefined;
-    if (!make.trim() || !model.trim() || (parsedYear !== undefined && !Number.isInteger(parsedYear))) {
+    const parsedDisplacementCc = displacementCc ? Number(displacementCc) : undefined;
+    if (
+      !make.trim() ||
+      !model.trim() ||
+      (parsedYear !== undefined && !Number.isInteger(parsedYear)) ||
+      (parsedDisplacementCc !== undefined && !Number.isInteger(parsedDisplacementCc))
+    ) {
       setError(translate(locale, "checkRequiredVehicleFields"));
       return;
     }
@@ -56,8 +77,14 @@ export default function VehicleSpecificationPage() {
         year: parsedYear,
         grade,
         modelCode,
+        specificationNote,
         engine,
+        engineCode,
+        displacementCc: parsedDisplacementCc,
+        aspiration,
+        drivetrain,
         transmission,
+        transmissionCode,
         steering,
       });
       router.push(`/garage?vehicle=${encodeURIComponent(editableVehicle.id)}`);
@@ -89,14 +116,24 @@ export default function VehicleSpecificationPage() {
             <Field label={translate(locale, "gradeOptional")}><input value={grade} onChange={(event) => setGrade(event.target.value)} placeholder={translate(locale, "gradeExample")} /></Field>
             <Field label={translate(locale, "modelCodeOptional")}><input value={modelCode} onChange={(event) => setModelCode(event.target.value)} placeholder={translate(locale, "modelCodeExample")} /></Field>
           </div>
-          {specification.generationId && <div className="vehicle-identity-match" aria-live="polite"><p>{translate(locale, specification.matchStatus === "confirmed_model_code" ? "confirmedSpecificationNotice" : "candidateSpecificationNotice", { generation: specification.generationLabel ?? "", variant: specification.variantLabel ?? translate(locale, "variantUnspecified") })}</p>{specification.conflict && <p className="specification-conflict">{translate(locale, "specificationConflictNotice")}</p>}</div>}
+          <Field label={translate(locale, "specificationNoteOptional")}><input value={specificationNote} onChange={(event) => setSpecificationNote(event.target.value)} placeholder={translate(locale, "specificationNoteExample")} /></Field>
+          {specification.generationId && <div className="vehicle-identity-match" aria-live="polite"><p>{translate(locale, specification.matchStatus === "confirmed_model_code" ? "confirmedSpecificationNotice" : "candidateSpecificationNotice", { generation: specification.generationLabel ?? "", variant: specification.configurationLabel ?? specification.variantLabel ?? translate(locale, "variantUnspecified") })}</p>{specification.conflict && <p className="specification-conflict">{translate(locale, "specificationConflictNotice")}</p>}</div>}
           <p className="catalog-free-note">{translate(locale, "specificationConfidenceHelp")}</p>
         </section>
         <section className="form-section">
           <div className="section-heading compact"><div><span className="eyebrow">02</span><h2>{translate(locale, "mechanicalDetailsOptional")}</h2></div></div>
           <div className="form-grid three-columns">
-            <Field label={translate(locale, "engineOptional")}><input value={engine} onChange={(event) => setEngine(event.target.value)} placeholder="RB25DET" /></Field>
+            <Field label={translate(locale, "engineDescriptionOptional")}><input value={engine} onChange={(event) => setEngine(event.target.value)} placeholder={translate(locale, "engineDescriptionExample")} /></Field>
+            <Field label={translate(locale, "engineCodeOptional")}><input value={engineCode} onChange={(event) => setEngineCode(event.target.value)} placeholder="RB25DET" /></Field>
+            <Field label={translate(locale, "displacementCcOptional")}><input type="number" min="1" max="30000" inputMode="numeric" value={displacementCc} onChange={(event) => setDisplacementCc(event.target.value)} placeholder="1905" /></Field>
+          </div>
+          <div className="form-grid three-columns">
+            <Field label={translate(locale, "aspirationOptional")}><select value={aspiration} onChange={(event) => setAspiration(event.target.value as VehicleAspirationType)}><option value="unknown">{translate(locale, "unknown")}</option><option value="naturally_aspirated">{translate(locale, "aspirationNaturallyAspirated")}</option><option value="turbocharged">{translate(locale, "aspirationTurbocharged")}</option><option value="supercharged">{translate(locale, "aspirationSupercharged")}</option><option value="electric">{translate(locale, "aspirationElectric")}</option><option value="other">{translate(locale, "other")}</option></select></Field>
+            <Field label={translate(locale, "drivetrainOptional")}><select value={drivetrain} onChange={(event) => setDrivetrain(event.target.value as VehicleDrivetrainType)}><option value="unknown">{translate(locale, "unknown")}</option><option value="fwd">FWD</option><option value="rwd">RWD</option><option value="awd">AWD</option><option value="four_wheel_drive">4WD</option><option value="other">{translate(locale, "other")}</option></select></Field>
             <Field label={translate(locale, "transmissionOptional")}><input value={transmission} onChange={(event) => setTransmission(event.target.value)} /></Field>
+          </div>
+          <div className="form-grid two-columns">
+            <Field label={translate(locale, "transmissionCodeOptional")}><input value={transmissionCode} onChange={(event) => setTransmissionCode(event.target.value)} /></Field>
             <Field label={translate(locale, "steeringOptional")}><input value={steering} onChange={(event) => setSteering(event.target.value)} /></Field>
           </div>
         </section>

@@ -44,8 +44,12 @@ function NewVehicleContent() {
     [identity.marketNameId, locale],
   );
   const specification = useMemo(
-    () => resolveVehicleSpecification(identity.modelFamilyId, draft, locale),
-    [draft, identity.modelFamilyId, locale],
+    () => resolveVehicleSpecification(identity.modelFamilyId, {
+      ...draft,
+      generationId: identity.generationId,
+      modelName: draft.model,
+    }, locale),
+    [draft, identity.generationId, identity.modelFamilyId, locale],
   );
   const router = useRouter();
 
@@ -167,7 +171,7 @@ function NewVehicleContent() {
                 ? "confirmedSpecificationNotice"
                 : "candidateSpecificationNotice", {
                 generation: specification.generationLabel ?? "",
-                variant: specification.variantLabel ?? translate(locale, "variantUnspecified"),
+                variant: specification.configurationLabel ?? specification.variantLabel ?? translate(locale, "variantUnspecified"),
               })}</p>
             )}
             {specification.conflict && <p className="specification-conflict">{translate(locale, "specificationConflictNotice")}</p>}
@@ -179,6 +183,17 @@ function NewVehicleContent() {
             <div className="form-grid two-columns optional-vehicle-details">
               <Field label={translate(locale, "gradeOptional")}><input value={draft.grade} onChange={(event) => setField("grade", event.target.value)} placeholder={translate(locale, "gradeExample")} /></Field>
               <Field label={translate(locale, "modelCodeOptional")}><input value={draft.modelCode} onChange={(event) => setField("modelCode", event.target.value)} placeholder={translate(locale, "modelCodeExample")} /></Field>
+            </div>
+            <Field label={translate(locale, "specificationNoteOptional")}><input value={draft.specificationNote} onChange={(event) => setField("specificationNote", event.target.value)} placeholder={translate(locale, "specificationNoteExample")} /></Field>
+            <div className="form-grid three-columns optional-vehicle-details">
+              <Field label={translate(locale, "engineCodeOptional")}><input value={draft.engineCode} onChange={(event) => setField("engineCode", event.target.value)} placeholder="RB25DET" /></Field>
+              <Field label={translate(locale, "displacementCcOptional")} error={errorFor("displacementCc")}><input type="number" min="1" max="30000" inputMode="numeric" value={draft.displacementCc} onChange={(event) => setField("displacementCc", event.target.value)} placeholder="1905" /></Field>
+              <Field label={translate(locale, "aspirationOptional")}><select value={draft.aspiration} onChange={(event) => setField("aspiration", event.target.value as VehicleDraft["aspiration"])}><option value="unknown">{translate(locale, "unknown")}</option><option value="naturally_aspirated">{translate(locale, "aspirationNaturallyAspirated")}</option><option value="turbocharged">{translate(locale, "aspirationTurbocharged")}</option><option value="supercharged">{translate(locale, "aspirationSupercharged")}</option><option value="electric">{translate(locale, "aspirationElectric")}</option><option value="other">{translate(locale, "other")}</option></select></Field>
+            </div>
+            <div className="form-grid three-columns optional-vehicle-details">
+              <Field label={translate(locale, "drivetrainOptional")}><select value={draft.drivetrain} onChange={(event) => setField("drivetrain", event.target.value as VehicleDraft["drivetrain"])}><option value="unknown">{translate(locale, "unknown")}</option><option value="fwd">FWD</option><option value="rwd">RWD</option><option value="awd">AWD</option><option value="four_wheel_drive">4WD</option><option value="other">{translate(locale, "other")}</option></select></Field>
+              <Field label={translate(locale, "transmissionOptional")}><input value={draft.transmission} onChange={(event) => setField("transmission", event.target.value)} /></Field>
+              <Field label={translate(locale, "transmissionCodeOptional")}><input value={draft.transmissionCode} onChange={(event) => setField("transmissionCode", event.target.value)} /></Field>
             </div>
             {isPrevious && <Field label={translate(locale, "nicknameOptional")}><input value={draft.nickname} onChange={(event) => setField("nickname", event.target.value)} /></Field>}
           </details>

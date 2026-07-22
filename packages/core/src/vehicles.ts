@@ -23,6 +23,7 @@ export function createEmptyVehicleDraft(): VehicleDraft {
     year: "",
     grade: "",
     modelCode: "",
+    specificationNote: "",
     nickname: "",
     ownershipType: "owned",
     ownershipStartedYear: "",
@@ -33,8 +34,13 @@ export function createEmptyVehicleDraft(): VehicleDraft {
     primaryUse: "",
     dispositionReason: "",
     engine: "",
+    engineCode: "",
+    displacementCc: "",
+    aspiration: "unknown",
+    drivetrain: "unknown",
     steering: "",
     transmission: "",
+    transmissionCode: "",
     odometer: "",
     odometerUnit: "km",
     odometerContext: "current",
@@ -61,6 +67,7 @@ export function validateVehicleDraft(
     ? Number(draft.ownershipEndedMonth)
     : undefined;
   const odometer = draft.odometer ? Number(draft.odometer) : undefined;
+  const displacementCc = draft.displacementCc ? Number(draft.displacementCc) : undefined;
 
   if (!draft.make.trim()) errors.make = "required";
   if (!draft.model.trim()) errors.model = "required";
@@ -121,6 +128,12 @@ export function validateVehicleDraft(
   if (odometer !== undefined && (!Number.isFinite(odometer) || odometer < 0)) {
     errors.odometer = "invalid";
   }
+  if (
+    displacementCc !== undefined &&
+    (!Number.isInteger(displacementCc) || displacementCc < 1 || displacementCc > 30000)
+  ) {
+    errors.displacementCc = "invalid";
+  }
 
   return { valid: Object.keys(errors).length === 0, errors };
 }
@@ -136,7 +149,11 @@ export function addVehicleToData(
   const odometer = draft.odometer ? Number(draft.odometer) : 0;
   const episodeId = `episode-${crypto.randomUUID()}`;
   const identity = resolveVehicleIdentity(draft.make, draft.model);
-  const specification = resolveVehicleSpecification(identity.modelFamilyId, draft);
+  const specification = resolveVehicleSpecification(identity.modelFamilyId, {
+    ...draft,
+    generationId: identity.generationId,
+    modelName: draft.model,
+  });
   const vehicle: Vehicle = {
     id: `vehicle-${crypto.randomUUID()}`,
     ownerProfileId: data.currentProfileId,
@@ -149,6 +166,7 @@ export function addVehicleToData(
     modelFamilyId: identity.modelFamilyId,
     generationId: specification.generationId ?? identity.generationId,
     variantId: specification.variantId,
+    configurationId: specification.configurationId,
     marketNameId: identity.marketNameId,
     marketRegion: identity.marketRegion,
     identityMatchStatus: identity.matchStatus,
@@ -156,6 +174,7 @@ export function addVehicleToData(
     year: draft.year ? Number(draft.year) : undefined,
     grade: draft.grade.trim() || undefined,
     modelCode: draft.modelCode.trim() || undefined,
+    specificationNote: draft.specificationNote.trim() || undefined,
     nickname: draft.nickname.trim() || undefined,
     ownershipType: draft.ownershipType,
     ownershipStartedYear: draft.ownershipStartedYear
@@ -174,8 +193,13 @@ export function addVehicleToData(
     primaryUse: draft.primaryUse.trim() || undefined,
     dispositionReason: draft.dispositionReason.trim() || undefined,
     engine: draft.engine.trim(),
+    engineCode: draft.engineCode.trim() || undefined,
+    displacementCc: draft.displacementCc ? Number(draft.displacementCc) : undefined,
+    aspiration: draft.aspiration,
+    drivetrain: draft.drivetrain,
     steering: draft.steering.trim(),
     transmission: draft.transmission.trim(),
+    transmissionCode: draft.transmissionCode.trim() || undefined,
     odometerKm: odometer,
     odometerEpisodes: [{ id: episodeId, reason: "initial", startedAt: now.slice(0, 10) }],
     currentOdometerReading: {
@@ -203,9 +227,15 @@ export interface VehicleSpecificationUpdate {
   year?: number;
   grade?: string;
   modelCode?: string;
+  specificationNote?: string;
   engine?: string;
+  engineCode?: string;
+  displacementCc?: number;
+  aspiration?: Vehicle["aspiration"];
+  drivetrain?: Vehicle["drivetrain"];
   steering?: string;
   transmission?: string;
+  transmissionCode?: string;
 }
 
 export function updateVehicleSpecificationInData(
@@ -226,9 +256,19 @@ export function updateVehicleSpecificationInData(
   ) {
     throw new Error("invalid_vehicle_specification");
   }
+  if (
+    update.displacementCc !== undefined &&
+    (!Number.isInteger(update.displacementCc) || update.displacementCc < 1 || update.displacementCc > 30000)
+  ) {
+    throw new Error("invalid_vehicle_specification");
+  }
 
   const identity = resolveVehicleIdentity(update.make, update.model);
-  const specification = resolveVehicleSpecification(identity.modelFamilyId, update);
+  const specification = resolveVehicleSpecification(identity.modelFamilyId, {
+    ...update,
+    generationId: identity.generationId,
+    modelName: update.model,
+  });
   const nextVehicle: Vehicle = {
     ...vehicle,
     vehicleCategory: update.vehicleCategory,
@@ -240,6 +280,7 @@ export function updateVehicleSpecificationInData(
     modelFamilyId: identity.modelFamilyId,
     generationId: specification.generationId,
     variantId: specification.variantId,
+    configurationId: specification.configurationId,
     marketNameId: identity.marketNameId,
     marketRegion: identity.marketRegion,
     identityMatchStatus: identity.matchStatus,
@@ -247,9 +288,15 @@ export function updateVehicleSpecificationInData(
     year: update.year,
     grade: update.grade?.trim() || undefined,
     modelCode: update.modelCode?.trim() || undefined,
+    specificationNote: update.specificationNote?.trim() || undefined,
     engine: update.engine?.trim() ?? "",
+    engineCode: update.engineCode?.trim() || undefined,
+    displacementCc: update.displacementCc,
+    aspiration: update.aspiration ?? "unknown",
+    drivetrain: update.drivetrain ?? "unknown",
     steering: update.steering?.trim() ?? "",
     transmission: update.transmission?.trim() ?? "",
+    transmissionCode: update.transmissionCode?.trim() || undefined,
   };
 
   return {
