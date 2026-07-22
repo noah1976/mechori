@@ -5,6 +5,7 @@ import { isAlphaActivityTrackingEnabled } from "@/lib/runtime-config";
 import { Check, Clipboard, Link2, LoaderCircle, ShieldCheck } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { useApp } from "@/lib/app-context";
+import { buildInvitationUrl, createInvitationToken, hashInvitationToken } from "@/lib/invitation-link";
 
 type AccessState = "loading" | "operator" | "denied" | "error";
 
@@ -75,8 +76,8 @@ export default function AlphaSettingsPage() {
     try {
       const days = Number(expiresInDays);
       if (!Number.isInteger(days) || days < 1 || days > 30) throw new Error("invalid_expiry");
-      const rawToken = randomToken();
-      const tokenHash = await sha256Hex(rawToken);
+      const rawToken = createInvitationToken();
+      const tokenHash = await hashInvitationToken(rawToken);
       const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString();
       const { error: createError } = await createSupabaseBrowserClient().rpc(
         "create_test_invitation",
@@ -88,10 +89,7 @@ export default function AlphaSettingsPage() {
         },
       );
       if (createError) throw createError;
-      const url = new URL("/auth", window.location.origin);
-      url.searchParams.set("mode", "signup");
-      url.hash = new URLSearchParams({ invite: rawToken }).toString();
-      setInviteUrl(url.toString());
+      setInviteUrl(buildInvitationUrl(window.location.origin, rawToken));
     } catch {
       setError(ja ? "招待URLを発行できませんでした。もう一度お試しください。" : "The invitation link could not be created. Please try again.");
     } finally {
@@ -162,17 +160,4 @@ export default function AlphaSettingsPage() {
       </form>
     </div>
   );
-}
-
-function randomToken(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(32));
-  return btoa(String.fromCharCode(...bytes))
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replace(/=+$/, "");
-}
-
-async function sha256Hex(value: string): Promise<string> {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }

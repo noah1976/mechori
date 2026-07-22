@@ -15,6 +15,7 @@ import {
   Plus,
   Search,
   Settings2,
+  UserPlus,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -122,6 +123,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             </label>
             {authenticated ? (
               <>
+                <Link href="/invite" className="icon-text-button" aria-label={locale === "ja" ? "友人を招待" : "Invite a friend"} title={locale === "ja" ? "友人を招待" : "Invite a friend"}>
+                  <UserPlus size={18} aria-hidden="true" />
+                  <span className="top-bar-action-label">{locale === "ja" ? "招待" : "Invite"}</span>
+                </Link>
                 <Link href="/settings/privacy" className="icon-text-button" aria-label={translate(locale, "privacyAndSafety")} title={translate(locale, "privacyAndSafety")}>
                   <Settings2 size={18} aria-hidden="true" />
                   <span className="top-bar-action-label">{translate(locale, "privacyAndSafety")}</span>
