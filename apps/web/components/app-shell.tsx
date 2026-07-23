@@ -69,6 +69,44 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }
 
+  if (pathname === "/professional") {
+    return (
+      <div className="professional-frame" data-clarity-mask="true">
+        <header className="professional-site-header">
+          <Link href="/professional" className="professional-site-brand" aria-label="MECHORI Professional">
+            <strong>MECHORI</strong>
+            <span>PROFESSIONAL</span>
+          </Link>
+          <label className="locale-select">
+            <Languages size={18} aria-hidden="true" />
+            <span className="sr-only">{translate(locale, "displayLanguage")}</span>
+            <select
+              value={locale}
+              onChange={(event) => setLocale(event.target.value as SupportedUiLocale)}
+              aria-label={translate(locale, "displayLanguage")}
+            >
+              {uiLocaleOptions.map((option) => (
+                <option value={option.value} key={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+        </header>
+        <main className="professional-site-main">
+          {hydrated ? children : (
+            <div className="app-loading" role="status" aria-live="polite">
+              <LoaderCircle className="spin" size={24} aria-hidden="true" />
+              <span>{translate(locale, "loadingGarage")}</span>
+            </div>
+          )}
+        </main>
+        <footer className="professional-site-footer">
+          <strong>MECHORI PROFESSIONAL</strong>
+          <Link href="/ai-policy">{translate(locale, "aiTrainingPolicy")}</Link>
+        </footer>
+      </div>
+    );
+  }
+
   return (
     <div className="app-frame" data-clarity-mask="true">
       <aside className="side-nav" aria-label="Primary navigation">
@@ -209,6 +247,7 @@ function isPublicPath(pathname: string): boolean {
     pathname === "/search" ||
     pathname === "/auth" ||
     pathname === "/ai-policy" ||
+    pathname === "/professional" ||
     pathname.startsWith("/v/") ||
     pathname.startsWith("/profile/") ||
     (pathname.startsWith("/journal/") &&

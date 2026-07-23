@@ -6,6 +6,8 @@
 
 `codex/remote-alpha-foundation`ブランチに、Next.js、Supabase Auth・Postgres、Netlifyを使う遠隔α基盤を実装しました。ローカルDEMOは従来どおり端末内で動き、公開αだけGoogle OAuthと利用者別の非公開Workspaceへ切り替わります。外部AI、OCR、決済、広告、独自ドメインの一般公開には接続していません。
 
+Professionalの事業仮説をαで確認するため、公開ティザー、Founding Partnerの価格仮説、工場提示画面からの紹介導線を追加しています。αの主目的はtoC検証のため、一般ホームと共通フッターにはProfessionalを掲載せず、`/professional`は独立したApp Shellで直接URLまたはオーナー紹介から入る構成です。事業モデルの正本は`docs/BUSINESS_MODEL.md`です。
+
 ## 実装済み
 
 - 正式名称をMECHORI（メカリィ）、公式ドメインを`mechori.com`として文書・画面・コード識別子へ反映

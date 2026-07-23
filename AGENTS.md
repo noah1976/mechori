@@ -48,6 +48,7 @@ MECHORI（メカリィ）は、車両メンテナンス記録を構造化し、�
 - AI方針: `docs/AI_POLICY.md`
 - 第三者AI学習・クローラー方針: `docs/AI_CRAWLING_POLICY.md`
 - 収益化・費用: `docs/MONETIZATION.md`
+- 事業モデル・価格・Professional獲得・国際展開: `docs/BUSINESS_MODEL.md`
 - 事業成長・初期獲得・検証指標: `docs/BUSINESS_GROWTH.md`
 - 初期検証の計測定義: `docs/MEASUREMENT_PLAN.md`
 - 招待制ベータ運用: `docs/BETA_PLAYBOOK.md`

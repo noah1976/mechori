@@ -2,6 +2,7 @@
 
 import { DemoNotice } from "@/components/demo-notice";
 import { recordOdometerLabel } from "@/components/record-card";
+import { WorkshopIntroductionActions } from "@/components/workshop-introduction-actions";
 import { useApp } from "@/lib/app-context";
 import { displayVehicleModel, getPreferredVehicle } from "@mechori/core";
 import { translate } from "@mechori/i18n";
@@ -59,6 +60,15 @@ function ServiceBriefContent() {
             </article>
           ))}
         </div>
+      </section>
+
+      <section className="workshop-introduction print-hidden">
+        <div>
+          <span className="eyebrow">MECHORI PROFESSIONAL</span>
+          <h2>{translate(locale, "workshopIntroductionTitle")}</h2>
+          <p>{translate(locale, "workshopIntroductionBody")}</p>
+        </div>
+        <WorkshopIntroductionActions locale={locale} />
       </section>
 
       <p className="service-brief-footer">MECHORI · Fix. Share. Drive on. · DEMO / SAMPLE</p>
