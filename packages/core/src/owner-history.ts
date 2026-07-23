@@ -1,4 +1,5 @@
 import type { AppData, Locale, MaintenanceRecord, Vehicle } from "./types.ts";
+import { maintenanceRecordDateKey } from "./records.ts";
 
 export type HistoryLevelCode = "not_started" | "started" | "organized" | "ongoing";
 export type HistoryMilestoneCode =
@@ -40,8 +41,9 @@ export interface AppDataExport {
 
 function getServiceDates(records: MaintenanceRecord[]): string[] {
   return records
-    .map((record) => record.serviceDate)
-    .filter((date) => !Number.isNaN(Date.parse(date)))
+    .filter((record) => record.serviceDatePrecision === "day")
+    .map(maintenanceRecordDateKey)
+    .filter((date) => date !== "0000")
     .sort((a, b) => a.localeCompare(b));
 }
 

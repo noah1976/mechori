@@ -52,6 +52,8 @@ test("round-trips a tester vehicle and maintenance record through workspace JSON
     vehicleResult.data,
     {
       serviceDate: "2026-07-17",
+      serviceDatePrecision: "day",
+      servicePeriodNote: "",
       odometerKm: "54000",
       odometerUnit: "km",
       odometerEpisodeId: vehicleResult.vehicle.currentOdometerReading.episodeId,

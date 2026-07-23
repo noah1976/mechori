@@ -4,6 +4,7 @@ import type {
   JournalDraft,
   JournalTextBlock,
   JournalVisibility,
+  MaintenanceOccurrencePrecision,
   PrototypeOdometerEpisodeReason,
   PrototypeOdometerUnit,
   RecordEvidenceBasis,
@@ -37,6 +38,13 @@ export function parseRecordLocalDraft(raw: string | null): LocalDraftEnvelope<Re
       evidenceBasis: isRecordEvidenceBasis(parsed.value.evidenceBasis)
         ? parsed.value.evidenceBasis
         : "unknown",
+      serviceDatePrecision: isMaintenanceOccurrencePrecision(parsed.value.serviceDatePrecision)
+        ? parsed.value.serviceDatePrecision
+        : inferMaintenanceOccurrencePrecision(parsed.value.serviceDate),
+      servicePeriodNote:
+        typeof parsed.value.servicePeriodNote === "string"
+          ? parsed.value.servicePeriodNote
+          : "",
     },
   };
 }
@@ -109,6 +117,19 @@ function isRecordEvidenceBasis(value: unknown): value is RecordEvidenceBasis {
     "recalled_later",
     "unknown",
   ].includes(String(value));
+}
+
+function isMaintenanceOccurrencePrecision(
+  value: unknown,
+): value is MaintenanceOccurrencePrecision {
+  return ["day", "month", "year", "unknown"].includes(String(value));
+}
+
+function inferMaintenanceOccurrencePrecision(value: string): MaintenanceOccurrencePrecision {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return "day";
+  if (/^\d{4}-\d{2}$/.test(value)) return "month";
+  if (/^\d{4}$/.test(value)) return "year";
+  return "unknown";
 }
 
 function isRecordActionDraft(value: unknown): value is RecordActionDraft {

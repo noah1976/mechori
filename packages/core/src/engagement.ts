@@ -1,5 +1,6 @@
 import type { AppData } from "./types.ts";
 import { getFollowingFeed, getOwnJournals } from "./social.ts";
+import { maintenanceRecordOccursInMonth } from "./records.ts";
 
 export type EngagementEventName =
   | "session_started"
@@ -91,7 +92,7 @@ export function buildMonthlyOwnerSummary(
       .map((vehicle) => vehicle.id),
   );
   const records = data.records.filter(
-    (record) => ownVehicleIds.has(record.vehicleId) && record.serviceDate.startsWith(month),
+    (record) => ownVehicleIds.has(record.vehicleId) && maintenanceRecordOccursInMonth(record, month),
   );
   const journals = getOwnJournals(data).filter((journal) => journal.createdAt.startsWith(month));
   const followingUpdates = getFollowingFeed(data).filter((journal) =>

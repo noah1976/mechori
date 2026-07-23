@@ -409,7 +409,7 @@ test("enriches a legacy Japanese vehicle and keeps journals and follows connecte
 
   const migrated = migrateAppData(legacy);
   assert.ok(migrated);
-  assert.equal(migrated.schemaVersion, 11);
+  assert.equal(migrated.schemaVersion, 12);
   assert.equal(migrated.vehicles[0]?.make, "FIAT");
   assert.equal(migrated.vehicles[0]?.makeInput, "フィアット");
   assert.equal(migrated.vehicles[0]?.modelFamilyId, "fiat-barchetta");

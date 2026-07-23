@@ -3,6 +3,7 @@
 import { recordOdometerLabel, recordTitle } from "@/components/record-card";
 import { HazardBadge, ResolutionBadge, VerificationBadge, VisibilityBadge } from "@/components/status-badges";
 import { useApp } from "@/lib/app-context";
+import { maintenanceRecordDateKey, maintenanceRecordDateLabel } from "@mechori/core";
 import { AlertTriangle, ArrowLeft, FilePenLine, Gauge, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -21,7 +22,7 @@ export default function RecordDetailPage() {
   const meterChangeLabel =
     odometerEpisode &&
     odometerEpisode.reason !== "initial" &&
-    odometerEpisode.startedAt === record.serviceDate
+    odometerEpisode.startedAt === maintenanceRecordDateKey(record)
       ? episodeReasonLabel(odometerEpisode.reason, ja)
       : undefined;
 
@@ -29,7 +30,7 @@ export default function RecordDetailPage() {
     <div className="page-stack narrow-page">
       <Link href="/records" className="back-link"><ArrowLeft size={17} />{ja ? "整備履歴" : "Maintenance history"}</Link>
       <header className="detail-header">
-        <div className="record-card-topline"><span>{record.serviceDate}</span>{record.isDemo && <span className="demo-label">DEMO</span>}</div>
+        <div className="record-card-topline"><span>{maintenanceRecordDateLabel(record, locale)}</span>{record.isDemo && <span className="demo-label">DEMO</span>}</div>
         <h1>{recordTitle(record, locale)}</h1>
         <div className="detail-summary"><span><Gauge size={16} />{recordOdometerLabel(record, locale)}</span><span>{record.matchScope}</span>{meterChangeLabel && <span>{meterChangeLabel}</span>}</div>
         <div className="badge-row"><ResolutionBadge value={record.resolutionStatus} locale={locale} /><VisibilityBadge value={record.visibility} locale={locale} /><HazardBadge level={record.hazardLevel} /><VerificationBadge value={record.verificationStatus} locale={locale} /></div>

@@ -1,6 +1,10 @@
 "use client";
 
-import type { Locale, MaintenanceRecord } from "@mechori/core";
+import {
+  maintenanceRecordDateLabel,
+  type Locale,
+  type MaintenanceRecord,
+} from "@mechori/core";
 import { ArrowUpRight, Gauge } from "lucide-react";
 import Link from "next/link";
 import { HazardBadge, ResolutionBadge, VisibilityBadge } from "./status-badges";
@@ -21,7 +25,7 @@ export function RecordCard({ record, locale }: { record: MaintenanceRecord; loca
   return (
     <Link href={`/records/${record.id}`} className="record-card">
       <div className="record-card-topline">
-        <span>{record.serviceDate}</span>
+        <span>{maintenanceRecordDateLabel(record, locale)}</span>
         {record.isDemo && <span className="demo-label">DEMO</span>}
       </div>
       <h3>{recordTitle(record, locale)}</h3>

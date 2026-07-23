@@ -4,6 +4,7 @@ import {
   getPreferredVehicle,
   createRestorableJournalDraft,
   journalToDraft,
+  maintenanceRecordDateLabel,
   validateJournalDraft,
   type GarageJournalPost,
   type JournalContentBlock,
@@ -571,7 +572,7 @@ export function JournalForm({
 
       <section className="journal-settings">
         <div className="section-heading compact"><div><span className="eyebrow">MAINTENANCE CONTEXT</span><h2>{ja ? "整備記録を添える" : "Attach maintenance context"}</h2></div><Link2 size={21} aria-hidden="true" /></div>
-        <label className="field">{ja ? "関連する整備記録" : "Related maintenance record"}<select value={draft.linkedRecordId} onChange={(event) => setDraft((current) => ({ ...current, linkedRecordId: event.target.value }))}><option value="">{ja ? "関連付けない" : "No linked record"}</option>{data.records.map((record) => <option key={record.id} value={record.id}>{record.serviceDate} · {record.summary}</option>)}</select></label>
+        <label className="field">{ja ? "関連する整備記録" : "Related maintenance record"}<select value={draft.linkedRecordId} onChange={(event) => setDraft((current) => ({ ...current, linkedRecordId: event.target.value }))}><option value="">{ja ? "関連付けない" : "No linked record"}</option>{data.records.map((record) => <option key={record.id} value={record.id}>{maintenanceRecordDateLabel(record, locale)} · {record.summary}</option>)}</select></label>
         {draft.linkedRecordId && <fieldset className="journal-field-options"><legend>{ja ? "記事に表示する定型情報" : "Structured details to show"}</legend>{displayFieldOptions.map((option) => <label className="checkbox-row" key={option.value}><input type="checkbox" checked={draft.displayFields.includes(option.value)} onChange={() => toggleDisplayField(option.value)} /><span>{ja ? option.ja : option.en}</span></label>)}</fieldset>}
       </section>
 

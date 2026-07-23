@@ -5,7 +5,13 @@ import { JournalCard } from "@/components/journal-card";
 import { JournalMedia } from "@/components/journal-media";
 import { RecordCard } from "@/components/record-card";
 import { useApp } from "@/lib/app-context";
-import { buildMonthlyOwnerSummary, getFollowingFeed, getPreferredVehicle, resolveJournalDisplayContent } from "@mechori/core";
+import {
+  buildMonthlyOwnerSummary,
+  getFollowingFeed,
+  getPreferredVehicle,
+  maintenanceRecordDateKey,
+  resolveJournalDisplayContent,
+} from "@mechori/core";
 import { translate } from "@mechori/i18n";
 import {
   ArrowRight,
@@ -29,7 +35,8 @@ export default function HomePage() {
   const { data, locale, signedIn } = useApp();
   const vehicle = getPreferredVehicle(data.vehicles);
   const recent = [...data.records]
-    .sort((a, b) => b.serviceDate.localeCompare(a.serviceDate))
+    .sort((a, b) =>
+      maintenanceRecordDateKey(b).localeCompare(maintenanceRecordDateKey(a)))
     .slice(0, 2);
   const allFeed = signedIn
     ? getFollowingFeed(data)

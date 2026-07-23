@@ -11,6 +11,7 @@ import {
   LoaderCircle,
   LogIn,
   LogOut,
+  MessageSquareText,
   Newspaper,
   Plus,
   Search,
@@ -164,6 +165,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Link href="/invite" className="icon-text-button" aria-label={locale === "ja" ? "友人を招待" : "Invite a friend"} title={locale === "ja" ? "友人を招待" : "Invite a friend"}>
                   <UserPlus size={18} aria-hidden="true" />
                   <span className="top-bar-action-label">{locale === "ja" ? "招待" : "Invite"}</span>
+                </Link>
+                <Link href="/feedback" className="icon-text-button" aria-label={translate(locale, "feedback")} title={translate(locale, "feedback")}>
+                  <MessageSquareText size={18} aria-hidden="true" />
+                  <span className="top-bar-action-label">{translate(locale, "feedback")}</span>
                 </Link>
                 <Link href="/settings/privacy" className="icon-text-button" aria-label={translate(locale, "privacyAndSafety")} title={translate(locale, "privacyAndSafety")}>
                   <Settings2 size={18} aria-hidden="true" />

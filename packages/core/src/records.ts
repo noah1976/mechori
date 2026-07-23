@@ -1,7 +1,9 @@
 import type {
   AppData,
+  Locale,
   MaintenanceRecord,
   MaintenanceRecordAction,
+  MaintenanceOccurrencePrecision,
   PrototypeOdometerEpisode,
   PrototypeOdometerReading,
   RecordActionDraft,
@@ -26,7 +28,9 @@ export function validateRecordDraft(draft: RecordDraft): ValidationResult {
   const hasOdometer = draft.odometerKm.trim() !== "";
   const odometer = hasOdometer ? Number(draft.odometerKm) : undefined;
 
-  if (!draft.serviceDate) errors.serviceDate = "required";
+  if (!isValidMaintenanceOccurrence(draft.serviceDate, draft.serviceDatePrecision)) {
+    errors.serviceDate = draft.serviceDate ? "invalid" : "required";
+  }
   if (!draft.summary.trim()) errors.summary = "required";
   if (
     (hasOdometer && (!Number.isFinite(odometer) || odometer! < 0)) ||
@@ -49,6 +53,48 @@ export function validateRecordDraft(draft: RecordDraft): ValidationResult {
   }
 
   return { valid: Object.keys(errors).length === 0, errors };
+}
+
+export function maintenanceRecordDateKey(record: MaintenanceRecord): string {
+  return record.serviceDate || "0000";
+}
+
+export function maintenanceRecordDateLabel(
+  record: MaintenanceRecord,
+  locale: Locale,
+): string {
+  const ja = locale === "ja";
+  let label: string;
+  if (record.serviceDatePrecision === "day" && isValidDateOnly(record.serviceDate)) {
+    label = new Intl.DateTimeFormat(ja ? "ja-JP" : "en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }).format(new Date(`${record.serviceDate}T00:00:00`));
+  } else if (record.serviceDatePrecision === "month" && isValidYearMonth(record.serviceDate)) {
+    const [year, month] = record.serviceDate.split("-").map(Number);
+    label = ja
+      ? `${year}年${month}月ごろ`
+      : `Around ${new Intl.DateTimeFormat("en-US", { month: "long" }).format(new Date(2000, month! - 1, 1))} ${year}`;
+  } else if (record.serviceDatePrecision === "year" && isValidYear(record.serviceDate)) {
+    label = ja ? `${record.serviceDate}年ごろ` : `Around ${record.serviceDate}`;
+  } else {
+    label = ja ? "時期不明" : "Date unknown";
+  }
+  if (!record.servicePeriodNote?.trim()) return label;
+  return ja
+    ? `${label}（${record.servicePeriodNote.trim()}）`
+    : `${label} (${record.servicePeriodNote.trim()})`;
+}
+
+export function maintenanceRecordOccursInMonth(
+  record: MaintenanceRecord,
+  month: string,
+): boolean {
+  return (
+    (record.serviceDatePrecision === "day" || record.serviceDatePrecision === "month") &&
+    record.serviceDate.startsWith(month)
+  );
 }
 
 export function filterRecords(
@@ -163,6 +209,8 @@ export function createRecordFromDraft(
     id: existingId ?? `record-${crypto.randomUUID()}`,
     vehicleId,
     serviceDate: draft.serviceDate,
+    serviceDatePrecision: draft.serviceDatePrecision,
+    servicePeriodNote: draft.servicePeriodNote.trim() || undefined,
     ...(odometerReading
       ? { odometerKm: odometerReading.displayedValue, odometerReading }
       : {}),
@@ -223,6 +271,7 @@ export function applyRecordDraftToData(
   const vehicle = data.vehicles.find((item) => item.id === vehicleId);
   if (!vehicle) throw new Error("vehicle_not_found");
   const existingReading = existingRecord?.odometerReading;
+  const draftDateKey = maintenanceDraftDateKey(draft);
 
   const newEpisodeReason =
     draft.odometerChangeReason === "same_episode"
@@ -238,7 +287,7 @@ export function applyRecordDraftToData(
       existingReading &&
       existingEpisode &&
       existingEpisode.reason !== "initial" &&
-      existingEpisode.startedAt === existingRecord.serviceDate,
+      existingEpisode.startedAt === maintenanceRecordDateKey(existingRecord),
   );
   const creatingEpisode = newEpisodeReason !== undefined && !reusingRecordedChange;
   const currentEpisodeId =
@@ -252,7 +301,7 @@ export function applyRecordDraftToData(
     ? {
         id: episodeId,
         reason: newEpisodeReason,
-        startedAt: draft.serviceDate,
+        startedAt: draftDateKey === "0000" ? undefined : draftDateKey,
         previousEpisodeId: currentEpisodeId,
       }
     : undefined;
@@ -262,9 +311,10 @@ export function applyRecordDraftToData(
       (record) =>
         record.id !== existingId &&
         record.odometerReading?.episodeId === episodeId &&
-        record.serviceDate <= draft.serviceDate,
+        maintenanceRecordDateKey(record) <= draftDateKey,
     )
-    .sort((left, right) => right.serviceDate.localeCompare(left.serviceDate))[0]
+    .sort((left, right) =>
+      maintenanceRecordDateKey(right).localeCompare(maintenanceRecordDateKey(left)))[0]
     ?.odometerReading : undefined;
   const odometerReading: PrototypeOdometerReading | undefined = hasOdometer
     ? {
@@ -298,7 +348,8 @@ export function applyRecordDraftToData(
     : [record, ...data.records];
   const latestVehicleRecord = records
     .filter((item) => item.vehicleId === vehicleId && item.odometerReading)
-    .sort((left, right) => right.serviceDate.localeCompare(left.serviceDate))[0];
+    .sort((left, right) =>
+      maintenanceRecordDateKey(right).localeCompare(maintenanceRecordDateKey(left)))[0];
   const nextVehicle: Vehicle = hasOdometer
     ? {
         ...vehicle,
@@ -316,7 +367,7 @@ export function applyRecordDraftToData(
     record,
     data: {
       ...data,
-      schemaVersion: 11,
+      schemaVersion: 12,
       vehicles: data.vehicles.map((item) => (item.id === vehicleId ? nextVehicle : item)),
       records,
     },
@@ -410,6 +461,15 @@ export function migrateAppData(input: unknown): AppData | null {
     };
     return {
       ...record,
+      serviceDate:
+        typeof record.serviceDate === "string" ? record.serviceDate : "",
+      serviceDatePrecision: isMaintenanceOccurrencePrecision(record.serviceDatePrecision)
+        ? record.serviceDatePrecision
+        : inferMaintenanceOccurrencePrecision(record.serviceDate),
+      servicePeriodNote:
+        typeof record.servicePeriodNote === "string"
+          ? record.servicePeriodNote
+          : undefined,
       ...(record.odometerReading
         ? { odometerKm: record.odometerReading.displayedValue, odometerReading: record.odometerReading }
         : typeof record.odometerKm === "number"
@@ -435,7 +495,7 @@ export function migrateAppData(input: unknown): AppData | null {
   });
 
   return {
-    schemaVersion: 11,
+    schemaVersion: 12,
     vehicles,
     records,
     profiles: Array.isArray(source.profiles)
@@ -542,6 +602,50 @@ function isValidDateOnly(value: string): boolean {
   return Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === value;
 }
 
+function isValidYearMonth(value: string): boolean {
+  if (!/^\d{4}-\d{2}$/.test(value)) return false;
+  const [year, month] = value.split("-").map(Number);
+  return isValidOccurrenceYear(year) && month! >= 1 && month! <= 12;
+}
+
+function isValidYear(value: string): boolean {
+  return /^\d{4}$/.test(value) && isValidOccurrenceYear(Number(value));
+}
+
+function isValidOccurrenceYear(value: number | undefined): boolean {
+  return Number.isInteger(value) && value! >= 1886 && value! <= new Date().getFullYear();
+}
+
+function isValidMaintenanceOccurrence(
+  value: string,
+  precision: MaintenanceOccurrencePrecision,
+): boolean {
+  if (precision === "day") return isValidDateOnly(value);
+  if (precision === "month") return isValidYearMonth(value);
+  if (precision === "year") return isValidYear(value);
+  return precision === "unknown" && value === "";
+}
+
+function maintenanceDraftDateKey(draft: RecordDraft): string {
+  return draft.serviceDate || "0000";
+}
+
+function isMaintenanceOccurrencePrecision(
+  value: unknown,
+): value is MaintenanceOccurrencePrecision {
+  return ["day", "month", "year", "unknown"].includes(String(value));
+}
+
+function inferMaintenanceOccurrencePrecision(
+  value: unknown,
+): MaintenanceOccurrencePrecision {
+  if (typeof value !== "string") return "unknown";
+  if (isValidDateOnly(value)) return "day";
+  if (isValidYearMonth(value)) return "month";
+  if (isValidYear(value)) return "year";
+  return "unknown";
+}
+
 function actionFromDraft(
   draft: RecordActionDraft,
   existingId?: string,
@@ -600,8 +704,8 @@ function hasVehicleIdentity(
 function hasRecordIdentity(
   record: Partial<MaintenanceRecord>,
 ): record is Partial<MaintenanceRecord> &
-  Pick<MaintenanceRecord, "id" | "vehicleId" | "summary" | "serviceDate" | "symptoms"> {
+  Pick<MaintenanceRecord, "id" | "vehicleId" | "summary" | "symptoms"> {
   return Boolean(
-    record.id && record.vehicleId && record.summary && record.serviceDate && record.symptoms,
+    record.id && record.vehicleId && record.summary && record.symptoms,
   );
 }

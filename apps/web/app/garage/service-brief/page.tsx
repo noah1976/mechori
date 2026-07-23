@@ -4,7 +4,12 @@ import { DemoNotice } from "@/components/demo-notice";
 import { recordOdometerLabel } from "@/components/record-card";
 import { WorkshopIntroductionActions } from "@/components/workshop-introduction-actions";
 import { useApp } from "@/lib/app-context";
-import { displayVehicleModel, getPreferredVehicle } from "@mechori/core";
+import {
+  displayVehicleModel,
+  getPreferredVehicle,
+  maintenanceRecordDateKey,
+  maintenanceRecordDateLabel,
+} from "@mechori/core";
 import { translate } from "@mechori/i18n";
 import { ArrowLeft, CircleAlert, Gauge, Printer, ShieldAlert, Wrench } from "lucide-react";
 import Link from "next/link";
@@ -21,7 +26,8 @@ function ServiceBriefContent() {
 
   const records = data.records
     .filter((record) => record.vehicleId === vehicle.id)
-    .sort((left, right) => right.serviceDate.localeCompare(left.serviceDate));
+    .sort((left, right) =>
+      maintenanceRecordDateKey(right).localeCompare(maintenanceRecordDateKey(left)));
   const unresolved = records.filter((record) => record.resolutionStatus === "unresolved");
 
   return (
@@ -47,7 +53,7 @@ function ServiceBriefContent() {
 
       <section>
         <div className="section-heading"><div><span className="eyebrow">OPEN ITEMS</span><h2>{ja ? "未解決・確認したいこと" : "Unresolved and follow-up items"}</h2></div></div>
-        {unresolved.length ? <div className="brief-open-items">{unresolved.map((record) => <article key={record.id}><span>{record.serviceDate}</span><div><h3>{record.summary}</h3><p>{record.symptoms}</p></div><span className="badge resolution-unresolved">{translate(locale, "unresolved")}</span></article>)}</div> : <p className="legal-note">{ja ? "未解決として記録された項目はありません。実車に問題がないことを保証する表示ではありません。" : "No item is recorded as unresolved. This does not guarantee that the vehicle has no issues."}</p>}
+        {unresolved.length ? <div className="brief-open-items">{unresolved.map((record) => <article key={record.id}><span>{maintenanceRecordDateLabel(record, locale)}</span><div><h3>{record.summary}</h3><p>{record.symptoms}</p></div><span className="badge resolution-unresolved">{translate(locale, "unresolved")}</span></article>)}</div> : <p className="legal-note">{ja ? "未解決として記録された項目はありません。実車に問題がないことを保証する表示ではありません。" : "No item is recorded as unresolved. This does not guarantee that the vehicle has no issues."}</p>}
       </section>
 
       <section>
@@ -55,7 +61,7 @@ function ServiceBriefContent() {
         <div className="brief-history-list">
           {records.map((record) => (
             <article key={record.id}>
-              <header><div><time>{record.serviceDate}</time><h3>{record.summary}</h3></div><span>{recordOdometerLabel(record, locale)}</span></header>
+              <header><div><time>{maintenanceRecordDateLabel(record, locale)}</time><h3>{record.summary}</h3></div><span>{recordOdometerLabel(record, locale)}</span></header>
               <ul>{record.actions.map((action) => <li key={action.id}><strong>{action.summary}</strong><span>{action.workPerformed || (ja ? "作業内容の記録なし" : "No work details recorded")}</span><small>{action.result || (ja ? "結果の記録なし" : "No result recorded")}</small></li>)}</ul>
             </article>
           ))}

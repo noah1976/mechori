@@ -3,7 +3,9 @@
 import {
   createEmptyActionDraft,
   getPreferredVehicle,
+  maintenanceRecordDateKey,
   validateRecordDraft,
+  type MaintenanceOccurrencePrecision,
   type MaintenanceRecord,
   type PrototypeOdometerEpisodeReason,
   type RecordActionDraft,
@@ -30,6 +32,7 @@ import {
   recordLocalDraftKey,
   saveLocalDraft,
 } from "@/lib/local-draft-store";
+import { OccurrenceDateFields } from "@/components/occurrence-date-fields";
 
 const meterChangeReasons: PrototypeOdometerEpisodeReason[] = [
   "replacement",
@@ -48,9 +51,12 @@ function draftFromRecord(record: MaintenanceRecord | undefined, vehicle: Vehicle
   const recordedMeterChange =
     recordedEpisode &&
     recordedEpisode.reason !== "initial" &&
-    recordedEpisode.startedAt === record?.serviceDate;
+    record &&
+    recordedEpisode.startedAt === maintenanceRecordDateKey(record);
   return {
     serviceDate: record?.serviceDate ?? new Date().toISOString().slice(0, 10),
+    serviceDatePrecision: record?.serviceDatePrecision ?? "day",
+    servicePeriodNote: record?.servicePeriodNote ?? "",
     odometerKm: record
       ? recordedReading?.displayedValue.toString() ?? ""
       : vehicle.ownershipType === "previously_owned" || vehicle.currentOdometerReading.displayedValue === 0
@@ -238,10 +244,14 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
           <div><span className="eyebrow">01</span><h2>{translate(locale, "basics")}</h2></div>
           <span className="required-note">{translate(locale, "required")}</span>
         </div>
-        <div className="form-grid three-columns">
-          <Field label={translate(locale, "serviceDateRequired")} error={errorText("serviceDate")}>
-            <input type="date" value={draft.serviceDate} onChange={(event) => setField("serviceDate", event.target.value)} />
-          </Field>
+        <OccurrenceDateFields
+          value={recordOccurrenceValue(draft)}
+          locale={locale}
+          legend={translate(locale, "serviceOccurrence")}
+          error={errorText("serviceDate")}
+          onChange={(patch) => setDraft((current) => applyOccurrencePatch(current, patch))}
+        />
+        <div className="form-grid two-columns">
           <Field label={translate(locale, hasMeterChange ? "odometerAfterChangeRequired" : "odometerOptional")} error={errorText("odometerKm")}>
             <input type="number" min="0" inputMode="numeric" value={draft.odometerKm} onChange={(event) => setField("odometerKm", event.target.value)} />
           </Field>
@@ -383,6 +393,56 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
       </div>
     </form>
   );
+}
+
+type RecordOccurrencePatch = {
+  occurredOn?: string;
+  occurredYear?: number;
+  occurredMonth?: number;
+  occurredPrecision?: MaintenanceOccurrencePrecision;
+  occurredPeriodNote?: string;
+};
+
+function recordOccurrenceValue(draft: RecordDraft): RecordOccurrencePatch {
+  const [year, month] = draft.serviceDate.split("-").map(Number);
+  return {
+    occurredOn: draft.serviceDatePrecision === "day" ? draft.serviceDate : undefined,
+    occurredYear:
+      draft.serviceDatePrecision === "month" || draft.serviceDatePrecision === "year"
+        ? year
+        : undefined,
+    occurredMonth: draft.serviceDatePrecision === "month" ? month : undefined,
+    occurredPrecision: draft.serviceDatePrecision,
+    occurredPeriodNote: draft.servicePeriodNote,
+  };
+}
+
+function applyOccurrencePatch(
+  draft: RecordDraft,
+  patch: RecordOccurrencePatch,
+): RecordDraft {
+  const precision = patch.occurredPrecision ?? draft.serviceDatePrecision;
+  const current = recordOccurrenceValue(draft);
+  const year = patch.occurredYear ?? current.occurredYear;
+  const month = patch.occurredMonth ?? current.occurredMonth;
+  let serviceDate = draft.serviceDate;
+
+  if (precision === "day") {
+    serviceDate = patch.occurredOn ?? (draft.serviceDatePrecision === "day" ? draft.serviceDate : "");
+  } else if (precision === "month") {
+    serviceDate = year && month ? `${year}-${String(month).padStart(2, "0")}` : "";
+  } else if (precision === "year") {
+    serviceDate = year ? String(year) : "";
+  } else {
+    serviceDate = "";
+  }
+
+  return {
+    ...draft,
+    serviceDate,
+    serviceDatePrecision: precision,
+    servicePeriodNote: patch.occurredPeriodNote ?? draft.servicePeriodNote,
+  };
 }
 
 function LocalDraftStatus({

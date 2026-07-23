@@ -22,11 +22,13 @@ const precisionOptions: Array<{
 export function OccurrenceDateFields({
   value,
   locale,
+  legend,
   error,
   onChange,
 }: {
   value: OccurrenceDateValue;
   locale: Locale;
+  legend?: string;
   error?: string;
   onChange(patch: Partial<OccurrenceDateValue>): void;
 }) {
@@ -51,7 +53,7 @@ export function OccurrenceDateFields({
 
   return (
     <fieldset className={`occurrence-date-fields${error ? " has-error" : ""}`}>
-      <legend>{ja ? "出来事があった時期" : "When it happened"}</legend>
+      <legend>{legend ?? (ja ? "出来事があった時期" : "When it happened")}</legend>
       <div className="date-precision-picker" role="group" aria-label={ja ? "時期の詳しさ" : "Date precision"}>
         {precisionOptions.map((option) => (
           <button

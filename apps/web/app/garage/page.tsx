@@ -13,6 +13,8 @@ import {
   groupVehiclesByOwnership,
   journalOccurrenceDate,
   journalOccurrenceLabel,
+  maintenanceRecordDateKey,
+  maintenanceRecordDateLabel,
   resolveJournalDisplayContent,
   summarizeVehicleRelationship,
   type JournalEventType,
@@ -107,8 +109,8 @@ function GarageContent() {
     ...records.map((record) => ({
       id: record.id,
       kind: "record" as const,
-      date: record.serviceDate,
-      dateLabel: formatTimelineDate(record.serviceDate, locale),
+      date: maintenanceRecordDateKey(record),
+      dateLabel: maintenanceRecordDateLabel(record, locale),
       title: record.summary,
       body: record.result || record.workPerformed,
       href: `/records/${record.id}`,
@@ -265,16 +267,6 @@ function GarageContent() {
       </section>
     </div>
   );
-}
-
-function formatTimelineDate(value: string, locale: "ja" | "en"): string {
-  const date = new Date(value.length === 10 ? `${value}T00:00:00` : value);
-  if (Number.isNaN(date.getTime())) return value.slice(0, 10);
-  return new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(date);
 }
 
 function VehicleSwitchButton({

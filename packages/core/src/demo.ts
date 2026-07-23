@@ -1,7 +1,7 @@
 import type { AppData } from "./types.ts";
 
 export const demoData: AppData = {
-  schemaVersion: 11,
+  schemaVersion: 12,
   vehicles: [
     {
       id: "vehicle-demo-barchetta",
@@ -46,6 +46,7 @@ export const demoData: AppData = {
       id: "record-demo-oil",
       vehicleId: "vehicle-demo-barchetta",
       serviceDate: "2026-04-12",
+      serviceDatePrecision: "day",
       odometerKm: 85200,
       odometerReading: {
         episodeId: "episode-demo-4",
@@ -102,6 +103,7 @@ export const demoData: AppData = {
       id: "record-demo-tire",
       vehicleId: "vehicle-demo-barchetta",
       serviceDate: "2026-05-28",
+      serviceDatePrecision: "day",
       odometerKm: 86010,
       odometerReading: {
         episodeId: "episode-demo-4",
@@ -146,6 +148,7 @@ export const demoData: AppData = {
       id: "record-demo-warning",
       vehicleId: "vehicle-demo-barchetta",
       serviceDate: "2026-06-19",
+      serviceDatePrecision: "day",
       odometerKm: 86390,
       odometerReading: {
         episodeId: "episode-demo-4",

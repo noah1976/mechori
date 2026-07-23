@@ -4,6 +4,7 @@ import {
   applyRecordDraftToData,
   cloneDemoData,
   filterRecords,
+  maintenanceRecordDateLabel,
   migrateAppData,
   validateRecordDraft,
   type RecordDraft,
@@ -12,6 +13,8 @@ import {
 function validDraft(overrides: Partial<RecordDraft> = {}): RecordDraft {
   return {
     serviceDate: "2026-07-13",
+    serviceDatePrecision: "day",
+    servicePeriodNote: "",
     odometerKm: "1000",
     odometerUnit: "km",
     odometerEpisodeId: "episode-demo-4",
@@ -82,6 +85,53 @@ test("adds an older maintenance event to a currently owned vehicle", () => {
   assert.equal(result.record.vehicleId, original.vehicles[0]?.id);
   assert.equal(result.record.serviceDate, "2018-04-21");
   assert.equal(result.record.evidenceBasis, "invoice_or_receipt");
+});
+
+test("keeps an approximate service month without inventing a day", () => {
+  const result = applyRecordDraftToData(cloneDemoData(), validDraft({
+    serviceDate: "2003-11",
+    serviceDatePrecision: "month",
+    servicePeriodNote: "車検の少し前",
+    odometerKm: "",
+    evidenceBasis: "recalled_later",
+  }));
+
+  assert.equal(result.record.serviceDate, "2003-11");
+  assert.equal(result.record.serviceDatePrecision, "month");
+  assert.equal(result.record.servicePeriodNote, "車検の少し前");
+  assert.equal(
+    maintenanceRecordDateLabel(result.record, "ja"),
+    "2003年11月ごろ（車検の少し前）",
+  );
+});
+
+test("allows a maintenance record with an unknown occurrence date", () => {
+  const result = applyRecordDraftToData(cloneDemoData(), validDraft({
+    serviceDate: "",
+    serviceDatePrecision: "unknown",
+    servicePeriodNote: "最初のオーナーだった頃",
+    odometerKm: "",
+  }));
+
+  assert.equal(result.record.serviceDate, "");
+  assert.equal(result.record.serviceDatePrecision, "unknown");
+  assert.equal(maintenanceRecordDateLabel(result.record, "en"), "Date unknown (最初のオーナーだった頃)");
+});
+
+test("rejects incomplete approximate maintenance dates", () => {
+  const month = validateRecordDraft(validDraft({
+    serviceDate: "2003",
+    serviceDatePrecision: "month",
+  }));
+  const unknownWithDate = validateRecordDraft(validDraft({
+    serviceDate: "2003-11-01",
+    serviceDatePrecision: "unknown",
+  }));
+
+  assert.equal(month.valid, false);
+  assert.equal(month.errors.serviceDate, "invalid");
+  assert.equal(unknownWithDate.valid, false);
+  assert.equal(unknownWithDate.errors.serviceDate, "invalid");
 });
 
 test("still requires a reading when recording a meter change", () => {
@@ -185,7 +235,7 @@ test("migrates legacy local data into actions and an odometer episode", () => {
   delete journals[0]?.contentBlocks;
 
   const migrated = migrateAppData(legacy);
-  assert.equal(migrated?.schemaVersion, 11);
+  assert.equal(migrated?.schemaVersion, 12);
   assert.deepEqual(migrated?.contentReports, []);
   assert.equal(
     migrated?.profiles.find((profile) => profile.id === "profile-demo-luca")?.visibility,
@@ -195,6 +245,7 @@ test("migrates legacy local data into actions and an odometer episode", () => {
   assert.equal(migrated?.vehicles[0]?.ownershipType, "owned");
   assert.equal(migrated?.vehicles[0]?.vehicleCategory, "car");
   assert.equal(migrated?.records[0]?.evidenceBasis, "unknown");
+  assert.equal(migrated?.records[0]?.serviceDatePrecision, "day");
   assert.equal(migrated?.vehicles[0]?.ownershipStartedYear, 2014);
   assert.equal(migrated?.vehicles[0]?.ownershipStartedMonth, 4);
   assert.equal(migrated?.vehicles[0]?.odometerEpisodes.length, 1);

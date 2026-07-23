@@ -70,6 +70,8 @@ export type RecordEvidenceBasis =
   | "photo_or_service_book"
   | "recalled_later"
   | "unknown";
+export type OccurrencePrecision = "day" | "month" | "year" | "unknown";
+export type MaintenanceOccurrencePrecision = OccurrencePrecision;
 
 export interface PrototypeOdometerEpisode {
   id: string;
@@ -190,7 +192,13 @@ export interface MaintenanceRecordAction {
 export interface MaintenanceRecord {
   id: string;
   vehicleId: string;
+  /**
+   * ISO-like value at the precision the owner remembers:
+   * YYYY-MM-DD, YYYY-MM, YYYY, or an empty string when unknown.
+   */
   serviceDate: string;
+  serviceDatePrecision: MaintenanceOccurrencePrecision;
+  servicePeriodNote?: string;
   /** @deprecated Use odometerReading. */
   odometerKm?: number;
   odometerReading?: PrototypeOdometerReading;
@@ -233,6 +241,8 @@ export interface RecordActionDraft {
 
 export interface RecordDraft {
   serviceDate: string;
+  serviceDatePrecision: MaintenanceOccurrencePrecision;
+  servicePeriodNote: string;
   odometerKm: string;
   odometerUnit: PrototypeOdometerUnit;
   odometerEpisodeId: string;
@@ -264,7 +274,7 @@ export interface RecordFilters {
 }
 
 export type JournalVisibility = "private" | "followers" | "public";
-export type JournalOccurrencePrecision = "day" | "month" | "year" | "unknown";
+export type JournalOccurrencePrecision = OccurrencePrecision;
 export type JournalModerationState = "visible" | "under_review" | "temporarily_hidden";
 export type SocialProfileRole = "owner" | "mechanic";
 export type ProfileVisibility = "private" | "followers" | "public";
@@ -451,7 +461,7 @@ export interface JournalDraft {
 }
 
 export interface AppData {
-  schemaVersion: 11;
+  schemaVersion: 12;
   vehicles: Vehicle[];
   records: MaintenanceRecord[];
   profiles: SocialProfile[];

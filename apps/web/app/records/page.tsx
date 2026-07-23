@@ -3,13 +3,15 @@
 import { DemoNotice } from "@/components/demo-notice";
 import { RecordCard } from "@/components/record-card";
 import { useApp } from "@/lib/app-context";
+import { maintenanceRecordDateKey } from "@mechori/core";
 import { translate } from "@mechori/i18n";
 import { CarFront, Plus } from "lucide-react";
 import Link from "next/link";
 
 export default function RecordsPage() {
   const { data, locale } = useApp();
-  const records = [...data.records].sort((a, b) => b.serviceDate.localeCompare(a.serviceDate));
+  const records = [...data.records].sort((a, b) =>
+    maintenanceRecordDateKey(b).localeCompare(maintenanceRecordDateKey(a)));
   const hasVehicle = data.vehicles.some((vehicle) => vehicle.ownerProfileId === data.currentProfileId);
   return (
     <div className="page-stack">

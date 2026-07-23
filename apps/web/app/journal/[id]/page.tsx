@@ -7,6 +7,7 @@ import {
   isProfileBlocked,
   isProfileMuted,
   journalOccurrenceLabel,
+  maintenanceRecordDateLabel,
   resolveJournalDisplayContent,
 } from "@mechori/core";
 import {
@@ -219,7 +220,7 @@ export default function JournalDetailPage() {
               <div>
                 <CalendarDays size={18} aria-hidden="true" />
                 <span>{ja ? "整備日" : "Service date"}</span>
-                <strong>{record.serviceDate}</strong>
+                <strong>{maintenanceRecordDateLabel(record, locale)}</strong>
               </div>
             )}
             {journal.displayFields.includes("odometer") && (

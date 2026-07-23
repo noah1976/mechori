@@ -12,6 +12,8 @@ import {
 
 const recordDraft: RecordDraft = {
   serviceDate: "2026-07-16",
+  serviceDatePrecision: "day",
+  servicePeriodNote: "",
   odometerKm: "86420",
   odometerUnit: "km",
   odometerEpisodeId: "episode-demo",
@@ -60,6 +62,17 @@ test("round-trips valid record and journal drafts", () => {
     savedAt,
     value: { draft: journalDraft, omittedMediaCount: 0 },
   });
+});
+
+test("restores a legacy exact-date record draft with explicit precision", () => {
+  const legacy = structuredClone(recordDraft) as Partial<RecordDraft>;
+  delete legacy.serviceDatePrecision;
+  delete legacy.servicePeriodNote;
+
+  const parsed = parseRecordLocalDraft(serializeLocalDraft(legacy));
+
+  assert.equal(parsed?.value.serviceDatePrecision, "day");
+  assert.equal(parsed?.value.servicePeriodNote, "");
 });
 
 test("keeps an approximate month in a local journal draft", () => {
