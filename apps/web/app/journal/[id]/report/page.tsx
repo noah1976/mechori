@@ -1,7 +1,7 @@
 "use client";
 
 import { useApp } from "@/lib/app-context";
-import type { ContentReportReason } from "@mechori/core";
+import { resolveJournalDisplayContent, type ContentReportReason } from "@mechori/core";
 import { ArrowLeft, CheckCircle2, Flag, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -26,6 +26,7 @@ export default function JournalReportPage() {
   const [error, setError] = useState("");
   const ja = locale === "ja";
   const journal = data.journals.find((item) => item.id === id);
+  const display = journal ? resolveJournalDisplayContent(data, journal, locale) : undefined;
   const existing = data.contentReports.some(
     (report) =>
       report.reporterProfileId === data.currentProfileId &&
@@ -78,7 +79,7 @@ export default function JournalReportPage() {
     <div className="page-stack narrow-page">
       <Link href={`/journal/${journal.id}`} className="back-link"><ArrowLeft size={17} />{ja ? "投稿へ戻る" : "Back to post"}</Link>
       <header className="page-header">
-        <div><span className="eyebrow">REPORT</span><h1>{ja ? "投稿を通報" : "Report post"}</h1><p>{journal.title}</p></div>
+        <div><span className="eyebrow">REPORT</span><h1>{ja ? "投稿を通報" : "Report post"}</h1><p>{display?.title}</p></div>
         <Flag size={26} aria-hidden="true" />
       </header>
       <form className="report-form" onSubmit={handleSubmit} aria-busy={submitting}>

@@ -16,6 +16,7 @@ import {
   updateVehicleSpecificationInData,
   updateCurrentProfilePrivacy,
   updateJournalInData,
+  upsertJournalTranslationInData,
   isSignedIn,
   getPreferredVehicle,
   isSupportedUiLocale,
@@ -31,6 +32,7 @@ import {
   type GarageJournalPost,
   type JournalDraft,
   type JournalMediaAttachment,
+  type JournalTranslationDraft,
   type Locale,
   type MaintenanceRecord,
   type ModerationAction,
@@ -89,6 +91,7 @@ interface AppContextValue {
     draft: JournalDraft,
     uploads?: JournalMediaUpload[],
   ): Promise<GarageJournalPost>;
+  updateJournalTranslation(id: string, draft: JournalTranslationDraft): Promise<void>;
   toggleFollow(targetType: FollowTargetType, targetId: string): void;
   toggleMuteProfile(profileId: string): void;
   toggleBlockProfile(profileId: string): void;
@@ -350,6 +353,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [authSession, data, persist],
   );
 
+  const updateJournalTranslation = useCallback(
+    async (id: string, draft: JournalTranslationDraft) => {
+      if (!isSignedIn(authSession)) throw new Error("authentication_required");
+      await persist(upsertJournalTranslationInData(data, id, draft));
+    },
+    [authSession, data, persist],
+  );
+
   const toggleFollow = useCallback(
     (targetType: FollowTargetType, targetId: string) => {
       if (!isSignedIn(authSession)) return;
@@ -442,6 +453,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateRecord,
       addJournal,
       updateJournal,
+      updateJournalTranslation,
       toggleFollow,
       toggleMuteProfile,
       toggleBlockProfile,
@@ -468,6 +480,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateRecord,
       addJournal,
       updateJournal,
+      updateJournalTranslation,
       toggleFollow,
       toggleMuteProfile,
       toggleBlockProfile,

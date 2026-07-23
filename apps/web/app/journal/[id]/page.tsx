@@ -7,6 +7,7 @@ import {
   isProfileBlocked,
   isProfileMuted,
   journalOccurrenceLabel,
+  resolveJournalDisplayContent,
 } from "@mechori/core";
 import {
   ArrowLeft,
@@ -21,9 +22,11 @@ import {
   Sparkles,
   Users,
   Wrench,
+  Languages,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { JournalContent } from "@/components/journal-content";
 import { ProfileSafetyMenu } from "@/components/profile-safety-menu";
 import { recordOdometerLabel } from "@/components/record-card";
@@ -32,6 +35,7 @@ export default function JournalDetailPage() {
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const { data, locale, signedIn, toggleMuteProfile, toggleBlockProfile } = useApp();
+  const [showOriginal, setShowOriginal] = useState(false);
   const ja = locale === "ja";
   const journal = data.journals.find((item) => item.id === id);
   const blocked = signedIn && journal ? isProfileBlocked(data, journal.authorProfileId) : false;
@@ -82,6 +86,8 @@ export default function JournalDetailPage() {
   const record = data.records.find((item) => item.id === journal.linkedRecordId);
   const knowledgeClass = classifyJournalForKnowledge(journal);
   const ownJournal = signedIn && journal.authorProfileId === data.currentProfileId;
+  const automaticDisplay = resolveJournalDisplayContent(data, journal, locale);
+  const display = resolveJournalDisplayContent(data, journal, locale, showOriginal);
 
   return (
     <div className="page-stack journal-detail-page">
@@ -133,10 +139,16 @@ export default function JournalDetailPage() {
             <div className="journal-author-actions">
               {journal.isDemo && <span className="demo-label">DEMO</span>}
               {ownJournal && (
-                <Link href={`/journal/${journal.id}/edit`} className="secondary-action">
-                  <Pencil size={16} aria-hidden="true" />
-                  {ja ? "編集" : "Edit"}
-                </Link>
+                <>
+                  <Link href={`/journal/${journal.id}/translate`} className="secondary-action">
+                    <Languages size={16} aria-hidden="true" />
+                    {ja ? "翻訳" : "Translation"}
+                  </Link>
+                  <Link href={`/journal/${journal.id}/edit`} className="secondary-action">
+                    <Pencil size={16} aria-hidden="true" />
+                    {ja ? "編集" : "Edit"}
+                  </Link>
+                </>
               )}
               {signedIn && journal.authorProfileId !== data.currentProfileId && author && (
                 <ProfileSafetyMenu
@@ -151,7 +163,7 @@ export default function JournalDetailPage() {
               )}
             </div>
           </div>
-          <h1>{journal.title}</h1>
+          <h1>{display.title}</h1>
           <div className="journal-detail-meta">
             <span>
               <CalendarDays size={16} aria-hidden="true" />
@@ -174,7 +186,23 @@ export default function JournalDetailPage() {
           </div>
         </header>
 
-        <JournalContent journal={journal} locale={locale} />
+        {automaticDisplay.translated && (
+          <div className="translation-status">
+            <Languages size={17} aria-hidden="true" />
+            <span>{ja ? `${languageDisplayName(display.sourceLanguage, true)}の原文から翻訳して表示中` : `Translated from ${languageDisplayName(display.sourceLanguage, false)}`}</span>
+            <button type="button" onClick={() => setShowOriginal((current) => !current)}>
+              {showOriginal ? (ja ? "翻訳を表示" : "Show translation") : (ja ? "原文を表示" : "Show original")}
+            </button>
+          </div>
+        )}
+        {!automaticDisplay.translated && display.sourceLanguage !== locale && (
+          <div className="translation-status is-original">
+            <Languages size={17} aria-hidden="true" />
+            <span>{ja ? "この投稿には日本語訳がないため、原文を表示しています。" : "No English translation is available yet. Showing the original."}</span>
+          </div>
+        )}
+
+        <JournalContent journal={journal} locale={locale} contentBlocks={display.contentBlocks} />
       </article>
 
       {record && (
@@ -248,4 +276,11 @@ function visibilityLabel(value: string, ja: boolean): string {
   if (value === "private") return ja ? "非公開" : "Private";
   if (value === "followers") return ja ? "フォロワー限定" : "Followers only";
   return ja ? "公開" : "Public";
+}
+
+function languageDisplayName(language: string, ja: boolean): string {
+  const base = language.split("-")[0];
+  if (base === "ja") return ja ? "日本語" : "Japanese";
+  if (base === "en") return ja ? "英語" : "English";
+  return language;
 }

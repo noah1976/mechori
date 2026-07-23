@@ -116,6 +116,7 @@ export function QuickEventForm({
       const attachment = newAttachment ?? existingAttachment;
       const draft: JournalDraft = {
         title: translate(locale, selectedType.label),
+        sourceLanguage: journal?.sourceLanguage ?? locale,
         eventType,
         ...occurrence,
         bodyOriginal: note.trim(),

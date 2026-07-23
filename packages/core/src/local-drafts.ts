@@ -130,6 +130,7 @@ function isJournalDraft(value: unknown): value is JournalDraft {
     (value.occurredYear === undefined || typeof value.occurredYear === "number") &&
     (value.occurredMonth === undefined || typeof value.occurredMonth === "number") &&
     (value.occurredPeriodNote === undefined || typeof value.occurredPeriodNote === "string") &&
+    (value.sourceLanguage === undefined || typeof value.sourceLanguage === "string") &&
     Array.isArray(value.displayFields) &&
     value.displayFields.every(isJournalDisplayField) &&
     Array.isArray(value.media) &&

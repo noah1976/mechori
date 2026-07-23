@@ -78,9 +78,10 @@ function newTextBlock(style: JournalTextBlockStyle = "paragraph"): JournalConten
   };
 }
 
-function createInitialJournalDraft(vehicleId: string): JournalDraft {
+function createInitialJournalDraft(vehicleId: string, sourceLanguage: "ja" | "en"): JournalDraft {
   return {
     title: "",
+    sourceLanguage,
     occurredOn: localDateInputValue(),
     occurredPrecision: "day",
     bodyOriginal: "",
@@ -126,8 +127,8 @@ export function JournalForm({
   const initialDraft = useMemo(
     () => journal
       ? journalToDraft(journal)
-      : createInitialJournalDraft(vehicle?.id ?? ""),
-    [journal, vehicle?.id],
+      : createInitialJournalDraft(vehicle?.id ?? "", locale),
+    [journal, locale, vehicle?.id],
   );
   const [draft, setDraft] = useState<JournalDraft>(initialDraft);
   const [submitted, setSubmitted] = useState(false);
@@ -459,6 +460,15 @@ export function JournalForm({
           error={submitted && validation.errors.occurredOn ? validation.errors.occurredOn : undefined}
           onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
         />
+
+        <label className="field journal-source-language">
+          {ja ? "この文章の原文言語" : "Original language of this post"}
+          <select value={draft.sourceLanguage ?? locale} onChange={(event) => setDraft((current) => ({ ...current, sourceLanguage: event.target.value }))}>
+            <option value="ja">日本語</option>
+            <option value="en">English</option>
+          </select>
+          <small>{ja ? "画面の表示言語ではなく、実際に書いている言語を選びます。" : "Choose the language you are actually writing in, independently of the interface language."}</small>
+        </label>
 
         <div className="note-block-list">
           {draft.contentBlocks.map((block, index) => {

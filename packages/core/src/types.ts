@@ -433,6 +433,7 @@ export interface FollowTargetSummary {
 
 export interface JournalDraft {
   title: string;
+  sourceLanguage?: LanguageTag;
   eventType?: JournalEventType;
   occurredOn?: string;
   occurredYear?: number;
@@ -450,12 +451,13 @@ export interface JournalDraft {
 }
 
 export interface AppData {
-  schemaVersion: 10;
+  schemaVersion: 11;
   vehicles: Vehicle[];
   records: MaintenanceRecord[];
   profiles: SocialProfile[];
   currentProfileId: string;
   journals: GarageJournalPost[];
+  contentTranslations: import("./domain-model.ts").ContentTranslation[];
   follows: FollowRelation[];
   profileSafetyRelations: ProfileSafetyRelation[];
   contentReports: ContentReport[];

@@ -5,7 +5,7 @@ import { JournalCard } from "@/components/journal-card";
 import { JournalMedia } from "@/components/journal-media";
 import { RecordCard } from "@/components/record-card";
 import { useApp } from "@/lib/app-context";
-import { buildMonthlyOwnerSummary, getFollowingFeed, getPreferredVehicle } from "@mechori/core";
+import { buildMonthlyOwnerSummary, getFollowingFeed, getPreferredVehicle, resolveJournalDisplayContent } from "@mechori/core";
 import { translate } from "@mechori/i18n";
 import {
   ArrowRight,
@@ -20,6 +20,7 @@ import {
   UserPlus,
   Wrench,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -40,6 +41,9 @@ export default function HomePage() {
           ),
         );
   const featuredJournal = allFeed.find((journal) => journal.media.length > 0) ?? allFeed[0];
+  const featuredDisplay = featuredJournal
+    ? resolveJournalDisplayContent(data, featuredJournal, locale)
+    : undefined;
   const feed = allFeed.filter((journal) => journal.id !== featuredJournal?.id).slice(0, 2);
   const [query, setQuery] = useState("");
   const router = useRouter();
@@ -74,8 +78,47 @@ export default function HomePage() {
 
   return (
     <div className="page-stack">
-      <DemoNotice />
+      {signedIn && <DemoNotice />}
 
+      {!signedIn ? (
+        <section className="signed-out-hero" aria-labelledby="signed-out-hero-heading">
+          <Image
+            src="/demo-roadster.png"
+            alt={ja ? "ガレージの前に停めたオープンカー" : "A roadster parked in front of its garage"}
+            fill
+            sizes="(max-width: 760px) 100vw, 1180px"
+            priority
+          />
+          <div className="signed-out-hero-shade" aria-hidden="true" />
+          <div className="signed-out-hero-copy">
+            <span className="eyebrow">MECHORI / VEHICLE MEMORY</span>
+            <h1 id="signed-out-hero-heading">
+              {ja ? "愛車との時間を、一台の履歴に。" : "Every chapter of your vehicle, in one history."}
+            </h1>
+            <p>
+              {ja
+                ? "ドライブの一枚も、故障の症状も、交換した部品も。思い出と維持の記録を車両ごとに残し、同じクルマを守る知識へつなげます。"
+                : "A drive, a symptom, a part that finally worked. Keep memories and maintenance together, then turn lived experience into knowledge for the next owner."}
+            </p>
+            <div className="home-community-actions">
+              <Link href="/auth?mode=signup&invite=MECHORI-DEMO" className="primary-action">
+                <UserPlus size={18} aria-hidden="true" />
+                {ja ? "招待コードで参加" : "Join with an invitation"}
+              </Link>
+              <Link href="/auth" className="signed-out-hero-login">
+                <LogIn size={18} aria-hidden="true" />
+                {ja ? "ログイン" : "Sign in"}
+                <ArrowRight size={17} aria-hidden="true" />
+              </Link>
+            </div>
+          </div>
+          <div className="signed-out-hero-caption">
+            <span>{ja ? "思い出" : "MEMORIES"}</span>
+            <span>{ja ? "整備履歴" : "MAINTENANCE"}</span>
+            <span>{ja ? "実体験のナレッジ" : "LIVED KNOWLEDGE"}</span>
+          </div>
+        </section>
+      ) : (
       <section className="home-community-stage">
         <div className="home-community-intro">
           <span className="eyebrow">{signedIn ? "TODAY IN THE GARAGE" : "PUBLIC VEHICLE RECORDS"}</span>
@@ -86,29 +129,14 @@ export default function HomePage() {
               : "Even a roadside breakdown becomes a story another owner wants to read. Keep the next chapter in words and pictures."}
           </p>
           <div className="home-community-actions">
-            {signedIn ? (
-              <>
-                <Link href="/journal/new" className="primary-action">
-                  <BookOpenText size={19} aria-hidden="true" />
-                  {ja ? "詳しく記録する" : "Write a detailed record"}
-                </Link>
-                <Link href="/records/new" className="secondary-action">
-                  <Wrench size={18} aria-hidden="true" />
-                  {ja ? "整備記録だけ残す" : "Maintenance record only"}
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link href="/auth?mode=signup&invite=MECHORI-DEMO" className="primary-action">
-                  <UserPlus size={18} aria-hidden="true" />
-                  {ja ? "招待で新規登録" : "Join with an invitation"}
-                </Link>
-                <Link href="/auth" className="secondary-action">
-                  <LogIn size={18} aria-hidden="true" />
-                  {ja ? "ログイン" : "Sign in"}
-                </Link>
-              </>
-            )}
+            <Link href="/journal/new" className="primary-action">
+              <BookOpenText size={19} aria-hidden="true" />
+              {ja ? "詳しく記録する" : "Write a detailed record"}
+            </Link>
+            <Link href="/records/new" className="secondary-action">
+              <Wrench size={18} aria-hidden="true" />
+              {ja ? "整備記録だけ残す" : "Maintenance record only"}
+            </Link>
           </div>
           <form className="home-knowledge-prompt" onSubmit={search}>
             <Search size={20} aria-hidden="true" />
@@ -125,13 +153,34 @@ export default function HomePage() {
             <JournalMedia attachments={featuredJournal.media} locale={locale} compact priority />
             <div className="home-featured-copy">
               <span className="eyebrow">{signedIn ? "FROM YOUR FOLLOWING" : "PUBLIC RECORD"}</span>
-              <h2>{featuredJournal.title}</h2>
-              <p>{featuredJournal.bodyOriginal}</p>
+              <h2>{featuredDisplay?.title}</h2>
+              <p>{featuredDisplay?.body}</p>
               <footer><span>{featuredJournal.vehicleLabel}</span><span><Heart size={15} aria-hidden="true" />{featuredJournal.appreciationCount}</span></footer>
             </div>
           </Link>
         )}
       </section>
+      )}
+
+      {!signedIn && (
+        <section className="signed-out-discovery" aria-labelledby="signed-out-search-heading">
+          <div>
+            <span className="eyebrow">SEARCH THE KNOWLEDGE</span>
+            <h2 id="signed-out-search-heading">{ja ? "困ったときは、同じクルマの経験を探す。" : "When something goes wrong, start with lived experience."}</h2>
+            <p>{ja ? "公開されている整備・故障・部品の記録は、ログインせずに検索できます。" : "Search public maintenance, fault, and parts records without signing in."}</p>
+          </div>
+          <form className="home-knowledge-prompt" onSubmit={search}>
+            <Search size={20} aria-hidden="true" />
+            <div>
+              <small>{ja ? "公開記録を検索" : "SEARCH PUBLIC RECORDS"}</small>
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={ja ? "症状・車名・部品名" : "Symptom, vehicle, or part"} aria-label={translate(locale, "search")} />
+            </div>
+            <button type="submit" aria-label={translate(locale, "search")}><ArrowRight size={20} aria-hidden="true" /></button>
+          </form>
+        </section>
+      )}
+
+      {!signedIn && <DemoNotice />}
 
       {signedIn && (
         <section className="monthly-owner-band" aria-labelledby="monthly-owner-heading">
@@ -186,6 +235,7 @@ export default function HomePage() {
                 (record) => record.id === journal.linkedRecordId,
               )}
               locale={locale}
+              translations={data.contentTranslations}
             />
           ))}
         </div>

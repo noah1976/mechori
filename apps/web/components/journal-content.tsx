@@ -1,16 +1,18 @@
-import type { GarageJournalPost, Locale } from "@mechori/core";
+import type { GarageJournalPost, JournalContentBlock, Locale } from "@mechori/core";
 import { JournalMedia } from "@/components/journal-media";
 
 export function JournalContent({
   journal,
   locale,
+  contentBlocks = journal.contentBlocks,
 }: {
   journal: GarageJournalPost;
   locale: Locale;
+  contentBlocks?: JournalContentBlock[];
 }) {
   return (
     <div className="journal-content">
-      {journal.contentBlocks.map((block) => {
+      {contentBlocks.map((block) => {
         if (block.type === "media") {
           const attachment = journal.media.find((item) => item.id === block.mediaId);
           return attachment ? (

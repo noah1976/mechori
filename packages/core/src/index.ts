@@ -17,6 +17,7 @@ export * from "./odometer.ts";
 export * from "./owner-history.ts";
 export * from "./records.ts";
 export * from "./social.ts";
+export * from "./translations.ts";
 export * from "./types.ts";
 export * from "./vehicle-relationship.ts";
 export * from "./vehicle-catalog.ts";

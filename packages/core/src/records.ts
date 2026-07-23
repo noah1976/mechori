@@ -316,7 +316,7 @@ export function applyRecordDraftToData(
     record,
     data: {
       ...data,
-      schemaVersion: 10,
+      schemaVersion: 11,
       vehicles: data.vehicles.map((item) => (item.id === vehicleId ? nextVehicle : item)),
       records,
     },
@@ -435,7 +435,7 @@ export function migrateAppData(input: unknown): AppData | null {
   });
 
   return {
-    schemaVersion: 10,
+    schemaVersion: 11,
     vehicles,
     records,
     profiles: Array.isArray(source.profiles)
@@ -515,6 +515,13 @@ export function migrateAppData(input: unknown): AppData | null {
           };
         })
       : structuredClone(demoData.journals),
+    contentTranslations: Array.isArray(source.contentTranslations)
+      ? source.contentTranslations
+      : demoData.contentTranslations.filter((translation) =>
+          source.journals?.some(
+            (journal) => journal.isDemo && journal.id === translation.entityId,
+          ),
+        ),
     follows: Array.isArray(source.follows)
       ? source.follows.map((follow) => follow.targetType === "model"
           ? { ...follow, targetId: canonicalizeLegacyModelTargetId(follow.targetId) }

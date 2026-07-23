@@ -1,7 +1,8 @@
 "use client";
 
-import { journalOccurrenceLabel } from "@mechori/core";
+import { journalOccurrenceLabel, resolveJournalDisplayContent } from "@mechori/core";
 import type {
+  ContentTranslation,
   GarageJournalPost,
   Locale,
   MaintenanceRecord,
@@ -20,12 +21,14 @@ export function JournalCard({
   locale,
   safety,
   mediaPriority = false,
+  translations = [],
 }: {
   journal: GarageJournalPost;
   author?: SocialProfile;
   record?: MaintenanceRecord;
   locale: Locale;
   mediaPriority?: boolean;
+  translations?: ContentTranslation[];
   safety?: {
     muted: boolean;
     blocked: boolean;
@@ -34,6 +37,7 @@ export function JournalCard({
   };
 }) {
   const ja = locale === "ja";
+  const display = resolveJournalDisplayContent({ contentTranslations: translations }, journal, locale);
   return (
     <article className="journal-card">
       <div className="journal-card-meta">
@@ -66,8 +70,13 @@ export function JournalCard({
         </div>
       </div>
       <JournalMedia attachments={journal.media} locale={locale} compact priority={mediaPriority} />
-      <h3>{journal.title}</h3>
-      <p>{journal.bodyOriginal}</p>
+      <h3>{display.title}</h3>
+      <p>{display.body}</p>
+      {!display.translated && display.sourceLanguage !== locale && (
+        <small className="translation-note">
+          {ja ? "原文のまま表示しています" : `Shown in the original (${display.sourceLanguage})`}
+        </small>
+      )}
       {record && (
         <div className="journal-record-link">
           <Link2 size={15} aria-hidden="true" />

@@ -68,6 +68,7 @@ export default function FeedPage() {
                       (record) => record.id === journal.linkedRecordId,
                     )}
                     locale={locale}
+                    translations={data.contentTranslations}
                     mediaPriority={index === 0}
                     safety={journal.authorProfileId === data.currentProfileId ? undefined : {
                       muted: isProfileMuted(data, journal.authorProfileId),

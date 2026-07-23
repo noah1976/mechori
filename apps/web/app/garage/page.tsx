@@ -13,6 +13,7 @@ import {
   groupVehiclesByOwnership,
   journalOccurrenceDate,
   journalOccurrenceLabel,
+  resolveJournalDisplayContent,
   summarizeVehicleRelationship,
   type JournalEventType,
   type Vehicle,
@@ -89,17 +90,20 @@ function GarageContent() {
   const isPreviousVehicle = vehicle.ownershipType === "previously_owned";
   const ownershipPeriod = formatOwnershipPeriod(vehicle, locale);
   const timeline = [
-    ...journals.map((journal) => ({
+    ...journals.map((journal) => {
+      const display = resolveJournalDisplayContent(data, journal, locale);
+      return ({
       id: journal.id,
       kind: "journal" as const,
       date: journalOccurrenceDate(journal),
       dateLabel: journalOccurrenceLabel(journal, locale),
-      title: journal.title,
-      body: journal.bodyOriginal,
+      title: display.title,
+      body: display.body,
       eventType: journal.eventType,
       href: `/journal/${journal.id}`,
       media: journal.media[0],
-    })),
+      });
+    }),
     ...records.map((record) => ({
       id: record.id,
       kind: "record" as const,
@@ -253,7 +257,7 @@ function GarageContent() {
         </div>
         {journals.length ? (
           <div className="journal-grid">
-            {journals.map((journal) => <JournalCard key={journal.id} journal={journal} author={data.profiles.find((profile) => profile.id === journal.authorProfileId)} record={data.records.find((record) => record.id === journal.linkedRecordId)} locale={locale} />)}
+            {journals.map((journal) => <JournalCard key={journal.id} journal={journal} author={data.profiles.find((profile) => profile.id === journal.authorProfileId)} record={data.records.find((record) => record.id === journal.linkedRecordId)} locale={locale} translations={data.contentTranslations} />)}
           </div>
         ) : (
           <div className="empty-state"><BookOpenText size={28} /><h3>{ja ? "写真・文章の記録はまだありません" : "No photo or written records yet"}</h3><p>{ja ? "一言なら「さっと記録」、長く書くなら「詳しく記録」から残せます。どちらも同じ時間軸に並びます。" : "Use Quick record for one line or Detailed record for a longer story. Both appear on the same timeline."}</p></div>

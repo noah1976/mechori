@@ -15,6 +15,7 @@ test("creates a private empty workspace for a newly invited tester", () => {
   assert.equal(data.currentProfileId, "tester-001");
   assert.deepEqual(data.vehicles, []);
   assert.deepEqual(data.records, []);
+  assert.deepEqual(data.contentTranslations, []);
   assert.deepEqual(data.profiles, [
     {
       id: "tester-001",

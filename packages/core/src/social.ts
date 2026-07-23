@@ -12,6 +12,7 @@ import type {
   ProfileVisibility,
 } from "./types.ts";
 import { canonicalModelTargetId, resolveVehicleIdentity } from "./vehicle-catalog.ts";
+import { inferJournalSourceLanguage } from "./translations.ts";
 
 export interface JournalValidationResult {
   valid: boolean;
@@ -70,6 +71,10 @@ export function createJournalPost(
     .map((block) => block.text)
     .filter((text) => text.trim())
     .join("\n\n");
+  const detectedSourceLanguage = inferJournalSourceLanguage(
+    `${draft.title}\n${bodyOriginal}`,
+    draft.sourceLanguage ?? sourceLanguage,
+  );
 
   return {
     id: `journal-${crypto.randomUUID()}`,
@@ -81,7 +86,7 @@ export function createJournalPost(
     title: draft.title.trim(),
     eventType: draft.eventType,
     bodyOriginal,
-    sourceLanguage,
+    sourceLanguage: detectedSourceLanguage,
     visibility: draft.visibility,
     moderationState: "visible",
     linkedRecordId: draft.linkedRecordId || undefined,
@@ -196,6 +201,7 @@ export function addJournalToData(
 export function journalToDraft(journal: GarageJournalPost): JournalDraft {
   return {
     title: journal.title,
+    sourceLanguage: journal.sourceLanguage,
     eventType: journal.eventType,
     occurredOn: journal.occurredOn,
     occurredYear: journal.occurredYear,
@@ -241,12 +247,25 @@ export function updateJournalInData(
         : previous.publishedAt ?? now,
     isDemo: previous.isDemo,
   };
+  const sourceChanged =
+    previous.title !== journal.title ||
+    JSON.stringify(previous.contentBlocks.filter((block) => block.type === "text")) !==
+      JSON.stringify(journal.contentBlocks.filter((block) => block.type === "text"));
 
   return {
     journal,
     data: {
       ...data,
       journals: data.journals.map((item) => item.id === journalId ? journal : item),
+      contentTranslations: data.contentTranslations.map((translation) =>
+        translation.entityType === "garage_journal" &&
+        translation.entityId === journalId &&
+        translation.reviewStatus !== "rejected"
+          ? sourceChanged
+            ? { ...translation, reviewStatus: "outdated" as const }
+            : { ...translation, sourceContentVersion: now }
+          : translation,
+      ),
     },
   };
 }
