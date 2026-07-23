@@ -98,19 +98,19 @@ export default function HomePage() {
           />
           <div className="signed-out-hero-shade" aria-hidden="true" />
           <div className="signed-out-hero-copy">
-            <span className="eyebrow">MECHORI / VEHICLE MEMORY</span>
+            <span className="eyebrow">MECHORI / MAINTENANCE KNOWLEDGE</span>
             <h1 id="signed-out-hero-heading">
-              {ja ? "愛車との時間を、一台の履歴に。" : "Every chapter of your vehicle, in one history."}
+              {ja ? "愛車の履歴を、次の整備に使える知識へ。" : "Vehicle history that helps with what comes next."}
             </h1>
             <p>
               {ja
-                ? "ドライブの一枚も、故障の症状も、交換した部品も。思い出と維持の記録を車両ごとに残し、同じクルマを守る知識へつなげます。"
-                : "A drive, a symptom, a part that finally worked. Keep memories and maintenance together, then turn lived experience into knowledge for the next owner."}
+                ? "ドライブの一枚も、故障の症状も、交換した部品も。一台の履歴として残し、困ったときは同型車の実体験を探せます。あなたの結果も、次のオーナーに役立つ記録になります。"
+                : "Keep drives, symptoms, repairs, and parts in one vehicle history. Find relevant owner experience when you need it, then make your outcome useful to whoever comes next."}
             </p>
             <div className="home-community-actions">
               <Link href="/auth?mode=signup&invite=MECHORI-DEMO" className="primary-action">
                 <UserPlus size={18} aria-hidden="true" />
-                {ja ? "招待コードで参加" : "Join with an invitation"}
+                {ja ? "招待で参加" : "Join with invite"}
               </Link>
               <Link href="/auth" className="signed-out-hero-login">
                 <LogIn size={18} aria-hidden="true" />
@@ -120,9 +120,9 @@ export default function HomePage() {
             </div>
           </div>
           <div className="signed-out-hero-caption">
-            <span>{ja ? "思い出" : "MEMORIES"}</span>
-            <span>{ja ? "整備履歴" : "MAINTENANCE"}</span>
-            <span>{ja ? "実体験のナレッジ" : "LIVED KNOWLEDGE"}</span>
+            <span>{ja ? "愛車履歴" : "VEHICLE HISTORY"}</span>
+            <span>{ja ? "整備・故障" : "MAINTENANCE"}</span>
+            <span>{ja ? "根拠付きナレッジ" : "CITED KNOWLEDGE"}</span>
           </div>
         </section>
       ) : (
@@ -133,7 +133,7 @@ export default function HomePage() {
           <p>
             {ja
               ? "整備記録を自分のために残し、困ったときは同型車の事例を探せます。写真や言葉で残した日々も、愛車の履歴につながります。"
-              : "Even a roadside breakdown becomes a story another owner wants to read. Keep the next chapter in words and pictures."}
+              : "Keep maintenance for yourself and look for comparable owner cases when needed. Photos and everyday notes stay connected to the same vehicle history."}
           </p>
           <div className="home-community-actions">
             <Link href="/journal/new" className="primary-action">
