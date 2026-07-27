@@ -316,6 +316,36 @@ Journalへの通報と、その後の操作を本文から分離します。
 
 症状がない定期整備では、Observationを必須にしません。
 
+### DiagnosticStep
+
+Professionalの症例で、判断経路を後からたどるための時系列要素です。自動診断の答えや推奨手順ではなく、実際に報告された観察・確認・判断・結果を保持します。
+
+- `id` / `maintenanceEventId`
+- `sequence`
+- `stepType`: 顧客申告、観察、原因候補、測定、確認、候補除外、作業、直後結果、追跡結果
+- `originalText` / `sourceLanguage`
+- `assertionState`: 事実、本人の推測、他者の推測、AI候補、判別不能
+- `performedByContributionId`: 誰がどの役割で関与したか
+- `occurredAt` / `recordedAt`
+- `evidenceSourceId`
+- `verificationStatus`
+
+後から記録した場合も、作業日時と入力日時を混同しません。候補除外は「除外したと報告された」事実であり、MECHORIが原因を否定した表示にしません。
+
+### MeasurementObservation
+
+作業前後や異なる条件で報告された測定値です。
+
+- `id` / `diagnosticStepId`
+- `measurementCode`
+- `displayedValue` / `unit`
+- `measurementCondition`
+- `instrumentOrMethod`
+- `referenceRangeSourceId`: 正規資料等がある場合のみ
+- `verificationStatus`
+
+単位換算値と原記録を分け、出典のない正常範囲をAIが補完しません。
+
 ### MaintenanceAction
 
 点検、調整、交換、修理等の個別作業です。1つのMaintenanceEventに複数紐付きます。
@@ -434,6 +464,7 @@ OCR・AI・手動インポートで作られた、まだ事実ではない整備
 - `id`
 - `knowledgeSubmissionId`: 内部関連。公開APIへ不用意に出さない
 - `vehicleApplicability`: メーカー、車種、年式範囲、エンジン、仕様と確認状態
+- `diagnosticTimeline`: 許諾された判断経路。非公開メモや顧客情報を含めない
 - `observations`
 - `causeCandidates`
 - `checksReported`
@@ -447,6 +478,21 @@ OCR・AI・手動インポートで作られた、まだ事実ではない整備
 - `publishedAt` / `lastReviewedAt` / `updatedAt`
 
 KnowledgeCaseは「正しい修理方法」を表すものではなく、確認範囲を示した参考事例です。
+
+### KnowledgeReview
+
+ProfessionalがKnowledgeCaseの項目へ行う確認・訂正提案です。
+
+- `id` / `knowledgeCaseId` / `targetFieldOrClaimId`
+- `reviewerContributionIdentityId`
+- `reviewType`: 支持、適用範囲訂正、反例追加、部品訂正、安全注意、情報不足、その他
+- `commentOriginal` / `sourceLanguage`
+- `evidenceSourceIds`
+- `conflictOfInterestDisclosure`
+- `status`: 提出、確認中、採用、一部採用、見送り、取下げ
+- `createdAt` / `resolvedAt`
+
+レビュー数を技術力や正確性の単純スコアにせず、誰がどの根拠で何を確認したかを表示します。
 
 ### RevisionEvent / AuditEvent
 
@@ -473,9 +519,11 @@ KnowledgeCaseは「正しい修理方法」を表すものではなく、確認�
 症状検索で採用した公開KnowledgeCaseと、集計結果を結び付ける一時的な出力契約です。
 
 - 使用した公開事例ID
-- 車両一致範囲
+- 車両仕様ごとの一致・相違・不明項目
 - 根拠付きの原因候補、確認箇所、対応
 - 改善、変化なし、悪化、未解決、不明の件数
+- 再発、適合失敗、候補除外等の反対結果
+- 作業前後の測定値と測定条件
 - 独立出典数
 - 危険ポリシー
 - 情報不足状態

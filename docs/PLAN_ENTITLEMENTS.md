@@ -12,6 +12,8 @@
 - 権限は`PlanCode`ではなく、サーバー側で評価する`EntitlementSet`として扱う。
 - Webと将来のアプリで同じ権限判定を使う。
 - プラン変更後も、既存の個人記録を削除しない。上限超過時の閲覧・出力は維持し、新規追加等を制限する。
+- OwnerをProfessionalから機能を隠しただけの画面にしない。Entitlementは利用可能範囲を決め、入力体験・ナビゲーション・用語はOwnerとProfessionalの目的に合わせて分ける。
+- 共通の記録・出典・確認モデルを使っても、Ownerの称号・反応・Journalと、Professionalの技能確認・技術ポートフォリオを相互に昇格させない。
 
 ## プラン仮説
 
@@ -25,6 +27,8 @@
 | 広告 | 広告表示候補 | 原則広告なし | 広告なし |
 | クライアント | Web、将来のモバイル | Web、将来のモバイル | 初期はWebのみ |
 | 業務機能 | なし | なし | 非公開事例、工場間相談、顧客車両・帳票管理等を段階検証 |
+
+Owner FreeとOwner PlusはProfessionalの劣化版ではありません。Ownerは個人の愛車履歴を軽く楽しく続ける専用体験、Professionalは業務案件と知識・技術実績を扱う専用体験です。共通ドメインを利用することで、同じ車両・整備・結果を再入力せず、明示同意のある範囲だけ引き継げることを優先します。
 
 Freeの2台は、クルマとバイクを1台ずつ、足グルマと趣味グルマを1台ずつ持つ利用者を主な想定とします。車両種別ごとに1台へ固定せず、利用者が自由に2台を選べる設計を優先します。
 
@@ -77,6 +81,9 @@ Freeの2台は、クルマとバイクを1台ずつ、足グルマと趣味グ�
 - `aiStructuringMonthlyAllowance`
 - `advancedFiltersEnabled`
 - `professionalWorkspaceEnabled`
+- `professionalCaseManagementEnabled`
+- `professionalPortfolioEnabled`
+- `knowledgeReviewEnabled`
 
 料金、回数、上限は設定データとして扱い、コードへ固定しません。無料2台という初期仮説も、検証後に設定変更できるようにします。
 
