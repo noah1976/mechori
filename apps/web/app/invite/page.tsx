@@ -20,6 +20,7 @@ import {
   invitationExpiresAt,
   invitationValidityDays,
 } from "@/lib/invitation-link";
+import { memberInvitationErrorMessage } from "@/lib/member-invitation-error";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { requiresGoogleOAuthTestUserRegistration } from "@/lib/runtime-config";
 
@@ -70,8 +71,7 @@ export default function InvitePage() {
         setError(ja ? "URLは発行できましたが、QRを作成できませんでした。URLをコピーして送ってください。" : "The link was created, but its QR code could not be generated. Copy and send the link instead.");
       }
     } catch (cause) {
-      const message = errorText(cause);
-      setError(invitationErrorMessage(message, ja));
+      setError(memberInvitationErrorMessage(cause, ja));
     } finally {
       setCreating(false);
     }
@@ -167,23 +167,4 @@ export default function InvitePage() {
       </form>
     </div>
   );
-}
-
-function invitationErrorMessage(message: string, ja: boolean): string {
-  if (message.includes("active_invitation_limit")) {
-    return ja ? "未使用の招待が3件あります。使用または期限切れのあとに、もう一度発行できます。" : "You already have three unused invitations. Create another after one is used or expires.";
-  }
-  if (message.includes("monthly_invitation_limit")) {
-    return ja ? "今月発行できる招待数の上限に達しました。" : "You have reached this month's invitation limit.";
-  }
-  if (message.includes("active_membership_required")) {
-    return ja ? "招待を発行できる参加状態を確認できませんでした。" : "An active membership is required to create invitations.";
-  }
-  return ja ? "招待URLを発行できませんでした。時間をおいてもう一度お試しください。" : "The invitation link could not be created. Please try again later.";
-}
-
-function errorText(value: unknown): string {
-  if (value instanceof Error) return value.message;
-  if (value && typeof value === "object" && "message" in value && typeof value.message === "string") return value.message;
-  return String(value);
 }
