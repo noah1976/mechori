@@ -16,7 +16,10 @@ import { inferJournalSourceLanguage } from "./translations.ts";
 
 export interface JournalValidationResult {
   valid: boolean;
-  errors: Partial<Record<"title" | "bodyOriginal" | "media" | "occurredOn", "required" | "private_only" | "invalid">>;
+  errors: Partial<Record<
+    "title" | "bodyOriginal" | "media" | "occurredOn",
+    "required" | "private_only" | "invalid" | "description_required"
+  >>;
 }
 
 export type JournalKnowledgeClassification =
@@ -46,7 +49,19 @@ export function validateJournalDraft(draft: JournalDraft): JournalValidationResu
     block.type === "media" ? true : Boolean(block.text.trim()),
   );
   if (!hasContent && !draft.linkedRecordId) errors.bodyOriginal = "required";
+  const displayedMediaIds = new Set(
+    draft.contentBlocks
+      .filter((block) => block.type === "media")
+      .map((block) => block.mediaId),
+  );
   if (
+    draft.media.some(
+      (attachment) =>
+        displayedMediaIds.has(attachment.id) && !attachment.altText.trim(),
+    )
+  ) {
+    errors.media = "description_required";
+  } else if (
     draft.visibility !== "private" &&
     draft.media.some((attachment) => attachment.privacyState !== "public_ready")
   ) {

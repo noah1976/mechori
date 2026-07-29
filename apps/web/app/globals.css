@@ -947,6 +947,11 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .moderation-author-notice p { margin: 4px 0 0; color: #6d5552; font-size: 12px; line-height: 1.5; }
 
 .journal-form { display: grid; gap: 18px; }
+.journal-submit-area { display: grid; gap: 8px; }
+.form-submit-feedback { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 9px; padding: 11px 13px; color: #435149; background: #edf2ef; border: 1px solid #c9d4ce; font-size: 12px; font-weight: 700; line-height: 1.5; }
+.form-submit-feedback.is-error { color: #7d302d; background: #f8ecea; border-color: #d9aaa6; }
+.form-submit-feedback svg { flex: none; }
+.form-submit-feedback .secondary-action { grid-column: 2; justify-self: start; min-height: 34px; padding-inline: 10px; }
 .note-editor-shell { display: grid; gap: 22px; padding: 28px; background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--brand); }
 .note-editor-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
 .note-editor-header strong, .note-editor-header small { display: block; }
@@ -1198,6 +1203,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .candidate-actions { flex-wrap: wrap; }
   .form-actions { position: sticky; bottom: 74px; padding: 10px; background: rgba(244, 245, 243, 0.96); border: 1px solid var(--line); border-radius: 7px; }
   .form-actions > * { flex: 1; }
+  .journal-submit-area { position: sticky; z-index: 4; bottom: 74px; padding: 10px; background: rgba(244, 245, 243, 0.97); border: 1px solid var(--line); border-radius: 7px; }
+  .journal-submit-area .form-actions { position: static; padding: 0; background: transparent; border: 0; border-radius: 0; }
   .home-search-panel { padding: 24px 18px; }
   .signed-out-hero { height: clamp(500px, calc(100svh - 150px), 650px); }
   .signed-out-hero > img { object-position: 61% center; }

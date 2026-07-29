@@ -21,6 +21,7 @@ import {
   Heading2,
   ImagePlus,
   Link2,
+  LoaderCircle,
   Plus,
   Quote,
   Save,
@@ -140,6 +141,8 @@ export function JournalForm({
   const [draft, setDraft] = useState<JournalDraft>(initialDraft);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveTakingLong, setSaveTakingLong] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [preparingMedia, setPreparingMedia] = useState(false);
   const [mediaError, setMediaError] = useState("");
   const [draftReady, setDraftReady] = useState(Boolean(journal));
@@ -151,8 +154,8 @@ export function JournalForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const submitFeedbackRef = useRef<HTMLDivElement>(null);
   const validation = validateJournalDraft(draft);
-  const missingMediaDescription = draft.media.some((attachment) => !attachment.altText.trim());
 
   useEffect(() => {
     pendingMediaRef.current = pendingMedia;
@@ -229,20 +232,32 @@ export function JournalForm({
     const submittedDraft = draft;
     const submittedValidation = validateJournalDraft(submittedDraft);
     setSubmitted(true);
-    if (!submittedValidation.valid || missingMediaDescription) {
+    setSaveError("");
+    if (!submittedValidation.valid) {
       window.requestAnimationFrame(() => {
-        if (submittedValidation.errors.title) {
-          titleInputRef.current?.focus();
-          return;
+        const firstInvalidField = submittedValidation.errors.title
+          ? titleInputRef.current
+          : formRef.current?.querySelector<HTMLElement>(
+              ".has-error input, .has-error textarea, [aria-invalid='true']",
+            );
+        if (firstInvalidField) {
+          firstInvalidField.focus();
+          firstInvalidField.scrollIntoView({ behavior: "smooth", block: "center" });
+        } else {
+          submitFeedbackRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
         }
-        formRef.current
-          ?.querySelector<HTMLElement>(".has-error input, .has-error textarea, [aria-invalid='true'], .note-text-block textarea")
-          ?.focus();
       });
       return;
     }
     if (saving || preparingMedia) return;
     setSaving(true);
+    setSaveTakingLong(false);
+    const slowSaveTimer = window.setTimeout(() => {
+      setSaveTakingLong(true);
+    }, 8000);
     try {
       const savedJournal = journal
         ? await updateJournal(
@@ -255,12 +270,15 @@ export function JournalForm({
             pendingMedia.map(({ attachment, file }) => ({ attachment, blob: file })),
           );
       clearLocalDraft(localDraftKey);
+      window.clearTimeout(slowSaveTimer);
       router.push(`/journal/${savedJournal.id}${journal ? "?updated=1" : ""}`);
     } catch {
-      setMediaError(
+      window.clearTimeout(slowSaveTimer);
+      setSaveTakingLong(false);
+      setSaveError(
         ja
-          ? "端末へ保存できませんでした。入力内容は下書きとして残しています。容量を確認して、もう一度お試しください。"
-          : "This journal could not be saved. Your text remains in the local draft. Check available storage and try again.",
+          ? "保存できませんでした。入力内容はこの画面に残っています。通信状態を確認して、もう一度お試しください。"
+          : "This record could not be saved. Your changes remain on this screen. Check your connection and try again.",
       );
       setSaving(false);
     }
@@ -547,7 +565,7 @@ export function JournalForm({
                       </div>
                       <label className={submitted && !media.attachment.altText.trim() ? "field has-error" : "field"}>
                         {ja ? "写真・動画の説明" : "Media description"}
-                        <input value={media.attachment.altText} onChange={(event) => describeMedia(media.attachment.id, event.target.value)} placeholder={ja ? "何が写っているか、ひとこと添える" : "Add a short description"} />
+                        <input value={media.attachment.altText} onChange={(event) => describeMedia(media.attachment.id, event.target.value)} placeholder={ja ? "何が写っているか、ひとこと添える" : "Add a short description"} aria-invalid={submitted && !media.attachment.altText.trim()} />
                         {submitted && !media.attachment.altText.trim() && <small>{ja ? "説明を入力してください" : "Add a description"}</small>}
                       </label>
                     </div>
@@ -558,7 +576,8 @@ export function JournalForm({
                         <JournalMedia attachments={[attachment]} locale={locale} />
                         <label className={submitted && !attachment.altText.trim() ? "field has-error" : "field"}>
                           {ja ? "写真・動画の説明" : "Media description"}
-                          <input value={attachment.altText} onChange={(event) => describeMedia(attachment.id, event.target.value)} placeholder={ja ? "何が写っているか、ひとこと添える" : "Add a short description"} />
+                          <input value={attachment.altText} onChange={(event) => describeMedia(attachment.id, event.target.value)} placeholder={ja ? "何が写っているか、ひとこと添える" : "Add a short description"} aria-invalid={submitted && !attachment.altText.trim()} />
+                          {submitted && !attachment.altText.trim() && <small>{ja ? "説明を入力してください" : "Add a description"}</small>}
                         </label>
                       </div>
                     ) : null;
@@ -610,9 +629,78 @@ export function JournalForm({
         <label className="consent-option"><input type="checkbox" checked={draft.knowledgeExtractionConsent} onChange={(event) => setDraft((current) => ({ ...current, knowledgeExtractionConsent: event.target.checked }))} /><span><strong>{ja ? "本文をナレッジ検索の参考候補にする" : "Allow this story to inform knowledge search"}</strong><small>{ja ? "AIは本文を代筆せず、公開後も出典付きの未確認投稿として扱います。" : "AI never writes the story and treats it as cited, unverified owner content."}</small></span></label>
       </section>
 
-      <div className="form-actions"><button type="submit" className="primary-action" disabled={saving || preparingMedia}><Save size={17} aria-hidden="true" />{saving ? ja ? "保存中…" : "Saving…" : journal ? (ja ? "変更を保存" : "Save changes") : draft.visibility === "private" ? ja ? "詳しい記録を非公開で保存" : "Save detailed record privately" : ja ? "公開範囲を確認して保存" : "Review audience and save"}</button></div>
+      <div className="journal-submit-area">
+        {submitted && !validation.valid && (
+          <div ref={submitFeedbackRef} className="form-submit-feedback is-error" role="alert">
+            <ShieldAlert size={18} aria-hidden="true" />
+            <span>{journalValidationMessage(validation, ja)}</span>
+            {validation.errors.media === "private_only" && (
+              <button
+                type="button"
+                className="secondary-action"
+                onClick={() =>
+                  setDraft((current) => ({ ...current, visibility: "private" }))
+                }
+              >
+                {ja ? "非公開に変更" : "Make private"}
+              </button>
+            )}
+          </div>
+        )}
+        {saveTakingLong && (
+          <div className="form-submit-feedback" role="status">
+            <LoaderCircle className="spin" size={18} aria-hidden="true" />
+            <span>
+              {ja
+                ? "保存を続けています。写真や通信状況によって少し時間がかかることがあります。"
+                : "Still saving. Photos or network conditions can make this take a little longer."}
+            </span>
+          </div>
+        )}
+        {saveError && (
+          <div className="form-submit-feedback is-error" role="alert">
+            <ShieldAlert size={18} aria-hidden="true" />
+            <span>{saveError}</span>
+          </div>
+        )}
+        <div className="form-actions">
+          <button type="submit" className="primary-action" disabled={saving || preparingMedia}>
+            {saving
+              ? <LoaderCircle className="spin" size={17} aria-hidden="true" />
+              : <Save size={17} aria-hidden="true" />}
+            {saving ? ja ? "保存中…" : "Saving…" : journal ? (ja ? "変更を保存" : "Save changes") : draft.visibility === "private" ? ja ? "詳しい記録を非公開で保存" : "Save detailed record privately" : ja ? "公開範囲を確認して保存" : "Review audience and save"}
+          </button>
+        </div>
+      </div>
     </form>
   );
+}
+
+function journalValidationMessage(
+  validation: ReturnType<typeof validateJournalDraft>,
+  ja: boolean,
+): string {
+  const issues: string[] = [];
+  if (validation.errors.title) {
+    issues.push(ja ? "タイトル" : "title");
+  }
+  if (validation.errors.occurredOn) {
+    issues.push(ja ? "日付・時期" : "date or period");
+  }
+  if (validation.errors.bodyOriginal) {
+    issues.push(ja ? "文章・写真・関連する整備記録" : "text, media, or a linked maintenance record");
+  }
+  if (validation.errors.media === "description_required") {
+    issues.push(ja ? "写真・動画の説明" : "media description");
+  }
+  if (validation.errors.media === "private_only") {
+    return ja
+      ? "この写真・動画は現在、非公開でのみ保存できます。公開範囲を「非公開」に変更してください。"
+      : "This media can currently be saved only as private. Change the audience to Private.";
+  }
+  return ja
+    ? `保存前に確認が必要です：${issues.join("、")}。`
+    : `Check the following before saving: ${issues.join(", ")}.`;
 }
 
 function JournalDraftStatus({

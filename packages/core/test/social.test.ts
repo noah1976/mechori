@@ -280,6 +280,50 @@ test("preserves media metadata and blocks unprocessed media from publication", (
   assert.notEqual(created.journal.media, media);
 });
 
+test("requires descriptions only for media displayed in journal content", () => {
+  const displayedMedia = {
+    id: "media-displayed",
+    kind: "image" as const,
+    source: "local_blob" as const,
+    storageKey: "media-displayed",
+    mimeType: "image/jpeg",
+    sizeBytes: 1024,
+    altText: "",
+    privacyState: "private_only" as const,
+    createdAt: "2026-07-15T10:00:00.000Z",
+    isDemo: false,
+  };
+  const hiddenLegacyMedia = {
+    ...displayedMedia,
+    id: "media-hidden-legacy",
+    storageKey: "media-hidden-legacy",
+  };
+  const contentBlocks = [
+    {
+      id: "journal-block-media",
+      type: "media" as const,
+      mediaId: displayedMedia.id,
+    },
+  ];
+
+  assert.equal(
+    validateJournalDraft(validDraft({
+      linkedRecordId: "",
+      media: [displayedMedia, hiddenLegacyMedia],
+      contentBlocks,
+    })).errors.media,
+    "description_required",
+  );
+  assert.equal(
+    validateJournalDraft(validDraft({
+      linkedRecordId: "",
+      media: [{ ...displayedMedia, altText: "DEMO: damaged bumper" }, hiddenLegacyMedia],
+      contentBlocks,
+    })).errors.media,
+    undefined,
+  );
+});
+
 test("builds a chronological feed only from followed public or follower posts", () => {
   const feed = getFollowingFeed(cloneDemoData());
   assert.deepEqual(
