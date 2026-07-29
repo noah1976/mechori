@@ -86,9 +86,13 @@ export function QuickEventForm({
       ? "private"
       : journal?.visibility ?? "private",
   );
-  const [publicationError, setPublicationError] = useState("");
-  const router = useRouter();
   const existingAttachment = journal?.media[0];
+  const [publicationError, setPublicationError] = useState("");
+  const [sharePhoto, setSharePhoto] = useState(
+    existingAttachment?.kind === "image" &&
+      existingAttachment.privacyState === "public_ready",
+  );
+  const router = useRouter();
   const vehicleModel = displayVehicleModel(vehicle, locale);
 
   async function selectPhoto(event: ChangeEvent<HTMLInputElement>) {
@@ -99,6 +103,7 @@ export function QuickEventForm({
     setError("");
     try {
       setImage(await preparePrivateAlphaImage(file, { maxDimension: 1400, maxOutputBytes: 460 * 1024 }));
+      setSharePhoto(false);
     } catch (error) {
       setError(imagePreparationMessageKey(error));
     } finally {
@@ -135,7 +140,10 @@ export function QuickEventForm({
         mimeType: image.mimeType,
         sizeBytes: image.sizeBytes,
         altText: `${vehicle.make} ${vehicleModel}`,
-        privacyState: "private_only",
+        privacyState:
+          visibility === "public" && sharePhoto
+            ? "public_ready"
+            : "private_only",
         createdAt: new Date().toISOString(),
         isDemo: false,
       } : undefined;
@@ -143,7 +151,10 @@ export function QuickEventForm({
         ?? (existingAttachment
           ? {
               ...existingAttachment,
-              privacyState: "private_only" as const,
+              privacyState:
+                visibility === "public" && sharePhoto
+                  ? "public_ready" as const
+                  : "private_only" as const,
             }
           : undefined);
       const draft: JournalDraft = {
@@ -203,8 +214,8 @@ export function QuickEventForm({
           <ShieldCheck size={15} />
           {isRemoteAlpha
             ? locale === "ja"
-              ? "写真は自分の非公開履歴に保存されます。"
-              : "The photo is saved in your private history."
+              ? "写真はまず自分の履歴へ保存します。α参加者へ見せるかは公開範囲で選べます。"
+              : "The photo is first saved to your history. You choose below whether alpha participants can see it."
             : translate(locale, "momentPrivateFirst")}
         </p>
         <fieldset className="event-type-picker"><legend>{translate(locale, "momentKindQuestion")}</legend>{eventTypes.map((item) => <button type="button" key={item.value} className={eventType === item.value ? "is-selected" : ""} aria-pressed={eventType === item.value} onClick={() => setEventType(item.value)}>{translate(locale, item.label)}</button>)}</fieldset>
@@ -233,6 +244,7 @@ export function QuickEventForm({
               aria-pressed={visibility === "private"}
               onClick={() => {
                 setVisibility("private");
+                setSharePhoto(false);
                 setPublicationError("");
               }}
             >
@@ -269,9 +281,26 @@ export function QuickEventForm({
           {isRemoteAlpha && visibility === "public" && (
             <p className="settings-help">
               {locale === "ja"
-                ? "ログイン済みのP0・α参加者に、本文と表示用車名を共有します。写真は公開前処理が未実装のため、自分の履歴だけに残ります。"
-                : "The text and vehicle label are shared with signed-in P0 and alpha participants. Photos stay in your private history until public-media processing is ready."}
+                ? "ログイン済みのP0・α参加者に、本文と表示用車名を共有します。"
+                : "The text and vehicle label are shared with signed-in P0 and alpha participants."}
             </p>
+          )}
+          {isRemoteAlpha && visibility === "public" && (image || existingAttachment?.kind === "image") && (
+            <label className="consent-option">
+              <input
+                type="checkbox"
+                checked={sharePhoto}
+                onChange={(event) => setSharePhoto(event.target.checked)}
+              />
+              <span>
+                <strong>{locale === "ja" ? "この写真もα参加者に見せる" : "Share this photo with alpha participants"}</strong>
+                <small>
+                  {locale === "ja"
+                    ? "ナンバー、人物、住所が分かる背景を確認してください。元画像ではなく軽量化した写真だけを共有します。"
+                    : "Check plates, people, and address-revealing backgrounds. Only the reduced image, never the original, is shared."}
+                </small>
+              </span>
+            </label>
           )}
           {isRemoteAlpha && !alphaJournalSharingAvailable && (
             <p className="media-publication-gate">

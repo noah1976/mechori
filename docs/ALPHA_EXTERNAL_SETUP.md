@@ -65,7 +65,7 @@ Publishable keyはブラウザで使う公開キーですが、RLSなしで安�
 
 ## 3. DBとRLS
 
-初期対象は`supabase/migrations/202607170001_remote_alpha.sql`と`supabase/migrations/202607170002_lock_down_alpha_functions.sql`です。MAU計測は`202607170003_monthly_activity.sql`、愛車共有は`202607170004_public_vehicle_shares.sql`、共同車両カタログは`202607290001_vehicle_catalog_collaboration.sql`、α参加者向けJournal共有は`202607290002_alpha_shared_journals.sql`として別承認・別適用にします。SQL Editorへ貼り付けて実行する前に、所有者とCodexで内容、対象プロジェクト、戻し方を確認します。
+初期対象は`supabase/migrations/202607170001_remote_alpha.sql`と`supabase/migrations/202607170002_lock_down_alpha_functions.sql`です。MAU計測は`202607170003_monthly_activity.sql`、愛車共有は`202607170004_public_vehicle_shares.sql`、共同車両カタログは`202607290001_vehicle_catalog_collaboration.sql`、α参加者向けJournal共有は`202607290002_alpha_shared_journals.sql`、α参加者向けJournal写真共有は`202607290003_alpha_shared_journal_media.sql`として別承認・別適用にします。SQL Editorへ貼り付けて実行する前に、所有者とCodexで内容、対象プロジェクト、戻し方を確認します。
 
 実行後に必要な確認:
 
@@ -76,8 +76,9 @@ Publishable keyはブラウザで使う公開キーですが、RLSなしで安�
 - 招待テーブルをブラウザから直接一覧できない
 - 使用済み招待を別アカウントが利用できない
 - Ownerロールの初期付与を対象ユーザー1人だけへ手動で行う
-- テスターAが共有したJournalの文字情報だけを、参加状態が有効なテスターBが取得できる
-- テスターBは、Aの写真、非公開Workspace、関連整備記録、内部の車両IDを共有データから取得できない
+- テスターAが共有したJournalの文字情報と、写真共有を別途確認した画像だけを、参加状態が有効なテスターBが取得できる
+- テスターBは、Aが共有を確認していない写真、動画、非公開Workspace、関連整備記録、内部の車両IDを共有データから取得できない
+- Journalの共有停止後、テスターBは以前のα共有写真をStorageから再取得できない
 - 未ログイン利用者と参加停止中の利用者は、α参加者向けJournal共有データを取得できない
 
 RLS公式: <https://supabase.com/docs/guides/database/postgres/row-level-security>

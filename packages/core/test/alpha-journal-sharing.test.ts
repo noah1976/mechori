@@ -65,8 +65,42 @@ test("shared journal projection omits private identifiers and linked maintenance
   );
 });
 
+test("explicitly prepared alpha images are included without private storage keys", () => {
+  const source = journal();
+  const { storageKey: _storageKey, ...privateMedia } = source.media[0]!;
+  const sharedImage = {
+    ...privateMedia,
+    source: "alpha_shared" as const,
+    assetPath:
+      "daed5df5-a404-4c89-82f6-ec92c085d2b4/journal-1/revision-media-1.webp",
+  };
+  const payload = createAlphaSharedJournalPayload(source, {
+    sharedMedia: [sharedImage],
+  });
+
+  assert.equal(payload.media.length, 1);
+  assert.equal(payload.media[0]?.source, "alpha_shared");
+  assert.equal(payload.media[0]?.assetPath, sharedImage.assetPath);
+  assert.equal(payload.media[0]?.storageKey, undefined);
+  assert.deepEqual(
+    payload.contentBlocks.map((block) => block.type),
+    ["media", "text"],
+  );
+});
+
 test("shared row becomes a non-searchable public journal with a synthetic author id", () => {
-  const payload = createAlphaSharedJournalPayload(journal());
+  const source = journal();
+  const { storageKey: _storageKey, ...privateMedia } = source.media[0]!;
+  const payload = createAlphaSharedJournalPayload(source, {
+    sharedMedia: [
+      {
+        ...privateMedia,
+        source: "alpha_shared",
+        assetPath:
+          "daed5df5-a404-4c89-82f6-ec92c085d2b4/journal-1/revision-media-1.webp",
+      },
+    ],
+  });
   const shared = parseAlphaSharedJournalRow({
     share_id: "share-1",
     journal_id: "journal-1",
@@ -80,6 +114,7 @@ test("shared row becomes a non-searchable public journal with a synthetic author
   assert.equal(shared.journal.authorProfileId, "alpha-shared-author-share-1");
   assert.equal(shared.journal.knowledgeExtractionConsent, false);
   assert.equal(shared.author.displayName, "Noah");
+  assert.equal(shared.journal.media[0]?.source, "alpha_shared");
 });
 
 test("private journals cannot create a shared projection", () => {
@@ -92,7 +127,7 @@ test("private journals cannot create a shared projection", () => {
   );
 });
 
-test("shared rows containing media are rejected instead of rendered", () => {
+test("shared rows containing local private media are rejected instead of rendered", () => {
   const payload = createAlphaSharedJournalPayload(journal());
   const shared = parseAlphaSharedJournalRow({
     share_id: "share-with-media",
@@ -107,4 +142,90 @@ test("shared rows containing media are rejected instead of rendered", () => {
   });
 
   assert.equal(shared, null);
+});
+
+test("shared rows reject unsafe paths and videos", () => {
+  const source = journal();
+  const payload = createAlphaSharedJournalPayload(source);
+  const baseMedia = {
+    ...source.media[0]!,
+    source: "alpha_shared",
+    storageKey: undefined,
+    assetPath:
+      "daed5df5-a404-4c89-82f6-ec92c085d2b4/journal-1/revision-media-1.webp",
+  };
+
+  for (const media of [
+    { ...baseMedia, assetPath: "../private/photo.webp" },
+    { ...baseMedia, kind: "video", mimeType: "video/mp4" },
+  ]) {
+    const shared = parseAlphaSharedJournalRow({
+      share_id: "unsafe-share",
+      journal_id: "unsafe-journal",
+      author_display_name: "Noah",
+      payload: {
+        ...payload,
+        media: [media],
+        contentBlocks: [{ id: "block-1", type: "media", mediaId: media.id }],
+      },
+      published_at: payload.publishedAt,
+      updated_at: payload.updatedAt,
+    });
+    assert.equal(shared, null);
+  }
+});
+
+test("media blocks cannot reference an image omitted from the shared payload", () => {
+  const payload = createAlphaSharedJournalPayload(journal());
+  const shared = parseAlphaSharedJournalRow({
+    share_id: "missing-media-share",
+    journal_id: "missing-media-journal",
+    author_display_name: "Noah",
+    payload: {
+      ...payload,
+      contentBlocks: [{ id: "block-1", type: "media", mediaId: "missing" }],
+    },
+    published_at: payload.publishedAt,
+    updated_at: payload.updatedAt,
+  });
+
+  assert.equal(shared, null);
+});
+
+test("shared images over the alpha limit are rejected", () => {
+  const source = journal();
+  const { storageKey: _storageKey, ...privateMedia } = source.media[0]!;
+
+  assert.throws(
+    () =>
+      createAlphaSharedJournalPayload(source, {
+        sharedMedia: [
+          {
+            ...privateMedia,
+            source: "alpha_shared",
+            assetPath:
+              "daed5df5-a404-4c89-82f6-ec92c085d2b4/journal-1/revision-media-1.webp",
+            sizeBytes: 512 * 1024 + 1,
+          },
+        ],
+      }),
+    /invalid_shared_media/,
+  );
+});
+
+test("a shared payload cannot contain more than six images", () => {
+  const source = journal();
+  const { storageKey: _storageKey, ...privateMedia } = source.media[0]!;
+  const sharedMedia = Array.from({ length: 7 }, (_, index) => ({
+    ...privateMedia,
+    id: `media-${index}`,
+    source: "alpha_shared" as const,
+    assetPath:
+      `daed5df5-a404-4c89-82f6-ec92c085d2b4/journal-1/revision-media-${index}.webp`,
+  }));
+
+  assert.throws(
+    () => createAlphaSharedJournalPayload(source, { sharedMedia }),
+    /too_many_shared_media/,
+  );
 });

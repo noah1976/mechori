@@ -3,12 +3,20 @@ import type {
   JournalContentBlock,
   JournalEventType,
   JournalMediaAttachment,
+  JournalMediaBlock,
   JournalOccurrencePrecision,
   SocialProfile,
 } from "./types.ts";
 import type { LanguageTag } from "./language.ts";
 
 export const alphaSharedJournalSchemaVersion = 1;
+export const alphaSharedJournalMaxMediaCount = 6;
+export const alphaSharedJournalMaxMediaBytes = 512 * 1024;
+
+export interface AlphaSharedJournalPayloadOptions {
+  sharedMedia?: JournalMediaAttachment[];
+}
+
 export interface AlphaSharedJournalPayload {
   schemaVersion: typeof alphaSharedJournalSchemaVersion;
   vehicleLabel: string;
@@ -45,15 +53,21 @@ export interface AlphaSharedJournal {
 
 export function createAlphaSharedJournalPayload(
   journal: GarageJournalPost,
+  options: AlphaSharedJournalPayloadOptions = {},
 ): AlphaSharedJournalPayload {
   if (journal.visibility !== "public") throw new Error("journal_not_public");
   if (journal.moderationState !== "visible") throw new Error("journal_not_visible");
 
-  // P0 shares text only. Real photos remain in the owner's private workspace
-  // until irreversible masking and the public-media review gate are implemented.
-  const publicMedia: JournalMediaAttachment[] = [];
+  const requestedMedia = options.sharedMedia ?? [];
+  if (requestedMedia.length > alphaSharedJournalMaxMediaCount) {
+    throw new Error("too_many_shared_media");
+  }
+  const publicMedia = requestedMedia.map(normalizeSharedMedia);
+  const publicMediaIds = new Set(publicMedia.map((attachment) => attachment.id));
   const contentBlocks = journal.contentBlocks
-    .filter((block) => block.type === "text")
+    .filter(
+      (block) => block.type === "text" || publicMediaIds.has(block.mediaId),
+    )
     .map((block) => ({ ...block }));
 
   return {
@@ -144,12 +158,16 @@ function parsePayload(value: unknown): AlphaSharedJournalPayload | null {
   ) {
     return null;
   }
-  if (value.media.length > 0) return null;
-  const media: JournalMediaAttachment[] = [];
-  const contentBlocks = value.contentBlocks.filter(
-    (block): block is JournalContentBlock =>
-      isTextBlock(block),
-  );
+  if (value.media.length > alphaSharedJournalMaxMediaCount) return null;
+  const media = value.media
+    .map(parseSharedMedia)
+    .filter((attachment): attachment is JournalMediaAttachment => Boolean(attachment));
+  if (media.length !== value.media.length) return null;
+  const mediaIds = new Set(media.map((attachment) => attachment.id));
+  const contentBlocks = value.contentBlocks.filter((block): block is JournalContentBlock => {
+    if (isTextBlock(block)) return true;
+    return isMediaBlock(block) && mediaIds.has(block.mediaId);
+  });
   if (contentBlocks.length !== value.contentBlocks.length) return null;
 
   return {
@@ -183,6 +201,70 @@ function isTextBlock(value: unknown): value is JournalContentBlock {
     (value.style === "paragraph" || value.style === "heading" || value.style === "quote") &&
     typeof value.text === "string"
   );
+}
+
+function isMediaBlock(value: unknown): value is JournalMediaBlock {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    value.type === "media" &&
+    typeof value.mediaId === "string"
+  );
+}
+
+function normalizeSharedMedia(
+  attachment: JournalMediaAttachment,
+): JournalMediaAttachment {
+  const parsed = parseSharedMedia(attachment);
+  if (!parsed) throw new Error("invalid_shared_media");
+  return parsed;
+}
+
+function parseSharedMedia(value: unknown): JournalMediaAttachment | null {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== "string" ||
+    value.kind !== "image" ||
+    value.source !== "alpha_shared" ||
+    typeof value.assetPath !== "string" ||
+    "storageKey" in value ||
+    !isSharedMediaPath(value.assetPath) ||
+    !isSharedImageMimeType(value.mimeType) ||
+    typeof value.sizeBytes !== "number" ||
+    !Number.isInteger(value.sizeBytes) ||
+    value.sizeBytes < 1 ||
+    value.sizeBytes > alphaSharedJournalMaxMediaBytes ||
+    typeof value.altText !== "string" ||
+    value.privacyState !== "public_ready" ||
+    typeof value.createdAt !== "string" ||
+    value.isDemo !== false
+  ) {
+    return null;
+  }
+  return {
+    id: bounded(value.id, 160),
+    kind: "image",
+    source: "alpha_shared",
+    assetPath: value.assetPath,
+    mimeType: value.mimeType,
+    sizeBytes: value.sizeBytes,
+    altText: bounded(value.altText, 500),
+    privacyState: "public_ready",
+    createdAt: value.createdAt,
+    isDemo: false,
+  };
+}
+
+function isSharedMediaPath(value: string): boolean {
+  return (
+    value.length <= 500 &&
+    !value.includes("..") &&
+    /^[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\/[A-Za-z0-9_.-]+$/.test(value)
+  );
+}
+
+function isSharedImageMimeType(value: unknown): value is string {
+  return ["image/jpeg", "image/png", "image/webp"].includes(String(value));
 }
 
 function isJournalEventType(value: unknown): value is JournalEventType {

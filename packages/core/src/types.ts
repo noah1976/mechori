@@ -288,7 +288,11 @@ export type FollowTargetType = "profile" | "vehicle" | "model";
 export type ProfileSafetyRelationType = "mute" | "block";
 export type JournalDisplayField = "service_date" | "odometer" | "actions";
 export type JournalMediaKind = "image" | "video";
-export type JournalMediaSource = "local_blob" | "demo_asset" | "alpha_inline";
+export type JournalMediaSource =
+  | "local_blob"
+  | "demo_asset"
+  | "alpha_inline"
+  | "alpha_shared";
 export type JournalMediaPrivacyState = "private_only" | "public_ready";
 export type JournalTextBlockStyle = "paragraph" | "heading" | "quote";
 export type JournalEventType =

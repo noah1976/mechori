@@ -163,6 +163,10 @@ export function JournalForm({
   const titleInputRef = useRef<HTMLInputElement>(null);
   const submitFeedbackRef = useRef<HTMLDivElement>(null);
   const validation = validateJournalDraft(draft);
+  const imageAttachments = draft.media.filter((attachment) => attachment.kind === "image");
+  const sharingAllImages =
+    imageAttachments.length > 0 &&
+    imageAttachments.every((attachment) => attachment.privacyState === "public_ready");
 
   useEffect(() => {
     pendingMediaRef.current = pendingMedia;
@@ -233,18 +237,48 @@ export function JournalForm({
   function changeVisibility(visibility: JournalVisibility) {
     if (isRemoteAlpha && visibility === "followers") return;
     if (isRemoteAlpha && visibility === "public" && !alphaJournalSharingAvailable) return;
+    if (visibility !== "public") {
+      setPendingMedia((current) =>
+        current.map((item) => ({
+          ...item,
+          attachment: { ...item.attachment, privacyState: "private_only" },
+        })),
+      );
+    }
+    setDraft((current) => ({
+      ...current,
+      visibility,
+      media:
+        visibility === "public"
+          ? current.media
+          : current.media.map((attachment) => ({
+              ...attachment,
+              privacyState: "private_only",
+            })),
+    }));
+  }
+
+  function setImageSharing(enabled: boolean) {
     setPendingMedia((current) =>
       current.map((item) => ({
         ...item,
-        attachment: { ...item.attachment, privacyState: "private_only" },
+        attachment: {
+          ...item.attachment,
+          privacyState:
+            enabled && item.attachment.kind === "image"
+              ? "public_ready"
+              : "private_only",
+        },
       })),
     );
     setDraft((current) => ({
       ...current,
-      visibility,
       media: current.media.map((attachment) => ({
         ...attachment,
-        privacyState: "private_only",
+        privacyState:
+          enabled && attachment.kind === "image"
+            ? "public_ready"
+            : "private_only",
       })),
     }));
   }
@@ -634,12 +668,12 @@ export function JournalForm({
             {ja ? "文章、写真・動画、または関連する整備記録を追加してください。" : "Add text, media, or a related maintenance record."}
           </p>
         )}
-        {pendingMedia.length > 0 && draft.visibility !== "public" && (
+        {draft.media.length > 0 && draft.visibility !== "public" && (
           <div className="media-privacy-notice">
             <ShieldAlert size={20} aria-hidden="true" />
             <div>
               <strong>{ja ? "写真は自分の履歴に非公開保存します" : "Photos stay private in your history"}</strong>
-              <p>{ja ? "P0・αで公開を選んだ場合も、参加者へ共有するのは本文だけです。" : "Even when sharing in P0 or alpha, only the post text is shared with participants."}</p>
+              <p>{ja ? "α参加者に見せる写真は、公開範囲で別に選べます。" : "You can separately choose whether alpha participants see the photos."}</p>
             </div>
           </div>
         )}
@@ -681,18 +715,35 @@ export function JournalForm({
         {isRemoteAlpha && draft.visibility === "public" && (
           <p className="settings-help">
             {ja
-              ? "ログイン済みのP0・α参加者だけが、投稿本文と表示用車名を見られます。写真と関連する非公開整備記録は共有しません。"
-              : "Signed-in P0 and alpha participants can see the post text and vehicle label. Photos and linked private maintenance records are not shared."}
+              ? "ログイン済みのP0・α参加者だけが、投稿本文と表示用車名を見られます。関連する非公開整備記録は共有しません。"
+              : "Only signed-in P0 and alpha participants can see the post text and vehicle label. Linked private maintenance records are not shared."}
           </p>
         )}
-        {isRemoteAlpha && draft.visibility === "public" && draft.media.length > 0 && (
+        {isRemoteAlpha && draft.visibility === "public" && imageAttachments.length > 0 && (
+          <label className="consent-option">
+            <input
+              type="checkbox"
+              checked={sharingAllImages}
+              onChange={(event) => setImageSharing(event.target.checked)}
+            />
+            <span>
+              <strong>
+                {ja
+                  ? `添付写真${imageAttachments.length}枚もα参加者に見せる`
+                  : `Share ${imageAttachments.length} attached photo${imageAttachments.length === 1 ? "" : "s"} with alpha participants`}
+              </strong>
+              <small>
+                {ja
+                  ? "ナンバー、人物、住所が分かる背景を確認してください。元画像ではなく軽量化した写真だけを共有します。"
+                  : "Check plates, people, and address-revealing backgrounds. Only the reduced image, never the original, is shared."}
+              </small>
+            </span>
+          </label>
+        )}
+        {isRemoteAlpha && draft.visibility === "public" && draft.media.some((item) => item.kind === "video") && (
           <div className="media-publication-gate" role="status">
             <ShieldCheck size={19} aria-hidden="true" />
-            <span>
-              {ja
-                ? "写真・動画は自分の履歴だけに保存し、α参加者には本文だけを共有します。"
-                : "Photos and videos stay in your private history; alpha participants receive the text only."}
-            </span>
+            <span>{ja ? "動画はα参加者へ共有せず、自分の履歴だけに残します。" : "Videos remain in your private history and are not shared with alpha participants."}</span>
           </div>
         )}
         <label className="consent-option"><input type="checkbox" checked={draft.knowledgeExtractionConsent} onChange={(event) => setDraft((current) => ({ ...current, knowledgeExtractionConsent: event.target.checked }))} /><span><strong>{ja ? "本文をナレッジ検索の参考候補にする" : "Allow this story to inform knowledge search"}</strong><small>{ja ? "AIは本文を代筆せず、公開後も出典付きの未確認投稿として扱います。" : "AI never writes the story and treats it as cited, unverified owner content."}</small></span></label>

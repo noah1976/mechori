@@ -4,7 +4,11 @@ import type { JournalMediaAttachment, Locale } from "@mechori/core";
 import { ImageIcon, LoaderCircle, Video } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import {
+  alphaSharedJournalMediaBucket,
+} from "@/lib/alpha-shared-journals";
 import { journalMediaStore } from "@/lib/media-store";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export function JournalMedia({
   attachments,
@@ -51,13 +55,33 @@ function JournalMediaItem({
       ? attachment.assetPath ?? null
       : null,
   );
-  const [loading, setLoading] = useState(attachment.source === "local_blob");
+  const [loading, setLoading] = useState(
+    attachment.source === "local_blob" || attachment.source === "alpha_shared",
+  );
 
   useEffect(() => {
-    if (attachment.source !== "local_blob" || !attachment.storageKey) return;
+    if (
+      attachment.source !== "local_blob" &&
+      attachment.source !== "alpha_shared"
+    ) {
+      return;
+    }
     let active = true;
     let objectUrl: string | undefined;
-    void journalMediaStore.load(attachment.storageKey).then((blob) => {
+    const blobPromise =
+      attachment.source === "local_blob" && attachment.storageKey
+        ? journalMediaStore.load(attachment.storageKey)
+        : attachment.source === "alpha_shared" && attachment.assetPath
+          ? createSupabaseBrowserClient()
+              .storage
+              .from(alphaSharedJournalMediaBucket)
+              .download(attachment.assetPath)
+              .then((result: { data: Blob | null; error: unknown }) => {
+                if (result.error) return null;
+                return result.data;
+              })
+          : Promise.resolve(null);
+    void blobPromise.then((blob: Blob | null) => {
       if (!active) return;
       if (blob) {
         objectUrl = URL.createObjectURL(blob);
@@ -69,7 +93,7 @@ function JournalMediaItem({
       active = false;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [attachment.source, attachment.storageKey]);
+  }, [attachment.assetPath, attachment.source, attachment.storageKey]);
 
   if (loading) {
     return (
@@ -88,7 +112,13 @@ function JournalMediaItem({
         ) : (
           <Video size={22} aria-hidden="true" />
         )}
-        {locale === "ja" ? "端末内メディアが見つかりません" : "Local media not found"}
+        {attachment.source === "alpha_shared"
+          ? locale === "ja"
+            ? "共有写真を読み込めません"
+            : "Shared photo is unavailable"
+          : locale === "ja"
+            ? "端末内メディアが見つかりません"
+            : "Local media not found"}
       </div>
     );
   }
