@@ -65,7 +65,7 @@ Publishable keyはブラウザで使う公開キーですが、RLSなしで安�
 
 ## 3. DBとRLS
 
-初期対象は`supabase/migrations/202607170001_remote_alpha.sql`と`supabase/migrations/202607170002_lock_down_alpha_functions.sql`です。MAU計測は`202607170003_monthly_activity.sql`、愛車共有は`202607170004_public_vehicle_shares.sql`、共同車両カタログは`202607290001_vehicle_catalog_collaboration.sql`、α参加者向けJournal共有は`202607290002_alpha_shared_journals.sql`、α参加者向けJournal写真共有は`202607290003_alpha_shared_journal_media.sql`として別承認・別適用にします。SQL Editorへ貼り付けて実行する前に、所有者とCodexで内容、対象プロジェクト、戻し方を確認します。
+初期対象は`supabase/migrations/202607170001_remote_alpha.sql`と`supabase/migrations/202607170002_lock_down_alpha_functions.sql`です。MAU計測は`202607170003_monthly_activity.sql`、愛車共有は`202607170004_public_vehicle_shares.sql`、共同車両カタログは`202607290001_vehicle_catalog_collaboration.sql`、α参加者向けJournal共有は`202607290002_alpha_shared_journals.sql`、α参加者向けJournal写真共有は`202607290003_alpha_shared_journal_media.sql`、写真共有の利用可否確認は`202607290004_alpha_shared_journal_media_capability.sql`として別承認・別適用にします。SQL Editorへ貼り付けて実行する前に、所有者とCodexで内容、対象プロジェクト、戻し方を確認します。
 
 実行後に必要な確認:
 

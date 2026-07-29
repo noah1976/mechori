@@ -14,12 +14,10 @@ export const alphaSharedJournalMediaBucket = "alpha-journal-media";
 
 export async function alphaSharedJournalMediaAvailable(): Promise<boolean> {
   const supabase = createSupabaseBrowserClient();
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData.user) return false;
-  const { error } = await supabase.storage
-    .from(alphaSharedJournalMediaBucket)
-    .list(`${safePathSegment(userData.user.id)}/__capability__`, { limit: 1 });
-  return !error;
+  const { data, error } = await supabase.rpc(
+    "alpha_shared_journal_media_available",
+  );
+  return !error && data === true;
 }
 
 export async function loadAlphaSharedJournals(): Promise<AlphaSharedJournal[]> {

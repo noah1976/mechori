@@ -202,7 +202,7 @@ Professionalの事業仮説をαで確認するため、公開ティザー、Fou
 - MAU最小計測マイグレーションは未適用で、Netlifyの計測環境変数も無効のまま。
 - 愛車共有用`202607170004_public_vehicle_shares.sql`は未適用。RLS内容を所有者と確認し、別利用者・未ログインの公開／非公開境界をテストしてから適用する。
 - 共同車両カタログ用`202607290001_vehicle_catalog_collaboration.sql`はローカル実装のみで、本番Supabaseには未適用。適用前にSQLレビュー、RLS境界、運営RPC、別利用者間の提案分離を確認する。
-- α参加者向けJournal共有用`202607290002_alpha_shared_journals.sql`は適用済み。写真共有を追加する`202607290003_alpha_shared_journal_media.sql`はローカル実装のみで、本番Supabaseには未適用。適用前に、別利用者へ明示確認済み写真だけが届くこと、未確認写真・動画・関連整備記録・内部IDが届かないこと、共有停止・未ログイン・参加停止時の取得拒否を確認する。
+- α参加者向けJournal共有用`202607290002_alpha_shared_journals.sql`と、非公開Storageへ写真共有を追加する`202607290003_alpha_shared_journal_media.sql`は本番Supabaseへ適用済み。利用可否確認をStorageの空フォルダ参照に依存させない`202607290004_alpha_shared_journal_media_capability.sql`を追加し、適用後に別利用者へ明示確認済み写真だけが届くこと、未確認写真・動画・関連整備記録・内部IDが届かないこと、共有停止・未ログイン・参加停止時の取得拒否を確認する。
 - 実行時依存の監査で、Next.js配下のPostCSS 8.4.31にmoderateのXSS報告がある。利用者入力からCSSを生成する実装はないが、α公開前に修正版への更新経路を再確認する。high・criticalは0件。
 - robots.txtやTDM権利留保は悪意ある取得を技術的に強制停止できない。正式公開前に利用規約、公開データ最小化、レート制限、ログ監視、クローラー違反対応を確定する。
 
