@@ -130,6 +130,7 @@ const BRANDS: BrandDefinition[] = [
     canonicalName: "CITROËN",
     aliases: ["CITROËN", "Citroën", "CITROEN", "Citroen", "シトロエン"],
   },
+  { id: "renault", canonicalName: "RENAULT", aliases: ["RENAULT", "Renault", "ルノー"] },
   { id: "lancia", canonicalName: "LANCIA", aliases: ["LANCIA", "Lancia", "ランチア"] },
 ];
 
