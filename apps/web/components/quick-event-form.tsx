@@ -60,6 +60,7 @@ export function QuickEventForm({
     updateJournal,
     isRemoteAlpha,
     alphaJournalSharingAvailable,
+    alphaJournalMediaSharingAvailable,
   } = useApp();
   const editing = Boolean(journal);
   const [eventType, setEventType] = useState<JournalEventType>(journal?.eventType ?? "photo");
@@ -89,6 +90,7 @@ export function QuickEventForm({
   const existingAttachment = journal?.media[0];
   const [publicationError, setPublicationError] = useState("");
   const [sharePhoto, setSharePhoto] = useState(
+    alphaJournalMediaSharingAvailable &&
     existingAttachment?.kind === "image" &&
       existingAttachment.privacyState === "public_ready",
   );
@@ -141,7 +143,9 @@ export function QuickEventForm({
         sizeBytes: image.sizeBytes,
         altText: `${vehicle.make} ${vehicleModel}`,
         privacyState:
-          visibility === "public" && sharePhoto
+          visibility === "public" &&
+          alphaJournalMediaSharingAvailable &&
+          sharePhoto
             ? "public_ready"
             : "private_only",
         createdAt: new Date().toISOString(),
@@ -152,7 +156,9 @@ export function QuickEventForm({
           ? {
               ...existingAttachment,
               privacyState:
-                visibility === "public" && sharePhoto
+                visibility === "public" &&
+                alphaJournalMediaSharingAvailable &&
+                sharePhoto
                   ? "public_ready" as const
                   : "private_only" as const,
             }
@@ -285,7 +291,10 @@ export function QuickEventForm({
                 : "The text and vehicle label are shared with signed-in P0 and alpha participants."}
             </p>
           )}
-          {isRemoteAlpha && visibility === "public" && (image || existingAttachment?.kind === "image") && (
+          {isRemoteAlpha &&
+            alphaJournalMediaSharingAvailable &&
+            visibility === "public" &&
+            (image || existingAttachment?.kind === "image") && (
             <label className="consent-option">
               <input
                 type="checkbox"
@@ -301,6 +310,17 @@ export function QuickEventForm({
                 </small>
               </span>
             </label>
+          )}
+          {isRemoteAlpha &&
+            !alphaJournalMediaSharingAvailable &&
+            visibility === "public" &&
+            (image || existingAttachment?.kind === "image") && (
+            <p className="media-publication-gate">
+              <ShieldAlert size={18} aria-hidden="true" />
+              {locale === "ja"
+                ? "写真共有の準備中です。今回は本文だけを共有し、写真は自分の履歴に残します。"
+                : "Photo sharing is still being prepared. This time only the text is shared; the photo remains in your history."}
+            </p>
           )}
           {isRemoteAlpha && !alphaJournalSharingAvailable && (
             <p className="media-publication-gate">

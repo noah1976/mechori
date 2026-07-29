@@ -53,6 +53,7 @@ import { recordAlphaEngagement } from "@/lib/alpha-engagement";
 import { loadAlphaWorkspace, saveAlphaWorkspace } from "@/lib/alpha-workspace";
 import { journalMediaStore } from "@/lib/media-store";
 import {
+  alphaSharedJournalMediaAvailable,
   loadAlphaSharedJournals,
   publishAlphaSharedJournal,
   withdrawAlphaSharedJournal,
@@ -79,6 +80,7 @@ interface AppContextValue {
   hydrated: boolean;
   isRemoteAlpha: boolean;
   alphaJournalSharingAvailable: boolean;
+  alphaJournalMediaSharingAvailable: boolean;
   sharedJournals: GarageJournalPost[];
   sharedProfiles: SocialProfile[];
   authSession: AuthSession;
@@ -144,6 +146,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [alphaJournalSharingAvailable, setAlphaJournalSharingAvailable] = useState(
     !isRemoteAlpha,
   );
+  const [
+    alphaJournalMediaSharingAvailable,
+    setAlphaJournalMediaSharingAvailable,
+  ] = useState(!isRemoteAlpha);
   const [alphaSharedContent, setAlphaSharedContent] = useState<AlphaSharedJournal[]>([]);
 
   useEffect(() => {
@@ -166,6 +172,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
             if (active) setAlphaJournalSharingAvailable(true);
           } catch {
             if (active) setAlphaJournalSharingAvailable(false);
+          }
+          const mediaSharingAvailable =
+            await alphaSharedJournalMediaAvailable().catch(() => false);
+          if (active) {
+            setAlphaJournalMediaSharingAvailable(mediaSharingAvailable);
           }
         }
 
@@ -564,6 +575,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       hydrated,
       isRemoteAlpha,
       alphaJournalSharingAvailable,
+      alphaJournalMediaSharingAvailable,
       sharedJournals: alphaSharedContent.map((item) => item.journal),
       sharedProfiles: alphaSharedContent.map((item) => item.author),
       authSession,
@@ -596,6 +608,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       hydrated,
       authSession,
       alphaJournalSharingAvailable,
+      alphaJournalMediaSharingAvailable,
       alphaSharedContent,
       persistenceError,
       setLocale,

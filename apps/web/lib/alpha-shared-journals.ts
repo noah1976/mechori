@@ -12,6 +12,16 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export const alphaSharedJournalMediaBucket = "alpha-journal-media";
 
+export async function alphaSharedJournalMediaAvailable(): Promise<boolean> {
+  const supabase = createSupabaseBrowserClient();
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) return false;
+  const { error } = await supabase.storage
+    .from(alphaSharedJournalMediaBucket)
+    .list(`${safePathSegment(userData.user.id)}/__capability__`, { limit: 1 });
+  return !error;
+}
+
 export async function loadAlphaSharedJournals(): Promise<AlphaSharedJournal[]> {
   const supabase = createSupabaseBrowserClient();
   const { data, error } = await supabase

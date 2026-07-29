@@ -128,6 +128,7 @@ export function JournalForm({
     updateJournal,
     isRemoteAlpha,
     alphaJournalSharingAvailable,
+    alphaJournalMediaSharingAvailable,
   } = useApp();
   const router = useRouter();
   const ja = locale === "ja";
@@ -171,6 +172,12 @@ export function JournalForm({
   useEffect(() => {
     pendingMediaRef.current = pendingMedia;
   }, [pendingMedia]);
+
+  useEffect(() => {
+    if (isRemoteAlpha && !alphaJournalMediaSharingAvailable) {
+      setImageSharing(false);
+    }
+  }, [alphaJournalMediaSharingAvailable, isRemoteAlpha]);
 
   useEffect(() => {
     if (journal) return;
@@ -719,7 +726,10 @@ export function JournalForm({
               : "Only signed-in P0 and alpha participants can see the post text and vehicle label. Linked private maintenance records are not shared."}
           </p>
         )}
-        {isRemoteAlpha && draft.visibility === "public" && imageAttachments.length > 0 && (
+        {isRemoteAlpha &&
+          alphaJournalMediaSharingAvailable &&
+          draft.visibility === "public" &&
+          imageAttachments.length > 0 && (
           <label className="consent-option">
             <input
               type="checkbox"
@@ -739,6 +749,19 @@ export function JournalForm({
               </small>
             </span>
           </label>
+        )}
+        {isRemoteAlpha &&
+          !alphaJournalMediaSharingAvailable &&
+          draft.visibility === "public" &&
+          imageAttachments.length > 0 && (
+          <div className="media-publication-gate" role="status">
+            <ShieldAlert size={19} aria-hidden="true" />
+            <span>
+              {ja
+                ? "写真共有の準備中です。今回は本文だけをα参加者へ共有し、写真は自分の履歴に残します。"
+                : "Photo sharing is still being prepared. This time only the text is shared; photos remain in your history."}
+            </span>
+          </div>
         )}
         {isRemoteAlpha && draft.visibility === "public" && draft.media.some((item) => item.kind === "video") && (
           <div className="media-publication-gate" role="status">
