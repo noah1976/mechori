@@ -1104,7 +1104,6 @@ from (
     ('peugeot-205-gen1', '205', null, 'generation_name', 'candidate_only'),
     ('peugeot-205-standard', 'Standard', 'en', 'grade_name', 'candidate_only'),
     ('peugeot-205-gti', 'GTI', 'en', 'grade_name', 'exact'),
-    ('peugeot-205-gti', 'GT-i', 'en', 'grade_name', 'exact'),
     ('peugeot-205-gti-1-6', 'GTI 1.6', 'en', 'grade_name', 'exact'),
     ('peugeot-205-gti-1-9', 'GTI 1.9', 'en', 'grade_name', 'exact'),
     ('peugeot-205-turbo-16', 'Turbo 16', 'en', 'grade_name', 'exact'),
