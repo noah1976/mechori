@@ -9,9 +9,10 @@ import {
   LoaderCircle,
   QrCode,
   Share2,
+  Trash2,
   UserPlus,
 } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useApp } from "@/lib/app-context";
 import {
   buildInvitationUrl,
@@ -24,31 +25,66 @@ import { memberInvitationErrorMessage } from "@/lib/member-invitation-error";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { requiresGoogleOAuthTestUserRegistration } from "@/lib/runtime-config";
 
+type ActiveInvitation = {
+  id: string;
+  created_at: string;
+  expires_at: string;
+};
+
+async function fetchActiveInvitations(): Promise<ActiveInvitation[] | null> {
+  const { data, error } = await createSupabaseBrowserClient().rpc(
+    "list_my_active_member_invitations",
+  );
+  if (error) return null;
+  return Array.isArray(data) ? data as ActiveInvitation[] : [];
+}
+
 export default function InvitePage() {
   const { locale, isRemoteAlpha } = useApp();
   const ja = locale === "ja";
   const googleTestUserRequired = requiresGoogleOAuthTestUserRegistration();
   const [creating, setCreating] = useState(false);
+  const [loadingInvitations, setLoadingInvitations] = useState(isRemoteAlpha);
+  const [activeInvitations, setActiveInvitations] = useState<ActiveInvitation[]>([]);
+  const [currentInvitationId, setCurrentInvitationId] = useState("");
+  const [confirmingRevokeId, setConfirmingRevokeId] = useState("");
+  const [revokingId, setRevokingId] = useState("");
   const [inviteUrl, setInviteUrl] = useState("");
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [showQr, setShowQr] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
 
+  const loadActiveInvitations = useCallback(async () => {
+    if (!isRemoteAlpha) return;
+    const invitations = await fetchActiveInvitations();
+    if (invitations) setActiveInvitations(invitations);
+    setLoadingInvitations(false);
+  }, [isRemoteAlpha]);
+
+  useEffect(() => {
+    if (!isRemoteAlpha) return;
+    let cancelled = false;
+    void fetchActiveInvitations().then((invitations) => {
+      if (cancelled) return;
+      if (invitations) setActiveInvitations(invitations);
+      setLoadingInvitations(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isRemoteAlpha]);
+
   async function createInvitation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!isRemoteAlpha || creating) return;
     setCreating(true);
     setError("");
-    setInviteUrl("");
-    setQrDataUrl("");
-    setShowQr(false);
-    setCopied(false);
 
     try {
       const rawToken = createInvitationToken();
       const tokenHash = await hashInvitationToken(rawToken);
-      const { error: createError } = await createSupabaseBrowserClient().rpc(
+      const { data: invitationId, error: createError } = await createSupabaseBrowserClient().rpc(
         "create_member_invitation",
         {
           p_token_hash: tokenHash,
@@ -58,7 +94,12 @@ export default function InvitePage() {
       if (createError) throw createError;
 
       const url = buildInvitationUrl(window.location.origin, rawToken);
+      setCurrentInvitationId(String(invitationId ?? ""));
       setInviteUrl(url);
+      setQrDataUrl("");
+      setShowQr(false);
+      setCopied(false);
+      await loadActiveInvitations();
       try {
         const qr = await QRCode.toDataURL(url, {
           errorCorrectionLevel: "M",
@@ -75,6 +116,34 @@ export default function InvitePage() {
     } finally {
       setCreating(false);
     }
+  }
+
+  async function revokeInvitation(invitationId: string) {
+    if (revokingId) return;
+    setRevokingId(invitationId);
+    setError("");
+    const { data, error: revokeError } = await createSupabaseBrowserClient().rpc(
+      "revoke_my_member_invitation",
+      { p_invitation_id: invitationId },
+    );
+    if (revokeError || data !== true) {
+      setError(
+        ja
+          ? "招待を取り消せませんでした。使用済みでないか確認し、もう一度お試しください。"
+          : "The invitation could not be revoked. Check whether it has already been used, then try again.",
+      );
+    } else {
+      if (currentInvitationId === invitationId) {
+        setCurrentInvitationId("");
+        setInviteUrl("");
+        setQrDataUrl("");
+        setShowQr(false);
+        setCopied(false);
+      }
+      setConfirmingRevokeId("");
+      await loadActiveInvitations();
+    }
+    setRevokingId("");
   }
 
   async function copyInvitation() {
@@ -157,6 +226,79 @@ export default function InvitePage() {
           </section>
         )}
 
+        <section className="form-section invite-active-list" aria-live="polite">
+          <div className="section-heading compact">
+            <div>
+              <span className="eyebrow">ACTIVE</span>
+              <h2>{ja ? "未使用の招待" : "Unused invitations"}</h2>
+            </div>
+            <span className="invite-active-count">
+              {loadingInvitations ? "..." : activeInvitations.length}
+            </span>
+          </div>
+          <p className="privacy-caption">
+            {ja
+              ? "安全のため、閉じた画面のURL本体は再表示できません。まだ送っていない招待は取り消して、発行し直せます。"
+              : "For security, a link cannot be shown again after you close its page. Revoke any unsent invitation and create a new one."}
+          </p>
+          {!loadingInvitations && activeInvitations.length === 0 && (
+            <p className="invite-active-empty">
+              {ja ? "未使用の招待はありません。" : "You have no unused invitations."}
+            </p>
+          )}
+          <div className="invite-active-rows">
+            {activeInvitations.map((invitation) => (
+              <div className="invite-active-row" key={invitation.id}>
+                <div>
+                  <strong>
+                    {currentInvitationId === invitation.id
+                      ? (ja ? "この画面で表示中" : "Shown on this page")
+                      : (ja ? "発行済みの招待" : "Issued invitation")}
+                  </strong>
+                  <span>
+                    {ja ? "発行" : "Created"}: {formatInvitationDate(invitation.created_at, locale)}
+                    {" / "}
+                    {ja ? "期限" : "Expires"}: {formatInvitationDate(invitation.expires_at, locale)}
+                  </span>
+                </div>
+                {confirmingRevokeId === invitation.id ? (
+                  <div className="invite-revoke-confirm">
+                    <span>{ja ? "このURLを無効にしますか？" : "Disable this link?"}</span>
+                    <button
+                      type="button"
+                      className="text-danger-action"
+                      disabled={revokingId === invitation.id}
+                      onClick={() => void revokeInvitation(invitation.id)}
+                    >
+                      {revokingId === invitation.id
+                        ? <LoaderCircle className="spin" size={16} />
+                        : <Trash2 size={16} />}
+                      {ja ? "取り消す" : "Revoke"}
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-text-button"
+                      disabled={Boolean(revokingId)}
+                      onClick={() => setConfirmingRevokeId("")}
+                    >
+                      {ja ? "戻る" : "Back"}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="text-danger-action"
+                    onClick={() => setConfirmingRevokeId(invitation.id)}
+                  >
+                    <Trash2 size={16} />
+                    {ja ? "取り消す" : "Revoke"}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
         {error && <p className="form-error-summary" role="alert">{error}</p>}
         <div className="form-actions">
           <button type="submit" className="primary-action" disabled={creating || !isRemoteAlpha}>
@@ -167,4 +309,15 @@ export default function InvitePage() {
       </form>
     </div>
   );
+}
+
+function formatInvitationDate(value: string, locale: "ja" | "en"): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }

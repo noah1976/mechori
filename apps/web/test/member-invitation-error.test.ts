@@ -19,7 +19,7 @@ test("explains when the member invitation database function is not available", (
 test("keeps invitation limits understandable", () => {
   assert.match(
     memberInvitationErrorMessage(new Error("active_invitation_limit"), true),
-    /未使用の招待が3件/,
+    /下の一覧から取り消す/,
   );
   assert.match(
     memberInvitationErrorMessage(new Error("monthly_invitation_limit"), false),

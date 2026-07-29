@@ -10,8 +10,8 @@ export function memberInvitationErrorMessage(value: unknown, ja: boolean): strin
 
   if (error.includes("active_invitation_limit")) {
     return ja
-      ? "未使用の招待が3件あります。使用または期限切れのあとに、もう一度発行できます。"
-      : "You already have three unused invitations. Create another after one is used or expires.";
+      ? "未使用の招待が3件あります。送っていない招待を下の一覧から取り消すか、使用・期限切れのあとに発行してください。"
+      : "You already have three unused invitations. Revoke an unsent one below, or create another after one is used or expires.";
   }
   if (error.includes("monthly_invitation_limit")) {
     return ja

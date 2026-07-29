@@ -102,6 +102,18 @@ button { cursor: pointer; }
 .invite-qr { display: grid; justify-items: center; gap: 10px; padding: 20px; background: var(--surface-soft); border: 1px solid var(--line); }
 .invite-qr img { width: min(280px, 100%); height: auto; background: #fff; }
 .invite-qr p { margin: 0; color: var(--muted); font-size: 12px; text-align: center; }
+.invite-active-list { gap: 14px; }
+.invite-active-list > .privacy-caption { margin: 0; }
+.invite-active-count { min-width: 30px; height: 30px; display: grid; place-items: center; color: var(--brand); border: 1px solid var(--line); border-radius: 4px; font-size: 12px; font-weight: 800; }
+.invite-active-empty { margin: 0; color: var(--muted); font-size: 13px; }
+.invite-active-rows { border-top: 1px solid var(--line); }
+.invite-active-row { min-height: 64px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.invite-active-row > div:first-child { min-width: 0; display: grid; gap: 3px; }
+.invite-active-row strong, .invite-active-row span { display: block; }
+.invite-active-row strong { font-size: 13px; }
+.invite-active-row span { color: var(--muted); font-size: 11px; line-height: 1.5; }
+.invite-revoke-confirm { display: grid; grid-template-columns: auto auto; justify-items: end; align-items: center; gap: 2px 7px; }
+.invite-revoke-confirm > span { grid-column: 1 / -1; color: var(--danger); font-size: 10px; font-weight: 700; }
 
 .primary-action, .secondary-action {
   min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -1165,6 +1177,10 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 }
 
 @media (max-width: 760px) {
+  .invite-active-row { grid-template-columns: 1fr; align-items: start; }
+  .invite-active-row > .text-danger-action { justify-self: start; }
+  .invite-revoke-confirm { justify-items: start; }
+
   .garage-collections { grid-template-columns: 1fr; }
   .garage-collections > div + div { border-left: 0; border-top: 1px solid var(--line); }
   .garage-unclassified { grid-template-columns: 1fr; }
