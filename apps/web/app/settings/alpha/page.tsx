@@ -5,7 +5,8 @@ import {
   isAlphaActivityTrackingEnabled,
   requiresGoogleOAuthTestUserRegistration,
 } from "@/lib/runtime-config";
-import { Check, Clipboard, Link2, LoaderCircle, ShieldCheck } from "lucide-react";
+import { BookOpenCheck, Check, Clipboard, Link2, LoaderCircle, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { useApp } from "@/lib/app-context";
 import { buildInvitationUrl, createInvitationToken, hashInvitationToken } from "@/lib/invitation-link";
@@ -137,6 +138,14 @@ export default function AlphaSettingsPage() {
         <div><strong>{metrics && metrics.mau ? `${Math.round((metrics.valueMau / metrics.mau) * 100)}%` : "-"}</strong><span>Value MAU Rate</span></div>
       </section>
       {!isAlphaActivityTrackingEnabled() && <p className="privacy-caption">{ja ? "月次計測はDB更新と環境設定が完了するまで無効です。" : "Monthly measurement remains disabled until its database update and environment setting are complete."}</p>}
+      <section className="settings-section">
+        <div className="section-heading compact">
+          <div><span className="eyebrow">CATALOG</span><h2>{ja ? "車両カタログを確認" : "Review vehicle catalog"}</h2></div>
+          <BookOpenCheck size={22} aria-hidden="true" />
+        </div>
+        <p className="settings-help">{ja ? "αテスターから届いた表記・車種・仕様の提案を確認してから反映します。" : "Review tester suggestions about names, models, and specifications before publishing them."}</p>
+        <Link href="/settings/alpha/catalog" className="secondary-action">{ja ? "確認待ちの提案を開く" : "Open review queue"}</Link>
+      </section>
       <form className="vehicle-form" onSubmit={createInvitation}>
         <section className="form-section">
           <div className="section-heading compact"><div><span className="eyebrow">SINGLE USE</span><h2>{ja ? "1人用の招待URL" : "Single-use invitation"}</h2></div><Link2 size={22} aria-hidden="true" /></div>

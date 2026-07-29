@@ -6,6 +6,8 @@ import {
   classifyJournalForKnowledge,
   isProfileBlocked,
   isProfileMuted,
+  journalContentBlocksForViewer,
+  journalMediaForViewer,
   journalOccurrenceLabel,
   maintenanceRecordDateLabel,
   resolveJournalDisplayContent,
@@ -35,13 +37,27 @@ import { recordOdometerLabel } from "@/components/record-card";
 export default function JournalDetailPage() {
   const { id } = useParams<{ id: string }>();
   const searchParams = useSearchParams();
-  const { data, locale, signedIn, toggleMuteProfile, toggleBlockProfile } = useApp();
+  const {
+    data,
+    locale,
+    signedIn,
+    isRemoteAlpha,
+    sharedJournals,
+    sharedProfiles,
+    toggleMuteProfile,
+    toggleBlockProfile,
+  } = useApp();
   const [showOriginal, setShowOriginal] = useState(false);
   const ja = locale === "ja";
-  const journal = data.journals.find((item) => item.id === id);
+  const localJournal = data.journals.find((item) => item.id === id);
+  const sharedJournal = sharedJournals.find((item) => item.id === id);
+  const journal = localJournal ?? sharedJournal;
+  const isSharedPost = !localJournal && Boolean(sharedJournal);
   const blocked = signedIn && journal ? isProfileBlocked(data, journal.authorProfileId) : false;
   const canView = journal && (
-    signedIn
+    isSharedPost
+      ? signedIn
+      : signedIn
       ? canCurrentProfileViewJournal(data, journal)
       : journal.visibility === "public" && journal.moderationState === "visible"
   );
@@ -83,12 +99,23 @@ export default function JournalDetailPage() {
 
   const author = data.profiles.find(
     (profile) => profile.id === journal.authorProfileId,
-  );
+  ) ?? sharedProfiles.find((profile) => profile.id === journal.authorProfileId);
   const record = data.records.find((item) => item.id === journal.linkedRecordId);
   const knowledgeClass = classifyJournalForKnowledge(journal);
   const ownJournal = signedIn && journal.authorProfileId === data.currentProfileId;
   const automaticDisplay = resolveJournalDisplayContent(data, journal, locale);
   const display = resolveJournalDisplayContent(data, journal, locale, showOriginal);
+  const visibleMedia = journalMediaForViewer(journal, ownJournal);
+  const visibleMediaIds = new Set(visibleMedia.map((attachment) => attachment.id));
+  const visibleContentBlocks = journalContentBlocksForViewer(journal, ownJournal);
+  const visibleBlockIds = new Set(visibleContentBlocks.map((block) => block.id));
+  const displayContentBlocks = display.contentBlocks.filter(
+    (block) =>
+      block.type === "text"
+        ? visibleBlockIds.has(block.id)
+        : visibleMediaIds.has(block.mediaId),
+  );
+  const visibleJournal = { ...journal, media: visibleMedia };
 
   return (
     <div className="page-stack journal-detail-page">
@@ -133,7 +160,11 @@ export default function JournalDetailPage() {
             </span>
             <div>
               <strong>
-                {author && <Link href={`/profile/${author.id}`}>{author.displayName}</Link>}
+                {author && (
+                  isSharedPost
+                    ? author.displayName
+                    : <Link href={`/profile/${author.id}`}>{author.displayName}</Link>
+                )}
               </strong>
               <small>{journal.vehicleLabel}</small>
             </div>
@@ -151,7 +182,7 @@ export default function JournalDetailPage() {
                   </Link>
                 </>
               )}
-              {signedIn && journal.authorProfileId !== data.currentProfileId && author && (
+              {signedIn && !isSharedPost && journal.authorProfileId !== data.currentProfileId && author && (
                 <ProfileSafetyMenu
                   profileName={author.displayName}
                   muted={isProfileMuted(data, author.id)}
@@ -178,7 +209,9 @@ export default function JournalDetailPage() {
               ) : (
                 <BookOpen size={16} aria-hidden="true" />
               )}
-              {visibilityLabel(journal.visibility, ja)}
+              {journal.visibility === "public" && isRemoteAlpha
+                ? ja ? "α参加者に公開" : "Shared with alpha participants"
+                : visibilityLabel(journal.visibility, ja)}
             </span>
             <span>
               <Heart size={16} aria-hidden="true" />
@@ -203,7 +236,7 @@ export default function JournalDetailPage() {
           </div>
         )}
 
-        <JournalContent journal={journal} locale={locale} contentBlocks={display.contentBlocks} />
+        <JournalContent journal={visibleJournal} locale={locale} contentBlocks={displayContentBlocks} />
       </article>
 
       {record && (

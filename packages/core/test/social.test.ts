@@ -11,6 +11,8 @@ import {
   isFollowing,
   isProfileBlocked,
   isProfileMuted,
+  journalContentBlocksForViewer,
+  journalMediaForViewer,
   journalOccurrenceDate,
   journalOccurrenceLabel,
   journalToDraft,
@@ -247,7 +249,7 @@ test("allows a linked maintenance record without requiring journal prose", () =>
   assert.equal(result.valid, true);
 });
 
-test("preserves media metadata and blocks unprocessed media from publication", () => {
+test("preserves private media on a shared journal without exposing it to other viewers", () => {
   const media = [{
     id: "media-test",
     kind: "image" as const,
@@ -267,8 +269,24 @@ test("preserves media metadata and blocks unprocessed media from publication", (
     ...privateDraft,
     visibility: "public",
   });
-  assert.equal(publicValidation.valid, false);
-  assert.equal(publicValidation.errors.media, "private_only");
+  assert.equal(publicValidation.valid, true);
+
+  const publicPost = {
+    ...addJournalToData(
+      cloneDemoData(),
+      { ...privateDraft, visibility: "public" },
+      "ja",
+      "2026-07-15T10:00:00.000Z",
+    ).journal,
+  };
+  assert.equal(journalMediaForViewer(publicPost, true).length, 1);
+  assert.equal(journalMediaForViewer(publicPost, false).length, 0);
+  assert.equal(
+    journalContentBlocksForViewer(publicPost, false).some(
+      (block) => block.type === "media",
+    ),
+    false,
+  );
 
   const created = addJournalToData(
     cloneDemoData(),

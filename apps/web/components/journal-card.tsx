@@ -1,6 +1,10 @@
 "use client";
 
-import { journalOccurrenceLabel, resolveJournalDisplayContent } from "@mechori/core";
+import {
+  journalMediaForViewer,
+  journalOccurrenceLabel,
+  resolveJournalDisplayContent,
+} from "@mechori/core";
 import type {
   ContentTranslation,
   GarageJournalPost,
@@ -22,6 +26,9 @@ export function JournalCard({
   safety,
   mediaPriority = false,
   translations = [],
+  authorLinkEnabled = true,
+  alphaAudience = false,
+  showPrivateMedia = false,
 }: {
   journal: GarageJournalPost;
   author?: SocialProfile;
@@ -29,6 +36,9 @@ export function JournalCard({
   locale: Locale;
   mediaPriority?: boolean;
   translations?: ContentTranslation[];
+  authorLinkEnabled?: boolean;
+  alphaAudience?: boolean;
+  showPrivateMedia?: boolean;
   safety?: {
     muted: boolean;
     blocked: boolean;
@@ -38,6 +48,7 @@ export function JournalCard({
 }) {
   const ja = locale === "ja";
   const display = resolveJournalDisplayContent({ contentTranslations: translations }, journal, locale);
+  const visibleMedia = journalMediaForViewer(journal, showPrivateMedia);
   return (
     <article className="journal-card">
       <div className="journal-card-meta">
@@ -46,9 +57,9 @@ export function JournalCard({
         </span>
         <div>
           <strong>
-            {author ? (
+            {author && authorLinkEnabled ? (
               <Link href={`/profile/${author.id}`}>{author.displayName}</Link>
-            ) : ja ? "不明な投稿者" : "Unknown author"} / {journal.vehicleLabel}
+            ) : author ? author.displayName : ja ? "不明な投稿者" : "Unknown author"} / {journal.vehicleLabel}
           </strong>
           <small>
             {journalOccurrenceLabel(journal, locale)}
@@ -69,7 +80,7 @@ export function JournalCard({
           )}
         </div>
       </div>
-      <JournalMedia attachments={journal.media} locale={locale} compact priority={mediaPriority} />
+      <JournalMedia attachments={visibleMedia} locale={locale} compact priority={mediaPriority} />
       <h3>{display.title}</h3>
       <p>{display.body}</p>
       {!display.translated && display.sourceLanguage !== locale && (
@@ -95,7 +106,9 @@ export function JournalCard({
           )}
           {journal.visibility === "followers"
             ? translate(locale, "followersOnly")
-            : translate(locale, journal.visibility)}
+            : journal.visibility === "public" && alphaAudience
+              ? ja ? "α参加者に公開" : "Shared with alpha participants"
+              : translate(locale, journal.visibility)}
         </span>
         <span>
           <Heart size={15} aria-hidden="true" />

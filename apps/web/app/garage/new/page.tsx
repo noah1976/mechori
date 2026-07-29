@@ -6,13 +6,16 @@ import {
   preparePrivateAlphaImage,
 } from "@/lib/image-preparation";
 import {
+  collaborativeMatchIdentityOverride,
   createEmptyVehicleDraft,
   relatedVehicleIdentities,
+  resolveCollaborativeCatalog,
   resolveVehicleIdentity,
   resolveVehicleSpecification,
   validateVehicleDraft,
   type VehicleDraft,
 } from "@mechori/core";
+import { usePublishedVehicleCatalog } from "@/lib/use-vehicle-catalog";
 import { translate } from "@mechori/i18n";
 import { Bike, Camera, CarFront, History, ImagePlus, Save, ShieldCheck } from "lucide-react";
 import Image from "next/image";
@@ -37,11 +40,29 @@ function NewVehicleContent() {
   const [preparingImage, setPreparingImage] = useState(false);
   const [imageError, setImageError] = useState("");
   const [saveError, setSaveError] = useState(false);
+  const { snapshot: collaborativeCatalog } = usePublishedVehicleCatalog(isRemoteAlpha);
   const validation = useMemo(() => validateVehicleDraft(draft), [draft]);
-  const identity = useMemo(
+  const staticIdentity = useMemo(
     () => resolveVehicleIdentity(draft.make, draft.model),
     [draft.make, draft.model],
   );
+  const collaborativeMatch = useMemo(
+    () => collaborativeCatalog && draft.make.trim() && draft.model.trim()
+      ? resolveCollaborativeCatalog(collaborativeCatalog, draft.make, draft.model)
+      : undefined,
+    [collaborativeCatalog, draft.make, draft.model],
+  );
+  const collaborativeIdentity = useMemo(
+    () => collaborativeMatch
+      ? collaborativeMatchIdentityOverride(
+          collaborativeMatch,
+          draft.make,
+          draft.model,
+        )
+      : undefined,
+    [collaborativeMatch, draft.make, draft.model],
+  );
+  const identity = collaborativeIdentity ?? staticIdentity;
   const relatedIdentities = useMemo(
     () => relatedVehicleIdentities(identity.marketNameId, locale),
     [identity.marketNameId, locale],
@@ -91,7 +112,10 @@ function NewVehicleContent() {
     if (!validation.valid || (!draft.imagePath && !isPrevious) || saving || preparingImage) return;
     setSaving(true);
     try {
-      const vehicle = await addVehicle(draft);
+      const vehicle = await addVehicle(
+        draft,
+        collaborativeIdentity ? { identity: collaborativeIdentity } : undefined,
+      );
       router.push(isPrevious
         ? `/garage?vehicle=${encodeURIComponent(vehicle.id)}`
         : `/garage/${encodeURIComponent(vehicle.id)}/welcome`);
@@ -168,6 +192,20 @@ function NewVehicleContent() {
             )}
             {draft.model.trim() && identity.matchStatus !== "matched_alias" && (
               <p>{translate(locale, "unmatchedIdentityNotice")}</p>
+            )}
+            {collaborativeMatch?.status === "candidate" && (
+              <p>
+                {locale === "ja"
+                  ? "近いカタログ候補がありますが、自動では確定しません。登録後に内容を補足できます。"
+                  : "A close catalog candidate exists, but it will not be confirmed automatically. You can add details after registration."}
+              </p>
+            )}
+            {collaborativeMatch?.status === "ambiguous" && (
+              <p>
+                {locale === "ja"
+                  ? "複数の候補があります。入力内容をそのまま保存し、後から確認できます。"
+                  : "More than one candidate exists. Your original text will be saved for later review."}
+              </p>
             )}
             {specification.generationId && (
               <p>{translate(locale, specification.matchStatus === "confirmed_model_code"

@@ -15,10 +15,11 @@ import {
   type JournalEventType,
   type JournalDraft,
   type JournalMediaAttachment,
+  type JournalVisibility,
   type Vehicle,
 } from "@mechori/core";
 import { translate, type TranslationKey } from "@mechori/i18n";
-import { Camera, ImagePlus, Save, ShieldCheck } from "lucide-react";
+import { Camera, ImagePlus, Save, ShieldAlert, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -53,7 +54,13 @@ export function QuickEventForm({
   vehicle: Vehicle;
   journal?: GarageJournalPost;
 }) {
-  const { locale, addJournal, updateJournal } = useApp();
+  const {
+    locale,
+    addJournal,
+    updateJournal,
+    isRemoteAlpha,
+    alphaJournalSharingAvailable,
+  } = useApp();
   const editing = Boolean(journal);
   const [eventType, setEventType] = useState<JournalEventType>(journal?.eventType ?? "photo");
   const [occurrence, setOccurrence] = useState<OccurrenceDraft>(() => {
@@ -74,6 +81,12 @@ export function QuickEventForm({
   const [error, setError] = useState<TranslationKey | "">("");
   const [saving, setSaving] = useState(false);
   const [preparing, setPreparing] = useState(false);
+  const [visibility, setVisibility] = useState<JournalVisibility>(
+    isRemoteAlpha && journal?.visibility === "followers"
+      ? "private"
+      : journal?.visibility ?? "private",
+  );
+  const [publicationError, setPublicationError] = useState("");
   const router = useRouter();
   const existingAttachment = journal?.media[0];
   const vehicleModel = displayVehicleModel(vehicle, locale);
@@ -100,8 +113,17 @@ export function QuickEventForm({
       return;
     }
     if (saving || preparing) return;
+    if (isRemoteAlpha && visibility === "public" && !alphaJournalSharingAvailable) {
+      setPublicationError(
+        locale === "ja"
+          ? "共有機能の準備が完了していないため、いまは自分だけに保存してください。"
+          : "Sharing setup is not complete. Save this record for yourself for now.",
+      );
+      return;
+    }
     setSaving(true);
     setError("");
+    setPublicationError("");
     try {
       const selectedType = eventTypes.find((item) => item.value === eventType)!;
       const mediaId = image ? `journal-media-${crypto.randomUUID()}` : existingAttachment?.id;
@@ -117,7 +139,13 @@ export function QuickEventForm({
         createdAt: new Date().toISOString(),
         isDemo: false,
       } : undefined;
-      const attachment = newAttachment ?? existingAttachment;
+      const attachment = newAttachment
+        ?? (existingAttachment
+          ? {
+              ...existingAttachment,
+              privacyState: "private_only" as const,
+            }
+          : undefined);
       const draft: JournalDraft = {
         title: translate(locale, selectedType.label),
         sourceLanguage: journal?.sourceLanguage ?? locale,
@@ -132,11 +160,21 @@ export function QuickEventForm({
           ...(attachment ? [{ id: `journal-block-${crypto.randomUUID()}`, type: "media" as const, mediaId: attachment.id }] : []),
           { id: `journal-block-${crypto.randomUUID()}`, type: "text", style: "paragraph", text: note.trim() },
         ],
-        visibility: journal?.visibility ?? "private",
+        visibility,
         knowledgeExtractionConsent: journal?.knowledgeExtractionConsent ?? false,
       };
-      if (validateJournalDraft(draft).errors.occurredOn) {
+      const validation = validateJournalDraft(draft);
+      if (validation.errors.occurredOn) {
         setError("momentDateMissing");
+        setSaving(false);
+        return;
+      }
+      if (!validation.valid) {
+        setPublicationError(
+          locale === "ja"
+            ? "公開範囲と写真の確認状態を見直してください。"
+            : "Check the audience and photo confirmation.",
+        );
         setSaving(false);
         return;
       }
@@ -161,7 +199,14 @@ export function QuickEventForm({
           {image ? <Image src={image.dataUrl} alt="" fill sizes="(max-width: 760px) 100vw, 680px" unoptimized /> : existingImageSource ? <Image src={existingImageSource} alt={existingAttachment?.altText ?? ""} fill sizes="(max-width: 760px) 100vw, 680px" unoptimized /> : <div><Camera size={38} /><strong>{translate(locale, "photoOptional")}</strong><span>{translate(locale, "addTodaysPhoto")}</span></div>}
         </section>
         <label className="photo-pick-action"><ImagePlus size={18} />{preparing ? translate(locale, "preparingPhoto") : image || existingAttachment ? translate(locale, "chooseAnotherPhoto") : translate(locale, "addPhoto")}<input type="file" accept="image/*" onChange={selectPhoto} disabled={preparing || saving} /></label>
-        <p className="image-preparation-note"><ShieldCheck size={15} />{translate(locale, "momentPrivateFirst")}</p>
+        <p className="image-preparation-note">
+          <ShieldCheck size={15} />
+          {isRemoteAlpha
+            ? locale === "ja"
+              ? "写真は自分の非公開履歴に保存されます。"
+              : "The photo is saved in your private history."
+            : translate(locale, "momentPrivateFirst")}
+        </p>
         <fieldset className="event-type-picker"><legend>{translate(locale, "momentKindQuestion")}</legend>{eventTypes.map((item) => <button type="button" key={item.value} className={eventType === item.value ? "is-selected" : ""} aria-pressed={eventType === item.value} onClick={() => setEventType(item.value)}>{translate(locale, item.label)}</button>)}</fieldset>
         <OccurrenceDateFields
           value={occurrence}
@@ -170,7 +215,75 @@ export function QuickEventForm({
           onChange={(patch) => setOccurrence((current) => ({ ...current, ...patch }))}
         />
         <label className="field quick-note-field"><span>{translate(locale, "oneSentenceRequired")}</span><textarea autoFocus maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} placeholder={translate(locale, "momentPlaceholder")} /></label>
+        <section className="quick-event-audience" aria-labelledby="quick-event-audience-heading">
+          <div>
+            <strong id="quick-event-audience-heading">
+              {locale === "ja" ? "この記録を見る人" : "Who can see this record"}
+            </strong>
+            <small>
+              {locale === "ja"
+                ? "公開は自分で選んだ記録だけ。初期値は自分だけです。"
+                : "Only records you explicitly choose are shared. The default is private."}
+            </small>
+          </div>
+          <div className={`segmented-control ${isRemoteAlpha ? "has-two-options" : ""}`} role="group" aria-label={locale === "ja" ? "公開範囲" : "Audience"}>
+            <button
+              type="button"
+              className={visibility === "private" ? "is-selected" : ""}
+              aria-pressed={visibility === "private"}
+              onClick={() => {
+                setVisibility("private");
+                setPublicationError("");
+              }}
+            >
+              {locale === "ja" ? "自分だけ" : "Only me"}
+            </button>
+            {!isRemoteAlpha && (
+              <button
+                type="button"
+                className={visibility === "followers" ? "is-selected" : ""}
+                aria-pressed={visibility === "followers"}
+                onClick={() => {
+                  setVisibility("followers");
+                  setPublicationError("");
+                }}
+              >
+                {locale === "ja" ? "フォロワー" : "Followers"}
+              </button>
+            )}
+            <button
+              type="button"
+              className={visibility === "public" ? "is-selected" : ""}
+              aria-pressed={visibility === "public"}
+              disabled={isRemoteAlpha && !alphaJournalSharingAvailable}
+              onClick={() => {
+                setVisibility("public");
+                setPublicationError("");
+              }}
+            >
+              {isRemoteAlpha
+                ? locale === "ja" ? "α参加者に公開" : "Alpha participants"
+                : locale === "ja" ? "公開" : "Public"}
+            </button>
+          </div>
+          {isRemoteAlpha && visibility === "public" && (
+            <p className="settings-help">
+              {locale === "ja"
+                ? "ログイン済みのP0・α参加者に、本文と表示用車名を共有します。写真は公開前処理が未実装のため、自分の履歴だけに残ります。"
+                : "The text and vehicle label are shared with signed-in P0 and alpha participants. Photos stay in your private history until public-media processing is ready."}
+            </p>
+          )}
+          {isRemoteAlpha && !alphaJournalSharingAvailable && (
+            <p className="media-publication-gate">
+              <ShieldAlert size={18} aria-hidden="true" />
+              {locale === "ja"
+                ? "共有機能の準備が完了するまでは、自分だけに保存できます。"
+                : "Until sharing setup is complete, records can be saved only for you."}
+            </p>
+          )}
+        </section>
         {error && <p className="form-error-summary" role="alert">{translate(locale, error)}</p>}
+        {publicationError && <p className="form-error-summary" role="alert">{publicationError}</p>}
         <div className="form-actions"><Link href={journal ? `/journal/${journal.id}` : "/garage"} className="secondary-action">{translate(locale, "later")}</Link><button className="primary-action" type="submit" disabled={saving || preparing}><Save size={17} />{translate(locale, saving ? "addingMoment" : "saveMoment")}</button></div>
       </form>
     </div>

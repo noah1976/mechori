@@ -18,7 +18,7 @@ export interface JournalValidationResult {
   valid: boolean;
   errors: Partial<Record<
     "title" | "bodyOriginal" | "media" | "occurredOn",
-    "required" | "private_only" | "invalid" | "description_required"
+    "required" | "invalid" | "description_required"
   >>;
 }
 
@@ -61,13 +61,30 @@ export function validateJournalDraft(draft: JournalDraft): JournalValidationResu
     )
   ) {
     errors.media = "description_required";
-  } else if (
-    draft.visibility !== "private" &&
-    draft.media.some((attachment) => attachment.privacyState !== "public_ready")
-  ) {
-    errors.media = "private_only";
   }
   return { valid: Object.keys(errors).length === 0, errors };
+}
+
+export function journalMediaForViewer(
+  journal: GarageJournalPost,
+  viewerIsAuthor: boolean,
+): GarageJournalPost["media"] {
+  return viewerIsAuthor
+    ? journal.media
+    : journal.media.filter((attachment) => attachment.privacyState === "public_ready");
+}
+
+export function journalContentBlocksForViewer(
+  journal: GarageJournalPost,
+  viewerIsAuthor: boolean,
+): GarageJournalPost["contentBlocks"] {
+  if (viewerIsAuthor) return journal.contentBlocks;
+  const visibleMediaIds = new Set(
+    journalMediaForViewer(journal, false).map((attachment) => attachment.id),
+  );
+  return journal.contentBlocks.filter(
+    (block) => block.type === "text" || visibleMediaIds.has(block.mediaId),
+  );
 }
 
 export function createJournalPost(

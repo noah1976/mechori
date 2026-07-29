@@ -59,7 +59,7 @@ import { translate } from "@mechori/i18n";
 
 const maxMediaCount = 6;
 const maxVideoBytes = 100 * 1024 * 1024;
-const maxPreparedJournalImageBytes = 900 * 1024;
+const maxPreparedJournalImageBytes = 460 * 1024;
 
 interface PendingMedia {
   attachment: JournalMediaAttachment;
@@ -121,7 +121,14 @@ export function JournalForm({
   journal?: GarageJournalPost;
   vehicleId?: string;
 }) {
-  const { data, locale, addJournal, updateJournal } = useApp();
+  const {
+    data,
+    locale,
+    addJournal,
+    updateJournal,
+    isRemoteAlpha,
+    alphaJournalSharingAvailable,
+  } = useApp();
   const router = useRouter();
   const ja = locale === "ja";
   const vehicle = journal?.vehicleId
@@ -221,6 +228,25 @@ export function JournalForm({
     setOmittedMediaCount(0);
     setSubmitted(false);
     setMediaError("");
+  }
+
+  function changeVisibility(visibility: JournalVisibility) {
+    if (isRemoteAlpha && visibility === "followers") return;
+    if (isRemoteAlpha && visibility === "public" && !alphaJournalSharingAvailable) return;
+    setPendingMedia((current) =>
+      current.map((item) => ({
+        ...item,
+        attachment: { ...item.attachment, privacyState: "private_only" },
+      })),
+    );
+    setDraft((current) => ({
+      ...current,
+      visibility,
+      media: current.media.map((attachment) => ({
+        ...attachment,
+        privacyState: "private_only",
+      })),
+    }));
   }
 
   useEffect(() => () => {
@@ -608,10 +634,13 @@ export function JournalForm({
             {ja ? "文章、写真・動画、または関連する整備記録を追加してください。" : "Add text, media, or a related maintenance record."}
           </p>
         )}
-        {pendingMedia.length > 0 && (
+        {pendingMedia.length > 0 && draft.visibility !== "public" && (
           <div className="media-privacy-notice">
             <ShieldAlert size={20} aria-hidden="true" />
-            <div><strong>{ja ? "実ファイル付き投稿は現在、非公開のみ" : "Real media remains private for now"}</strong><p>{ja ? "ナンバー・顔・位置情報の公開前処理が完成するまで、端末内の非公開記録として保存します。" : "Until privacy processing is complete, media stays private on this device."}</p></div>
+            <div>
+              <strong>{ja ? "写真は自分の履歴に非公開保存します" : "Photos stay private in your history"}</strong>
+              <p>{ja ? "P0・αで公開を選んだ場合も、参加者へ共有するのは本文だけです。" : "Even when sharing in P0 or alpha, only the post text is shared with participants."}</p>
+            </div>
           </div>
         )}
       </section>
@@ -624,8 +653,48 @@ export function JournalForm({
 
       <section className="journal-settings">
         <div className="section-heading compact"><div><span className="eyebrow">PRIVACY</span><h2>{ja ? "公開範囲" : "Audience"}</h2></div><ShieldCheck size={21} aria-hidden="true" /></div>
-        <div className="segmented-control" role="group" aria-label={ja ? "公開範囲" : "Audience"}>{([ ["private", ja ? "非公開" : "Private"], ["followers", ja ? "フォロワー" : "Followers"], ["public", ja ? "公開" : "Public"] ] as Array<[JournalVisibility, string]>).map(([value, label]) => <button type="button" className={draft.visibility === value ? "is-selected" : ""} aria-pressed={draft.visibility === value} onClick={() => setDraft((current) => ({ ...current, visibility: value }))} key={value}>{label}</button>)}</div>
-        {validation.errors.media === "private_only" && <div className="media-publication-gate" role="alert"><ShieldAlert size={19} aria-hidden="true" /><span>{ja ? "実ファイルの公開前処理が未実装です。" : "Privacy processing for real media is not implemented."}</span><button type="button" className="secondary-action" onClick={() => setDraft((current) => ({ ...current, visibility: "private" }))}>{ja ? "非公開に戻す" : "Make private"}</button></div>}
+        <div className={`segmented-control ${isRemoteAlpha ? "has-two-options" : ""}`} role="group" aria-label={ja ? "公開範囲" : "Audience"}>
+          {([
+            ["private", ja ? "自分だけ" : "Only me"],
+            ...(!isRemoteAlpha ? [["followers", ja ? "フォロワー" : "Followers"]] : []),
+            ["public", isRemoteAlpha ? (ja ? "α参加者に公開" : "Alpha participants") : (ja ? "公開" : "Public")],
+          ] as Array<[JournalVisibility, string]>).map(([value, label]) => (
+            <button
+              type="button"
+              className={draft.visibility === value ? "is-selected" : ""}
+              aria-pressed={draft.visibility === value}
+              onClick={() => changeVisibility(value)}
+              disabled={isRemoteAlpha && value === "public" && !alphaJournalSharingAvailable}
+              key={value}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {isRemoteAlpha && !alphaJournalSharingAvailable && (
+          <p className="settings-help">
+            {ja
+              ? "共有機能の準備がまだ完了していないため、現在は自分だけに保存できます。"
+              : "Sharing setup is not complete yet, so records can currently be saved only for you."}
+          </p>
+        )}
+        {isRemoteAlpha && draft.visibility === "public" && (
+          <p className="settings-help">
+            {ja
+              ? "ログイン済みのP0・α参加者だけが、投稿本文と表示用車名を見られます。写真と関連する非公開整備記録は共有しません。"
+              : "Signed-in P0 and alpha participants can see the post text and vehicle label. Photos and linked private maintenance records are not shared."}
+          </p>
+        )}
+        {isRemoteAlpha && draft.visibility === "public" && draft.media.length > 0 && (
+          <div className="media-publication-gate" role="status">
+            <ShieldCheck size={19} aria-hidden="true" />
+            <span>
+              {ja
+                ? "写真・動画は自分の履歴だけに保存し、α参加者には本文だけを共有します。"
+                : "Photos and videos stay in your private history; alpha participants receive the text only."}
+            </span>
+          </div>
+        )}
         <label className="consent-option"><input type="checkbox" checked={draft.knowledgeExtractionConsent} onChange={(event) => setDraft((current) => ({ ...current, knowledgeExtractionConsent: event.target.checked }))} /><span><strong>{ja ? "本文をナレッジ検索の参考候補にする" : "Allow this story to inform knowledge search"}</strong><small>{ja ? "AIは本文を代筆せず、公開後も出典付きの未確認投稿として扱います。" : "AI never writes the story and treats it as cited, unverified owner content."}</small></span></label>
       </section>
 
@@ -634,17 +703,6 @@ export function JournalForm({
           <div ref={submitFeedbackRef} className="form-submit-feedback is-error" role="alert">
             <ShieldAlert size={18} aria-hidden="true" />
             <span>{journalValidationMessage(validation, ja)}</span>
-            {validation.errors.media === "private_only" && (
-              <button
-                type="button"
-                className="secondary-action"
-                onClick={() =>
-                  setDraft((current) => ({ ...current, visibility: "private" }))
-                }
-              >
-                {ja ? "非公開に変更" : "Make private"}
-              </button>
-            )}
           </div>
         )}
         {saveTakingLong && (
@@ -692,11 +750,6 @@ function journalValidationMessage(
   }
   if (validation.errors.media === "description_required") {
     issues.push(ja ? "写真・動画の説明" : "media description");
-  }
-  if (validation.errors.media === "private_only") {
-    return ja
-      ? "この写真・動画は現在、非公開でのみ保存できます。公開範囲を「非公開」に変更してください。"
-      : "This media can currently be saved only as private. Change the audience to Private.";
   }
   return ja
     ? `保存前に確認が必要です：${issues.join("、")}。`

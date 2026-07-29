@@ -21,5 +21,7 @@ export * from "./translations.ts";
 export * from "./types.ts";
 export * from "./vehicle-relationship.ts";
 export * from "./vehicle-catalog.ts";
+export * from "./vehicle-catalog-contribution.ts";
+export * from "./alpha-journal-sharing.ts";
 export * from "./vehicles.ts";
 export * from "./workspace.ts";

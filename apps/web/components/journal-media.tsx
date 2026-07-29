@@ -111,7 +111,13 @@ function JournalMediaItem({
       )}
       {!attachment.isDemo && attachment.source === "local_blob" && (
         <figcaption>
-          {locale === "ja" ? "端末内保存・非公開メディア" : "Stored on this device · private media"}
+          {attachment.privacyState === "public_ready"
+            ? locale === "ja"
+              ? "公開確認済み画像"
+              : "Confirmed for sharing"
+            : locale === "ja"
+              ? "端末内保存・非公開メディア"
+              : "Stored on this device · private media"}
         </figcaption>
       )}
     </figure>

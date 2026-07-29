@@ -3,7 +3,7 @@
 import { useApp } from "@/lib/app-context";
 import { displayVehicleModel, formatOwnershipDuration, summarizeVehicleRelationship } from "@mechori/core";
 import { translate } from "@mechori/i18n";
-import { ArrowRight, Camera, CarFront, CheckCircle2, Plus } from "lucide-react";
+import { ArrowRight, BookOpenCheck, Camera, CarFront, CheckCircle2, Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -51,6 +51,7 @@ export default function VehicleWelcomePage() {
         <div className="welcome-action-buttons">
           <Link href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`} className="primary-action"><Camera size={18} />{translate(locale, "addMoment")}<ArrowRight size={17} /></Link>
           <Link href="/garage" className="secondary-action"><Plus size={17} />{translate(locale, "viewVehiclePageNow")}</Link>
+          <Link href={`/garage/${encodeURIComponent(vehicle.id)}/catalog`} className="secondary-action"><BookOpenCheck size={17} />{ja ? "この一台をカタログに加える" : "Add this vehicle to the catalog"}</Link>
         </div>
       </section>
     </div>

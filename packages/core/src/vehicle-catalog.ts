@@ -71,6 +71,7 @@ interface MarketNameDefinition {
   names: Record<Locale, string>;
   aliases: string[];
   defaultGenerationId?: string;
+  allowSpecificationSuffix?: boolean;
 }
 
 interface MarketNameRelationDefinition {
@@ -113,8 +114,13 @@ const BRANDS: BrandDefinition[] = [
   },
   { id: "honda", canonicalName: "HONDA", aliases: ["HONDA", "Honda", "本田", "ホンダ"] },
   { id: "toyota", canonicalName: "TOYOTA", aliases: ["TOYOTA", "Toyota", "トヨタ"] },
+  { id: "lexus", canonicalName: "LEXUS", aliases: ["LEXUS", "Lexus", "レクサス"] },
   { id: "suzuki", canonicalName: "SUZUKI", aliases: ["SUZUKI", "Suzuki", "スズキ"] },
   { id: "mazda", canonicalName: "MAZDA", aliases: ["MAZDA", "Mazda", "マツダ"] },
+  { id: "eunos", canonicalName: "EUNOS", aliases: ["EUNOS", "Eunos", "ユーノス"] },
+  { id: "efini", canonicalName: "ɛ̃FINI", aliases: ["ɛ̃FINI", "EFINI", "Efini", "アンフィニ"] },
+  { id: "autozam", canonicalName: "AUTOZAM", aliases: ["AUTOZAM", "Autozam", "オートザム"] },
+  { id: "subaru", canonicalName: "SUBARU", aliases: ["SUBARU", "Subaru", "スバル"] },
   { id: "mg", canonicalName: "MG", aliases: ["MG", "エムジー"] },
   { id: "bertone", canonicalName: "BERTONE", aliases: ["BERTONE", "Bertone", "ベルトーネ"] },
   { id: "alfa-romeo", canonicalName: "ALFA ROMEO", aliases: ["ALFA ROMEO", "Alfa Romeo", "アルファロメオ"] },
@@ -309,16 +315,9 @@ const MARKET_NAMES: MarketNameDefinition[] = [
     brandId: "peugeot",
     region: "global",
     names: { ja: "205", en: "205" },
-    aliases: [
-      "205",
-      "205 GTI",
-      "205 GTi",
-      "205 GTI 1.6",
-      "205 GTI 1.9",
-      "205 Turbo 16",
-      "205 T16",
-    ],
+    aliases: ["205"],
     defaultGenerationId: "peugeot-205-first",
+    allowSpecificationSuffix: true,
   },
   {
     id: "lancia-delta-global",
@@ -326,22 +325,9 @@ const MARKET_NAMES: MarketNameDefinition[] = [
     brandId: "lancia",
     region: "global",
     names: { ja: "デルタ", en: "Delta" },
-    aliases: [
-      "Delta",
-      "デルタ",
-      "Delta HF 4WD",
-      "Delta HF Integrale",
-      "Delta HF Integrale 8V",
-      "Delta HF Integrale 16V",
-      "Delta HF Integrale Evoluzione",
-      "Delta HF Integrale Evoluzione I",
-      "Delta HF Integrale Evoluzione II",
-      "デルタ HF インテグラーレ",
-      "デルタ HF インテグラーレ 16V",
-      "デルタ エヴォリツォーネ I",
-      "デルタ エヴォリツォーネ II",
-    ],
+    aliases: ["Delta", "デルタ"],
     defaultGenerationId: "lancia-delta-first",
+    allowSpecificationSuffix: true,
   },
 ];
 
@@ -755,11 +741,20 @@ export function resolveVehicleIdentity(make: string, model: string): VehicleIden
   const modelKey = aliasKey(modelInput);
   const brand = BRANDS.find((item) => item.aliases.some((alias) => aliasKey(alias) === makeKey));
   const marketName = brand
-    ? MARKET_NAMES.find(
-        (item) =>
-          item.brandId === brand.id &&
-          item.aliases.some((alias) => aliasKey(alias) === modelKey),
-      )
+    ? MARKET_NAMES
+        .filter((item) => item.brandId === brand.id)
+        .map((item) => ({
+          item,
+          matchLength: item.aliases
+            .map((alias) => aliasKey(alias))
+            .filter((key) =>
+              key === modelKey
+              || (item.allowSpecificationSuffix && key.length > 0 && modelKey.startsWith(key)),
+            )
+            .reduce((length, key) => Math.max(length, key.length), 0),
+        }))
+        .filter(({ matchLength }) => matchLength > 0)
+        .sort((left, right) => right.matchLength - left.matchLength)[0]?.item
     : undefined;
   const familyNames = marketName
     ? MARKET_NAMES.filter((item) => item.familyId === marketName.familyId)

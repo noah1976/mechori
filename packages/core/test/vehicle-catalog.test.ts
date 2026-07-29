@@ -34,6 +34,21 @@ test("standardizes a Japanese make alias while preserving the owner input", () =
   assert.equal(displayVehicleModel(vehicle, "en"), "Barchetta");
 });
 
+test("keeps Mazda marques and Toyota/Lexus marques distinct", () => {
+  assert.equal(resolveVehicleIdentity("マツダ", "不明").canonicalMake, "MAZDA");
+  assert.equal(resolveVehicleIdentity("ユーノス", "不明").canonicalMake, "EUNOS");
+  assert.equal(resolveVehicleIdentity("アンフィニ", "不明").canonicalMake, "ɛ̃FINI");
+  assert.equal(resolveVehicleIdentity("オートザム", "不明").canonicalMake, "AUTOZAM");
+  assert.equal(resolveVehicleIdentity("トヨタ", "不明").canonicalMake, "TOYOTA");
+  assert.equal(resolveVehicleIdentity("レクサス", "不明").canonicalMake, "LEXUS");
+});
+
+test("normalizes Subaru marque names without treating its former company name as an exact alias", () => {
+  assert.equal(resolveVehicleIdentity("スバル", "レオーネ").canonicalMake, "SUBARU");
+  assert.equal(resolveVehicleIdentity("富士重工", "レオーネ").canonicalMake, "富士重工");
+  assert.equal(resolveVehicleIdentity("富士重工", "レオーネ").matchStatus, "unmatched");
+});
+
 test("links Vitz and Yaris to one family without erasing their market names", () => {
   const vitz = resolveVehicleIdentity("トヨタ", "ヴィッツ");
   const yaris = resolveVehicleIdentity("TOYOTA", "YARIS");

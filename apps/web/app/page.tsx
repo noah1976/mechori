@@ -9,6 +9,7 @@ import {
   buildMonthlyOwnerSummary,
   getFollowingFeed,
   getPreferredVehicle,
+  journalMediaForViewer,
   maintenanceRecordDateKey,
   resolveJournalDisplayContent,
 } from "@mechori/core";
@@ -32,14 +33,31 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 export default function HomePage() {
-  const { data, locale, signedIn } = useApp();
+  const {
+    data,
+    locale,
+    signedIn,
+    isRemoteAlpha,
+    sharedJournals,
+    sharedProfiles,
+  } = useApp();
   const vehicle = getPreferredVehicle(data.vehicles);
   const recent = [...data.records]
     .sort((a, b) =>
       maintenanceRecordDateKey(b).localeCompare(maintenanceRecordDateKey(a)))
     .slice(0, 2);
+  const ownJournalIds = new Set(data.journals.map((journal) => journal.id));
   const allFeed = signedIn
-    ? getFollowingFeed(data)
+    ? [
+        ...getFollowingFeed(data),
+        ...(isRemoteAlpha
+          ? sharedJournals.filter((journal) => !ownJournalIds.has(journal.id))
+          : []),
+      ].sort((left, right) =>
+        (right.publishedAt ?? right.createdAt).localeCompare(
+          left.publishedAt ?? left.createdAt,
+        ),
+      )
     : data.journals
         .filter((journal) => journal.visibility === "public")
         .sort((left, right) =>
@@ -47,7 +65,12 @@ export default function HomePage() {
             left.publishedAt ?? left.createdAt,
           ),
         );
-  const featuredJournal = allFeed.find((journal) => journal.media.length > 0) ?? allFeed[0];
+  const visibleMediaFor = (journal: (typeof allFeed)[number]) =>
+    journalMediaForViewer(
+      journal,
+      signedIn && journal.authorProfileId === data.currentProfileId,
+    );
+  const featuredJournal = allFeed.find((journal) => visibleMediaFor(journal).length > 0) ?? allFeed[0];
   const featuredDisplay = featuredJournal
     ? resolveJournalDisplayContent(data, featuredJournal, locale)
     : undefined;
@@ -157,9 +180,9 @@ export default function HomePage() {
 
         {featuredJournal && (
           <Link href={`/journal/${featuredJournal.id}`} className="home-featured-journal">
-            <JournalMedia attachments={featuredJournal.media} locale={locale} compact priority />
+            <JournalMedia attachments={visibleMediaFor(featuredJournal)} locale={locale} compact priority />
             <div className="home-featured-copy">
-              <span className="eyebrow">{signedIn ? "FROM YOUR FOLLOWING" : "PUBLIC RECORD"}</span>
+              <span className="eyebrow">{signedIn ? isRemoteAlpha ? "FROM ALPHA GARAGES" : "FROM YOUR FOLLOWING" : "PUBLIC RECORD"}</span>
               <h2>{featuredDisplay?.title}</h2>
               <p>{featuredDisplay?.body}</p>
               <footer><span>{featuredJournal.vehicleLabel}</span><span><Heart size={15} aria-hidden="true" />{featuredJournal.appreciationCount}</span></footer>
@@ -235,14 +258,23 @@ export default function HomePage() {
             <JournalCard
               key={journal.id}
               journal={journal}
-              author={data.profiles.find(
-                (profile) => profile.id === journal.authorProfileId,
-              )}
+              author={
+                data.profiles.find(
+                  (profile) => profile.id === journal.authorProfileId,
+                ) ?? sharedProfiles.find(
+                  (profile) => profile.id === journal.authorProfileId,
+                )
+              }
               record={data.records.find(
                 (record) => record.id === journal.linkedRecordId,
               )}
               locale={locale}
               translations={data.contentTranslations}
+              authorLinkEnabled={!sharedProfiles.some(
+                (profile) => profile.id === journal.authorProfileId,
+              )}
+              alphaAudience={isRemoteAlpha}
+              showPrivateMedia={signedIn && journal.authorProfileId === data.currentProfileId}
             />
           ))}
         </div>

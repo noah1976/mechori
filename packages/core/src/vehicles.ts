@@ -7,11 +7,18 @@ import type {
 import {
   resolveVehicleIdentity,
   resolveVehicleSpecification,
+  type VehicleIdentityCandidate,
+  type VehicleSpecificationCandidate,
 } from "./vehicle-catalog.ts";
 
 export interface VehicleDraftValidationResult {
   valid: boolean;
   errors: Partial<Record<keyof VehicleDraft, "required" | "invalid">>;
+}
+
+export interface VehicleCatalogResolutionOverride {
+  identity?: VehicleIdentityCandidate;
+  specification?: VehicleSpecificationCandidate;
 }
 
 export function createEmptyVehicleDraft(): VehicleDraft {
@@ -141,19 +148,28 @@ export function validateVehicleDraft(
 export function addVehicleToData(
   data: AppData,
   draft: VehicleDraft,
-  now = new Date().toISOString(),
+  catalogResolutionOrNow: VehicleCatalogResolutionOverride | string = {},
+  nowInput = new Date().toISOString(),
 ): { data: AppData; vehicle: Vehicle } {
+  const catalogResolution = typeof catalogResolutionOrNow === "string"
+    ? {}
+    : catalogResolutionOrNow;
+  const now = typeof catalogResolutionOrNow === "string"
+    ? catalogResolutionOrNow
+    : nowInput;
   const validation = validateVehicleDraft(draft, new Date(now).getUTCFullYear());
   if (!validation.valid) throw new Error("invalid_vehicle_draft");
 
   const odometer = draft.odometer ? Number(draft.odometer) : 0;
   const episodeId = `episode-${crypto.randomUUID()}`;
-  const identity = resolveVehicleIdentity(draft.make, draft.model);
-  const specification = resolveVehicleSpecification(identity.modelFamilyId, {
-    ...draft,
-    generationId: identity.generationId,
-    modelName: draft.model,
-  });
+  const identity = catalogResolution.identity
+    ?? resolveVehicleIdentity(draft.make, draft.model);
+  const specification = catalogResolution.specification
+    ?? resolveVehicleSpecification(identity.modelFamilyId, {
+      ...draft,
+      generationId: identity.generationId,
+      modelName: draft.model,
+    });
   const vehicle: Vehicle = {
     id: `vehicle-${crypto.randomUUID()}`,
     ownerProfileId: data.currentProfileId,

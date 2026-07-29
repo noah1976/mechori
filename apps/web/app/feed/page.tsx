@@ -17,9 +17,29 @@ import Link from "next/link";
 import { useEffect } from "react";
 
 export default function FeedPage() {
-  const { data, locale, toggleFollow, toggleMuteProfile, toggleBlockProfile, recordEngagement } = useApp();
+  const {
+    data,
+    locale,
+    isRemoteAlpha,
+    sharedJournals,
+    sharedProfiles,
+    toggleFollow,
+    toggleMuteProfile,
+    toggleBlockProfile,
+    recordEngagement,
+  } = useApp();
   const ja = locale === "ja";
-  const feed = getFollowingFeed(data);
+  const ownJournalIds = new Set(data.journals.map((journal) => journal.id));
+  const feed = [
+    ...getFollowingFeed(data),
+    ...(isRemoteAlpha
+      ? sharedJournals.filter((journal) => !ownJournalIds.has(journal.id))
+      : []),
+  ].sort((left, right) =>
+    (right.publishedAt ?? right.createdAt).localeCompare(
+      left.publishedAt ?? left.createdAt,
+    ),
+  );
   const targets = createFollowTargets(data);
   const safetyRelations = data.profileSafetyRelations.filter(
     (relation) => relation.actorProfileId === data.currentProfileId,
@@ -31,10 +51,14 @@ export default function FeedPage() {
       <DemoNotice />
       <header className="page-header">
         <div>
-          <span className="eyebrow">FOLLOWING</span>
-          <h1>{translate(locale, "feed")}</h1>
+          <span className="eyebrow">{isRemoteAlpha ? "ALPHA GARAGES" : "FOLLOWING"}</span>
+          <h1>{isRemoteAlpha ? (ja ? "みんなの愛車記録" : "Alpha vehicle records") : translate(locale, "feed")}</h1>
           <p>
-            {ja
+            {isRemoteAlpha
+              ? ja
+                ? "一台ずつの記録を持ち寄って、P0・αのガレージを一緒に育てます。本人が公開を選んだ記録だけが並び、人気は整備情報の正しさを表しません。"
+                : "We are growing the P0 and alpha garages together, one vehicle record at a time. Only records explicitly shared by their authors appear here, and popularity never determines maintenance accuracy."
+              : ja
               ? "人だけでなく、気になる一台や車種の続きを時系列で追えます。人気はナレッジの信頼度に影響しません。"
               : "Follow people, individual vehicles, and models in chronological order. Popularity never changes knowledge trust."}
           </p>
@@ -45,18 +69,23 @@ export default function FeedPage() {
         </Link>
       </header>
 
-      <div className="feed-layout">
+      <div className={isRemoteAlpha ? "feed-layout alpha-community-feed" : "feed-layout"}>
         <section className="feed-stream">
           <div className="section-heading">
             <div>
               <span className="eyebrow">LATEST</span>
-              <h2>{ja ? "新しい愛車の記録" : "Latest vehicle records"}</h2>
+              <h2>{isRemoteAlpha ? (ja ? "αガレージの新着" : "Latest from alpha garages") : (ja ? "新しい愛車の記録" : "Latest vehicle records")}</h2>
             </div>
           </div>
           {feed.length ? (
             <div className="journal-list">
               {feed.map((journal, index) => {
                 const author = data.profiles.find(
+                  (profile) => profile.id === journal.authorProfileId,
+                ) ?? sharedProfiles.find(
+                  (profile) => profile.id === journal.authorProfileId,
+                );
+                const sharedPost = sharedProfiles.some(
                   (profile) => profile.id === journal.authorProfileId,
                 );
                 return (
@@ -70,7 +99,13 @@ export default function FeedPage() {
                     locale={locale}
                     translations={data.contentTranslations}
                     mediaPriority={index === 0}
-                    safety={journal.authorProfileId === data.currentProfileId ? undefined : {
+                    authorLinkEnabled={!sharedPost}
+                    alphaAudience={isRemoteAlpha}
+                    showPrivateMedia={journal.authorProfileId === data.currentProfileId}
+                    safety={
+                      sharedPost || journal.authorProfileId === data.currentProfileId
+                        ? undefined
+                        : {
                       muted: isProfileMuted(data, journal.authorProfileId),
                       blocked: isProfileBlocked(data, journal.authorProfileId),
                       onToggleMute: () => toggleMuteProfile(journal.authorProfileId),
@@ -83,9 +118,13 @@ export default function FeedPage() {
           ) : (
             <div className="empty-state">
               <BookOpenText size={28} aria-hidden="true" />
-              <h3>{ja ? "フォロー中の更新はありません" : "No followed updates"}</h3>
+              <h3>{isRemoteAlpha ? (ja ? "最初の愛車記録を置いてみませんか" : "Add the first vehicle record") : (ja ? "フォロー中の更新はありません" : "No followed updates")}</h3>
               <p>
-                {ja
+                {isRemoteAlpha
+                  ? ja
+                    ? "ひとつ投稿されると、みんなで作るP0・αのガレージが動き始めます。「さっと記録」または「詳しく記録」で参加者への公開を選べます。"
+                    : "One shared post brings the P0 and alpha garages to life. Choose the participant audience in Quick or Detailed record."
+                  : ja
                   ? "右側からプロフィール、車両、車種をフォローできます。"
                   : "Follow a profile, vehicle, or model from the panel."}
               </p>
@@ -93,7 +132,7 @@ export default function FeedPage() {
           )}
         </section>
 
-        <aside className="follow-panel" aria-label={ja ? "フォロー候補" : "Follow suggestions"}>
+        {!isRemoteAlpha && <aside className="follow-panel" aria-label={ja ? "フォロー候補" : "Follow suggestions"}>
           <span className="eyebrow">DISCOVER</span>
           <h2>{ja ? "続きを見たい対象" : "Things to keep up with"}</h2>
           <p>
@@ -153,7 +192,7 @@ export default function FeedPage() {
               </div>
             </section>
           )}
-        </aside>
+        </aside>}
       </div>
     </div>
   );

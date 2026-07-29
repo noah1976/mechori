@@ -9,7 +9,8 @@ import {
   type VehicleDrivetrainType,
 } from "@mechori/core";
 import { translate } from "@mechori/i18n";
-import { Bike, CarFront, Save } from "lucide-react";
+import { Bike, BookOpenCheck, CarFront, Save } from "lucide-react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 
@@ -138,7 +139,7 @@ export default function VehicleSpecificationPage() {
           </div>
         </section>
         {error && <p className="form-error-summary" role="alert">{error}</p>}
-        <div className="form-actions"><button type="button" className="secondary-action" onClick={() => router.back()}>{translate(locale, "back")}</button><button type="submit" className="primary-action" disabled={saving}><Save size={18} />{translate(locale, saving ? "saving" : "saveSpecification")}</button></div>
+        <div className="form-actions"><Link href={`/garage/${encodeURIComponent(editableVehicle.id)}/catalog`} className="secondary-action"><BookOpenCheck size={17} />{locale === "ja" ? "知っている仕様を届ける" : "Share a specification you know"}</Link><button type="button" className="secondary-action" onClick={() => router.back()}>{translate(locale, "back")}</button><button type="submit" className="primary-action" disabled={saving}><Save size={18} />{translate(locale, saving ? "saving" : "saveSpecification")}</button></div>
       </form>
     </div>
   );
