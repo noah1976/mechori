@@ -125,6 +125,11 @@ const BRANDS: BrandDefinition[] = [
   { id: "opel", canonicalName: "OPEL", aliases: ["OPEL", "Opel", "オペル"] },
   { id: "vauxhall", canonicalName: "VAUXHALL", aliases: ["VAUXHALL", "Vauxhall", "ボクスホール"] },
   { id: "peugeot", canonicalName: "PEUGEOT", aliases: ["PEUGEOT", "Peugeot", "プジョー"] },
+  {
+    id: "citroen",
+    canonicalName: "CITROËN",
+    aliases: ["CITROËN", "Citroën", "CITROEN", "Citroen", "シトロエン"],
+  },
   { id: "lancia", canonicalName: "LANCIA", aliases: ["LANCIA", "Lancia", "ランチア"] },
 ];
 

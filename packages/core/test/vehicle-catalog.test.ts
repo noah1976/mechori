@@ -148,11 +148,16 @@ test("uppercases an unknown Latin make without pretending it has a catalog match
   assert.equal(identity.matchStatus, "unmatched");
 });
 
-test("keeps official Latin diacritics while uppercasing an unknown make", () => {
+test("standardizes Citroen aliases with the official Latin spelling", () => {
   const identity = resolveVehicleIdentity("Citroën", "Saxo");
+  const japaneseIdentity = resolveVehicleIdentity("シトロエン", "サクソ");
 
   assert.equal(identity.canonicalMake, "CITROËN");
-  assert.equal(identity.matchStatus, "unmatched");
+  assert.equal(identity.brandId, "citroen");
+  assert.equal(identity.matchStatus, "brand_only");
+  assert.equal(japaneseIdentity.canonicalMake, "CITROËN");
+  assert.equal(japaneseIdentity.brandId, "citroen");
+  assert.equal(japaneseIdentity.makeInput, "シトロエン");
 });
 
 test("separates R33 GT-S25t and GT-R as variants within one generation", () => {
@@ -418,4 +423,23 @@ test("enriches a legacy Japanese vehicle and keeps journals and follows connecte
     migrated.follows.find((follow) => follow.targetType === "model")?.targetId,
     "model-family:fiat-barchetta",
   );
+});
+
+test("normalizes an existing Japanese Citroen make without replacing the vehicle", () => {
+  const legacy = structuredClone(cloneDemoData());
+  const originalVehicleId = legacy.vehicles[0]!.id;
+  legacy.vehicles[0]!.make = "シトロエン";
+  legacy.vehicles[0]!.model = "サクソ";
+  legacy.vehicles[0]!.makeInput = "シトロエン";
+  legacy.vehicles[0]!.modelInput = "サクソ";
+  legacy.vehicles[0]!.brandId = undefined;
+  legacy.vehicles[0]!.modelFamilyId = undefined;
+
+  const migrated = migrateAppData(legacy);
+
+  assert.ok(migrated);
+  assert.equal(migrated.vehicles[0]?.id, originalVehicleId);
+  assert.equal(migrated.vehicles[0]?.make, "CITROËN");
+  assert.equal(migrated.vehicles[0]?.makeInput, "シトロエン");
+  assert.equal(migrated.vehicles[0]?.brandId, "citroen");
 });
