@@ -7,10 +7,13 @@ import {
   type GarageJournalPost,
   type JournalMediaAttachment,
 } from "@mechori/core";
+import { preparePrivateAlphaImage } from "@/lib/image-preparation";
 import { journalMediaStore } from "@/lib/media-store";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export const alphaSharedJournalMediaBucket = "alpha-journal-media";
+const maxPreparedSharedImageBytes = 460 * 1024;
+const maxSharedImageDimension = 1400;
 
 export async function alphaSharedJournalMediaAvailable(): Promise<boolean> {
   const supabase = createSupabaseBrowserClient();
@@ -99,9 +102,11 @@ async function uploadSharedJournalImages(
   try {
     const sharedMedia: JournalMediaAttachment[] = [];
     for (const attachment of candidates) {
-      const blob = await loadPrivateAttachmentBlob(attachment);
-      if (!blob) throw new Error("shared_image_not_found");
-      const mimeType = normalizedSharedMimeType(blob.type || attachment.mimeType);
+      const privateBlob = await loadPrivateAttachmentBlob(attachment);
+      if (!privateBlob) throw new Error("shared_image_not_found");
+      const prepared = await prepareSharedJournalImage(privateBlob, attachment);
+      const blob = prepared.blob;
+      const mimeType = normalizedSharedMimeType(prepared.mimeType);
       if (!mimeType || blob.size < 1 || blob.size > alphaSharedJournalMaxMediaBytes) {
         throw new Error("invalid_shared_image");
       }
@@ -138,6 +143,25 @@ async function uploadSharedJournalImages(
     await removeSharedMediaQuietly(uploadedPaths);
     throw error;
   }
+}
+
+async function prepareSharedJournalImage(
+  blob: Blob,
+  attachment: JournalMediaAttachment,
+): Promise<{ blob: Blob; mimeType: string }> {
+  const sourceMimeType = blob.type || attachment.mimeType || "application/octet-stream";
+  const prepared = await preparePrivateAlphaImage(
+    new File(
+      [blob],
+      `shared-${safePathSegment(attachment.id)}.${sourceFileExtension(sourceMimeType)}`,
+      { type: sourceMimeType },
+    ),
+    {
+      maxDimension: maxSharedImageDimension,
+      maxOutputBytes: maxPreparedSharedImageBytes,
+    },
+  );
+  return { blob: prepared.blob, mimeType: prepared.mimeType };
 }
 
 async function loadPrivateAttachmentBlob(
@@ -213,6 +237,13 @@ function fileExtension(mimeType: string): string {
   if (mimeType === "image/jpeg") return "jpg";
   if (mimeType === "image/png") return "png";
   return "webp";
+}
+
+function sourceFileExtension(mimeType: string): string {
+  if (mimeType === "image/jpeg") return "jpg";
+  if (mimeType === "image/png") return "png";
+  if (mimeType === "image/webp") return "webp";
+  return "heic";
 }
 
 function safePathSegment(value: string): string {
