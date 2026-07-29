@@ -1,4 +1,5 @@
 export type MechoriRuntime = "local" | "alpha";
+export type GoogleOAuthPublishingStatus = "testing" | "production";
 
 export interface SupabasePublicConfig {
   url: string;
@@ -13,6 +14,19 @@ export function isAlphaActivityTrackingEnabled(): boolean {
   return (
     getMechoriRuntime() === "alpha" &&
     process.env.NEXT_PUBLIC_MECHORI_ACTIVITY_TRACKING === "enabled"
+  );
+}
+
+export function getGoogleOAuthPublishingStatus(): GoogleOAuthPublishingStatus {
+  return process.env.NEXT_PUBLIC_GOOGLE_OAUTH_PUBLISHING_STATUS === "production"
+    ? "production"
+    : "testing";
+}
+
+export function requiresGoogleOAuthTestUserRegistration(): boolean {
+  return (
+    getMechoriRuntime() === "alpha" &&
+    getGoogleOAuthPublishingStatus() === "testing"
   );
 }
 

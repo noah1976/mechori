@@ -17,12 +17,12 @@ MECHORIを特に親しい3〜5人へ渡すとき、所有者が行う作業だ�
 ## 1人招待するたびに行うこと
 
 1. 本人がログインに使うGoogleアカウントを、普段の連絡手段で確認する。
-2. Google Auth Platformの`対象`で、そのアカウントをテストユーザーへ追加する。
-3. MECHORIへログインし、上部の`招待`から1人用URLを1本発行する。
+2. MECHORIへログインし、上部の`招待`から1人用URLを1本発行する。
+3. 招待画面に「Google OAuthはテスト中」と表示される場合だけ、Google Auth Platformの`対象`で、そのアカウントをテストユーザーへ追加する。
 4. 下の依頼文とURLを本人だけへ送る。SNSへ公開投稿しない。
 5. その人が参加できたら、次の人には新しいURLを発行する。
 
-Google OAuthをテストモードから正式公開へ変更するまでは、手順2を省略できません。MECHORIの招待権限とGoogleのテストユーザーは別の安全ゲートです。
+Google OAuthを`本番環境`へ公開し、Netlifyの`NEXT_PUBLIC_GOOGLE_OAUTH_PUBLISHING_STATUS`を`production`へ変更した後は、Googleテストユーザー追加を省略できます。MECHORIの招待権限は別の安全ゲートとして残ります。
 
 ## そのまま使える依頼文
 

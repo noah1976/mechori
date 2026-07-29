@@ -60,6 +60,24 @@ test("requires the core manual-entry fields", () => {
   assert.equal(result.errors.summary, "required");
 });
 
+test("saves routine maintenance without inventing symptoms", () => {
+  const applied = applyRecordDraftToData(
+    cloneDemoData(),
+    validDraft({
+      summary: "DEMO: 定期点検",
+      symptoms: "",
+      resolutionStatus: "resolved",
+    }),
+  );
+  const reloaded = migrateAppData(applied.data);
+  const reloadedRecord = reloaded?.records.find(
+    (record) => record.id === applied.record.id,
+  );
+
+  assert.equal(applied.record.symptoms, "");
+  assert.equal(reloadedRecord?.symptoms, "");
+});
+
 test("allows a maintenance record when the historical odometer is unknown", () => {
   const original = cloneDemoData();
   const currentReading = structuredClone(original.vehicles[0]!.currentOdometerReading);

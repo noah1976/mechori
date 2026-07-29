@@ -91,11 +91,46 @@ RLS公式: <https://supabase.com/docs/guides/database/postgres/row-level-securit
 7. Google Client IDとClient SecretをSupabase DashboardのGoogle Providerへ直接入力する。
 8. Client Secretをチャット、Git、Netlifyの公開変数へ貼らない。
 
-初回所有者の設定は`docs/ALPHA_OWNER_BOOTSTRAP.md`に従います。αテスターはGoogle Auth Platformのテストユーザーにも追加し、MECHORIの1人用招待URLと組み合わせます。
+初回所有者の設定は`docs/ALPHA_OWNER_BOOTSTRAP.md`に従います。Google OAuthの公開ステータスが`テスト`の間は、αテスターをGoogle Auth Platformのテストユーザーにも追加し、MECHORIの1人用招待URLと組み合わせます。Google OAuthを`本番環境`へ公開した後も、MECHORI側の1人用招待と参加権限は維持されます。
 
 MECHORIの招待コードはURLフラグメント（`#invite=...`）で受け取り、画面で取得した直後にアドレス欄から消します。フラグメントは通常のWebリクエストへ送られないため、Netlifyのアクセスログには残りません。Googleへも送らず、OAuth往復中だけ短命のHttpOnly Cookieへ保持します。ログイン後、Supabase上の参加権限を確認できないアカウントは非公開領域へ入れません。
 
 MECHORIはGoogle Drive、連絡先、友人一覧、投稿等へアクセスしません。GoogleのProvider tokenも保存・再利用しません。
+
+### Google OAuthを本番環境へ公開する
+
+ここでいう`本番環境`は、Google OAuthのテストユーザー制限を解除する設定です。MECHORIを一般公開したり、招待制を解除したり、Google Cloudの有料APIを有効にする操作ではありません。現在要求している`openid`、`userinfo.email`、`userinfo.profile`の基本スコープでGoogleログインすること自体に、利用者数に応じたGoogle OAuth料金はありません。
+
+公開前に次を確認します。
+
+1. Google Auth Platformの`データアクセス`が`openid`、`userinfo.email`、`userinfo.profile`だけである。
+2. Authorized JavaScript originsが、使用中のMECHORI α URLとローカル開発URLだけである。
+3. Authorized redirect URIが、SupabaseのGoogle Provider画面に表示されるCallback URLと一致する。
+4. `https://mechori-alpha.netlify.app/privacy`をログアウト状態で開ける。
+5. ホーム、プライバシーポリシー、将来の利用規約を、正式公開時には所有・確認済みの`mechori.com`へ揃える計画がある。
+
+Google Auth Platformの画面で次を行います。
+
+1. 対象のGoogle Cloudプロジェクトが`MECHORI Alpha`であることを確認する。
+2. `Google Auth Platform`の`対象`を開く。
+3. 現在の公開ステータスが`テスト`であることを確認する。
+4. `アプリを公開`または`本番環境に移行`を選ぶ。
+5. 確認内容を読み、`本番環境`へ変更する。
+6. `クライアントID`と`クライアントシークレット`は作り直さない。SupabaseのGoogle Provider設定も変更しない。
+
+Google側で`本番環境`になったことを確認した後だけ、NetlifyのEnvironment variablesへ次を追加または変更します。
+
+```text
+NEXT_PUBLIC_GOOGLE_OAUTH_PUBLISHING_STATUS=production
+```
+
+その後、承認済みαブランチを再デプロイします。この変数は招待画面の説明文だけを切り替え、認証方式、招待引換、参加権限、RLSを変更しません。Google側がまだ`テスト`なのに先に`production`へ変えると、画面が誤った案内をするため順序を逆にしません。
+
+確認は、Google Auth Platformのテストユーザーへ登録していない協力者1人で行います。本人専用のMECHORI招待URLからGoogleログインし、愛車登録画面まで到達できることを確認します。招待URLなしのGoogleアカウントは、OAuthに成功してもMECHORIの非公開領域へ参加できないことも確認します。
+
+テスト状態へ戻す場合は、Google Auth Platformを先に`テスト`へ戻し、Netlifyの値を`testing`へ戻して再デプロイします。既存のClient Secretをチャット、Git、文書へ貼りません。
+
+Googleのブランド確認では、公開ホーム、プライバシーポリシー、利用規約、リダイレクト元のドメインが、所有・確認済みドメインに揃っていることを求められる場合があります。少人数αでOAuth公開ステータスを変更することと、`mechori.com`でブランド確認を完了することは別作業として扱います。
 
 ## 5. Netlify
 
@@ -105,7 +140,7 @@ MECHORIはGoogle Drive、連絡先、友人一覧、投稿等へアクセスし�
 2. GitHub連携では`noah1976insemble/mechori`だけを選べるリポジトリアクセスにする。
 3. α用Siteを作り、production branchをα公開に使う承認済みブランチへ限定する。`main`へ自動反映する設定にしない。
 4. Base directory、build command、publish directoryは接続時の自動検出結果を確認する。MECHORIのルートbuild commandは`npm run build`。
-5. Environment variablesへ`apps/web/.env.local`と同じ3項目を所有者が直接入力する。
+5. Environment variablesへ`apps/web/.env.local`と同じ公開環境変数を所有者が直接入力する。Google OAuth公開ステータスは、Google Auth Platformがテスト中なら`testing`、本番環境なら`production`にする。
 6. Deploy Previewと本番相当α URLのどちらを使うかを決め、Google OAuthのOriginとSupabase Redirect allow listへ同じURLを登録する。
 7. デプロイ後、環境変数が画面やビルドログへ出ていないことを確認する。
 

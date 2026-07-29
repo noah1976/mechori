@@ -21,10 +21,12 @@ import {
   invitationValidityDays,
 } from "@/lib/invitation-link";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { requiresGoogleOAuthTestUserRegistration } from "@/lib/runtime-config";
 
 export default function InvitePage() {
   const { locale, isRemoteAlpha } = useApp();
   const ja = locale === "ja";
+  const googleTestUserRequired = requiresGoogleOAuthTestUserRegistration();
   const [creating, setCreating] = useState(false);
   const [inviteUrl, setInviteUrl] = useState("");
   const [qrDataUrl, setQrDataUrl] = useState("");
@@ -120,7 +122,15 @@ export default function InvitePage() {
           </div>
           <p>{ja ? `URLは${invitationValidityDays}日間有効で、1つのGoogleアカウントが登録すると使用済みになります。` : `The link is valid for ${invitationValidityDays} days and is consumed when one Google account joins.`}</p>
           <p className="privacy-caption">{ja ? "URLを受け取った本人にだけ送ってください。SNSへの公開投稿には載せないでください。" : "Send it only to the intended person. Do not post it publicly on social media."}</p>
-          <p className="privacy-caption">{ja ? "現在のα版では、相手のGoogleアカウントをGoogleのテストユーザーへ追加する運営作業が別途必要です。" : "During the current alpha, the person's Google account must also be added as a Google test user by the operator."}</p>
+          <p className="privacy-caption">
+            {googleTestUserRequired
+              ? (ja
+                  ? "現在はGoogle OAuthのテスト中です。相手のGoogleアカウントをGoogleのテストユーザーへ追加する運営作業も必要です。"
+                  : "Google OAuth is currently in testing. The operator must also add the person's Google account as a Google test user.")
+              : (ja
+                  ? "Googleへの事前登録は不要です。この招待URLだけを本人へ送ってください。"
+                  : "No Google pre-registration is required. Send only this invitation link to the intended person.")}
+          </p>
         </section>
 
         {inviteUrl && (

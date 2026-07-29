@@ -2,7 +2,11 @@
 
 import { useApp } from "@/lib/app-context";
 import { localDateInputValue } from "@/lib/date-input";
-import { preparePrivateAlphaImage, type PreparedImage } from "@/lib/image-preparation";
+import {
+  imagePreparationMessageKey,
+  preparePrivateAlphaImage,
+  type PreparedImage,
+} from "@/lib/image-preparation";
 import {
   displayVehicleModel,
   journalToDraft,
@@ -82,8 +86,8 @@ export function QuickEventForm({
     setError("");
     try {
       setImage(await preparePrivateAlphaImage(file, { maxDimension: 1400, maxOutputBytes: 460 * 1024 }));
-    } catch {
-      setError("vehicleImageInvalid");
+    } catch (error) {
+      setError(imagePreparationMessageKey(error));
     } finally {
       setPreparing(false);
     }
@@ -156,7 +160,7 @@ export function QuickEventForm({
         <section className="quick-event-photo">
           {image ? <Image src={image.dataUrl} alt="" fill sizes="(max-width: 760px) 100vw, 680px" unoptimized /> : existingImageSource ? <Image src={existingImageSource} alt={existingAttachment?.altText ?? ""} fill sizes="(max-width: 760px) 100vw, 680px" unoptimized /> : <div><Camera size={38} /><strong>{translate(locale, "photoOptional")}</strong><span>{translate(locale, "addTodaysPhoto")}</span></div>}
         </section>
-        <label className="photo-pick-action"><ImagePlus size={18} />{preparing ? translate(locale, "preparingPhoto") : image || existingAttachment ? translate(locale, "chooseAnotherPhoto") : translate(locale, "addPhoto")}<input type="file" accept="image/jpeg,image/png,image/webp" onChange={selectPhoto} disabled={preparing || saving} /></label>
+        <label className="photo-pick-action"><ImagePlus size={18} />{preparing ? translate(locale, "preparingPhoto") : image || existingAttachment ? translate(locale, "chooseAnotherPhoto") : translate(locale, "addPhoto")}<input type="file" accept="image/*" onChange={selectPhoto} disabled={preparing || saving} /></label>
         <p className="image-preparation-note"><ShieldCheck size={15} />{translate(locale, "momentPrivateFirst")}</p>
         <fieldset className="event-type-picker"><legend>{translate(locale, "momentKindQuestion")}</legend>{eventTypes.map((item) => <button type="button" key={item.value} className={eventType === item.value ? "is-selected" : ""} aria-pressed={eventType === item.value} onClick={() => setEventType(item.value)}>{translate(locale, item.label)}</button>)}</fieldset>
         <OccurrenceDateFields

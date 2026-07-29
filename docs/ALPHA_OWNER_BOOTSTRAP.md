@@ -8,7 +8,7 @@
 
 ## 初回だけ必要な手順
 
-1. Google Auth Platformの`対象`で、所有者が使うGoogleアカウントをテストユーザーへ追加する。
+1. Google OAuthがテスト中の場合だけ、Google Auth Platformの`対象`で、所有者が使うGoogleアカウントをテストユーザーへ追加する。
 2. `https://mechori-alpha.netlify.app/auth`で`Googleで続ける`を選ぶ。
 3. 初回は「有効な招待URLが必要です」と戻る。これは正常で、Supabase AuthenticationにはGoogleユーザーが作成される。
 4. Supabase Dashboardの`Authentication` → `Users`で、自分のユーザーUUIDをコピーする。
@@ -72,11 +72,11 @@ $$;
 
 ## テスターを1人追加するたびに行うこと
 
-1. Google Auth Platformの`対象`へ、その人のGoogleアカウントをテストユーザーとして追加する。
+1. Google OAuthがテスト中の場合だけ、Google Auth Platformの`対象`へ、その人のGoogleアカウントをテストユーザーとして追加する。
 2. MECHORI上部の`招待`または`/invite`で新しい1人用URLを発行する。運営用の`/settings/alpha`から発行してもよい。
 3. 普段のSNSまたはメッセージで本人だけへ送る。共通URLとして投稿しない。
 4. 本人がログイン、愛車登録、非公開整備記録1件を完了したことを確認する。
 
-招待URLは発行直後にコピー、OSの共有画面、QRコード表示を選べます。QRコードはブラウザ内で生成され、外部のQR生成サービスへ招待URLを送りません。Google OAuthがテストモードの間は、招待URLとは別に手順1のテストユーザー追加が必要です。
+招待URLは発行直後にコピー、OSの共有画面、QRコード表示を選べます。QRコードはブラウザ内で生成され、外部のQR生成サービスへ招待URLを送りません。Google OAuthがテストモードの間だけ、招待URLとは別に手順1のテストユーザー追加が必要です。
 
 Googleのテストモードでは認可が期限切れになる場合があります。ログインできなくなったときは、まずAudienceのテストユーザーとGoogle側の再認可を確認します。

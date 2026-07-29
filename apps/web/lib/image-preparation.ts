@@ -1,7 +1,22 @@
-const supportedImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
-const maxSourceBytes = 12 * 1024 * 1024;
+const supportedImageTypes = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+  "image/heic-sequence",
+  "image/heif-sequence",
+]);
+const supportedImageExtensions = /\.(?:jpe?g|png|webp|heic|heif)$/i;
+export const maxSourceImageBytes = 48 * 1024 * 1024;
+
+export type ImagePreparationMessageKey =
+  | "imageSourceTooLarge"
+  | "imageSourceUnsupported"
+  | "imagePreparationFailed";
 
 export interface PreparedImage {
+  blob: Blob;
   dataUrl: string;
   mimeType: string;
   sizeBytes: number;
@@ -13,8 +28,8 @@ export async function preparePrivateAlphaImage(
   file: File,
   options: { maxDimension?: number; maxOutputBytes?: number } = {},
 ): Promise<PreparedImage> {
-  if (!supportedImageTypes.has(file.type)) throw new Error("unsupported_image");
-  if (file.size > maxSourceBytes) throw new Error("image_too_large");
+  const sourceError = validateSourceImage(file);
+  if (sourceError) throw new Error(sourceError);
 
   const maxDimension = options.maxDimension ?? 1600;
   const maxOutputBytes = options.maxOutputBytes ?? 520 * 1024;
@@ -47,6 +62,7 @@ export async function preparePrivateAlphaImage(
 
     if (!blob || blob.size > maxOutputBytes) throw new Error("image_output_too_large");
     return {
+      blob,
       dataUrl: await blobToDataUrl(blob),
       mimeType: blob.type || "image/webp",
       sizeBytes: blob.size,
@@ -56,6 +72,30 @@ export async function preparePrivateAlphaImage(
   } finally {
     URL.revokeObjectURL(sourceUrl);
   }
+}
+
+export function validateSourceImage(
+  file: Pick<File, "name" | "size" | "type">,
+): "unsupported_image" | "image_too_large" | null {
+  if (file.size <= 0) return "unsupported_image";
+  if (file.size > maxSourceImageBytes) return "image_too_large";
+
+  const mimeType = file.type.trim().toLowerCase();
+  if (supportedImageTypes.has(mimeType)) return null;
+  if ((!mimeType || mimeType === "application/octet-stream") && supportedImageExtensions.test(file.name)) {
+    return null;
+  }
+  return "unsupported_image";
+}
+
+export function imagePreparationMessageKey(error: unknown): ImagePreparationMessageKey {
+  if (error instanceof Error && error.message === "image_too_large") {
+    return "imageSourceTooLarge";
+  }
+  if (error instanceof Error && error.message === "unsupported_image") {
+    return "imageSourceUnsupported";
+  }
+  return "imagePreparationFailed";
 }
 
 function loadImage(source: string): Promise<HTMLImageElement> {

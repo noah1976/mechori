@@ -1,7 +1,10 @@
 "use client";
 
 import { DemoNotice } from "@/components/demo-notice";
-import { recordOdometerLabel } from "@/components/record-card";
+import {
+  recordOdometerLabel,
+  recordReasonLabel,
+} from "@/components/record-card";
 import { WorkshopIntroductionActions } from "@/components/workshop-introduction-actions";
 import { useApp } from "@/lib/app-context";
 import {
@@ -53,7 +56,7 @@ function ServiceBriefContent() {
 
       <section>
         <div className="section-heading"><div><span className="eyebrow">OPEN ITEMS</span><h2>{ja ? "未解決・確認したいこと" : "Unresolved and follow-up items"}</h2></div></div>
-        {unresolved.length ? <div className="brief-open-items">{unresolved.map((record) => <article key={record.id}><span>{maintenanceRecordDateLabel(record, locale)}</span><div><h3>{record.summary}</h3><p>{record.symptoms}</p></div><span className="badge resolution-unresolved">{translate(locale, "unresolved")}</span></article>)}</div> : <p className="legal-note">{ja ? "未解決として記録された項目はありません。実車に問題がないことを保証する表示ではありません。" : "No item is recorded as unresolved. This does not guarantee that the vehicle has no issues."}</p>}
+        {unresolved.length ? <div className="brief-open-items">{unresolved.map((record) => <article key={record.id}><span>{maintenanceRecordDateLabel(record, locale)}</span><div><h3>{record.summary}</h3><p>{recordReasonLabel(record, locale)}</p></div><span className="badge resolution-unresolved">{translate(locale, "unresolved")}</span></article>)}</div> : <p className="legal-note">{ja ? "未解決として記録された項目はありません。実車に問題がないことを保証する表示ではありません。" : "No item is recorded as unresolved. This does not guarantee that the vehicle has no issues."}</p>}
       </section>
 
       <section>

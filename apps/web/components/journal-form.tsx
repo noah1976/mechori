@@ -44,19 +44,25 @@ import { JournalMedia } from "@/components/journal-media";
 import { OccurrenceDateFields } from "@/components/occurrence-date-fields";
 import { localDateInputValue } from "@/lib/date-input";
 import {
+  imagePreparationMessageKey,
+  preparePrivateAlphaImage,
+  validateSourceImage,
+} from "@/lib/image-preparation";
+import {
   clearLocalDraft,
   journalLocalDraftKey,
   loadJournalLocalDraft,
   saveLocalDraft,
 } from "@/lib/local-draft-store";
+import { translate } from "@mechori/i18n";
 
 const maxMediaCount = 6;
-const maxImageBytes = 10 * 1024 * 1024;
 const maxVideoBytes = 100 * 1024 * 1024;
+const maxPreparedJournalImageBytes = 900 * 1024;
 
 interface PendingMedia {
   attachment: JournalMediaAttachment;
-  file: File;
+  file: Blob;
   previewUrl: string;
 }
 
@@ -134,6 +140,7 @@ export function JournalForm({
   const [draft, setDraft] = useState<JournalDraft>(initialDraft);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [preparingMedia, setPreparingMedia] = useState(false);
   const [mediaError, setMediaError] = useState("");
   const [draftReady, setDraftReady] = useState(Boolean(journal));
   const [draftStatus, setDraftStatus] = useState<"idle" | "restored" | "saved" | "error">("idle");
@@ -234,7 +241,7 @@ export function JournalForm({
       });
       return;
     }
-    if (saving) return;
+    if (saving || preparingMedia) return;
     setSaving(true);
     try {
       const savedJournal = journal
@@ -303,11 +310,12 @@ export function JournalForm({
   }
 
   function openMediaPicker(afterId: string | null) {
+    if (preparingMedia || saving) return;
     setInsertAfterBlockId(afterId);
     fileInputRef.current?.click();
   }
 
-  function selectMedia(event: ChangeEvent<HTMLInputElement>) {
+  async function selectMedia(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
     setMediaError("");
@@ -319,47 +327,65 @@ export function JournalForm({
       );
       return;
     }
-    const unsupported = files.find(
-      (file) => !file.type.startsWith("image/") && !file.type.startsWith("video/"),
+    const imageSourceError = files
+      .filter((file) => !file.type.startsWith("video/"))
+      .map((file) => validateSourceImage(file))
+      .find((error) => error !== null);
+    const unsupportedVideo = files.find(
+      (file) => !file.type.startsWith("video/") && validateSourceImage(file) === "unsupported_image",
     );
-    const tooLarge = files.find((file) =>
-      file.type.startsWith("video/")
-        ? file.size > maxVideoBytes
-        : file.size > maxImageBytes,
+    const oversizedVideo = files.find(
+      (file) => file.type.startsWith("video/") && file.size > maxVideoBytes,
     );
-    if (unsupported || tooLarge) {
+    if (unsupportedVideo || imageSourceError || oversizedVideo) {
       setMediaError(
-        unsupported
-          ? ja
-            ? "画像または動画ファイルを選んでください。"
-            : "Choose image or video files."
+        imageSourceError
+          ? translate(locale, imagePreparationMessageKey(new Error(imageSourceError)))
           : ja
-            ? "画像は10MB、動画は100MBまでです。"
-            : "Images are limited to 10 MB and videos to 100 MB.",
+            ? "動画は100MBまでです。"
+            : "Videos are limited to 100 MB.",
       );
       return;
     }
 
     const now = new Date().toISOString();
-    const additions = files.map((file): PendingMedia => {
-      const id = `journal-media-${crypto.randomUUID()}`;
-      return {
-        attachment: {
-          id,
-          kind: file.type.startsWith("video/") ? "video" : "image",
-          source: "local_blob",
-          storageKey: id,
-          mimeType: file.type,
-          sizeBytes: file.size,
-          altText: "",
-          privacyState: "private_only",
-          createdAt: now,
-          isDemo: false,
-        },
-        file,
-        previewUrl: URL.createObjectURL(file),
-      };
-    });
+    const additions: PendingMedia[] = [];
+    setPreparingMedia(true);
+    try {
+      for (const file of files) {
+        const id = `journal-media-${crypto.randomUUID()}`;
+        const isVideo = file.type.startsWith("video/");
+        const prepared = isVideo
+          ? null
+          : await preparePrivateAlphaImage(file, {
+              maxDimension: 1800,
+              maxOutputBytes: maxPreparedJournalImageBytes,
+            });
+        const blob = prepared?.blob ?? file;
+        additions.push({
+          attachment: {
+            id,
+            kind: isVideo ? "video" : "image",
+            source: "local_blob",
+            storageKey: id,
+            mimeType: blob.type,
+            sizeBytes: blob.size,
+            altText: "",
+            privacyState: "private_only",
+            createdAt: now,
+            isDemo: false,
+          },
+          file: blob,
+          previewUrl: URL.createObjectURL(blob),
+        });
+      }
+    } catch (error) {
+      additions.forEach(({ previewUrl }) => URL.revokeObjectURL(previewUrl));
+      setMediaError(translate(locale, imagePreparationMessageKey(error)));
+      setPreparingMedia(false);
+      return;
+    }
+    setPreparingMedia(false);
     setPendingMedia((current) => [...current, ...additions]);
     setDraft((current) => {
       const mediaBlocks = additions.map(({ attachment }) => ({
@@ -417,7 +443,7 @@ export function JournalForm({
   }
 
   return (
-    <form ref={formRef} className="journal-form note-editor-form" onSubmit={submit} noValidate aria-busy={saving}>
+    <form ref={formRef} className="journal-form note-editor-form" onSubmit={submit} noValidate aria-busy={saving || preparingMedia}>
       <section className="note-editor-shell">
         <header className="note-editor-header">
           <div>
@@ -542,7 +568,7 @@ export function JournalForm({
                   ja={ja}
                   onText={(style) => addText(block.id, style)}
                   onMedia={() => openMediaPicker(block.id)}
-                  mediaDisabled={pendingMedia.length >= maxMediaCount}
+                  mediaDisabled={draft.media.length >= maxMediaCount || preparingMedia || saving}
                 />
               </div>
             );
@@ -550,12 +576,13 @@ export function JournalForm({
           {draft.contentBlocks.length === 0 && (
             <div className="note-empty-editor">
               <p>{ja ? "文章でも写真でも、好きなところから始められます。" : "Begin with words or media."}</p>
-              <BlockInsertMenu ja={ja} onText={(style) => addText(null, style)} onMedia={() => openMediaPicker(null)} mediaDisabled={false} />
+              <BlockInsertMenu ja={ja} onText={(style) => addText(null, style)} onMedia={() => openMediaPicker(null)} mediaDisabled={preparingMedia || saving} />
             </div>
           )}
         </div>
 
-        <input ref={fileInputRef} hidden type="file" accept="image/*,video/*" multiple tabIndex={-1} aria-hidden="true" onChange={selectMedia} />
+        <input ref={fileInputRef} hidden type="file" accept="image/*,video/*" multiple tabIndex={-1} aria-hidden="true" onChange={selectMedia} disabled={preparingMedia || saving} />
+        {preparingMedia && <p className="image-preparation-note" role="status"><ShieldCheck size={15} aria-hidden="true" />{translate(locale, "preparingPhoto")}</p>}
         {mediaError && <p className="media-error" role="alert">{mediaError}</p>}
         {submitted && validation.errors.bodyOriginal && (
           <p className="media-error" role="alert">
@@ -583,7 +610,7 @@ export function JournalForm({
         <label className="consent-option"><input type="checkbox" checked={draft.knowledgeExtractionConsent} onChange={(event) => setDraft((current) => ({ ...current, knowledgeExtractionConsent: event.target.checked }))} /><span><strong>{ja ? "本文をナレッジ検索の参考候補にする" : "Allow this story to inform knowledge search"}</strong><small>{ja ? "AIは本文を代筆せず、公開後も出典付きの未確認投稿として扱います。" : "AI never writes the story and treats it as cited, unverified owner content."}</small></span></label>
       </section>
 
-      <div className="form-actions"><button type="submit" className="primary-action" disabled={saving}><Save size={17} aria-hidden="true" />{saving ? ja ? "保存中…" : "Saving…" : journal ? (ja ? "変更を保存" : "Save changes") : draft.visibility === "private" ? ja ? "詳しい記録を非公開で保存" : "Save detailed record privately" : ja ? "公開範囲を確認して保存" : "Review audience and save"}</button></div>
+      <div className="form-actions"><button type="submit" className="primary-action" disabled={saving || preparingMedia}><Save size={17} aria-hidden="true" />{saving ? ja ? "保存中…" : "Saving…" : journal ? (ja ? "変更を保存" : "Save changes") : draft.visibility === "private" ? ja ? "詳しい記録を非公開で保存" : "Save detailed record privately" : ja ? "公開範囲を確認して保存" : "Review audience and save"}</button></div>
     </form>
   );
 }

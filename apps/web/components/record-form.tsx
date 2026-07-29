@@ -306,7 +306,7 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
 
       <section className="form-section">
         <div className="section-heading compact"><div><span className="eyebrow">02</span><h2>{translate(locale, "serviceReasonHeading")}</h2></div></div>
-        <Field label={translate(locale, "serviceReasonRequired")} error={errorText("symptoms")}>
+        <Field label={translate(locale, "serviceReasonOptional")}>
           <textarea rows={3} value={draft.symptoms} onChange={(event) => setField("symptoms", event.target.value)} />
         </Field>
       </section>

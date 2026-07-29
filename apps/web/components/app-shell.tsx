@@ -102,7 +102,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
         <footer className="professional-site-footer">
           <strong>MECHORI PROFESSIONAL</strong>
-          <Link href="/ai-policy">{translate(locale, "aiTrainingPolicy")}</Link>
+          <span className="professional-policy-links">
+            <Link href="/privacy">{locale === "ja" ? "プライバシーポリシー" : "Privacy policy"}</Link>
+            <Link href="/ai-policy">{translate(locale, "aiTrainingPolicy")}</Link>
+          </span>
         </footer>
       </div>
     );
@@ -218,6 +221,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           )}
         </main>
         <footer className="site-policy-footer">
+          <Link href="/privacy">
+            {locale === "ja" ? "プライバシーポリシー" : "Privacy policy"}
+          </Link>
           <Link href="/ai-policy">
             {translate(locale, "aiTrainingPolicy")}
           </Link>
@@ -251,6 +257,7 @@ function isPublicPath(pathname: string): boolean {
     pathname === "/" ||
     pathname === "/search" ||
     pathname === "/auth" ||
+    pathname === "/privacy" ||
     pathname === "/ai-policy" ||
     pathname === "/professional" ||
     pathname.startsWith("/v/") ||

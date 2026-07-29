@@ -22,6 +22,7 @@ MECHORI（メカリィ）は、車両メンテナンス記録を構造化し、�
 
 ## 参照文書
 
+- プロダクト・事業・設計・実装の長期原則: `docs/CONSTITUTION.md`
 - プロダクト方針: `docs/PRODUCT.md`
 - MVP範囲: `docs/MVP_SCOPE.md`
 - アーキテクチャ: `docs/ARCHITECTURE.md`

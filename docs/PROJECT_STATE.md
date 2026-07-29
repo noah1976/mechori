@@ -6,6 +6,8 @@
 
 `codex/remote-alpha-foundation`ブランチに、Next.js、Supabase Auth・Postgres、Netlifyを使う遠隔α基盤を実装しました。ローカルDEMOは従来どおり端末内で動き、公開αだけGoogle OAuthと利用者別の非公開Workspaceへ切り替わります。外部AI、OCR、決済、広告、独自ドメインの一般公開には接続していません。
 
+2026年7月27日、招待制αの実態に合わせた日英プライバシーポリシーを`/privacy`へ追加しました。Google OAuth、Supabase、Netlify、GA4、Clarity、Cookie、外部AI非送信、第三者AI学習拒否、問い合わせによる削除対応を明示しています。Google OAuthをテストから本番環境へ切り替えた後に、招待画面のテストユーザー案内だけを環境変数で切り替えられるようにしました。Google側の公開操作とNetlify環境変数変更は所有者作業で、コードからは実行しません。
+
 Professionalの事業仮説をαで確認するため、公開ティザー、Founding Partnerの価格仮説、工場提示画面からの紹介導線を追加しています。αの主目的はtoC検証のため、一般ホームと共通フッターにはProfessionalを掲載せず、`/professional`は独立したApp Shellで直接URLまたはオーナー紹介から入る構成です。事業モデルの正本は`docs/BUSINESS_MODEL.md`です。
 
 ## 実装済み

@@ -38,7 +38,6 @@ export function validateRecordDraft(draft: RecordDraft): ValidationResult {
   ) {
     errors.odometerKm = "invalid";
   }
-  if (!draft.symptoms.trim()) errors.symptoms = "required";
   if (draft.partNumber.trim() && draft.partNumber.trim().length < 3) {
     errors.partNumber = "verify";
   }
@@ -706,6 +705,9 @@ function hasRecordIdentity(
 ): record is Partial<MaintenanceRecord> &
   Pick<MaintenanceRecord, "id" | "vehicleId" | "summary" | "symptoms"> {
   return Boolean(
-    record.id && record.vehicleId && record.summary && record.symptoms,
+    record.id &&
+      record.vehicleId &&
+      record.summary &&
+      typeof record.symptoms === "string",
   );
 }

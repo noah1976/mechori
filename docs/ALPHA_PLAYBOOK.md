@@ -47,7 +47,7 @@
 - Google CloudのOAuth設定: Supabase AuthのGoogleログインだけに使用
 - Netlify Free: α用URLとNext.js配信
 
-Google OAuthをテストモードで使う間は、MECHORIの招待URLを発行する前に、所有者が相手のGoogleアカウントをGoogle Auth Platformのテストユーザーへ追加します。3〜5人への具体的な手順と依頼文は`docs/ALPHA_LAUNCH_CHECKLIST.md`に固定します。
+Google OAuthをテストモードで使う間は、MECHORIの招待URLを発行する前後に、所有者が相手のGoogleアカウントをGoogle Auth Platformのテストユーザーへ追加します。Google OAuthを`本番環境`へ公開した後はこの作業を省略できますが、MECHORIの1人用招待と参加権限は維持します。3〜5人への具体的な手順と依頼文は`docs/ALPHA_LAUNCH_CHECKLIST.md`に固定します。
 
 ### α開始時には不要
 

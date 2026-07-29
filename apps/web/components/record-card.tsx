@@ -21,6 +21,16 @@ export function recordOdometerLabel(record: MaintenanceRecord, locale: Locale): 
       : "Odometer not recorded";
 }
 
+export function recordReasonLabel(record: MaintenanceRecord, locale: Locale): string {
+  const reason = record.symptoms.trim();
+
+  if (reason) return reason;
+
+  return locale === "ja"
+    ? "症状・依頼内容の記録なし"
+    : "No symptoms or request recorded";
+}
+
 export function RecordCard({ record, locale }: { record: MaintenanceRecord; locale: Locale }) {
   return (
     <Link href={`/records/${record.id}`} className="record-card">
@@ -29,7 +39,7 @@ export function RecordCard({ record, locale }: { record: MaintenanceRecord; loca
         {record.isDemo && <span className="demo-label">DEMO</span>}
       </div>
       <h3>{recordTitle(record, locale)}</h3>
-      <p className="record-excerpt">{record.symptoms}</p>
+      <p className="record-excerpt">{recordReasonLabel(record, locale)}</p>
       <div className="record-meta">
         <span><Gauge size={15} />{recordOdometerLabel(record, locale)}</span>
         {record.actions.length > 1 && <span>{locale === "ja" ? `${record.actions.length}作業` : `${record.actions.length} actions`}</span>}

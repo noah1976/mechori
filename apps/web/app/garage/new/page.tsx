@@ -1,7 +1,10 @@
 "use client";
 
 import { useApp } from "@/lib/app-context";
-import { preparePrivateAlphaImage } from "@/lib/image-preparation";
+import {
+  imagePreparationMessageKey,
+  preparePrivateAlphaImage,
+} from "@/lib/image-preparation";
 import {
   createEmptyVehicleDraft,
   relatedVehicleIdentities,
@@ -71,8 +74,8 @@ function NewVehicleContent() {
     try {
       const prepared = await preparePrivateAlphaImage(file);
       setField("imagePath", prepared.dataUrl);
-    } catch {
-      setImageError(translate(locale, "vehicleImageInvalid"));
+    } catch (error) {
+      setImageError(translate(locale, imagePreparationMessageKey(error)));
     } finally {
       setPreparingImage(false);
     }
@@ -124,7 +127,7 @@ function NewVehicleContent() {
           <label className="photo-pick-action">
             <ImagePlus size={18} aria-hidden="true" />
             {translate(locale, preparingImage ? "preparingPhoto" : draft.imagePath ? "chooseAnotherPhoto" : "choosePhoto")}
-            <input type="file" accept="image/jpeg,image/png,image/webp" onChange={selectPhoto} disabled={preparingImage || saving} />
+            <input type="file" accept="image/*" onChange={selectPhoto} disabled={preparingImage || saving} />
           </label>
           {imageError && <p className="media-error" role="alert">{imageError}</p>}
           <p className="image-preparation-note"><ShieldCheck size={15} aria-hidden="true" />{translate(locale, "privateImagePreparationNotice")}</p>

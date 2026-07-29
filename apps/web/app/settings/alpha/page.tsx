@@ -1,7 +1,10 @@
 "use client";
 
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { isAlphaActivityTrackingEnabled } from "@/lib/runtime-config";
+import {
+  isAlphaActivityTrackingEnabled,
+  requiresGoogleOAuthTestUserRegistration,
+} from "@/lib/runtime-config";
 import { Check, Clipboard, Link2, LoaderCircle, ShieldCheck } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { useApp } from "@/lib/app-context";
@@ -12,6 +15,7 @@ type AccessState = "loading" | "operator" | "denied" | "error";
 export default function AlphaSettingsPage() {
   const { locale, isRemoteAlpha } = useApp();
   const ja = locale === "ja";
+  const googleTestUserRequired = requiresGoogleOAuthTestUserRegistration();
   const [access, setAccess] = useState<AccessState>("loading");
   const [expiresInDays, setExpiresInDays] = useState("7");
   const [creating, setCreating] = useState(false);
@@ -146,7 +150,15 @@ export default function AlphaSettingsPage() {
               <option value="30">30{ja ? "日" : " days"}</option>
             </select>
           </label>
-          <p className="privacy-caption">{ja ? "URLは1アカウントが参加すると使用済みになります。Googleのテストユーザー登録も別途必要です。" : "The URL is consumed after one account joins. The person must also be added as a Google test user."}</p>
+          <p className="privacy-caption">
+            {googleTestUserRequired
+              ? (ja
+                  ? "URLは1アカウントが参加すると使用済みになります。現在はGoogleのテストユーザー登録も別途必要です。"
+                  : "The URL is consumed after one account joins. A Google test-user registration is also currently required.")
+              : (ja
+                  ? "URLは1アカウントが参加すると使用済みになります。Googleへの事前登録は不要です。"
+                  : "The URL is consumed after one account joins. Google pre-registration is not required.")}
+          </p>
         </section>
         {inviteUrl && (
           <section className="form-section">

@@ -1,6 +1,10 @@
 "use client";
 
-import { recordOdometerLabel, recordTitle } from "@/components/record-card";
+import {
+  recordOdometerLabel,
+  recordReasonLabel,
+  recordTitle,
+} from "@/components/record-card";
 import { HazardBadge, ResolutionBadge, VerificationBadge, VisibilityBadge } from "@/components/status-badges";
 import { useApp } from "@/lib/app-context";
 import { maintenanceRecordDateKey, maintenanceRecordDateLabel } from "@mechori/core";
@@ -42,7 +46,7 @@ export default function RecordDetailPage() {
       {odometerReading?.sequenceAssessment === "needs_context" && <div className="context-notice"><Gauge size={20} /><div><strong>{ja ? "表示値が前回より小さい記録です" : "This reading is lower than the previous one"}</strong><p>{ja ? "メーター交換・修理・入力時期などの背景確認が必要な状態です。虚偽や誤りとは判定していません。" : "Meter replacement, repair, or record timing may explain it. This is not classified as false or incorrect."}</p></div></div>}
 
       <section className="knowledge-flow">
-        <DetailBlock number="01" title={ja ? "入庫のきっかけ・症状" : "Reason for visit and symptoms"} value={record.symptoms} />
+        <DetailBlock number="01" title={ja ? "入庫のきっかけ・症状" : "Reason for visit and symptoms"} value={recordReasonLabel(record, locale)} />
       </section>
 
       <section className="action-list" aria-labelledby="actions-heading">
