@@ -388,8 +388,9 @@ button { cursor: pointer; }
 .field input, .field select, .filter-grid input, .filter-grid select { min-height: 44px; padding: 0 11px; }
 .field textarea { resize: vertical; min-height: 92px; padding: 11px; line-height: 1.5; }
 .field input:focus, .field textarea:focus, .field select:focus, .filter-grid input:focus, .filter-grid select:focus, .search-main:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(45, 97, 119, 0.12); }
-.field.has-error input, .field.has-error textarea { border-color: var(--danger); }
-.field small { color: var(--danger); }
+.field.has-error input, .field.has-error textarea, .field.has-error select { border-color: var(--danger); }
+.field small { color: var(--muted); }
+.field.has-error small, .field small.field-error { color: var(--danger); }
 .quick-event-date-field:not(.has-error) small, .note-event-date:not(.has-error) small { color: var(--muted); font-weight: 550; line-height: 1.5; }
 .vehicle-form { display: grid; gap: 18px; }
 .lovable-onboarding { width: min(100%, 820px); }
