@@ -31,6 +31,12 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase.rpc("redeem_test_invitation", {
       p_raw_token: invite,
     });
+    if (error) {
+      console.error("alpha_invitation_redemption_failed", {
+        code: error.code,
+        message: error.message,
+      });
+    }
     if (error || !acceptedRedemptionStatuses.has(String(data))) {
       accessError = error ? "invalid_invitation" : String(data);
     }

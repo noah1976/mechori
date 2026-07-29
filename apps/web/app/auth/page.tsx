@@ -4,7 +4,7 @@ import { useApp } from "@/lib/app-context";
 import { alphaAuthErrorMessage } from "@/lib/auth-flow";
 import { sanitizeLocalReturnPath, type AuthProvider } from "@mechori/core";
 import { translate } from "@mechori/i18n";
-import { ArrowRight, LockKeyhole, ShieldCheck } from "lucide-react";
+import { ArrowRight, CircleCheck, LockKeyhole, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState, type FormEvent } from "react";
@@ -24,6 +24,7 @@ function AuthContent() {
   const [error, setError] = useState("");
   const returnTo = sanitizeLocalReturnPath(params.get("returnTo"));
   const displayedError = error || alphaAuthErrorMessage(params.get("error"), locale);
+  const invitedSignup = mode === "signup" && Boolean(inviteCode.trim());
 
   useEffect(() => {
     const cleanUrl = new URL(window.location.href);
@@ -90,7 +91,9 @@ function AuthContent() {
         <span className="eyebrow">MECHORI ACCOUNT</span>
         <h1>{translate(locale, mode === "signin" ? "welcomeBack" : "startVehicleHistory")}</h1>
         <p>
-          {mode === "signin"
+          {invitedSignup
+            ? translate(locale, "invitedSignupInstruction")
+            : mode === "signin"
             ? translate(locale, "returnToGarage")
             : isRemoteAlpha
               ? translate(locale, "invitedAlphaOnly")
@@ -99,16 +102,18 @@ function AuthContent() {
       </header>
 
       <section className="auth-panel">
-        <div className="segmented-control" role="group" aria-label={translate(locale, "accountAction")}>
-          <button type="button" className={mode === "signin" ? "is-selected" : ""} aria-pressed={mode === "signin"} onClick={() => { setMode("signin"); setError(""); }}>
-            {translate(locale, "signIn")}
-          </button>
-          <button type="button" className={mode === "signup" ? "is-selected" : ""} aria-pressed={mode === "signup"} onClick={() => { setMode("signup"); setError(""); }}>
-            {translate(locale, "createAccount")}
-          </button>
-        </div>
+        {!invitedSignup && (
+          <div className="segmented-control has-two-options" role="group" aria-label={translate(locale, "accountAction")}>
+            <button type="button" className={mode === "signin" ? "is-selected" : ""} aria-pressed={mode === "signin"} onClick={() => { setMode("signin"); setError(""); }}>
+              {translate(locale, "signIn")}
+            </button>
+            <button type="button" className={mode === "signup" ? "is-selected" : ""} aria-pressed={mode === "signup"} onClick={() => { setMode("signup"); setError(""); }}>
+              {translate(locale, "createAccount")}
+            </button>
+          </div>
+        )}
 
-        {mode === "signup" && (
+        {mode === "signup" && !invitedSignup && (
           <label className="auth-field">
             <span>{translate(locale, "invitationCode")}</span>
             <input
@@ -121,6 +126,16 @@ function AuthContent() {
           </label>
         )}
 
+        {invitedSignup && (
+          <div className="auth-invite-ready" role="status">
+            <CircleCheck size={19} aria-hidden="true" />
+            <p>
+              <strong>{translate(locale, "invitationConfirmed")}</strong>
+              <span>{translate(locale, "invitationConfirmedNotice")}</span>
+            </p>
+          </div>
+        )}
+
         <form className="auth-provider-list" action="/auth/start" method="post" onSubmit={submit}>
           <input type="hidden" name="provider" value="google" />
           <input type="hidden" name="mode" value={mode} />
@@ -129,7 +144,9 @@ function AuthContent() {
           {initialProviders.map((provider) => (
             <button type="submit" key={provider.id}>
               <span className={`provider-mark is-${provider.id}`} aria-hidden="true">{provider.mark}</span>
-              <strong>{translate(locale, "continueWithGoogle")}</strong>
+              <strong>
+                {translate(locale, invitedSignup ? "signUpWithGoogle" : "continueWithGoogle")}
+              </strong>
               <ArrowRight size={16} aria-hidden="true" />
             </button>
           ))}
