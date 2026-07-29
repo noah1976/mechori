@@ -3,6 +3,7 @@
 import {
   journalMediaForViewer,
   journalOccurrenceLabel,
+  preferSharedJournalMediaForDisplay,
   resolveJournalDisplayContent,
 } from "@mechori/core";
 import type {
@@ -20,6 +21,7 @@ import { ProfileSafetyMenu } from "@/components/profile-safety-menu";
 
 export function JournalCard({
   journal,
+  sharedJournal,
   author,
   record,
   locale,
@@ -31,6 +33,7 @@ export function JournalCard({
   showPrivateMedia = false,
 }: {
   journal: GarageJournalPost;
+  sharedJournal?: GarageJournalPost;
   author?: SocialProfile;
   record?: MaintenanceRecord;
   locale: Locale;
@@ -47,8 +50,13 @@ export function JournalCard({
   };
 }) {
   const ja = locale === "ja";
-  const display = resolveJournalDisplayContent({ contentTranslations: translations }, journal, locale);
-  const visibleMedia = journalMediaForViewer(journal, showPrivateMedia);
+  const displayJournal = preferSharedJournalMediaForDisplay(journal, sharedJournal);
+  const display = resolveJournalDisplayContent(
+    { contentTranslations: translations },
+    displayJournal,
+    locale,
+  );
+  const visibleMedia = journalMediaForViewer(displayJournal, showPrivateMedia);
   return (
     <article className="journal-card">
       <div className="journal-card-meta">
@@ -66,7 +74,7 @@ export function JournalCard({
           </small>
         </div>
         <div className="journal-card-actions">
-          {journal.isDemo && <span className="demo-label">DEMO</span>}
+          {displayJournal.isDemo && <span className="demo-label">DEMO</span>}
           {safety && author && (
             <ProfileSafetyMenu
               profileName={author.displayName}
@@ -97,24 +105,24 @@ export function JournalCard({
       )}
       <footer>
         <span>
-          {journal.visibility === "private" ? (
+          {displayJournal.visibility === "private" ? (
             <Lock size={15} aria-hidden="true" />
-          ) : journal.visibility === "followers" ? (
+          ) : displayJournal.visibility === "followers" ? (
             <Users size={15} aria-hidden="true" />
           ) : (
             <BookOpen size={15} aria-hidden="true" />
           )}
-          {journal.visibility === "followers"
+          {displayJournal.visibility === "followers"
             ? translate(locale, "followersOnly")
-            : journal.visibility === "public" && alphaAudience
+            : displayJournal.visibility === "public" && alphaAudience
               ? ja ? "α参加者に公開" : "Shared with alpha participants"
-              : translate(locale, journal.visibility)}
+              : translate(locale, displayJournal.visibility)}
         </span>
         <span>
           <Heart size={15} aria-hidden="true" />
-          {journal.appreciationCount}
+          {displayJournal.appreciationCount}
         </span>
-        <Link href={`/journal/${journal.id}`} className="text-link">
+        <Link href={`/journal/${displayJournal.id}`} className="text-link">
           {ja ? "読む" : "Read"}
           <ArrowRight size={15} aria-hidden="true" />
         </Link>

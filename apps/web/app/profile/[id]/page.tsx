@@ -19,7 +19,14 @@ import { useParams } from "next/navigation";
 
 export default function ProfilePage() {
   const { id } = useParams<{ id: string }>();
-  const { data, locale, signedIn, toggleBlockProfile, toggleMuteProfile } = useApp();
+  const {
+    data,
+    locale,
+    signedIn,
+    sharedJournals,
+    toggleBlockProfile,
+    toggleMuteProfile,
+  } = useApp();
   const ja = locale === "ja";
   const profile = data.profiles.find((item) => item.id === id);
   const ownProfile = signedIn && id === data.currentProfileId;
@@ -80,7 +87,7 @@ export default function ProfilePage() {
 
       <section>
         <div className="section-heading"><div><span className="eyebrow">VEHICLE RECORDS</span><h2>{ja ? "閲覧できる愛車記録" : "Visible vehicle records"}</h2></div></div>
-        {journals.length ? <div className="journal-grid">{journals.map((journal) => <JournalCard key={journal.id} journal={journal} author={profile} record={data.records.find((record) => record.id === journal.linkedRecordId)} locale={locale} translations={data.contentTranslations} showPrivateMedia={ownProfile} safety={!ownProfile && signedIn ? { muted: isProfileMuted(data, profile.id), blocked: isProfileBlocked(data, profile.id), onToggleMute: () => toggleMuteProfile(profile.id), onToggleBlock: () => toggleBlockProfile(profile.id) } : undefined} />)}</div> : <div className="empty-state"><BookOpenText size={26} /><h3>{ja ? "表示できる愛車記録はありません" : "No visible vehicle records"}</h3></div>}
+        {journals.length ? <div className="journal-grid">{journals.map((journal) => <JournalCard key={journal.id} journal={journal} sharedJournal={sharedJournals.find((item) => item.id === journal.id)} author={profile} record={data.records.find((record) => record.id === journal.linkedRecordId)} locale={locale} translations={data.contentTranslations} showPrivateMedia={ownProfile} safety={!ownProfile && signedIn ? { muted: isProfileMuted(data, profile.id), blocked: isProfileBlocked(data, profile.id), onToggleMute: () => toggleMuteProfile(profile.id), onToggleBlock: () => toggleBlockProfile(profile.id) } : undefined} />)}</div> : <div className="empty-state"><BookOpenText size={26} /><h3>{ja ? "表示できる愛車記録はありません" : "No visible vehicle records"}</h3></div>}
       </section>
       <p className="legal-note">{ja ? "所有期間や投稿数は人気、整備能力、ナレッジの信頼度を表しません。" : "Ownership duration and post counts do not indicate popularity, maintenance skill, or knowledge reliability."}</p>
     </div>

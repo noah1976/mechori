@@ -10,6 +10,7 @@ import {
   journalMediaForViewer,
   journalOccurrenceLabel,
   maintenanceRecordDateLabel,
+  preferSharedJournalMediaForDisplay,
   resolveJournalDisplayContent,
 } from "@mechori/core";
 import {
@@ -51,7 +52,9 @@ export default function JournalDetailPage() {
   const ja = locale === "ja";
   const localJournal = data.journals.find((item) => item.id === id);
   const sharedJournal = sharedJournals.find((item) => item.id === id);
-  const journal = localJournal ?? sharedJournal;
+  const journal = localJournal
+    ? preferSharedJournalMediaForDisplay(localJournal, sharedJournal)
+    : sharedJournal;
   const isSharedPost = !localJournal && Boolean(sharedJournal);
   const blocked = signedIn && journal ? isProfileBlocked(data, journal.authorProfileId) : false;
   const canView = journal && (

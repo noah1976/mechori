@@ -32,7 +32,14 @@ export default function GaragePage() {
 }
 
 function GarageContent() {
-  const { data, locale, isRemoteAlpha, resetDemo, recordEngagement } = useApp();
+  const {
+    data,
+    locale,
+    isRemoteAlpha,
+    sharedJournals,
+    resetDemo,
+    recordEngagement,
+  } = useApp();
   const params = useSearchParams();
   const ownVehicles = data.vehicles.filter(
     (item) => item.ownerProfileId === data.currentProfileId,
@@ -259,7 +266,7 @@ function GarageContent() {
         </div>
         {journals.length ? (
           <div className="journal-grid">
-            {journals.map((journal) => <JournalCard key={journal.id} journal={journal} author={data.profiles.find((profile) => profile.id === journal.authorProfileId)} record={data.records.find((record) => record.id === journal.linkedRecordId)} locale={locale} translations={data.contentTranslations} showPrivateMedia />)}
+            {journals.map((journal) => <JournalCard key={journal.id} journal={journal} sharedJournal={sharedJournals.find((item) => item.id === journal.id)} author={data.profiles.find((profile) => profile.id === journal.authorProfileId)} record={data.records.find((record) => record.id === journal.linkedRecordId)} locale={locale} translations={data.contentTranslations} showPrivateMedia />)}
           </div>
         ) : (
           <div className="empty-state"><BookOpenText size={28} /><h3>{ja ? "写真・文章の記録はまだありません" : "No photo or written records yet"}</h3><p>{ja ? "一言なら「さっと記録」、長く書くなら「詳しく記録」から残せます。どちらも同じ時間軸に並びます。" : "Use Quick record for one line or Detailed record for a longer story. Both appear on the same timeline."}</p></div>

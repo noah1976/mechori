@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   createAlphaSharedJournalPayload,
   parseAlphaSharedJournalRow,
+  preferSharedJournalMediaForDisplay,
   type GarageJournalPost,
 } from "../src/index.ts";
 
@@ -228,4 +229,48 @@ test("a shared payload cannot contain more than six images", () => {
     () => createAlphaSharedJournalPayload(source, { sharedMedia }),
     /too_many_shared_media/,
   );
+});
+
+test("a server copy replaces public-ready local media for cross-device display", () => {
+  const local = journal();
+  const sharedMedia = {
+    ...local.media[0]!,
+    source: "alpha_shared" as const,
+    storageKey: undefined,
+    assetPath:
+      "daed5df5-a404-4c89-82f6-ec92c085d2b4/journal-1/revision-media-1.webp",
+  };
+  const shared = {
+    ...local,
+    media: [sharedMedia],
+  };
+
+  const display = preferSharedJournalMediaForDisplay(local, shared);
+
+  assert.equal(display.media[0]?.source, "alpha_shared");
+  assert.equal(display.media[0]?.assetPath, sharedMedia.assetPath);
+  assert.equal(display.media[0]?.storageKey, undefined);
+});
+
+test("private local media is never replaced by a server copy", () => {
+  const local = journal();
+  local.media[0] = {
+    ...local.media[0]!,
+    privacyState: "private_only",
+  };
+  const shared = {
+    ...journal(),
+    media: [{
+      ...journal().media[0]!,
+      source: "alpha_shared" as const,
+      storageKey: undefined,
+      assetPath:
+        "daed5df5-a404-4c89-82f6-ec92c085d2b4/journal-1/revision-media-1.webp",
+    }],
+  };
+
+  const display = preferSharedJournalMediaForDisplay(local, shared);
+
+  assert.equal(display.media[0]?.source, "local_blob");
+  assert.equal(display.media[0]?.privacyState, "private_only");
 });

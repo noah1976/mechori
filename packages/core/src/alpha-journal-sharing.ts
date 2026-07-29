@@ -51,6 +51,25 @@ export interface AlphaSharedJournal {
   author: SocialProfile;
 }
 
+export function preferSharedJournalMediaForDisplay(
+  journal: GarageJournalPost,
+  sharedJournal?: GarageJournalPost,
+): GarageJournalPost {
+  if (!sharedJournal || journal.id !== sharedJournal.id) return journal;
+  const sharedMediaById = new Map(
+    sharedJournal.media.map((attachment) => [attachment.id, attachment]),
+  );
+  let changed = false;
+  const media = journal.media.map((attachment) => {
+    if (attachment.privacyState !== "public_ready") return attachment;
+    const sharedAttachment = sharedMediaById.get(attachment.id);
+    if (!sharedAttachment) return attachment;
+    changed = true;
+    return sharedAttachment;
+  });
+  return changed ? { ...journal, media } : journal;
+}
+
 export function createAlphaSharedJournalPayload(
   journal: GarageJournalPost,
   options: AlphaSharedJournalPayloadOptions = {},

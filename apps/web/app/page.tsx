@@ -11,6 +11,7 @@ import {
   getPreferredVehicle,
   journalMediaForViewer,
   maintenanceRecordDateKey,
+  preferSharedJournalMediaForDisplay,
   resolveJournalDisplayContent,
 } from "@mechori/core";
 import { translate } from "@mechori/i18n";
@@ -67,12 +68,21 @@ export default function HomePage() {
         );
   const visibleMediaFor = (journal: (typeof allFeed)[number]) =>
     journalMediaForViewer(
-      journal,
+      preferSharedJournalMediaForDisplay(
+        journal,
+        sharedJournals.find((item) => item.id === journal.id),
+      ),
       signedIn && journal.authorProfileId === data.currentProfileId,
     );
   const featuredJournal = allFeed.find((journal) => visibleMediaFor(journal).length > 0) ?? allFeed[0];
-  const featuredDisplay = featuredJournal
-    ? resolveJournalDisplayContent(data, featuredJournal, locale)
+  const featuredDisplayJournal = featuredJournal
+    ? preferSharedJournalMediaForDisplay(
+        featuredJournal,
+        sharedJournals.find((item) => item.id === featuredJournal.id),
+      )
+    : undefined;
+  const featuredDisplay = featuredDisplayJournal
+    ? resolveJournalDisplayContent(data, featuredDisplayJournal, locale)
     : undefined;
   const feed = allFeed.filter((journal) => journal.id !== featuredJournal?.id).slice(0, 2);
   const [query, setQuery] = useState("");
@@ -258,6 +268,7 @@ export default function HomePage() {
             <JournalCard
               key={journal.id}
               journal={journal}
+              sharedJournal={sharedJournals.find((item) => item.id === journal.id)}
               author={
                 data.profiles.find(
                   (profile) => profile.id === journal.authorProfileId,

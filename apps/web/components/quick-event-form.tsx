@@ -47,6 +47,8 @@ type OccurrenceDraft = Pick<
   "occurredOn" | "occurredYear" | "occurredMonth" | "occurredPrecision" | "occurredPeriodNote"
 >;
 
+type AlphaPhotoSharingDecision = "share" | "private" | null;
+
 export function QuickEventForm({
   vehicle,
   journal,
@@ -89,11 +91,18 @@ export function QuickEventForm({
   );
   const existingAttachment = journal?.media[0];
   const [publicationError, setPublicationError] = useState("");
-  const [sharePhoto, setSharePhoto] = useState(
-    alphaJournalMediaSharingAvailable &&
-    existingAttachment?.kind === "image" &&
-      existingAttachment.privacyState === "public_ready",
-  );
+  const [photoSharingDecision, setPhotoSharingDecision] =
+    useState<AlphaPhotoSharingDecision>(() => {
+      if (
+        journal?.visibility !== "public" ||
+        existingAttachment?.kind !== "image"
+      ) {
+        return null;
+      }
+      return existingAttachment.privacyState === "public_ready"
+        ? "share"
+        : null;
+    });
   const router = useRouter();
   const vehicleModel = displayVehicleModel(vehicle, locale);
 
@@ -105,7 +114,7 @@ export function QuickEventForm({
     setError("");
     try {
       setImage(await preparePrivateAlphaImage(file, { maxDimension: 1400, maxOutputBytes: 460 * 1024 }));
-      setSharePhoto(false);
+      setPhotoSharingDecision(null);
     } catch (error) {
       setError(imagePreparationMessageKey(error));
     } finally {
@@ -128,6 +137,20 @@ export function QuickEventForm({
       );
       return;
     }
+    if (
+      isRemoteAlpha &&
+      alphaJournalMediaSharingAvailable &&
+      visibility === "public" &&
+      (image || existingAttachment?.kind === "image") &&
+      photoSharingDecision === null
+    ) {
+      setPublicationError(
+        locale === "ja"
+          ? "写真をα参加者にも公開するか、自分だけに残すかを選んでください。"
+          : "Choose whether to share the photo with alpha participants or keep it private.",
+      );
+      return;
+    }
     setSaving(true);
     setError("");
     setPublicationError("");
@@ -145,7 +168,7 @@ export function QuickEventForm({
         privacyState:
           visibility === "public" &&
           alphaJournalMediaSharingAvailable &&
-          sharePhoto
+          photoSharingDecision === "share"
             ? "public_ready"
             : "private_only",
         createdAt: new Date().toISOString(),
@@ -158,7 +181,7 @@ export function QuickEventForm({
               privacyState:
                 visibility === "public" &&
                 alphaJournalMediaSharingAvailable &&
-                sharePhoto
+                photoSharingDecision === "share"
                   ? "public_ready" as const
                   : "private_only" as const,
             }
@@ -250,7 +273,7 @@ export function QuickEventForm({
               aria-pressed={visibility === "private"}
               onClick={() => {
                 setVisibility("private");
-                setSharePhoto(false);
+                setPhotoSharingDecision(null);
                 setPublicationError("");
               }}
             >
@@ -295,21 +318,48 @@ export function QuickEventForm({
             alphaJournalMediaSharingAvailable &&
             visibility === "public" &&
             (image || existingAttachment?.kind === "image") && (
-            <label className="consent-option">
-              <input
-                type="checkbox"
-                checked={sharePhoto}
-                onChange={(event) => setSharePhoto(event.target.checked)}
-              />
-              <span>
-                <strong>{locale === "ja" ? "この写真もα参加者に見せる" : "Share this photo with alpha participants"}</strong>
-                <small>
-                  {locale === "ja"
-                    ? "ナンバー、人物、住所が分かる背景を確認してください。元画像ではなく軽量化した写真だけを共有します。"
-                    : "Check plates, people, and address-revealing backgrounds. Only the reduced image, never the original, is shared."}
-                </small>
-              </span>
-            </label>
+            <fieldset className={`alpha-media-sharing-choice${photoSharingDecision === null ? " needs-decision" : ""}`}>
+              <legend>
+                {locale === "ja" ? "この投稿の写真" : "Photo in this post"}
+              </legend>
+              <div className="segmented-control has-two-options">
+                <button
+                  type="button"
+                  className={photoSharingDecision === "share" ? "is-selected" : ""}
+                  aria-pressed={photoSharingDecision === "share"}
+                  onClick={() => {
+                    setPhotoSharingDecision("share");
+                    setPublicationError("");
+                  }}
+                >
+                  {locale === "ja" ? "写真も公開" : "Share photo"}
+                </button>
+                <button
+                  type="button"
+                  className={photoSharingDecision === "private" ? "is-selected" : ""}
+                  aria-pressed={photoSharingDecision === "private"}
+                  onClick={() => {
+                    setPhotoSharingDecision("private");
+                    setPublicationError("");
+                  }}
+                >
+                  {locale === "ja" ? "写真は自分だけ" : "Keep photo private"}
+                </button>
+              </div>
+              <small>
+                {photoSharingDecision === "share"
+                  ? locale === "ja"
+                    ? "軽量化した共有版をSupabaseへ保存し、α参加者と自分の別端末で表示します。ナンバー、人物、住所が分かる背景を確認してください。"
+                    : "A reduced copy is stored in Supabase for alpha participants and your other devices. Check plates, people, and address-revealing backgrounds."
+                  : photoSharingDecision === "private"
+                    ? locale === "ja"
+                      ? "写真は自分だけに表示し、α参加者には公開しません。"
+                      : "The photo remains visible only to you and is not shared with alpha participants."
+                    : locale === "ja"
+                      ? "保存前に、写真の公開範囲を選んでください。"
+                      : "Choose the photo audience before saving."}
+              </small>
+            </fieldset>
           )}
           {isRemoteAlpha &&
             !alphaJournalMediaSharingAvailable &&

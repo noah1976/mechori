@@ -67,6 +67,8 @@ interface PendingMedia {
   previewUrl: string;
 }
 
+type AlphaImageSharingDecision = "share" | "private" | null;
+
 const displayFieldOptions: Array<{
   value: JournalDisplayField;
   ja: string;
@@ -157,6 +159,14 @@ export function JournalForm({
   const [draftStatus, setDraftStatus] = useState<"idle" | "restored" | "saved" | "error">("idle");
   const [omittedMediaCount, setOmittedMediaCount] = useState(0);
   const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([]);
+  const [imageSharingDecision, setImageSharingDecision] =
+    useState<AlphaImageSharingDecision>(() => {
+      const images = journal?.media.filter((attachment) => attachment.kind === "image") ?? [];
+      if (journal?.visibility !== "public" || images.length === 0) return null;
+      return images.every((attachment) => attachment.privacyState === "public_ready")
+        ? "share"
+        : null;
+    });
   const [insertAfterBlockId, setInsertAfterBlockId] = useState<string | null>(null);
   const pendingMediaRef = useRef<PendingMedia[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -165,9 +175,6 @@ export function JournalForm({
   const submitFeedbackRef = useRef<HTMLDivElement>(null);
   const validation = validateJournalDraft(draft);
   const imageAttachments = draft.media.filter((attachment) => attachment.kind === "image");
-  const sharingAllImages =
-    imageAttachments.length > 0 &&
-    imageAttachments.every((attachment) => attachment.privacyState === "public_ready");
 
   useEffect(() => {
     pendingMediaRef.current = pendingMedia;
@@ -245,6 +252,7 @@ export function JournalForm({
     if (isRemoteAlpha && visibility === "followers") return;
     if (isRemoteAlpha && visibility === "public" && !alphaJournalSharingAvailable) return;
     if (visibility !== "public") {
+      setImageSharingDecision(null);
       setPendingMedia((current) =>
         current.map((item) => ({
           ...item,
@@ -266,6 +274,7 @@ export function JournalForm({
   }
 
   function setImageSharing(enabled: boolean) {
+    setImageSharingDecision(enabled ? "share" : "private");
     setPendingMedia((current) =>
       current.map((item) => ({
         ...item,
@@ -316,6 +325,26 @@ export function JournalForm({
             block: "center",
           });
         }
+      });
+      return;
+    }
+    if (
+      isRemoteAlpha &&
+      alphaJournalMediaSharingAvailable &&
+      submittedDraft.visibility === "public" &&
+      imageAttachments.length > 0 &&
+      imageSharingDecision === null
+    ) {
+      setSaveError(
+        ja
+          ? "写真をα参加者にも公開するか、自分だけに残すかを選んでください。"
+          : "Choose whether to share the photos with alpha participants or keep them private.",
+      );
+      window.requestAnimationFrame(() => {
+        submitFeedbackRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
       });
       return;
     }
@@ -456,7 +485,13 @@ export function JournalForm({
             mimeType: blob.type,
             sizeBytes: blob.size,
             altText: "",
-            privacyState: "private_only",
+            privacyState:
+              isRemoteAlpha &&
+              draft.visibility === "public" &&
+              imageSharingDecision === "share" &&
+              !isVideo
+                ? "public_ready"
+                : "private_only",
             createdAt: now,
             isDemo: false,
           },
@@ -730,25 +765,44 @@ export function JournalForm({
           alphaJournalMediaSharingAvailable &&
           draft.visibility === "public" &&
           imageAttachments.length > 0 && (
-          <label className="consent-option">
-            <input
-              type="checkbox"
-              checked={sharingAllImages}
-              onChange={(event) => setImageSharing(event.target.checked)}
-            />
-            <span>
-              <strong>
-                {ja
-                  ? `添付写真${imageAttachments.length}枚もα参加者に見せる`
-                  : `Share ${imageAttachments.length} attached photo${imageAttachments.length === 1 ? "" : "s"} with alpha participants`}
-              </strong>
-              <small>
-                {ja
-                  ? "ナンバー、人物、住所が分かる背景を確認してください。元画像ではなく軽量化した写真だけを共有します。"
-                  : "Check plates, people, and address-revealing backgrounds. Only the reduced image, never the original, is shared."}
-              </small>
-            </span>
-          </label>
+          <fieldset className={`alpha-media-sharing-choice${imageSharingDecision === null ? " needs-decision" : ""}`}>
+            <legend>
+              {ja
+                ? `この投稿の写真${imageAttachments.length}枚`
+                : `${imageAttachments.length} photo${imageAttachments.length === 1 ? "" : "s"} in this post`}
+            </legend>
+            <div className="segmented-control has-two-options">
+              <button
+                type="button"
+                className={imageSharingDecision === "share" ? "is-selected" : ""}
+                aria-pressed={imageSharingDecision === "share"}
+                onClick={() => setImageSharing(true)}
+              >
+                {ja ? "写真も公開" : "Share photos"}
+              </button>
+              <button
+                type="button"
+                className={imageSharingDecision === "private" ? "is-selected" : ""}
+                aria-pressed={imageSharingDecision === "private"}
+                onClick={() => setImageSharing(false)}
+              >
+                {ja ? "写真は自分だけ" : "Keep photos private"}
+              </button>
+            </div>
+            <small>
+              {imageSharingDecision === "share"
+                ? ja
+                  ? "軽量化した共有版をSupabaseへ保存し、α参加者と自分の別端末で表示します。ナンバー、人物、住所が分かる背景を確認してください。"
+                  : "A reduced copy is stored in Supabase for alpha participants and your other devices. Check plates, people, and address-revealing backgrounds."
+                : imageSharingDecision === "private"
+                  ? ja
+                    ? "写真はこの端末だけに残り、α参加者や自分の別端末には表示されません。"
+                    : "Photos remain only on this device and will not appear to alpha participants or your other devices."
+                  : ja
+                    ? "保存前に、写真の公開範囲を選んでください。"
+                    : "Choose the photo audience before saving."}
+            </small>
+          </fieldset>
         )}
         {isRemoteAlpha &&
           !alphaJournalMediaSharingAvailable &&

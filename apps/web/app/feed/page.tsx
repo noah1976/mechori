@@ -92,6 +92,7 @@ export default function FeedPage() {
                   <JournalCard
                     key={journal.id}
                     journal={journal}
+                    sharedJournal={sharedJournals.find((item) => item.id === journal.id)}
                     author={author}
                     record={data.records.find(
                       (record) => record.id === journal.linkedRecordId,
