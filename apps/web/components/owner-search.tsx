@@ -49,26 +49,26 @@ export function OwnerSearch() {
         <div>
           <span className="eyebrow">FIND AN OWNER</span>
           <h2 id="owner-search-heading">
-            {ja ? "表示名からオーナーを探す" : "Find an owner by display name"}
+            {ja ? "人・クルマを検索" : "Search people and vehicles"}
           </h2>
           <p>
             {ja
-              ? "車種が違う友人も探せます。相手が公開した愛車だけを表示します。"
-              : "Find friends with different vehicles. Only vehicles they explicitly share are shown."}
+              ? "表示名または @ユーザー名から、車種が違う友人も探せます。"
+              : "Find friends across vehicle types by display name or @username."}
           </p>
         </div>
       </div>
       <form className="owner-search-form" onSubmit={submit}>
         <label>
           <span className="sr-only">
-            {ja ? "オーナーの表示名" : "Owner display name"}
+            {ja ? "表示名または公開ユーザー名" : "Display name or public username"}
           </span>
           <Search size={19} aria-hidden="true" />
           <input
             type="search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder={ja ? "表示名を入力" : "Enter a display name"}
+            placeholder={ja ? "表示名または @ユーザー名" : "Display name or @username"}
             maxLength={80}
             autoComplete="off"
           />
@@ -110,6 +110,7 @@ export function OwnerSearch() {
               </span>
               <span>
                 <strong>{owner.displayName}</strong>
+                {owner.publicUsername && <small>@{owner.publicUsername}</small>}
                 <small>
                   {ja
                     ? `公開中の愛車 ${owner.vehicleCount}台`

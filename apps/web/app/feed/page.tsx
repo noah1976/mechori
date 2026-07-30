@@ -5,7 +5,7 @@ import { JournalCard } from "@/components/journal-card";
 import { useApp } from "@/lib/app-context";
 import {
   createFollowTargets,
-  getFollowedSharedVehicleFeed,
+  getFollowedSharedFeed,
   getFollowingFeed,
   isFollowing,
   isProfileBlocked,
@@ -34,7 +34,7 @@ export default function FeedPage() {
   const feed = [
     ...getFollowingFeed(data),
     ...(isRemoteAlpha
-      ? getFollowedSharedVehicleFeed(data, sharedJournals).filter(
+      ? getFollowedSharedFeed(data, sharedJournals).filter(
           (journal) => !ownJournalIds.has(journal.id),
         )
       : []),
@@ -59,8 +59,8 @@ export default function FeedPage() {
           <p>
             {isRemoteAlpha
               ? ja
-                ? "表示名で見つけた友人の愛車を、一台ずつフォローできます。本人が公開を選んだ記録だけが並び、人気は整備情報の正しさを表しません。"
-                : "Follow individual vehicles shared by friends you find by display name. Only records explicitly shared by their authors appear here, and popularity never determines maintenance accuracy."
+                ? "人をフォローして全公開車両を追うことも、気になる一台だけをフォローすることもできます。同じ投稿は重複表示しません。"
+                : "Follow a person across all public vehicles or follow one vehicle only. The same post is never shown twice."
               : ja
               ? "人だけでなく、気になる一台や車種の続きを時系列で追えます。人気はナレッジの信頼度に影響しません。"
               : "Follow people, individual vehicles, and models in chronological order. Popularity never changes knowledge trust."}
@@ -77,7 +77,7 @@ export default function FeedPage() {
           <div className="section-heading">
             <div>
               <span className="eyebrow">LATEST</span>
-              <h2>{ja ? "フォロー中の愛車の新着" : "Latest from followed vehicles"}</h2>
+              <h2>{ja ? "フォロー中の人・クルマの新着" : "Latest from followed people and vehicles"}</h2>
             </div>
           </div>
           {feed.length ? (
@@ -129,15 +129,15 @@ export default function FeedPage() {
               <p>
                 {isRemoteAlpha
                   ? ja
-                    ? "ナレッジ検索から友人を表示名で探し、公開中の愛車をフォローできます。"
-                    : "Find a friend by display name in Search, then follow one of their shared vehicles."
+                    ? "表示名や @ユーザー名から友人を探し、その人または公開中のクルマをフォローできます。"
+                    : "Find friends by display name or @username, then follow the person or one of their public vehicles."
                   : ja
                   ? "右側からプロフィール、車両、車種をフォローできます。"
                   : "Follow a profile, vehicle, or model from the panel."}
               </p>
               {isRemoteAlpha && (
-                <Link href="/search" className="secondary-action">
-                  {ja ? "オーナーを探す" : "Find an owner"}
+                <Link href="/people" className="secondary-action">
+                  {ja ? "人・クルマを探す" : "Find people and vehicles"}
                 </Link>
               )}
             </div>

@@ -342,6 +342,7 @@ export interface JournalMediaAttachment {
 export interface SocialProfile {
   id: string;
   displayName: string;
+  publicUsername?: string;
   role: SocialProfileRole;
   bio: string;
   visibility: ProfileVisibility;

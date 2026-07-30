@@ -519,6 +519,36 @@ export function updateCurrentProfilePrivacy(
   };
 }
 
+export function updateCurrentProfileIdentity(
+  data: AppData,
+  displayName: string,
+  publicUsername?: string,
+): AppData {
+  const normalizedDisplayName = displayName.trim();
+  if (!normalizedDisplayName || normalizedDisplayName.length > 80) {
+    throw new Error("invalid_display_name");
+  }
+  const normalizedPublicUsername = publicUsername?.trim().toLowerCase() || undefined;
+  if (
+    normalizedPublicUsername &&
+    !/^[a-z0-9_]{3,30}$/.test(normalizedPublicUsername)
+  ) {
+    throw new Error("invalid_public_username");
+  }
+  return {
+    ...data,
+    profiles: data.profiles.map((profile) =>
+      profile.id === data.currentProfileId
+        ? {
+            ...profile,
+            displayName: normalizedDisplayName,
+            publicUsername: normalizedPublicUsername,
+          }
+        : profile,
+    ),
+  };
+}
+
 export function getFollowingFeed(data: AppData): GarageJournalPost[] {
   const follows = data.follows.filter(
     (follow) => follow.followerProfileId === data.currentProfileId,
@@ -558,6 +588,53 @@ export function getFollowedSharedVehicleFeed(
         left.publishedAt ?? left.createdAt,
       ),
     );
+}
+
+export function getFollowedSharedFeed(
+  data: AppData,
+  journals: GarageJournalPost[],
+): GarageJournalPost[] {
+  const profileTargets = new Set(
+    data.follows
+      .filter(
+        (follow) =>
+          follow.followerProfileId === data.currentProfileId &&
+          follow.targetType === "profile",
+      )
+      .map((follow) => follow.targetId),
+  );
+  const vehicleTargets = new Set(
+    data.follows
+      .filter(
+        (follow) =>
+          follow.followerProfileId === data.currentProfileId &&
+          follow.targetType === "vehicle",
+      )
+      .map((follow) => follow.targetId),
+  );
+
+  return [
+    ...new Map(
+      journals
+        .filter(
+          (journal) =>
+            journal.visibility === "public" &&
+            journal.moderationState === "visible" &&
+            !isProfileBlocked(data, journal.authorProfileId) &&
+            !isProfileMuted(data, journal.authorProfileId) &&
+            (profileTargets.has(journal.authorProfileId) ||
+              Boolean(
+                journal.vehicleTargetId &&
+                vehicleTargets.has(journal.vehicleTargetId),
+              )),
+        )
+        .map((journal) => [journal.id, journal]),
+    ).values(),
+  ].sort((left, right) =>
+    (right.publishedAt ?? right.createdAt).localeCompare(
+      left.publishedAt ?? left.createdAt,
+    ),
+  );
 }
 
 export function getOwnJournals(data: AppData): GarageJournalPost[] {

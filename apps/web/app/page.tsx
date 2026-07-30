@@ -7,7 +7,7 @@ import { RecordCard } from "@/components/record-card";
 import { useApp } from "@/lib/app-context";
 import {
   buildMonthlyOwnerSummary,
-  getFollowedSharedVehicleFeed,
+  getFollowedSharedFeed,
   getFollowingFeed,
   getPreferredVehicle,
   journalMediaForViewer,
@@ -27,6 +27,7 @@ import {
   Search,
   TriangleAlert,
   UserPlus,
+  UsersRound,
   Wrench,
 } from "lucide-react";
 import Image from "next/image";
@@ -53,7 +54,7 @@ export default function HomePage() {
     ? [
         ...getFollowingFeed(data),
         ...(isRemoteAlpha
-          ? getFollowedSharedVehicleFeed(data, sharedJournals).filter(
+          ? getFollowedSharedFeed(data, sharedJournals).filter(
               (journal) => !ownJournalIds.has(journal.id),
             )
           : []),
@@ -176,6 +177,10 @@ export default function HomePage() {
               <BookOpenText size={19} aria-hidden="true" />
               {ja ? "詳しく記録する" : "Write a detailed record"}
             </Link>
+            <Link href="/people" className="secondary-action">
+              <UsersRound size={18} aria-hidden="true" />
+              {ja ? "人・クルマを探す" : "Find people and vehicles"}
+            </Link>
             <Link href="/records/new" className="secondary-action">
               <Wrench size={18} aria-hidden="true" />
               {ja ? "整備記録だけ残す" : "Maintenance record only"}
@@ -257,7 +262,7 @@ export default function HomePage() {
         <div className="section-heading">
           <div>
             <span className="eyebrow">{signedIn ? "FOLLOWING" : "PUBLIC RECORDS"}</span>
-            <h2>{signedIn ? (ja ? "気になるクルマの続き" : "Stories you follow") : (ja ? "公開されている愛車の記録" : "Public vehicle stories")}</h2>
+            <h2>{signedIn ? (ja ? "フォロー中の人・クルマの続き" : "Stories from people and vehicles you follow") : (ja ? "公開されている愛車の記録" : "Public vehicle stories")}</h2>
           </div>
           {signedIn && (
             <Link href="/feed" className="text-link">

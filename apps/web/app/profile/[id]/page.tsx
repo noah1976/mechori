@@ -10,11 +10,12 @@ import {
   formatOwnershipDuration,
   formatOwnershipPeriod,
   groupVehiclesByOwnership,
+  isFollowing,
   isProfileBlocked,
   isProfileMuted,
   summarizeVehicleRelationship,
 } from "@mechori/core";
-import { ArrowLeft, Bike, BookOpenText, CarFront, History, LockKeyhole, Settings2, UserRound } from "lucide-react";
+import { ArrowLeft, Bike, BookOpenText, CarFront, History, LockKeyhole, Settings2, UserRound, UserRoundPlus } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -26,6 +27,7 @@ export default function ProfilePage() {
     signedIn,
     isRemoteAlpha,
     sharedJournals,
+    toggleFollow,
     toggleBlockProfile,
     toggleMuteProfile,
   } = useApp();
@@ -66,8 +68,20 @@ export default function ProfilePage() {
       <Link href={signedIn ? "/feed" : "/"} className="back-link"><ArrowLeft size={17} />{ja ? "戻る" : "Back"}</Link>
       <header className="profile-header">
         <span className="profile-avatar" aria-hidden="true">{profile.displayName.slice(0, 1).toLocaleUpperCase()}</span>
-        <div><span className="eyebrow">PROFILE</span><h1>{profile.displayName}</h1>{fields.has("role") && <p>{profile.role === "mechanic" ? (ja ? "メカニック" : "Mechanic") : (ja ? "オーナー" : "Owner")}{profile.isProfessional ? " · Professional DEMO" : ""}</p>}</div>
-        {ownProfile && <Link href="/settings/privacy" className="secondary-action"><Settings2 size={17} />{ja ? "公開設定" : "Visibility settings"}</Link>}
+        <div><span className="eyebrow">PROFILE</span><h1>{profile.displayName}</h1>{profile.publicUsername && <p className="public-username">@{profile.publicUsername}</p>}{fields.has("role") && <p>{profile.role === "mechanic" ? (ja ? "メカニック" : "Mechanic") : (ja ? "オーナー" : "Owner")}{profile.isProfessional ? " · Professional DEMO" : ""}</p>}</div>
+        {ownProfile ? (
+          <Link href="/settings/profile" className="secondary-action"><Settings2 size={17} />{ja ? "プロフィール編集" : "Edit profile"}</Link>
+        ) : signedIn ? (
+          <button
+            type="button"
+            className={isFollowing(data, "profile", profile.id) ? "follow-button is-following" : "follow-button"}
+            aria-pressed={isFollowing(data, "profile", profile.id)}
+            onClick={() => toggleFollow("profile", profile.id)}
+          >
+            <UserRoundPlus size={16} />
+            {isFollowing(data, "profile", profile.id) ? (ja ? "この人をフォロー中" : "Following this person") : (ja ? "この人をフォロー" : "Follow this person")}
+          </button>
+        ) : null}
       </header>
 
       {fields.has("bio") && <section className="profile-bio"><UserRound size={21} aria-hidden="true" /><p>{profile.bio}</p></section>}
@@ -82,11 +96,11 @@ export default function ProfilePage() {
         <section className="profile-vehicle-history">
           <div className="profile-vehicle-group">
             <div className="section-heading compact"><div><span className="eyebrow">CURRENT</span><h2>{ja ? "現在のガレージ" : "Current Garage"}</h2></div><CarFront size={21} aria-hidden="true" /></div>
-            {groupedVehicles.current.length ? <div className="profile-vehicle-lines">{groupedVehicles.current.map((vehicle) => <ProfileVehicleLine key={vehicle.id} vehicle={vehicle} period={formatOwnershipPeriod(vehicle, locale)} locale={locale} />)}</div> : <p>{ja ? "現在所有中の公開車両はありません。" : "No currently owned public vehicle."}</p>}
+            {groupedVehicles.current.length ? <div className="profile-vehicle-lines">{groupedVehicles.current.map((vehicle) => <ProfileVehicleLine key={vehicle.id} vehicle={vehicle} period={formatOwnershipPeriod(vehicle, locale)} locale={locale} followed={!ownProfile && isFollowing(data, "vehicle", vehicle.id)} onToggleFollow={!ownProfile && signedIn ? () => toggleFollow("vehicle", vehicle.id) : undefined} />)}</div> : <p>{ja ? "現在所有中の公開車両はありません。" : "No currently owned public vehicle."}</p>}
           </div>
           <div className="profile-vehicle-group">
             <div className="section-heading compact"><div><span className="eyebrow">HISTORY</span><h2>{ja ? "これまでの愛車" : "Previous Vehicles"}</h2></div><History size={21} aria-hidden="true" /></div>
-            {groupedVehicles.previous.length ? <div className="profile-vehicle-lines">{groupedVehicles.previous.map((vehicle) => <ProfileVehicleLine key={vehicle.id} vehicle={vehicle} period={formatOwnershipPeriod(vehicle, locale)} locale={locale} />)}</div> : <p>{ja ? "これまでの愛車はまだ公開されていません。" : "No previous vehicle is public yet."}</p>}
+            {groupedVehicles.previous.length ? <div className="profile-vehicle-lines">{groupedVehicles.previous.map((vehicle) => <ProfileVehicleLine key={vehicle.id} vehicle={vehicle} period={formatOwnershipPeriod(vehicle, locale)} locale={locale} followed={!ownProfile && isFollowing(data, "vehicle", vehicle.id)} onToggleFollow={!ownProfile && signedIn ? () => toggleFollow("vehicle", vehicle.id) : undefined} />)}</div> : <p>{ja ? "これまでの愛車はまだ公開されていません。" : "No previous vehicle is public yet."}</p>}
           </div>
         </section>
       )}
@@ -100,7 +114,8 @@ export default function ProfilePage() {
   );
 }
 
-function ProfileVehicleLine({ vehicle, period, locale }: { vehicle: ReturnType<typeof groupVehiclesByOwnership>["current"][number]; period: string; locale: "ja" | "en" }) {
+function ProfileVehicleLine({ vehicle, period, locale, followed = false, onToggleFollow }: { vehicle: ReturnType<typeof groupVehiclesByOwnership>["current"][number]; period: string; locale: "ja" | "en"; followed?: boolean; onToggleFollow?: () => void }) {
   const VehicleIcon = vehicle.vehicleCategory === "motorcycle" || vehicle.vehicleCategory === "moped" ? Bike : CarFront;
-  return <div><VehicleIcon size={18} aria-hidden="true" /><span><strong>{vehicle.year ? `${vehicle.year} ` : ""}{vehicle.make} {displayVehicleModel(vehicle, locale)}</strong><small>{period}</small></span></div>;
+  const ja = locale === "ja";
+  return <div><VehicleIcon size={18} aria-hidden="true" /><span><strong>{vehicle.year ? `${vehicle.year} ` : ""}{vehicle.make} {displayVehicleModel(vehicle, locale)}</strong><small>{period}</small></span>{onToggleFollow && <button type="button" className={followed ? "follow-button is-following" : "follow-button"} aria-pressed={followed} onClick={onToggleFollow}>{followed ? (ja ? "フォロー中" : "Following") : (ja ? "このクルマをフォロー" : "Follow this vehicle")}</button>}</div>;
 }

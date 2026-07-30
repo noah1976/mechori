@@ -484,7 +484,7 @@ button { cursor: pointer; }
 .profile-vehicle-group + .profile-vehicle-group { border-left: 1px solid var(--line); }
 .profile-vehicle-group > p { margin: 0; color: var(--muted); font-size: 12px; }
 .profile-vehicle-lines { display: grid; }
-.profile-vehicle-lines > div { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); }
+.profile-vehicle-lines > div { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); }
 .profile-vehicle-lines > div:first-child { border-top: 0; }
 .profile-vehicle-lines strong, .profile-vehicle-lines small { display: block; overflow-wrap: anywhere; }
 .profile-vehicle-lines strong { font-size: 14px; }
@@ -957,6 +957,15 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .policy-provider-list a:hover { text-decoration: underline; }
 .privacy-field-list { display: grid; border-top: 1px solid var(--line); }
 .settings-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.username-input { min-height: 44px; display: flex; align-items: center; gap: 7px; padding: 0 11px; color: var(--muted); background: #fff; border: 1px solid #c8d2cc; border-radius: 5px; }
+.username-input:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(45, 97, 119, 0.12); }
+.field.has-error .username-input { border-color: var(--danger); }
+.field .username-input input { min-height: 42px; padding: 0; border: 0; box-shadow: none; }
+.settings-navigation-row { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 18px 20px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); text-decoration: none; }
+.settings-navigation-row svg { color: var(--brand); }
+.settings-navigation-row strong, .settings-navigation-row small { display: block; }
+.settings-navigation-row strong { font-size: 13px; }
+.settings-navigation-row small { margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .safety-tools { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid var(--line); background: var(--surface); }
 .safety-tools > a { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 11px; padding: 18px; color: var(--ink); text-decoration: none; }
 .safety-tools > a + a { border-left: 1px solid var(--line); }
@@ -968,6 +977,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .profile-header { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 17px; padding: 26px; background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--brand); }
 .profile-header h1 { margin: 5px 0 4px; font-size: 30px; }
 .profile-header p { margin: 0; color: var(--muted); font-size: 12px; }
+.profile-header .public-username { margin: -1px 0 5px; color: var(--brand); font-weight: 750; }
+.profile-header > .follow-button { min-height: 40px; display: inline-flex; align-items: center; gap: 7px; padding-inline: 12px; font-size: 12px; }
 .profile-avatar { width: 58px; height: 58px; display: grid; place-items: center; color: #fff; background: var(--brand); border-radius: 50%; font-size: 20px; font-weight: 850; }
 .profile-bio { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding: 20px 24px; background: var(--surface-soft); border-left: 4px solid #8ca99c; }
 .profile-bio svg { color: var(--brand); }
@@ -999,6 +1010,21 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .owner-search-results small { margin-top: 3px; color: var(--muted); font-size: 10px; }
 .owner-search-avatar { width: 38px; height: 38px; display: grid; place-items: center; color: #fff; background: var(--brand); border-radius: 50%; font-size: 13px; font-weight: 850; }
 .owner-search-results > a > svg { color: var(--brand); }
+.owner-suggestions { display: grid; gap: 16px; }
+.owner-suggestion-list { display: grid; border-top: 1px solid var(--line); }
+.owner-suggestion { display: grid; gap: 13px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.owner-suggestion > header { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 11px; }
+.owner-suggestion > header > div { min-width: 0; }
+.owner-suggestion > header strong, .owner-suggestion > header small { display: block; overflow-wrap: anywhere; }
+.owner-suggestion > header strong { font-size: 14px; }
+.owner-suggestion > header small { margin-top: 3px; color: var(--muted); font-size: 11px; }
+.owner-suggestion > header .follow-button { min-height: 38px; display: inline-flex; align-items: center; gap: 7px; padding-inline: 11px; font-size: 12px; }
+.owner-suggestion-vehicles { display: grid; margin-left: 49px; border-top: 1px solid var(--line); }
+.owner-suggestion-vehicles > div { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.owner-suggestion-vehicles svg { color: var(--brand); }
+.owner-suggestion-vehicles strong { overflow-wrap: anywhere; font-size: 12px; }
+.owner-suggestion-vehicles .follow-button { font-size: 10px; }
+.owner-suggestion > .text-link { justify-self: end; }
 .remote-owner-vehicle-list { display: grid; border-top: 1px solid var(--line); }
 .remote-owner-vehicle { min-width: 0; display: grid; grid-template-columns: 230px minmax(0, 1fr); background: var(--surface); border-bottom: 1px solid var(--line); }
 .remote-owner-vehicle-photo { position: relative; min-height: 165px; overflow: hidden; background: #292d2b; }
@@ -1402,7 +1428,14 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .safety-tools { grid-template-columns: 1fr; }
   .safety-tools > a + a { border-left: 0; border-top: 1px solid var(--line); }
   .profile-header { grid-template-columns: auto minmax(0, 1fr); padding: 21px 16px; }
-  .profile-header .secondary-action { grid-column: 1 / -1; justify-self: start; }
+  .profile-header .secondary-action, .profile-header > .follow-button { grid-column: 1 / -1; justify-self: start; }
+  .profile-vehicle-lines > div { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
+  .profile-vehicle-lines .follow-button { grid-column: 2; justify-self: start; }
+  .owner-suggestion > header { grid-template-columns: auto minmax(0, 1fr); }
+  .owner-suggestion > header .follow-button { grid-column: 1 / -1; justify-self: start; }
+  .owner-suggestion-vehicles { margin-left: 0; }
+  .owner-suggestion-vehicles > div { grid-template-columns: auto minmax(0, 1fr); }
+  .owner-suggestion-vehicles .follow-button { grid-column: 2; justify-self: start; }
   .profile-facts, .moderation-summary { grid-template-columns: 1fr; }
   .profile-facts > div + div, .moderation-summary > div + div { border-left: 0; border-top: 1px solid var(--line); }
   .moderation-item { padding: 18px 15px; }

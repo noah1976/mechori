@@ -14,6 +14,9 @@ import {
   toggleMuteProfileInData,
   updateVehicleOwnershipInData,
   updateVehicleSpecificationInData,
+  isFollowing,
+  isProfileBlocked,
+  updateCurrentProfileIdentity,
   updateCurrentProfilePrivacy,
   updateJournalInData,
   upsertJournalTranslationInData,
@@ -50,6 +53,14 @@ import {
 import { LocalStorageDataProvider } from "@mechori/shared";
 import { loadAlphaAuthSession, signOutFromAlpha } from "@/lib/alpha-auth";
 import { recordAlphaEngagement } from "@/lib/alpha-engagement";
+import {
+  loadMyAlphaUserFollows,
+  setAlphaUserFollow,
+} from "@/lib/alpha-user-follows";
+import {
+  loadMyAlphaProfileIdentity,
+  updateMyAlphaProfileIdentity,
+} from "@/lib/alpha-profile";
 import { loadAlphaWorkspace, saveAlphaWorkspace } from "@/lib/alpha-workspace";
 import { journalMediaStore } from "@/lib/media-store";
 import {
@@ -120,6 +131,10 @@ interface AppContextValue {
     visibility: ProfileVisibility,
     displayFields: ProfileDisplayField[],
   ): Promise<void>;
+  updateProfileIdentity(
+    displayName: string,
+    publicUsername: string,
+  ): Promise<void>;
   recordEngagement(name: EngagementEventName): void;
   resetDemo(): Promise<void>;
 }
@@ -160,11 +175,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const storedAuthSession = isRemoteAlpha
           ? await loadAlphaAuthSession()
           : readStoredAuthSession();
-        const storedData = isRemoteAlpha
+        let storedData = isRemoteAlpha
           ? isSignedIn(storedAuthSession)
             ? await loadAlphaWorkspace(storedAuthSession.profileId)
             : null
           : await dataProvider.load();
+        if (isRemoteAlpha && isSignedIn(storedAuthSession) && storedData) {
+          const [identity, profileFollows] = await Promise.all([
+            loadMyAlphaProfileIdentity().catch(() => null),
+            loadMyAlphaUserFollows(storedData.currentProfileId).catch(
+              () => null,
+            ),
+          ]);
+          if (identity) {
+            storedData = updateCurrentProfileIdentity(
+              storedData,
+              identity.displayName,
+              identity.publicUsername,
+            );
+          }
+          if (profileFollows) {
+            storedData = {
+              ...storedData,
+              follows: [
+                ...storedData.follows.filter(
+                  (follow) => follow.targetType !== "profile",
+                ),
+                ...profileFollows,
+              ],
+            };
+          }
+        }
         let sharedContent: AlphaSharedJournal[] = [];
         if (isRemoteAlpha && isSignedIn(storedAuthSession)) {
           try {
@@ -489,7 +530,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const toggleFollow = useCallback(
     (targetType: FollowTargetType, targetId: string) => {
       if (!isSignedIn(authSession)) return;
-      void persist(toggleFollowInData(data, targetType, targetId)).catch(() => undefined);
+      const following = isFollowing(data, targetType, targetId);
+      const nextData = toggleFollowInData(data, targetType, targetId);
+      if (nextData === data) return;
+      void (async () => {
+        if (isRemoteAlpha && targetType === "profile") {
+          await setAlphaUserFollow(targetId, !following);
+        }
+        await persist(nextData);
+      })().catch(() => setPersistenceError(true));
     },
     [authSession, data, persist],
   );
@@ -505,19 +554,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const toggleBlockProfile = useCallback(
     (profileId: string) => {
       if (!isSignedIn(authSession)) return;
+      const blocking = !isProfileBlocked(data, profileId);
       const relatedVehicleTargetIds = alphaSharedContent
         .filter((item) => item.journal.authorProfileId === profileId)
         .flatMap((item) =>
           item.journal.vehicleTargetId ? [item.journal.vehicleTargetId] : [],
         );
-      void persist(
-        toggleBlockProfileInData(
-          data,
-          profileId,
-          new Date().toISOString(),
-          relatedVehicleTargetIds,
-        ),
-      ).catch(() => undefined);
+      const nextData = toggleBlockProfileInData(
+        data,
+        profileId,
+        new Date().toISOString(),
+        relatedVehicleTargetIds,
+      );
+      void (async () => {
+        if (
+          isRemoteAlpha &&
+          blocking &&
+          isFollowing(data, "profile", profileId)
+        ) {
+          await setAlphaUserFollow(profileId, false);
+        }
+        await persist(nextData);
+      })().catch(() => setPersistenceError(true));
     },
     [alphaSharedContent, authSession, data, persist],
   );
@@ -547,6 +605,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     async (visibility: ProfileVisibility, displayFields: ProfileDisplayField[]) => {
       if (!isSignedIn(authSession)) throw new Error("authentication_required");
       await persist(updateCurrentProfilePrivacy(data, visibility, displayFields));
+    },
+    [authSession, data, persist],
+  );
+
+  const updateProfileIdentity = useCallback(
+    async (displayName: string, publicUsername: string) => {
+      if (!isSignedIn(authSession)) throw new Error("authentication_required");
+      if (isRemoteAlpha) {
+        const identity = await updateMyAlphaProfileIdentity(
+          displayName,
+          publicUsername,
+        );
+        setData((current) =>
+          updateCurrentProfileIdentity(
+            current,
+            identity.displayName,
+            identity.publicUsername,
+          ),
+        );
+        setPersistenceError(false);
+        return;
+      }
+      await persist(
+        updateCurrentProfileIdentity(data, displayName, publicUsername),
+      );
     },
     [authSession, data, persist],
   );
@@ -615,6 +698,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       submitReport,
       moderateReport,
       updateProfilePrivacy,
+      updateProfileIdentity,
       recordEngagement,
       resetDemo,
     }),
@@ -645,6 +729,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       submitReport,
       moderateReport,
       updateProfilePrivacy,
+      updateProfileIdentity,
       recordEngagement,
       resetDemo,
     ],

@@ -8,6 +8,7 @@ import {
   cloneDemoData,
   createFollowTargets,
   getFollowedSharedVehicleFeed,
+  getFollowedSharedFeed,
   getFollowingFeed,
   isFollowing,
   isProfileBlocked,
@@ -21,6 +22,7 @@ import {
   toggleFollowInData,
   toggleMuteProfileInData,
   updateCurrentProfilePrivacy,
+  updateCurrentProfileIdentity,
   updateJournalInData,
   validateJournalDraft,
   type JournalDraft,
@@ -370,16 +372,74 @@ test("does not expose a followers-only journal through a model or vehicle follow
 
 test("toggles profile, vehicle, or model follows independently", () => {
   const data = cloneDemoData();
-  const followed = toggleFollowInData(data, "profile", "profile-demo-workshop");
+  const followedProfile = toggleFollowInData(
+    data,
+    "profile",
+    "profile-demo-workshop",
+  );
+  const followed = toggleFollowInData(
+    followedProfile,
+    "vehicle",
+    "vehicle-demo-workshop-barchetta",
+  );
   assert.equal(isFollowing(followed, "profile", "profile-demo-workshop"), true);
+  assert.equal(
+    isFollowing(followed, "vehicle", "vehicle-demo-workshop-barchetta"),
+    true,
+  );
   assert.equal(isFollowing(followed, "model", "model-family:fiat-barchetta"), true);
 
-  const unfollowed = toggleFollowInData(
+  const profileUnfollowed = toggleFollowInData(
     followed,
     "profile",
     "profile-demo-workshop",
   );
-  assert.equal(isFollowing(unfollowed, "profile", "profile-demo-workshop"), false);
+  assert.equal(
+    isFollowing(profileUnfollowed, "profile", "profile-demo-workshop"),
+    false,
+  );
+  assert.equal(
+    isFollowing(
+      profileUnfollowed,
+      "vehicle",
+      "vehicle-demo-workshop-barchetta",
+    ),
+    true,
+  );
+
+  const vehicleUnfollowed = toggleFollowInData(
+    followed,
+    "vehicle",
+    "vehicle-demo-workshop-barchetta",
+  );
+  assert.equal(
+    isFollowing(vehicleUnfollowed, "profile", "profile-demo-workshop"),
+    true,
+  );
+  assert.equal(
+    isFollowing(
+      vehicleUnfollowed,
+      "vehicle",
+      "vehicle-demo-workshop-barchetta",
+    ),
+    false,
+  );
+});
+
+test("updates the current profile identity without changing its immutable id", () => {
+  const data = cloneDemoData();
+  const updated = updateCurrentProfileIdentity(data, " Noah ", "NOAH_NORD");
+  const profile = updated.profiles.find(
+    (item) => item.id === updated.currentProfileId,
+  );
+
+  assert.equal(profile?.id, data.currentProfileId);
+  assert.equal(profile?.displayName, "Noah");
+  assert.equal(profile?.publicUsername, "noah_nord");
+  assert.throws(
+    () => updateCurrentProfileIdentity(data, "Noah", "no"),
+    /invalid_public_username/,
+  );
 });
 
 test("shows only shared posts from explicitly followed vehicles", () => {
@@ -414,6 +474,42 @@ test("shows only shared posts from explicitly followed vehicles", () => {
   assert.deepEqual(
     getFollowedSharedVehicleFeed(data, shared).map((journal) => journal.id),
     ["shared-alfa"],
+  );
+});
+
+test("combines profile and vehicle follows without duplicating shared posts", () => {
+  let data = cloneDemoData();
+  data.follows = [];
+  data = toggleFollowInData(data, "profile", "public-owner-alfa");
+  data = toggleFollowInData(data, "vehicle", "public-vehicle-alfa");
+  const source = data.journals.find(
+    (journal) => journal.visibility === "public",
+  );
+  assert.ok(source);
+  const shared = [
+    {
+      ...source,
+      id: "shared-alfa",
+      authorProfileId: "public-owner-alfa",
+      vehicleTargetId: "public-vehicle-alfa",
+    },
+    {
+      ...source,
+      id: "shared-alfa-second-car",
+      authorProfileId: "public-owner-alfa",
+      vehicleTargetId: "public-vehicle-alfa-two",
+    },
+    {
+      ...source,
+      id: "shared-renault",
+      authorProfileId: "public-owner-renault",
+      vehicleTargetId: "public-vehicle-renault",
+    },
+  ];
+
+  assert.deepEqual(
+    getFollowedSharedFeed(data, shared).map((journal) => journal.id),
+    ["shared-alfa", "shared-alfa-second-car"],
   );
 });
 

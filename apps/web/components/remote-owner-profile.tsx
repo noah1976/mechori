@@ -19,6 +19,7 @@ import {
   CarFront,
   LoaderCircle,
   LockKeyhole,
+  UserRoundPlus,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -43,6 +44,7 @@ export function RemoteOwnerProfile({
   const [state, setState] = useState<LoadState>("loading");
   const ja = locale === "ja";
   const blocked = isProfileBlocked(data, publicProfileId);
+  const profileFollowed = isFollowing(data, "profile", publicProfileId);
 
   useEffect(() => {
     let active = true;
@@ -86,7 +88,7 @@ export function RemoteOwnerProfile({
             ? "公開車両がないか、プロフィールが利用できない状態です。"
             : "This owner has no shared vehicles or the profile is unavailable."}
         </p>
-        <Link href="/search" className="secondary-action">
+        <Link href="/people" className="secondary-action">
           {ja ? "検索へ戻る" : "Back to search"}
         </Link>
       </div>
@@ -105,6 +107,7 @@ export function RemoteOwnerProfile({
   const profile: SocialProfile = {
     id: owner.id,
     displayName: owner.displayName,
+    publicUsername: owner.publicUsername,
     role: "owner",
     bio: "",
     visibility: "public",
@@ -115,7 +118,7 @@ export function RemoteOwnerProfile({
 
   return (
     <div className="page-stack profile-page">
-      <Link href="/search" className="back-link">
+      <Link href="/people" className="back-link">
         <ArrowLeft size={17} aria-hidden="true" />
         {ja ? "オーナー検索へ戻る" : "Back to owner search"}
       </Link>
@@ -126,12 +129,34 @@ export function RemoteOwnerProfile({
         <div>
           <span className="eyebrow">PUBLIC OWNER</span>
           <h1>{owner.displayName}</h1>
+          {owner.publicUsername && (
+            <p className="public-username">@{owner.publicUsername}</p>
+          )}
           <p>
             {ja
               ? `公開中の愛車 ${owner.vehicles.length}台`
               : `${owner.vehicles.length} shared ${owner.vehicles.length === 1 ? "vehicle" : "vehicles"}`}
           </p>
         </div>
+        <button
+          type="button"
+          className={
+            profileFollowed
+              ? "follow-button is-following"
+              : "follow-button"
+          }
+          aria-pressed={profileFollowed}
+          onClick={() => toggleFollow("profile", owner.id)}
+        >
+          <UserRoundPlus size={16} aria-hidden="true" />
+          {profileFollowed
+            ? ja
+              ? "この人をフォロー中"
+              : "Following this person"
+            : ja
+              ? "この人をフォロー"
+              : "Follow this person"}
+        </button>
       </header>
 
       <section className="remote-owner-vehicles" aria-labelledby="remote-owner-vehicles-heading">
@@ -173,7 +198,7 @@ export function RemoteOwnerProfile({
                       <CarFront size={16} aria-hidden="true" />
                       {followed
                         ? ja ? "フォロー中" : "Following"
-                        : ja ? "この愛車をフォロー" : "Follow this vehicle"}
+                        : ja ? "このクルマをフォロー" : "Follow this vehicle"}
                     </button>
                     <Link href={`/v/${vehicle.slug}`} className="text-link">
                       {ja ? "愛車ページを見る" : "View vehicle"}

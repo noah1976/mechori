@@ -3,6 +3,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 export interface AlphaPublicOwnerSummary {
   id: string;
   displayName: string;
+  publicUsername?: string;
   vehicleCount: number;
 }
 
@@ -22,18 +23,21 @@ export interface AlphaPublicVehicle {
 export interface AlphaPublicOwner {
   id: string;
   displayName: string;
+  publicUsername?: string;
   vehicles: AlphaPublicVehicle[];
 }
 
 interface AlphaPublicOwnerSearchRow {
   public_profile_id: string;
   display_name: string;
+  public_username: string | null;
   vehicle_count: number | string;
 }
 
-interface AlphaPublicOwnerVehicleRow {
+export interface AlphaPublicOwnerVehicleRow {
   public_profile_id: string;
   display_name: string;
+  public_username: string | null;
   vehicle_target_id: string;
   vehicle_slug: string;
   make: string;
@@ -59,6 +63,7 @@ export async function searchAlphaPublicOwners(
   return ((data ?? []) as AlphaPublicOwnerSearchRow[]).map((row) => ({
     id: row.public_profile_id,
     displayName: row.display_name,
+    publicUsername: row.public_username ?? undefined,
     vehicleCount: Number(row.vehicle_count) || 0,
   }));
 }
@@ -72,13 +77,36 @@ export async function loadAlphaPublicOwner(
     { p_public_profile_id: publicProfileId },
   );
   if (error) throw new Error("alpha_public_owner_load_failed");
-  const rows = (data ?? []) as AlphaPublicOwnerVehicleRow[];
-  const first = rows[0];
-  if (!first) return null;
-  return {
-    id: first.public_profile_id,
-    displayName: first.display_name,
-    vehicles: rows.map((row) => ({
+  return groupAlphaPublicOwnerRows(
+    (data ?? []) as AlphaPublicOwnerVehicleRow[],
+  )[0] ?? null;
+}
+
+export async function suggestAlphaPublicOwners(
+  limit = 10,
+): Promise<AlphaPublicOwner[]> {
+  const { data, error } = await createSupabaseBrowserClient().rpc(
+    "suggest_alpha_public_owners",
+    { p_limit: Math.min(Math.max(Math.trunc(limit), 1), 10) },
+  );
+  if (error) throw new Error("alpha_public_owner_suggestions_failed");
+  return groupAlphaPublicOwnerRows(
+    (data ?? []) as AlphaPublicOwnerVehicleRow[],
+  );
+}
+
+export function groupAlphaPublicOwnerRows(
+  rows: AlphaPublicOwnerVehicleRow[],
+): AlphaPublicOwner[] {
+  const owners = new Map<string, AlphaPublicOwner>();
+  for (const row of rows) {
+    const owner = owners.get(row.public_profile_id) ?? {
+      id: row.public_profile_id,
+      displayName: row.display_name,
+      publicUsername: row.public_username ?? undefined,
+      vehicles: [],
+    };
+    owner.vehicles.push({
       targetId: row.vehicle_target_id,
       slug: row.vehicle_slug,
       make: row.make,
@@ -89,8 +117,10 @@ export async function loadAlphaPublicOwner(
       ownerComment: row.owner_comment ?? undefined,
       imageDataUrl: row.image_data_url,
       publishedAt: row.published_at,
-    })),
-  };
+    });
+    owners.set(row.public_profile_id, owner);
+  }
+  return [...owners.values()];
 }
 
 function isUuid(value: string): boolean {

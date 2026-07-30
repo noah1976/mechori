@@ -173,9 +173,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <MessageSquareText size={18} aria-hidden="true" />
                   <span className="top-bar-action-label">{translate(locale, "feedback")}</span>
                 </Link>
-                <Link href="/settings/privacy" className="icon-text-button" aria-label={translate(locale, "privacyAndSafety")} title={translate(locale, "privacyAndSafety")}>
+                <Link href="/settings/profile" className="icon-text-button" aria-label={locale === "ja" ? "プロフィール設定" : "Profile settings"} title={locale === "ja" ? "プロフィール設定" : "Profile settings"}>
                   <Settings2 size={18} aria-hidden="true" />
-                  <span className="top-bar-action-label">{translate(locale, "privacyAndSafety")}</span>
+                  <span className="top-bar-action-label">{locale === "ja" ? "設定" : "Settings"}</span>
                 </Link>
                 <button className="icon-text-button" type="button" onClick={logOut} aria-label={translate(locale, "signOut")} title={translate(locale, "signOut")}>
                   <LogOut size={18} aria-hidden="true" />
