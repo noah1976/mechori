@@ -400,6 +400,7 @@ export function toggleBlockProfileInData(
   data: AppData,
   targetProfileId: string,
   now = new Date().toISOString(),
+  relatedVehicleTargetIds: Iterable<string> = [],
 ): AppData {
   if (targetProfileId === data.currentProfileId) return data;
   if (isProfileBlocked(data, targetProfileId)) {
@@ -416,11 +417,14 @@ export function toggleBlockProfileInData(
     };
   }
 
-  const blockedVehicleIds = new Set(
-    data.journals
+  const blockedVehicleIds = new Set([
+    ...relatedVehicleTargetIds,
+    ...data.journals
       .filter((journal) => journal.authorProfileId === targetProfileId)
-      .flatMap((journal) => journal.vehicleTargetId ? [journal.vehicleTargetId] : []),
-  );
+      .flatMap((journal) =>
+        journal.vehicleTargetId ? [journal.vehicleTargetId] : [],
+      ),
+  ]);
   const relation: ProfileSafetyRelation = {
     id: `profile-safety-${crypto.randomUUID()}`,
     actorProfileId: data.currentProfileId,
@@ -528,6 +532,27 @@ export function getFollowingFeed(data: AppData): GarageJournalPost[] {
       if (isProfileMuted(data, journal.authorProfileId)) return false;
       return follows.some((follow) => journalMatchesFollow(journal, follow));
     })
+    .sort((left, right) =>
+      (right.publishedAt ?? right.createdAt).localeCompare(
+        left.publishedAt ?? left.createdAt,
+      ),
+    );
+}
+
+export function getFollowedSharedVehicleFeed(
+  data: AppData,
+  journals: GarageJournalPost[],
+): GarageJournalPost[] {
+  return journals
+    .filter(
+      (journal) =>
+        Boolean(journal.vehicleTargetId) &&
+        journal.visibility === "public" &&
+        journal.moderationState === "visible" &&
+        !isProfileBlocked(data, journal.authorProfileId) &&
+        !isProfileMuted(data, journal.authorProfileId) &&
+        isFollowing(data, "vehicle", journal.vehicleTargetId!),
+    )
     .sort((left, right) =>
       (right.publishedAt ?? right.createdAt).localeCompare(
         left.publishedAt ?? left.createdAt,

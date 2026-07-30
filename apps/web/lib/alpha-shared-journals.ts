@@ -25,11 +25,7 @@ export async function alphaSharedJournalMediaAvailable(): Promise<boolean> {
 
 export async function loadAlphaSharedJournals(): Promise<AlphaSharedJournal[]> {
   const supabase = createSupabaseBrowserClient();
-  const { data, error } = await supabase
-    .from("alpha_shared_journals")
-    .select("share_id,journal_id,author_display_name,payload,published_at,updated_at")
-    .order("published_at", { ascending: false })
-    .limit(100);
+  const { data, error } = await supabase.rpc("list_alpha_shared_journals");
   if (error) throw new Error("alpha_shared_journals_load_failed");
   return (data as AlphaSharedJournalRow[])
     .map(parseAlphaSharedJournalRow)

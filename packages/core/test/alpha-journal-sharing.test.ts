@@ -118,6 +118,29 @@ test("shared row becomes a non-searchable public journal with a synthetic author
   assert.equal(shared.journal.media[0]?.source, "alpha_shared");
 });
 
+test("shared rows use stable public profile and vehicle identifiers when available", () => {
+  const payload = createAlphaSharedJournalPayload(journal());
+  const shared = parseAlphaSharedJournalRow({
+    share_id: "share-with-public-links",
+    journal_id: "journal-with-public-links",
+    public_profile_id: "28d8cb58-2f98-4e4d-b9b2-382416ca37d2",
+    vehicle_target_id: "public-vehicle-slug",
+    author_display_name: "Noah",
+    payload,
+    published_at: payload.publishedAt,
+    updated_at: payload.updatedAt,
+  });
+
+  assert.ok(shared);
+  assert.equal(
+    shared.journal.authorProfileId,
+    "28d8cb58-2f98-4e4d-b9b2-382416ca37d2",
+  );
+  assert.equal(shared.journal.vehicleTargetId, "public-vehicle-slug");
+  assert.equal(shared.author.visibility, "public");
+  assert.deepEqual(shared.author.displayFields, ["vehicles"]);
+});
+
 test("private journals cannot create a shared projection", () => {
   assert.throws(
     () =>

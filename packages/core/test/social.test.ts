@@ -7,6 +7,7 @@ import {
   classifyJournalForKnowledge,
   cloneDemoData,
   createFollowTargets,
+  getFollowedSharedVehicleFeed,
   getFollowingFeed,
   isFollowing,
   isProfileBlocked,
@@ -381,6 +382,41 @@ test("toggles profile, vehicle, or model follows independently", () => {
   assert.equal(isFollowing(unfollowed, "profile", "profile-demo-workshop"), false);
 });
 
+test("shows only shared posts from explicitly followed vehicles", () => {
+  let data = cloneDemoData();
+  data.follows = [];
+  data = toggleFollowInData(data, "vehicle", "public-vehicle-alfa");
+  const source = data.journals.find(
+    (journal) => journal.visibility === "public",
+  );
+  assert.ok(source);
+  const shared = [
+    {
+      ...source,
+      id: "shared-alfa",
+      authorProfileId: "public-owner-alfa",
+      vehicleTargetId: "public-vehicle-alfa",
+    },
+    {
+      ...source,
+      id: "shared-renault",
+      authorProfileId: "public-owner-renault",
+      vehicleTargetId: "public-vehicle-renault",
+    },
+    {
+      ...source,
+      id: "shared-without-public-vehicle",
+      authorProfileId: "public-owner-unknown",
+      vehicleTargetId: undefined,
+    },
+  ];
+
+  assert.deepEqual(
+    getFollowedSharedVehicleFeed(data, shared).map((journal) => journal.id),
+    ["shared-alfa"],
+  );
+});
+
 test("muting hides an author's journals without changing follow state", () => {
   const data = cloneDemoData();
   const muted = toggleMuteProfileInData(
@@ -425,6 +461,25 @@ test("blocking removes profile and vehicle follows but keeps model follows", () 
     ),
     false,
   );
+});
+
+test("blocking a remote owner removes their supplied public vehicle follows", () => {
+  let data = cloneDemoData();
+  data.follows = [];
+  data = toggleFollowInData(data, "vehicle", "public-vehicle-one");
+  data = toggleFollowInData(data, "vehicle", "public-vehicle-two");
+  data = toggleFollowInData(data, "vehicle", "unrelated-public-vehicle");
+
+  const blocked = toggleBlockProfileInData(
+    data,
+    "public-owner-one",
+    "2026-07-30T10:00:00.000Z",
+    ["public-vehicle-one", "public-vehicle-two"],
+  );
+
+  assert.equal(isFollowing(blocked, "vehicle", "public-vehicle-one"), false);
+  assert.equal(isFollowing(blocked, "vehicle", "public-vehicle-two"), false);
+  assert.equal(isFollowing(blocked, "vehicle", "unrelated-public-vehicle"), true);
 });
 
 test("blocking replaces mute and blocks direct journal access until undone", () => {

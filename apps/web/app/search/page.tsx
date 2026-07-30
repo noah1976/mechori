@@ -1,6 +1,7 @@
 "use client";
 
 import { DemoNotice } from "@/components/demo-notice";
+import { OwnerSearch } from "@/components/owner-search";
 import { RecordCard } from "@/components/record-card";
 import { KnowledgeSynthesisPanel } from "@/components/knowledge-synthesis-panel";
 import { useApp } from "@/lib/app-context";
@@ -40,6 +41,7 @@ function SearchContent() {
   }, [keyword, symptom]);
 
   return <div className="page-stack"><DemoNotice /><header className="page-header"><div><span className="eyebrow">KNOWLEDGE SEARCH</span><h1>{translate(locale, "search")}</h1><p>{ja ? "同型車の公開事例から、報告されている原因候補、確認箇所、対応例を出典つきで整理します。" : "MECHORI reads matching posts and records together, then organizes reported checks and responses with source links."}</p></div></header>
+    <OwnerSearch />
     <section className="search-panel">
       <label className="search-main"><Search size={20} /><input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={ja ? "キーワード" : "Keyword"} /></label>
       <div className="filter-grid">

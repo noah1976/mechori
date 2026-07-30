@@ -40,6 +40,8 @@ export interface AlphaSharedJournalPayload {
 export interface AlphaSharedJournalRow {
   share_id: string;
   journal_id: string;
+  public_profile_id?: string | null;
+  vehicle_target_id?: string | null;
   author_display_name: string;
   payload: unknown;
   published_at: string;
@@ -117,14 +119,17 @@ export function parseAlphaSharedJournalRow(
 ): AlphaSharedJournal | null {
   const payload = parsePayload(row.payload);
   if (!payload) return null;
-  const authorId = `alpha-shared-author-${row.share_id}`;
+  const authorId =
+    optionalString(row.public_profile_id, 80) ??
+    `alpha-shared-author-${row.share_id}`;
+  const vehicleTargetId = optionalString(row.vehicle_target_id, 160);
   const author: SocialProfile = {
     id: authorId,
     displayName: bounded(row.author_display_name, 80) || "MECHORI User",
     role: "owner",
     bio: "",
-    visibility: "private",
-    displayFields: [],
+    visibility: row.public_profile_id ? "public" : "private",
+    displayFields: row.public_profile_id ? ["vehicles"] : [],
     isProfessional: false,
     isDemo: false,
   };
@@ -133,6 +138,7 @@ export function parseAlphaSharedJournalRow(
     journal: {
       id: row.journal_id,
       authorProfileId: authorId,
+      vehicleTargetId,
       vehicleLabel: payload.vehicleLabel,
       modelTargetId: payload.modelTargetId,
       title: payload.title,

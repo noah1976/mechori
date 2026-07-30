@@ -5,6 +5,7 @@ import { JournalCard } from "@/components/journal-card";
 import { useApp } from "@/lib/app-context";
 import {
   createFollowTargets,
+  getFollowedSharedVehicleFeed,
   getFollowingFeed,
   isFollowing,
   isProfileBlocked,
@@ -33,7 +34,9 @@ export default function FeedPage() {
   const feed = [
     ...getFollowingFeed(data),
     ...(isRemoteAlpha
-      ? sharedJournals.filter((journal) => !ownJournalIds.has(journal.id))
+      ? getFollowedSharedVehicleFeed(data, sharedJournals).filter(
+          (journal) => !ownJournalIds.has(journal.id),
+        )
       : []),
   ].sort((left, right) =>
     (right.publishedAt ?? right.createdAt).localeCompare(
@@ -51,13 +54,13 @@ export default function FeedPage() {
       <DemoNotice />
       <header className="page-header">
         <div>
-          <span className="eyebrow">{isRemoteAlpha ? "ALPHA GARAGES" : "FOLLOWING"}</span>
-          <h1>{isRemoteAlpha ? (ja ? "みんなの愛車記録" : "Alpha vehicle records") : translate(locale, "feed")}</h1>
+          <span className="eyebrow">FOLLOWING</span>
+          <h1>{translate(locale, "feed")}</h1>
           <p>
             {isRemoteAlpha
               ? ja
-                ? "一台ずつの記録を持ち寄って、P0・αのガレージを一緒に育てます。本人が公開を選んだ記録だけが並び、人気は整備情報の正しさを表しません。"
-                : "We are growing the P0 and alpha garages together, one vehicle record at a time. Only records explicitly shared by their authors appear here, and popularity never determines maintenance accuracy."
+                ? "表示名で見つけた友人の愛車を、一台ずつフォローできます。本人が公開を選んだ記録だけが並び、人気は整備情報の正しさを表しません。"
+                : "Follow individual vehicles shared by friends you find by display name. Only records explicitly shared by their authors appear here, and popularity never determines maintenance accuracy."
               : ja
               ? "人だけでなく、気になる一台や車種の続きを時系列で追えます。人気はナレッジの信頼度に影響しません。"
               : "Follow people, individual vehicles, and models in chronological order. Popularity never changes knowledge trust."}
@@ -74,7 +77,7 @@ export default function FeedPage() {
           <div className="section-heading">
             <div>
               <span className="eyebrow">LATEST</span>
-              <h2>{isRemoteAlpha ? (ja ? "αガレージの新着" : "Latest from alpha garages") : (ja ? "新しい愛車の記録" : "Latest vehicle records")}</h2>
+              <h2>{ja ? "フォロー中の愛車の新着" : "Latest from followed vehicles"}</h2>
             </div>
           </div>
           {feed.length ? (
@@ -88,6 +91,8 @@ export default function FeedPage() {
                 const sharedPost = sharedProfiles.some(
                   (profile) => profile.id === journal.authorProfileId,
                 );
+                const sharedProfileLinkable =
+                  sharedPost && author?.visibility === "public";
                 return (
                   <JournalCard
                     key={journal.id}
@@ -100,11 +105,12 @@ export default function FeedPage() {
                     locale={locale}
                     translations={data.contentTranslations}
                     mediaPriority={index === 0}
-                    authorLinkEnabled={!sharedPost}
+                    authorLinkEnabled={!sharedPost || sharedProfileLinkable}
                     alphaAudience={isRemoteAlpha}
                     showPrivateMedia={journal.authorProfileId === data.currentProfileId}
                     safety={
-                      sharedPost || journal.authorProfileId === data.currentProfileId
+                      journal.authorProfileId === data.currentProfileId ||
+                      (sharedPost && !sharedProfileLinkable)
                         ? undefined
                         : {
                       muted: isProfileMuted(data, journal.authorProfileId),
@@ -119,16 +125,21 @@ export default function FeedPage() {
           ) : (
             <div className="empty-state">
               <BookOpenText size={28} aria-hidden="true" />
-              <h3>{isRemoteAlpha ? (ja ? "最初の愛車記録を置いてみませんか" : "Add the first vehicle record") : (ja ? "フォロー中の更新はありません" : "No followed updates")}</h3>
+              <h3>{ja ? "フォロー中の更新はありません" : "No followed updates"}</h3>
               <p>
                 {isRemoteAlpha
                   ? ja
-                    ? "ひとつ投稿されると、みんなで作るP0・αのガレージが動き始めます。「さっと記録」または「詳しく記録」で参加者への公開を選べます。"
-                    : "One shared post brings the P0 and alpha garages to life. Choose the participant audience in Quick or Detailed record."
+                    ? "ナレッジ検索から友人を表示名で探し、公開中の愛車をフォローできます。"
+                    : "Find a friend by display name in Search, then follow one of their shared vehicles."
                   : ja
                   ? "右側からプロフィール、車両、車種をフォローできます。"
                   : "Follow a profile, vehicle, or model from the panel."}
               </p>
+              {isRemoteAlpha && (
+                <Link href="/search" className="secondary-action">
+                  {ja ? "オーナーを探す" : "Find an owner"}
+                </Link>
+              )}
             </div>
           )}
         </section>

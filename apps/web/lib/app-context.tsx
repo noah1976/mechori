@@ -505,9 +505,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const toggleBlockProfile = useCallback(
     (profileId: string) => {
       if (!isSignedIn(authSession)) return;
-      void persist(toggleBlockProfileInData(data, profileId)).catch(() => undefined);
+      const relatedVehicleTargetIds = alphaSharedContent
+        .filter((item) => item.journal.authorProfileId === profileId)
+        .flatMap((item) =>
+          item.journal.vehicleTargetId ? [item.journal.vehicleTargetId] : [],
+        );
+      void persist(
+        toggleBlockProfileInData(
+          data,
+          profileId,
+          new Date().toISOString(),
+          relatedVehicleTargetIds,
+        ),
+      ).catch(() => undefined);
     },
-    [authSession, data, persist],
+    [alphaSharedContent, authSession, data, persist],
   );
 
   const submitReport = useCallback(
@@ -577,7 +589,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       alphaJournalSharingAvailable,
       alphaJournalMediaSharingAvailable,
       sharedJournals: alphaSharedContent.map((item) => item.journal),
-      sharedProfiles: alphaSharedContent.map((item) => item.author),
+      sharedProfiles: [
+        ...new Map(
+          alphaSharedContent.map((item) => [item.author.id, item.author]),
+        ).values(),
+      ],
       authSession,
       signedIn: isSignedIn(authSession),
       persistenceError,

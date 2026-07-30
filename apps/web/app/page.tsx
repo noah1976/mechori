@@ -7,6 +7,7 @@ import { RecordCard } from "@/components/record-card";
 import { useApp } from "@/lib/app-context";
 import {
   buildMonthlyOwnerSummary,
+  getFollowedSharedVehicleFeed,
   getFollowingFeed,
   getPreferredVehicle,
   journalMediaForViewer,
@@ -52,7 +53,9 @@ export default function HomePage() {
     ? [
         ...getFollowingFeed(data),
         ...(isRemoteAlpha
-          ? sharedJournals.filter((journal) => !ownJournalIds.has(journal.id))
+          ? getFollowedSharedVehicleFeed(data, sharedJournals).filter(
+              (journal) => !ownJournalIds.has(journal.id),
+            )
           : []),
       ].sort((left, right) =>
         (right.publishedAt ?? right.createdAt).localeCompare(
@@ -281,9 +284,16 @@ export default function HomePage() {
               )}
               locale={locale}
               translations={data.contentTranslations}
-              authorLinkEnabled={!sharedProfiles.some(
-                (profile) => profile.id === journal.authorProfileId,
-              )}
+              authorLinkEnabled={
+                !sharedProfiles.some(
+                  (profile) => profile.id === journal.authorProfileId,
+                ) ||
+                sharedProfiles.some(
+                  (profile) =>
+                    profile.id === journal.authorProfileId &&
+                    profile.visibility === "public",
+                )
+              }
               alphaAudience={isRemoteAlpha}
               showPrivateMedia={signedIn && journal.authorProfileId === data.currentProfileId}
             />

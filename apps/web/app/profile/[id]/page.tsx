@@ -1,6 +1,7 @@
 "use client";
 
 import { JournalCard } from "@/components/journal-card";
+import { RemoteOwnerProfile } from "@/components/remote-owner-profile";
 import { useApp } from "@/lib/app-context";
 import {
   canCurrentProfileViewJournal,
@@ -23,6 +24,7 @@ export default function ProfilePage() {
     data,
     locale,
     signedIn,
+    isRemoteAlpha,
     sharedJournals,
     toggleBlockProfile,
     toggleMuteProfile,
@@ -31,6 +33,10 @@ export default function ProfilePage() {
   const profile = data.profiles.find((item) => item.id === id);
   const ownProfile = signedIn && id === data.currentProfileId;
   const canView = profile && canProfileViewProfile(data, id, signedIn ? data.currentProfileId : undefined);
+
+  if (!profile && signedIn && isRemoteAlpha) {
+    return <RemoteOwnerProfile publicProfileId={id} />;
+  }
 
   if (!profile || !canView) {
     return (
