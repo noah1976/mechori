@@ -8,7 +8,13 @@ import {
   alphaSharedJournalMediaBucket,
 } from "@/lib/alpha-shared-journals";
 import { journalMediaStore } from "@/lib/media-store";
+import {
+  createSharedMediaLoadDiagnostic,
+  type SharedMediaLoadDiagnostic,
+} from "@/lib/shared-media-diagnostics";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+
+const reportedMediaDiagnostics = new Set<string>();
 
 export function JournalMedia({
   attachments,
@@ -59,6 +65,7 @@ function JournalMediaItem({
     attachment.source === "local_blob" || attachment.source === "alpha_shared",
   );
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const [failureId, setFailureId] = useState<string | null>(null);
 
   useEffect(() => {
     if (
@@ -70,11 +77,14 @@ function JournalMediaItem({
     let active = true;
     let objectUrl: string | undefined;
     const blobPromise = loadJournalMediaBlob(attachment);
-    void blobPromise.then((blob: Blob | null) => {
+    void blobPromise.then((result) => {
       if (!active) return;
-      if (blob) {
-        objectUrl = URL.createObjectURL(blob);
+      if (result.blob) {
+        objectUrl = URL.createObjectURL(result.blob);
         setSource(objectUrl);
+      } else if (result.diagnostic) {
+        setFailureId(result.diagnostic.errorId);
+        void reportSharedMediaDiagnostic(result.diagnostic);
       }
       setLoading(false);
     });
@@ -109,6 +119,9 @@ function JournalMediaItem({
           : locale === "ja"
             ? "端末内メディアが見つかりません"
             : "Local media not found"}</span>
+        {sharedPhotoUnavailable && failureId && (
+          <small>{locale === "ja" ? `確認番号: ${failureId}` : `Reference: ${failureId}`}</small>
+        )}
         {sharedPhotoUnavailable && (
           <button
             type="button"
@@ -159,23 +172,56 @@ function JournalMediaItem({
 
 async function loadJournalMediaBlob(
   attachment: JournalMediaAttachment,
-): Promise<Blob | null> {
+): Promise<{ blob: Blob | null; diagnostic: SharedMediaLoadDiagnostic | null }> {
   if (attachment.source === "local_blob" && attachment.storageKey) {
-    return journalMediaStore.load(attachment.storageKey);
+    return { blob: await journalMediaStore.load(attachment.storageKey), diagnostic: null };
   }
   if (attachment.source !== "alpha_shared" || !attachment.assetPath) {
-    return null;
+    return { blob: null, diagnostic: null };
   }
 
-  const storage = createSupabaseBrowserClient().storage.from(
+  const supabase = createSupabaseBrowserClient();
+  const storage = supabase.storage.from(
     alphaSharedJournalMediaBucket,
   );
+  const session = await supabase.auth.getSession();
+  let lastError: unknown = { code: "empty_storage_response" };
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const result = await storage.download(attachment.assetPath);
-    if (!result.error && result.data) return result.data;
+    if (!result.error && result.data) {
+      return { blob: result.data, diagnostic: null };
+    }
+    lastError = result.error ?? lastError;
     if (attempt === 0) await wait(650);
   }
-  return null;
+  return {
+    blob: null,
+    diagnostic: await createSharedMediaLoadDiagnostic({
+      photoId: attachment.id,
+      bucket: alphaSharedJournalMediaBucket,
+      objectPath: attachment.assetPath,
+      error: lastError,
+      sessionPresent: Boolean(session.data.session),
+      attempts: 2,
+    }),
+  };
+}
+
+async function reportSharedMediaDiagnostic(
+  diagnostic: SharedMediaLoadDiagnostic,
+): Promise<void> {
+  if (reportedMediaDiagnostics.has(diagnostic.errorId)) return;
+  reportedMediaDiagnostics.add(diagnostic.errorId);
+  try {
+    await fetch("/api/media-diagnostics", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(diagnostic),
+      keepalive: true,
+    });
+  } catch {
+    // The short reference remains visible even when diagnostic delivery fails.
+  }
 }
 
 function wait(milliseconds: number): Promise<void> {
