@@ -19,7 +19,7 @@ import {
   type Vehicle,
 } from "@mechori/core";
 import { translate, type TranslationKey } from "@mechori/i18n";
-import { Camera, Save, ShieldAlert, ShieldCheck } from "lucide-react";
+import { Camera, LoaderCircle, Save, ShieldAlert, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -84,6 +84,7 @@ export function QuickEventForm({
   const [image, setImage] = useState<PreparedImage | null>(null);
   const [error, setError] = useState<TranslationKey | "">("");
   const [saving, setSaving] = useState(false);
+  const [saveTakingLong, setSaveTakingLong] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const [visibility, setVisibility] = useState<JournalVisibility>(
     isRemoteAlpha && journal?.visibility === "followers"
@@ -152,9 +153,10 @@ export function QuickEventForm({
       );
       return;
     }
-    setSaving(true);
+    setSaveTakingLong(false);
     setError("");
     setPublicationError("");
+    let slowSaveTimer: number | undefined;
     try {
       const selectedType = eventTypes.find((item) => item.value === eventType)!;
       const mediaId = image ? `journal-media-${crypto.randomUUID()}` : existingAttachment?.id;
@@ -207,7 +209,6 @@ export function QuickEventForm({
       const validation = validateJournalDraft(draft);
       if (validation.errors.occurredOn) {
         setError("momentDateMissing");
-        setSaving(false);
         return;
       }
       if (!validation.valid) {
@@ -216,13 +217,19 @@ export function QuickEventForm({
             ? "公開範囲と写真の確認状態を見直してください。"
             : "Check the audience and photo confirmation.",
         );
-        setSaving(false);
         return;
       }
+      setSaving(true);
+      slowSaveTimer = window.setTimeout(() => {
+        setSaveTakingLong(true);
+      }, 8000);
       if (journal) await updateJournal(journal.id, draft);
       else await addJournal(draft);
+      window.clearTimeout(slowSaveTimer);
       router.push(journal ? `/journal/${journal.id}?updated=1` : `/garage?moment=added&vehicle=${encodeURIComponent(vehicle.id)}`);
     } catch {
+      if (slowSaveTimer !== undefined) window.clearTimeout(slowSaveTimer);
+      setSaveTakingLong(false);
       setError("momentSaveError");
       setSaving(false);
     }
@@ -235,7 +242,7 @@ export function QuickEventForm({
   return (
     <div className="page-stack narrow-page quick-event-page">
       <header className="page-header"><div><span className="eyebrow">{editing ? "EDIT A MOMENT" : "ADD A MOMENT"}</span><h1>{editing ? (locale === "ja" ? "短い記録を編集" : "Edit quick record") : translate(locale, "momentWithVehicle", { vehicle: vehicleModel })}</h1><p>{locale === "ja" ? "写真と一言で残す、短い愛車記録です。日付や内容はあとから直せます。" : "A quick vehicle record with a photo and a short note. You can edit it later."}</p></div></header>
-      <form className="quick-event-form" onSubmit={submit}>
+      <form className="quick-event-form" onSubmit={submit} aria-busy={saving || preparing}>
         <section className="quick-event-photo">
           {image ? <Image src={image.dataUrl} alt="" fill sizes="(max-width: 760px) 100vw, 680px" unoptimized /> : existingImageSource ? <Image src={existingImageSource} alt={existingAttachment?.altText ?? ""} fill sizes="(max-width: 760px) 100vw, 680px" unoptimized /> : <div><Camera size={38} /><strong>{translate(locale, "photoOptional")}</strong><span>{translate(locale, "addTodaysPhoto")}</span></div>}
         </section>
@@ -389,7 +396,17 @@ export function QuickEventForm({
         </section>
         {error && <p className="form-error-summary" role="alert">{translate(locale, error)}</p>}
         {publicationError && <p className="form-error-summary" role="alert">{publicationError}</p>}
-        <div className="form-actions"><Link href={journal ? `/journal/${journal.id}` : "/garage"} className="secondary-action">{translate(locale, "later")}</Link><button className="primary-action" type="submit" disabled={saving || preparing}><Save size={17} />{translate(locale, saving ? "addingMoment" : "saveMoment")}</button></div>
+        {saveTakingLong && (
+          <div className="form-submit-feedback" role="status">
+            <LoaderCircle className="spin" size={18} aria-hidden="true" />
+            <span>
+              {locale === "ja"
+                ? "保存を続けています。写真や通信状況によって少し時間がかかることがあります。"
+                : "Still saving. Photos or network conditions can make this take a little longer."}
+            </span>
+          </div>
+        )}
+        <div className="form-actions"><Link href={journal ? `/journal/${journal.id}` : "/garage"} className="secondary-action">{translate(locale, "later")}</Link><button className="primary-action" type="submit" disabled={saving || preparing}>{saving ? <LoaderCircle className="spin" size={17} aria-hidden="true" /> : <Save size={17} aria-hidden="true" />}{translate(locale, saving ? "addingMoment" : "saveMoment")}</button></div>
       </form>
     </div>
   );

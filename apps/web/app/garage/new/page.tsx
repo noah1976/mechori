@@ -18,7 +18,7 @@ import {
 } from "@mechori/core";
 import { usePublishedVehicleCatalog } from "@/lib/use-vehicle-catalog";
 import { translate } from "@mechori/i18n";
-import { Bike, Camera, CarFront, History, Save, ShieldCheck } from "lucide-react";
+import { Bike, Camera, CarFront, History, LoaderCircle, Save, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
@@ -38,6 +38,7 @@ function NewVehicleContent() {
   }));
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveTakingLong, setSaveTakingLong] = useState(false);
   const [preparingImage, setPreparingImage] = useState(false);
   const [imageError, setImageError] = useState("");
   const [saveError, setSaveError] = useState(false);
@@ -109,15 +110,22 @@ function NewVehicleContent() {
     setSaveError(false);
     if (!validation.valid || saving || preparingImage) return;
     setSaving(true);
+    setSaveTakingLong(false);
+    const slowSaveTimer = window.setTimeout(() => {
+      setSaveTakingLong(true);
+    }, 8000);
     try {
       const vehicle = await addVehicle(
         draft,
         collaborativeIdentity ? { identity: collaborativeIdentity } : undefined,
       );
+      window.clearTimeout(slowSaveTimer);
       router.push(isPrevious
         ? `/garage?vehicle=${encodeURIComponent(vehicle.id)}`
         : `/garage/${encodeURIComponent(vehicle.id)}/welcome`);
     } catch {
+      window.clearTimeout(slowSaveTimer);
+      setSaveTakingLong(false);
       setSaveError(true);
       setSaving(false);
     }
@@ -312,9 +320,19 @@ function NewVehicleContent() {
         </section>
 
         {saveError && <p className="form-error-summary" role="alert">{translate(locale, isRemoteAlpha ? "remoteVehicleSaveError" : "localVehicleSaveError")}</p>}
+        {saveTakingLong && (
+          <div className="form-submit-feedback" role="status">
+            <LoaderCircle className="spin" size={18} aria-hidden="true" />
+            <span>
+              {locale === "ja"
+                ? "愛車ページを作成しています。写真や通信状況によって少し時間がかかることがあります。"
+                : "Creating your vehicle page. Photos or network conditions can make this take a little longer."}
+            </span>
+          </div>
+        )}
         <div className="form-actions">
           <button type="button" className="secondary-action" onClick={() => router.back()}>{translate(locale, "back")}</button>
-          <button type="submit" className="primary-action" disabled={saving || preparingImage}><Save size={18} />{translate(locale, saving ? "addingToGarage" : isPrevious ? "addToPreviousVehicles" : "createVehiclePage")}</button>
+          <button type="submit" className="primary-action" disabled={saving || preparingImage}>{saving ? <LoaderCircle className="spin" size={18} aria-hidden="true" /> : <Save size={18} aria-hidden="true" />}{translate(locale, saving ? "addingToGarage" : isPrevious ? "addToPreviousVehicles" : "createVehiclePage")}</button>
         </div>
       </form>
     </div>

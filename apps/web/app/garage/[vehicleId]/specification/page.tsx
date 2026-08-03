@@ -11,7 +11,7 @@ import {
   type VehicleDrivetrainType,
 } from "@mechori/core";
 import { translate } from "@mechori/i18n";
-import { Bike, BookOpenCheck, Camera, CarFront, Save, Trash2 } from "lucide-react";
+import { Bike, BookOpenCheck, Camera, CarFront, LoaderCircle, Save, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -48,6 +48,7 @@ export default function VehicleSpecificationPage() {
   const [preparingImage, setPreparingImage] = useState(false);
   const [imageError, setImageError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saveTakingLong, setSaveTakingLong] = useState(false);
   const [error, setError] = useState("");
   const identity = useMemo(() => resolveVehicleIdentity(make, model), [make, model]);
   const specification = useMemo(
@@ -101,6 +102,10 @@ export default function VehicleSpecificationPage() {
       return;
     }
     setSaving(true);
+    setSaveTakingLong(false);
+    const slowSaveTimer = window.setTimeout(() => {
+      setSaveTakingLong(true);
+    }, 8000);
     try {
       await updateVehicleSpecification(editableVehicle.id, {
         vehicleCategory,
@@ -126,8 +131,11 @@ export default function VehicleSpecificationPage() {
         ownershipStartedDay: parsedOwnershipStartedDay,
         ownershipStartedPrecision,
       });
+      window.clearTimeout(slowSaveTimer);
       router.push(`/garage?vehicle=${encodeURIComponent(editableVehicle.id)}`);
     } catch {
+      window.clearTimeout(slowSaveTimer);
+      setSaveTakingLong(false);
       setError(translate(locale, "vehicleSpecificationSaveError"));
       setSaving(false);
     }
@@ -138,7 +146,7 @@ export default function VehicleSpecificationPage() {
       <header className="page-header">
         <div><span className="eyebrow">VEHICLE SPECIFICATION</span><h1>{translate(locale, "editVehicleSpecification")}</h1><p>{translate(locale, "editVehicleSpecificationIntro")}</p></div>
       </header>
-      <form className="vehicle-form" onSubmit={submit} noValidate>
+      <form className="vehicle-form" onSubmit={submit} noValidate aria-busy={saving || preparingImage}>
         <section className="form-section">
           <div className="section-heading compact"><div><span className="eyebrow">PROFILE</span><h2>{locale === "ja" ? "愛車ページの見え方" : "Vehicle profile"}</h2></div></div>
           <div className="vehicle-photo-field is-optional-past-photo">
@@ -223,7 +231,17 @@ export default function VehicleSpecificationPage() {
           </div>
         </section>
         {error && <p className="form-error-summary" role="alert">{error}</p>}
-        <div className="form-actions"><button type="submit" className="primary-action" disabled={saving || preparingImage}><Save size={18} />{translate(locale, saving ? "saving" : "saveSpecification")}</button><Link href={`/garage/${encodeURIComponent(editableVehicle.id)}/catalog`} className="secondary-action"><BookOpenCheck size={17} />{locale === "ja" ? "仕様情報を追加・修正する" : "Add or correct specification data"}</Link><button type="button" className="secondary-action" onClick={() => router.back()}>{translate(locale, "back")}</button></div>
+        {saveTakingLong && (
+          <div className="form-submit-feedback" role="status">
+            <LoaderCircle className="spin" size={18} aria-hidden="true" />
+            <span>
+              {locale === "ja"
+                ? "変更を保存しています。写真や通信状況によって少し時間がかかることがあります。"
+                : "Still saving changes. Photos or network conditions can make this take a little longer."}
+            </span>
+          </div>
+        )}
+        <div className="form-actions"><button type="submit" className="primary-action" disabled={saving || preparingImage}>{saving ? <LoaderCircle className="spin" size={18} aria-hidden="true" /> : <Save size={18} aria-hidden="true" />}{translate(locale, saving ? "saving" : "saveSpecification")}</button><Link href={`/garage/${encodeURIComponent(editableVehicle.id)}/catalog`} className="secondary-action"><BookOpenCheck size={17} />{locale === "ja" ? "仕様情報を追加・修正する" : "Add or correct specification data"}</Link><button type="button" className="secondary-action" onClick={() => router.back()}>{translate(locale, "back")}</button></div>
       </form>
     </div>
   );

@@ -20,6 +20,7 @@ import {
   ArrowRight,
   BookOpenText,
   CalendarDays,
+  Camera,
   CarFront,
   FileClock,
   Heart,
@@ -173,9 +174,12 @@ export default function HomePage() {
               : "Keep maintenance for yourself and look for comparable owner cases when needed. Photos and everyday notes stay connected to the same vehicle history."}
           </p>
           <div className="home-community-actions">
-            <Link href="/journal/new" className="primary-action">
-              <BookOpenText size={19} aria-hidden="true" />
-              {ja ? "詳しく記録する" : "Write a detailed record"}
+            <Link
+              href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`}
+              className="primary-action"
+            >
+              <Camera size={19} aria-hidden="true" />
+              {ja ? "さっと記録" : "Quick record"}
             </Link>
             <Link href="/people" className="secondary-action">
               <UsersRound size={18} aria-hidden="true" />
