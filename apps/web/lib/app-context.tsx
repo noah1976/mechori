@@ -60,7 +60,13 @@ import {
 import {
   loadMyAlphaProfileIdentity,
   updateMyAlphaProfileIdentity,
+  acceptAlphaContentPolicy,
 } from "@/lib/alpha-profile";
+import {
+  loadAlphaJournalReactions,
+  setAlphaJournalLike,
+  type AlphaJournalReaction,
+} from "@/lib/alpha-journal-likes";
 import { loadAlphaWorkspace, saveAlphaWorkspace } from "@/lib/alpha-workspace";
 import { journalMediaStore } from "@/lib/media-store";
 import {
@@ -71,6 +77,7 @@ import {
 } from "@/lib/alpha-shared-journals";
 import { getMechoriRuntime } from "@/lib/runtime-config";
 import { clearAllLocalDrafts } from "@/lib/local-draft-store";
+import { pushAnalyticsEvent } from "@/lib/analytics";
 import {
   recordLocalEngagement,
   resetLocalEngagement,
@@ -97,6 +104,7 @@ interface AppContextValue {
   authSession: AuthSession;
   signedIn: boolean;
   persistenceError: boolean;
+  contentPolicyAccepted: boolean;
   setLocale(locale: Locale): void;
   signIn(provider: AuthProvider): void;
   signOut(): Promise<void>;
@@ -134,7 +142,11 @@ interface AppContextValue {
   updateProfileIdentity(
     displayName: string,
     publicUsername: string,
+    bio: string,
   ): Promise<void>;
+  acceptContentPolicy(): Promise<void>;
+  journalReaction(journalId: string): { appreciationCount: number; likedByMe: boolean };
+  toggleJournalLike(journalId: string): Promise<void>;
   recordEngagement(name: EngagementEventName): void;
   resetDemo(): Promise<void>;
 }
@@ -151,6 +163,7 @@ const legacyLocaleKey = "mechory.prototype.locale";
 const authKey = "mechori.prototype.auth-session";
 const runtime = getMechoriRuntime();
 const isRemoteAlpha = runtime === "alpha";
+export const alphaContentPolicyVersion = "alpha-public-content-v1";
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<AppData>(() => cloneDemoData());
@@ -166,6 +179,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setAlphaJournalMediaSharingAvailable,
   ] = useState(!isRemoteAlpha);
   const [alphaSharedContent, setAlphaSharedContent] = useState<AlphaSharedJournal[]>([]);
+  const [alphaJournalReactions, setAlphaJournalReactions] = useState<
+    Map<string, AlphaJournalReaction>
+  >(new Map());
+  const [contentPolicyAccepted, setContentPolicyAccepted] = useState(!isRemoteAlpha);
 
   useEffect(() => {
     let active = true;
@@ -192,7 +209,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
               storedData,
               identity.displayName,
               identity.publicUsername,
+              identity.bio,
             );
+            if (active) {
+              setContentPolicyAccepted(
+                identity.contentPolicyVersion === alphaContentPolicyVersion &&
+                  Boolean(identity.contentPolicyAcceptedAt),
+              );
+            }
           }
           if (profileFollows) {
             storedData = {
@@ -209,7 +233,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         let sharedContent: AlphaSharedJournal[] = [];
         if (isRemoteAlpha && isSignedIn(storedAuthSession)) {
           try {
-            sharedContent = await loadAlphaSharedJournals();
+            const [loadedSharedContent, reactions] = await Promise.all([
+              loadAlphaSharedJournals(),
+              loadAlphaJournalReactions().catch(() => []),
+            ]);
+            sharedContent = loadedSharedContent;
+            if (active) {
+              setAlphaJournalReactions(
+                new Map(reactions.map((reaction) => [reaction.journalId, reaction])),
+              );
+            }
             if (active) setAlphaJournalSharingAvailable(true);
           } catch {
             if (active) setAlphaJournalSharingAvailable(false);
@@ -239,6 +272,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setAuthSession(signedOutSession);
         setData(cloneDemoData());
         setAlphaSharedContent([]);
+        setAlphaJournalReactions(new Map());
+        setContentPolicyAccepted(!isRemoteAlpha);
         setPersistenceError(true);
       } finally {
         if (active) setHydrated(true);
@@ -306,6 +341,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         await signOutFromAlpha();
         setData(cloneDemoData());
         setAlphaSharedContent([]);
+        setAlphaJournalReactions(new Map());
+        setContentPolicyAccepted(!isRemoteAlpha);
       } else {
         window.localStorage.setItem(authKey, JSON.stringify(signedOutSession));
       }
@@ -321,7 +358,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const refreshAlphaSharedContent = useCallback(async () => {
     if (!isRemoteAlpha || !isSignedIn(authSession)) return;
     try {
-      setAlphaSharedContent(await loadAlphaSharedJournals());
+      const [sharedContent, reactions] = await Promise.all([
+        loadAlphaSharedJournals(),
+        loadAlphaJournalReactions().catch(() => []),
+      ]);
+      setAlphaSharedContent(sharedContent);
+      setAlphaJournalReactions(
+        new Map(reactions.map((reaction) => [reaction.journalId, reaction])),
+      );
       setAlphaJournalSharingAvailable(true);
     } catch {
       setAlphaJournalSharingAvailable(false);
@@ -340,13 +384,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       catalogResolution?: VehicleCatalogResolutionOverride,
     ) => {
       if (!isSignedIn(authSession)) throw new Error("authentication_required");
+      if (isRemoteAlpha && !contentPolicyAccepted) {
+        throw new Error("content_policy_acceptance_required");
+      }
       const result = addVehicleToData(data, draft, catalogResolution);
       await persist(result.data);
       recordLocalEngagement("vehicle_created");
       void recordAlphaEngagement("vehicle_created").catch(() => undefined);
+      pushAnalyticsEvent("vehicle_created", {
+        vehicle_category: result.vehicle.vehicleCategory,
+        ownership_type: result.vehicle.ownershipType,
+      });
       return result.vehicle;
     },
-    [authSession, data, persist],
+    [authSession, contentPolicyAccepted, data, persist],
   );
 
   const updateVehicleOwnership = useCallback(
@@ -372,15 +423,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addRecord = useCallback(
     async (draft: RecordDraft, vehicleId?: string) => {
       if (!isSignedIn(authSession)) throw new Error("authentication_required");
+      if (isRemoteAlpha && !contentPolicyAccepted) {
+        throw new Error("content_policy_acceptance_required");
+      }
       const vehicle = data.vehicles.find((item) => item.id === vehicleId) ?? getPreferredVehicle(data.vehicles);
       if (!vehicle) throw new Error("A demo vehicle is required");
       const result = applyRecordDraftToData(data, draft, undefined, locale, vehicle.id);
       await persist(result.data);
       recordLocalEngagement("maintenance_saved");
       void recordAlphaEngagement("maintenance_saved").catch(() => undefined);
+      pushAnalyticsEvent("maintenance_saved", {
+        resolution_status: result.record.resolutionStatus,
+      });
       return result.record;
     },
-    [authSession, data, locale, persist],
+    [authSession, contentPolicyAccepted, data, locale, persist],
   );
 
   const updateRecord = useCallback(
@@ -404,6 +461,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const addJournal = useCallback(
     async (draft: JournalDraft, uploads: JournalMediaUpload[] = []) => {
       if (!isSignedIn(authSession)) throw new Error("authentication_required");
+      if (isRemoteAlpha && !contentPolicyAccepted) {
+        throw new Error("content_policy_acceptance_required");
+      }
       if (isRemoteAlpha && draft.visibility === "public" && !alphaJournalSharingAvailable) {
         throw new Error("alpha_journal_sharing_unavailable");
       }
@@ -439,11 +499,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       recordLocalEngagement("journal_saved");
       void recordAlphaEngagement("journal_saved").catch(() => undefined);
+      pushAnalyticsEvent("post_created", {
+        visibility: result.journal.visibility,
+        media_count: result.journal.media.length,
+      });
       return result.journal;
     },
     [
       alphaJournalSharingAvailable,
       authSession,
+      contentPolicyAccepted,
       data,
       locale,
       persist,
@@ -538,6 +603,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           await setAlphaUserFollow(targetId, !following);
         }
         await persist(nextData);
+        if (!following) {
+          pushAnalyticsEvent(
+            targetType === "profile" ? "user_followed" : "vehicle_followed",
+          );
+        }
       })().catch(() => setPersistenceError(true));
     },
     [authSession, data, persist],
@@ -610,29 +680,97 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const updateProfileIdentity = useCallback(
-    async (displayName: string, publicUsername: string) => {
+    async (displayName: string, publicUsername: string, bio: string) => {
       if (!isSignedIn(authSession)) throw new Error("authentication_required");
       if (isRemoteAlpha) {
         const identity = await updateMyAlphaProfileIdentity(
           displayName,
           publicUsername,
+          bio,
         );
         setData((current) =>
           updateCurrentProfileIdentity(
             current,
             identity.displayName,
             identity.publicUsername,
+            identity.bio,
           ),
         );
         setPersistenceError(false);
         return;
       }
       await persist(
-        updateCurrentProfileIdentity(data, displayName, publicUsername),
+        updateCurrentProfileIdentity(data, displayName, publicUsername, bio),
       );
     },
     [authSession, data, persist],
   );
+
+  const acceptContentPolicy = useCallback(async () => {
+    if (!isSignedIn(authSession)) throw new Error("authentication_required");
+    if (isRemoteAlpha) {
+      await acceptAlphaContentPolicy(alphaContentPolicyVersion);
+    }
+    setContentPolicyAccepted(true);
+    pushAnalyticsEvent("content_policy_accepted", {
+      policy_version: alphaContentPolicyVersion,
+    });
+  }, [authSession]);
+
+  const journalReaction = useCallback((journalId: string) => {
+    const reaction = alphaJournalReactions.get(journalId);
+    return {
+      appreciationCount: reaction?.appreciationCount ?? 0,
+      likedByMe: reaction?.likedByMe ?? false,
+    };
+  }, [alphaJournalReactions]);
+
+  const toggleJournalLike = useCallback(async (journalId: string) => {
+    if (!isRemoteAlpha || !isSignedIn(authSession)) return;
+    const shared = alphaSharedContent.find((item) => item.journal.id === journalId);
+    if (!shared || shared.journal.authorProfileId === data.currentProfileId) return;
+    const previous = alphaJournalReactions.get(journalId) ?? {
+      shareId: shared.shareId,
+      journalId,
+      appreciationCount: 0,
+      likedByMe: false,
+    };
+    const nextLiked = !previous.likedByMe;
+    setAlphaJournalReactions((current) => {
+      const next = new Map(current);
+      next.set(journalId, {
+        ...previous,
+        appreciationCount: Math.max(
+          0,
+          previous.appreciationCount + (nextLiked ? 1 : -1),
+        ),
+        likedByMe: nextLiked,
+      });
+      return next;
+    });
+    let result: AlphaJournalReaction;
+    try {
+      const saved = await setAlphaJournalLike(shared.shareId, nextLiked);
+      result = {
+        shareId: shared.shareId,
+        journalId,
+        ...saved,
+      };
+    } catch (error) {
+      setAlphaJournalReactions((current) => {
+        const next = new Map(current);
+        next.set(journalId, previous);
+        return next;
+      });
+      throw error;
+    }
+    setAlphaJournalReactions((current) => {
+      const next = new Map(current);
+      next.set(journalId, result);
+      return next;
+    });
+    if (result.likedByMe) pushAnalyticsEvent("like_added");
+  }, [alphaJournalReactions, alphaSharedContent, authSession, data.currentProfileId]);
 
   const resetDemo = useCallback(async () => {
     try {
@@ -650,6 +788,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ]);
         setData(emptyData);
         setAlphaSharedContent([]);
+        setAlphaJournalReactions(new Map());
       } else {
         await Promise.all([dataProvider.reset(), journalMediaStore.reset()]);
         setData(cloneDemoData());
@@ -680,6 +819,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       authSession,
       signedIn: isSignedIn(authSession),
       persistenceError,
+      contentPolicyAccepted,
       setLocale,
       signIn,
       signOut,
@@ -699,6 +839,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       moderateReport,
       updateProfilePrivacy,
       updateProfileIdentity,
+      acceptContentPolicy,
+      journalReaction,
+      toggleJournalLike,
       recordEngagement,
       resetDemo,
     }),
@@ -711,6 +854,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       alphaJournalMediaSharingAvailable,
       alphaSharedContent,
       persistenceError,
+      contentPolicyAccepted,
       setLocale,
       signIn,
       signOut,
@@ -730,6 +874,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       moderateReport,
       updateProfilePrivacy,
       updateProfileIdentity,
+      acceptContentPolicy,
+      journalReaction,
+      toggleJournalLike,
       recordEngagement,
       resetDemo,
     ],

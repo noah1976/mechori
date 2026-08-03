@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="MECHORI">
+  <rect width="512" height="512" rx="72" fill="#20262b"/>
+  <path d="M116 84h132v344l-66-48-66 48z" fill="#ff7a00"/>
+  <path d="M365 122a92 92 0 0 0-100 116L151 352a42 42 0 0 0 59 59l114-114a92 92 0 0 0 116-100l-65 65-58-16-16-58z" fill="#f7f8f7"/>
+  <circle cx="181" cy="381" r="14" fill="#20262b"/>
+</svg>

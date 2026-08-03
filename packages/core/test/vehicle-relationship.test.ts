@@ -37,6 +37,19 @@ test("treats a year-only ownership start as approximate", () => {
   assert.match(formatOwnershipDuration("en", snapshot) ?? "", /^About /);
 });
 
+test("formats exact ownership start dates without dropping the day", () => {
+  const vehicle = {
+    ...cloneDemoData().vehicles[0]!,
+    ownershipStartedYear: 2014,
+    ownershipStartedMonth: 4,
+    ownershipStartedDay: 12,
+    ownershipStartedPrecision: "day" as const,
+  };
+
+  assert.equal(formatOwnershipPeriod(vehicle, "ja"), "2014年4月12日から所有中");
+  assert.equal(formatOwnershipPeriod(vehicle, "en"), "Owned since Apr 12, 2014");
+});
+
 test("formats partial previous ownership dates without inventing exact dates", () => {
   const vehicle = {
     ...cloneDemoData().vehicles[0]!,

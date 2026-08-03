@@ -1,11 +1,13 @@
 "use client";
 
 import { useApp } from "@/lib/app-context";
+import { submitAlphaFeedback, type AlphaFeedbackKind } from "@/lib/alpha-operations";
+import { pushAnalyticsEvent } from "@/lib/analytics";
 import { translate } from "@mechori/i18n";
-import { Check, ClipboardCopy, Mail, MessageSquareText } from "lucide-react";
+import { Check, ClipboardCopy, LoaderCircle, MessageSquareText, Send } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 
-const feedbackKinds = ["liked", "confusing", "broken", "missing"] as const;
+const feedbackKinds = ["liked", "confusing", "broken", "missing", "other"] as const satisfies readonly AlphaFeedbackKind[];
 type FeedbackKind = (typeof feedbackKinds)[number];
 
 export default function FeedbackPage() {
@@ -15,6 +17,9 @@ export default function FeedbackPage() {
   const [details, setDetails] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<"" | "failed" | "rate">("");
   const kindLabel = feedbackKindLabel(kind, locale);
   const feedbackText = useMemo(
     () => [
@@ -27,13 +32,27 @@ export default function FeedbackPage() {
     ].join("\n"),
     [details, kindLabel, locale, where],
   );
-  const mailto = `mailto:info@mechori.com?subject=${encodeURIComponent(`[MECHORI alpha] ${kindLabel}`)}&body=${encodeURIComponent(feedbackText)}`;
-
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitted(true);
     if (!details.trim()) return;
-    window.location.href = mailto;
+    setSaving(true);
+    setError("");
+    try {
+      await submitAlphaFeedback({
+        kind,
+        content: feedbackText,
+        pagePath: new URLSearchParams(window.location.search).get("from") || window.location.pathname,
+        appBuild: process.env.NEXT_PUBLIC_COMMIT_REF ?? process.env.NEXT_PUBLIC_CONTEXT ?? "",
+        userAgent: navigator.userAgent,
+      });
+      pushAnalyticsEvent("feedback_submitted", { feedback_kind: kind });
+      setSaved(true);
+    } catch (saveError) {
+      setError(saveError instanceof Error && saveError.message === "feedback_rate_limited" ? "rate" : "failed");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function copyFeedback() {
@@ -57,7 +76,15 @@ export default function FeedbackPage() {
         <MessageSquareText size={30} aria-hidden="true" />
       </header>
 
-      <form className="record-form" onSubmit={submit} noValidate>
+      {saved ? (
+        <section className="report-success" role="status">
+          <Check size={25} aria-hidden="true" />
+          <div>
+            <h1>{locale === "ja" ? "フィードバックを受け取りました" : "Feedback received"}</h1>
+            <p>{locale === "ja" ? "α版を一緒に育てる材料として確認します。ありがとうございます。" : "Thank you. We will use it to improve the alpha together."}</p>
+          </div>
+        </section>
+      ) : <form className="record-form" onSubmit={submit} noValidate>
         <section className="form-section">
           <fieldset className="feedback-kind-fields">
             <legend>{translate(locale, "feedbackType")}</legend>
@@ -101,22 +128,29 @@ export default function FeedbackPage() {
 
         <p className="privacy-caption">{translate(locale, "feedbackPrivacyNotice")}</p>
 
+        {error && <p className="form-error-summary" role="alert">
+          {error === "rate"
+            ? locale === "ja" ? "短時間の送信上限に達しました。10分ほど待ってからお試しください。" : "The short-term submission limit was reached. Try again in about 10 minutes."
+            : locale === "ja" ? "送信できませんでした。内容をコピーして、時間をおいてもう一度お試しください。" : "Feedback could not be sent. Copy it and try again shortly."}
+        </p>}
+
         <div className="form-actions">
           <button type="button" className="secondary-action" onClick={() => void copyFeedback()}>
             {copied ? <Check size={18} /> : <ClipboardCopy size={18} />}
             {translate(locale, copied ? "copiedFeedback" : "copyFeedback")}
           </button>
-          <button type="submit" className="primary-action">
-            <Mail size={18} />
-            {translate(locale, "openEmail")}
+          <button type="submit" className="primary-action" disabled={saving}>
+            {saving ? <LoaderCircle className="spin" size={18} /> : <Send size={18} />}
+            {saving ? (locale === "ja" ? "送信中" : "Sending") : (locale === "ja" ? "MECHORIへ送る" : "Send to MECHORI")}
           </button>
         </div>
-      </form>
+      </form>}
     </div>
   );
 }
 
 function feedbackKindLabel(kind: FeedbackKind, locale: "ja" | "en"): string {
+  if (kind === "other") return locale === "ja" ? "その他" : "Other";
   const keys = {
     liked: "feedbackLiked",
     confusing: "feedbackConfusing",

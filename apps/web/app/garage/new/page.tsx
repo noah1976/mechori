@@ -106,10 +106,7 @@ function NewVehicleContent() {
     event.preventDefault();
     setSubmitted(true);
     setSaveError(false);
-    if (!draft.imagePath && !isPrevious) {
-      setImageError(translate(locale, "vehicleMainPhotoRequired"));
-    }
-    if (!validation.valid || (!draft.imagePath && !isPrevious) || saving || preparingImage) return;
+    if (!validation.valid || saving || preparingImage) return;
     setSaving(true);
     try {
       const vehicle = await addVehicle(
@@ -140,12 +137,12 @@ function NewVehicleContent() {
       </header>
 
       <form className="vehicle-form lovable-vehicle-form" onSubmit={submit} noValidate aria-busy={saving || preparingImage}>
-        <section className={`vehicle-photo-field ${isPrevious && !draft.imagePath ? "is-optional-past-photo" : ""}`}>
+        <section className={`vehicle-photo-field ${!draft.imagePath ? "is-optional-past-photo" : ""}`}>
           <div className="vehicle-photo-preview">
             {draft.imagePath ? (
               <Image src={draft.imagePath} alt="" fill sizes="(max-width: 760px) 100vw, 720px" unoptimized priority />
             ) : (
-              <div><Camera size={44} aria-hidden="true" /><strong>{translate(locale, isPrevious ? "pastPhotoOptionalTitle" : "mainVehiclePhoto")}</strong><span>{translate(locale, isPrevious ? "pastPhotoOptionalBody" : "checkPhotoPrivacy")}</span></div>
+              <div><Camera size={44} aria-hidden="true" /><strong>{isPrevious ? translate(locale, "pastPhotoOptionalTitle") : locale === "ja" ? "愛車の写真（任意）" : "Vehicle photo (optional)"}</strong><span>{translate(locale, isPrevious ? "pastPhotoOptionalBody" : "checkPhotoPrivacy")}</span></div>
             )}
           </div>
           <label className="photo-pick-action">
@@ -175,6 +172,9 @@ function NewVehicleContent() {
               <input value={draft.model} onChange={(event) => setField("model", event.target.value)} placeholder={translate(locale, "modelExample")} />
             </Field>
           </div>
+          <Field label={translate(locale, "nicknameOptional")}>
+            <input value={draft.nickname} onChange={(event) => setField("nickname", event.target.value)} placeholder={locale === "ja" ? "普段呼んでいる名前があれば" : "How you usually refer to it"} />
+          </Field>
           {draft.make.trim() && <div className="vehicle-identity-match" aria-live="polite">
             {identity.brandId && identity.canonicalMake !== draft.make.trim() && (
               <p>{translate(locale, "canonicalBrandNotice", {
@@ -236,23 +236,49 @@ function NewVehicleContent() {
               <Field label={translate(locale, "transmissionOptional")}><input value={draft.transmission} onChange={(event) => setField("transmission", event.target.value)} /></Field>
               <Field label={translate(locale, "transmissionCodeOptional")}><input value={draft.transmissionCode} onChange={(event) => setField("transmissionCode", event.target.value)} /></Field>
             </div>
-            {isPrevious && <Field label={translate(locale, "nicknameOptional")}><input value={draft.nickname} onChange={(event) => setField("nickname", event.target.value)} /></Field>}
           </details>
         </section>
 
         <section className="form-section">
           <div className="section-heading compact"><div><span className="eyebrow">02</span><h2>{translate(locale, "approximateDates")}</h2></div>{isPrevious && <History size={22} aria-hidden="true" />}</div>
-          <div className="form-grid three-columns">
+          <div className="form-grid two-columns">
             <Field label={translate(locale, "approximateModelYear")} error={errorFor("year")}>
               <input type="number" inputMode="numeric" min="1886" max={new Date().getFullYear() + 2} value={draft.year} onChange={(event) => setField("year", event.target.value)} placeholder={translate(locale, "yearExample1997")} />
             </Field>
+            <Field label={locale === "ja" ? "所有開始時期の詳しさ" : "Ownership start precision"}>
+              <select
+                value={draft.ownershipStartedPrecision}
+                onChange={(event) => {
+                  const precision = event.target.value as VehicleDraft["ownershipStartedPrecision"];
+                  setDraft((current) => ({
+                    ...current,
+                    ownershipStartedPrecision: precision,
+                    ownershipStartedYear: precision === "unknown" ? "" : current.ownershipStartedYear,
+                    ownershipStartedMonth: precision === "year" || precision === "unknown" ? "" : current.ownershipStartedMonth,
+                    ownershipStartedDay: precision === "day" ? current.ownershipStartedDay : "",
+                  }));
+                }}
+              >
+                <option value="unknown">{locale === "ja" ? "不明・覚えていない" : "Unknown"}</option>
+                <option value="year">{locale === "ja" ? "年まで" : "Year"}</option>
+                <option value="month">{locale === "ja" ? "年月まで" : "Year and month"}</option>
+                <option value="day">{locale === "ja" ? "年月日" : "Exact date"}</option>
+              </select>
+            </Field>
+          </div>
+          {draft.ownershipStartedPrecision !== "unknown" && (
+          <div className="form-grid three-columns">
             <Field label={translate(locale, "ownershipStartYear")} error={errorFor("ownershipStartedYear")}>
               <input type="number" inputMode="numeric" min="1886" max={new Date().getFullYear()} value={draft.ownershipStartedYear} onChange={(event) => setField("ownershipStartedYear", event.target.value)} placeholder={translate(locale, "yearExample2018")} />
             </Field>
-            <Field label={translate(locale, "monthOptional")} error={errorFor("ownershipStartedMonth")}>
+            {draft.ownershipStartedPrecision !== "year" && <Field label={translate(locale, "monthOptional")} error={errorFor("ownershipStartedMonth")}>
               <input type="number" inputMode="numeric" min="1" max="12" value={draft.ownershipStartedMonth} onChange={(event) => setField("ownershipStartedMonth", event.target.value)} placeholder="1–12" />
-            </Field>
+            </Field>}
+            {draft.ownershipStartedPrecision === "day" && <Field label={locale === "ja" ? "日" : "Day"} error={errorFor("ownershipStartedDay")}>
+              <input type="number" inputMode="numeric" min="1" max="31" value={draft.ownershipStartedDay} onChange={(event) => setField("ownershipStartedDay", event.target.value)} placeholder="1–31" />
+            </Field>}
           </div>
+          )}
           {isPrevious && <>
             <div className="form-grid two-columns">
               <Field label={translate(locale, "ownershipEndYearOptional")} error={errorFor("ownershipEndedYear")}>

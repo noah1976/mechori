@@ -58,7 +58,17 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  return finish(request, returnTo);
+  return finish(
+    request,
+    withAuthResult(returnTo, invite ? "sign_up" : "login", Boolean(invite)),
+  );
+}
+
+function withAuthResult(path: string, authEvent: "sign_up" | "login", inviteCompleted: boolean): string {
+  const url = new URL(path, "https://mechori.invalid");
+  url.searchParams.set("authEvent", authEvent);
+  if (inviteCompleted) url.searchParams.set("inviteCompleted", "1");
+  return `${url.pathname}${url.search}${url.hash}`;
 }
 
 function authErrorPath(error: string, mode: "signin" | "signup", returnTo: string): string {

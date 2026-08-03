@@ -85,8 +85,8 @@ export function RemoteOwnerProfile({
         </h1>
         <p>
           {ja
-            ? "公開車両がないか、プロフィールが利用できない状態です。"
-            : "This owner has no shared vehicles or the profile is unavailable."}
+            ? "公開プロフィールが利用できない状態です。"
+            : "This public profile is unavailable."}
         </p>
         <Link href="/people" className="secondary-action">
           {ja ? "検索へ戻る" : "Back to search"}
@@ -109,9 +109,9 @@ export function RemoteOwnerProfile({
     displayName: owner.displayName,
     publicUsername: owner.publicUsername,
     role: "owner",
-    bio: "",
+    bio: owner.bio,
     visibility: "public",
-    displayFields: ["vehicles"],
+    displayFields: ["bio", "vehicles"],
     isProfessional: false,
     isDemo: false,
   };
@@ -137,6 +137,7 @@ export function RemoteOwnerProfile({
               ? `公開中の愛車 ${owner.vehicles.length}台`
               : `${owner.vehicles.length} shared ${owner.vehicles.length === 1 ? "vehicle" : "vehicles"}`}
           </p>
+          {owner.bio && <p className="public-profile-bio">{owner.bio}</p>}
         </div>
         <button
           type="button"
@@ -168,8 +169,9 @@ export function RemoteOwnerProfile({
             </h2>
           </div>
         </div>
-        <div className="remote-owner-vehicle-list">
-          {owner.vehicles.map((vehicle) => {
+        {owner.vehicles.length > 0 ? (
+          <div className="remote-owner-vehicle-list">
+            {owner.vehicles.map((vehicle) => {
             const followed = isFollowing(data, "vehicle", vehicle.targetId);
             return (
               <article key={vehicle.targetId} className="remote-owner-vehicle">
@@ -208,8 +210,14 @@ export function RemoteOwnerProfile({
                 </div>
               </article>
             );
-          })}
-        </div>
+            })}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <CarFront size={26} aria-hidden="true" />
+            <h3>{ja ? "公開中の愛車はまだありません" : "No shared vehicles yet"}</h3>
+          </div>
+        )}
       </section>
 
       <section>

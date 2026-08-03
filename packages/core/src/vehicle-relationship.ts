@@ -47,11 +47,13 @@ export function formatOwnershipPeriod(vehicle: Vehicle, locale: Locale): string 
   const start = formatPartialDate(
     vehicle.ownershipStartedYear,
     vehicle.ownershipStartedMonth,
+    vehicle.ownershipStartedDay,
     locale,
   );
   const end = formatPartialDate(
     vehicle.ownershipEndedYear,
     vehicle.ownershipEndedMonth,
+    undefined,
     locale,
   );
   if (vehicle.ownershipType === "owned") {
@@ -105,11 +107,15 @@ function calculateElapsedMonths(
 function formatPartialDate(
   year: number | undefined,
   month: number | undefined,
+  day: number | undefined,
   locale: Locale,
 ): string | undefined {
   if (year === undefined) return undefined;
-  if (locale === "ja") return month ? `${year}年${month}月` : `${year}年`;
+  if (locale === "ja") {
+    if (month && day) return `${year}年${month}月${day}日`;
+    return month ? `${year}年${month}月` : `${year}年`;
+  }
   if (!month) return String(year);
-  return new Intl.DateTimeFormat("en-US", { year: "numeric", month: "short", timeZone: "UTC" })
-    .format(new Date(Date.UTC(year, month - 1, 1)));
+  return new Intl.DateTimeFormat("en-US", { year: "numeric", month: "short", day: day ? "numeric" : undefined, timeZone: "UTC" })
+    .format(new Date(Date.UTC(year, month - 1, day ?? 1)));
 }

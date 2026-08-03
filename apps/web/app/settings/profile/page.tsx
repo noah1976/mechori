@@ -3,8 +3,9 @@
 import { DemoNotice } from "@/components/demo-notice";
 import { useApp } from "@/lib/app-context";
 import { validateProfileIdentity } from "@/lib/profile-identity";
-import { Eye, LoaderCircle, Save, ShieldCheck, UserRound } from "lucide-react";
+import { Eye, LoaderCircle, LogOut, Save, ShieldCheck, UserRound } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
 type SaveStatus = "" | "saved" | "taken" | "error";
@@ -19,7 +20,8 @@ export default function ProfileSettingsPage() {
 }
 
 function ProfileIdentityForm() {
-  const { data, locale, updateProfileIdentity } = useApp();
+  const { data, locale, signOut, updateProfileIdentity } = useApp();
+  const router = useRouter();
   const profile = data.profiles.find(
     (item) => item.id === data.currentProfileId,
   )!;
@@ -27,13 +29,18 @@ function ProfileIdentityForm() {
   const [publicUsername, setPublicUsername] = useState(
     profile.publicUsername ?? "",
   );
+  const [bio, setBio] = useState(profile.bio ?? "");
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<SaveStatus>("");
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState(false);
   const ja = locale === "ja";
   const validation = validateProfileIdentity({
     displayName,
     publicUsername,
+    bio,
   });
 
   async function save(event: FormEvent<HTMLFormElement>) {
@@ -46,9 +53,11 @@ function ProfileIdentityForm() {
       await updateProfileIdentity(
         validation.normalized.displayName,
         validation.normalized.publicUsername,
+        validation.normalized.bio,
       );
       setDisplayName(validation.normalized.displayName);
       setPublicUsername(validation.normalized.publicUsername);
+      setBio(validation.normalized.bio);
       setStatus("saved");
     } catch (error) {
       setStatus(
@@ -103,6 +112,31 @@ function ProfileIdentityForm() {
               : ja
                 ? "他の利用者と同じ表示名も使用できます。"
                 : "The same display name may be used by other people."}
+          </small>
+        </label>
+
+        <label
+          className={submitted && validation.errors.bio ? "field has-error" : "field"}
+        >
+          <span>{ja ? "自己紹介" : "Bio"}</span>
+          <textarea
+            value={bio}
+            onChange={(event) => {
+              setBio(event.target.value);
+              setStatus("");
+            }}
+            maxLength={300}
+            rows={5}
+            placeholder={ja ? "愛車やクルマとの過ごし方を、無理のない範囲で。" : "Share a little about your vehicles and motoring life."}
+          />
+          <small>
+            {submitted && validation.errors.bio
+              ? ja
+                ? "300文字以内で、メールアドレスや電話番号を含めずに入力してください。"
+                : "Use up to 300 characters without email addresses or phone numbers."
+              : ja
+                ? `公開プロフィールに表示されます。個人情報は入力しないでください。${bio.length}/300`
+                : `Shown on your public profile. Do not enter personal contact details. ${bio.length}/300`}
           </small>
         </label>
 
@@ -197,11 +231,68 @@ function ProfileIdentityForm() {
           <strong>{ja ? "公開範囲と安全設定" : "Visibility and safety"}</strong>
           <small>
             {ja
-              ? "プロフィールに表示する項目と公開範囲を変更します。"
-              : "Choose profile fields and who can view them."}
+              ? "公開される情報と、安全に投稿するための注意点を確認します。"
+              : "Review what is public and how to post safely."}
           </small>
         </span>
       </Link>
+
+      <section className="settings-danger-zone" aria-labelledby="sign-out-heading">
+        <div>
+          <strong id="sign-out-heading">{ja ? "この端末からログアウト" : "Sign out on this device"}</strong>
+          <p>
+            {ja
+              ? "愛車や記録は削除されません。もう一度利用するときはGoogleでログインできます。"
+              : "Your vehicles and records will not be deleted. You can sign in with Google again."}
+          </p>
+        </div>
+        <button type="button" className="secondary-action" onClick={() => { setSignOutError(false); setConfirmingSignOut(true); }}>
+          <LogOut size={17} aria-hidden="true" />
+          {ja ? "ログアウト" : "Sign out"}
+        </button>
+      </section>
+
+      {confirmingSignOut && (
+        <div className="modal-backdrop" role="presentation">
+          <section className="confirmation-dialog" role="dialog" aria-modal="true" aria-labelledby="confirm-sign-out-title">
+            <h2 id="confirm-sign-out-title">{ja ? "ログアウトしますか？" : "Sign out?"}</h2>
+            <p>
+              {ja
+                ? "MECHORIからログアウトします。保存済みのデータは残ります。"
+                : "You will be signed out of MECHORI. Saved data will remain."}
+            </p>
+            {signOutError && (
+              <p className="form-error" role="alert">
+                {ja ? "ログアウトできませんでした。もう一度お試しください。" : "Sign-out failed. Please try again."}
+              </p>
+            )}
+            <div className="settings-actions">
+              <button type="button" className="secondary-action" disabled={signingOut} onClick={() => setConfirmingSignOut(false)}>
+                {ja ? "キャンセル" : "Cancel"}
+              </button>
+              <button
+                type="button"
+                className="primary-action"
+                disabled={signingOut}
+                onClick={async () => {
+                  setSigningOut(true);
+                  try {
+                    await signOut();
+                    router.replace("/auth/signed-out");
+                  } catch {
+                    setSignOutError(true);
+                  } finally {
+                    setSigningOut(false);
+                  }
+                }}
+              >
+                {signingOut && <LoaderCircle className="spin" size={17} aria-hidden="true" />}
+                {ja ? "ログアウトする" : "Sign out"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

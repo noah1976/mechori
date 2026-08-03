@@ -116,6 +116,8 @@ export interface Vehicle {
   ownershipType: VehicleRelationshipType;
   ownershipStartedYear?: number;
   ownershipStartedMonth?: number;
+  ownershipStartedDay?: number;
+  ownershipStartedPrecision?: OccurrencePrecision;
   ownershipEndedYear?: number;
   ownershipEndedMonth?: number;
   ownershipPeriodNote?: string;
@@ -152,6 +154,8 @@ export interface VehicleDraft {
   ownershipType: VehicleRelationshipType;
   ownershipStartedYear: string;
   ownershipStartedMonth: string;
+  ownershipStartedDay: string;
+  ownershipStartedPrecision: OccurrencePrecision;
   ownershipEndedYear: string;
   ownershipEndedMonth: string;
   ownershipPeriodNote: string;

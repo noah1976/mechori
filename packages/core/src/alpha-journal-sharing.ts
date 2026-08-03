@@ -49,6 +49,7 @@ export interface AlphaSharedJournalRow {
 }
 
 export interface AlphaSharedJournal {
+  shareId: string;
   journal: GarageJournalPost;
   author: SocialProfile;
 }
@@ -134,6 +135,7 @@ export function parseAlphaSharedJournalRow(
     isDemo: false,
   };
   return {
+    shareId: row.share_id,
     author,
     journal: {
       id: row.journal_id,

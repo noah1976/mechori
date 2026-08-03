@@ -15,8 +15,8 @@ export function DemoNotice() {
         <span>
           {isRemoteAlpha
             ? ja
-              ? "少人数テスト中です。愛車と整備履歴はあなた専用の非公開領域へ保存されます。"
-              : "This is a small alpha test. Your vehicles and maintenance history are stored in your private workspace."
+              ? "MECHORIは現在α版です。表示名とプロフィールは参加者から閲覧でき、愛車や投稿は保存時に選んだ公開範囲で表示されます。個人情報や写真の写り込みに注意してください。"
+              : "MECHORI is currently in alpha. Your display name and profile are visible to participants, while vehicles and posts follow the visibility selected when saved. Please avoid personal details and sensitive content in photos."
             : translate(locale, "demoNotice")}
         </span>
       </div>

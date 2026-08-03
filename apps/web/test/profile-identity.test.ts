@@ -32,3 +32,38 @@ test("accepts only 3 to 30 lower-case letters, digits, or underscores", () => {
     "required",
   );
 });
+
+test("keeps a short bio but rejects contact details and markup", () => {
+  const accepted = validateProfileIdentity({
+    displayName: "Noah",
+    publicUsername: "noah_1976",
+    bio: "古いクルマを長く楽しんでいます。",
+  });
+  assert.equal(accepted.valid, true);
+  assert.equal(accepted.normalized.bio, "古いクルマを長く楽しんでいます。");
+
+  assert.equal(
+    validateProfileIdentity({
+      displayName: "Noah",
+      publicUsername: "noah_1976",
+      bio: "mail@example.com へ連絡してください",
+    }).errors.bio,
+    "invalid",
+  );
+  assert.equal(
+    validateProfileIdentity({
+      displayName: "Noah",
+      publicUsername: "noah_1976",
+      bio: "090-1234-5678",
+    }).errors.bio,
+    "invalid",
+  );
+  assert.equal(
+    validateProfileIdentity({
+      displayName: "Noah",
+      publicUsername: "noah_1976",
+      bio: "<a href='https://example.com'>profile</a>",
+    }).errors.bio,
+    "invalid",
+  );
+});

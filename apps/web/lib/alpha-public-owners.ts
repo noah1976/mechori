@@ -24,7 +24,15 @@ export interface AlphaPublicOwner {
   id: string;
   displayName: string;
   publicUsername?: string;
+  bio: string;
   vehicles: AlphaPublicVehicle[];
+}
+
+interface AlphaPublicProfileRow {
+  public_profile_id: string;
+  display_name: string;
+  public_username: string | null;
+  bio: string;
 }
 
 interface AlphaPublicOwnerSearchRow {
@@ -72,14 +80,29 @@ export async function loadAlphaPublicOwner(
   publicProfileId: string,
 ): Promise<AlphaPublicOwner | null> {
   if (!isUuid(publicProfileId)) return null;
-  const { data, error } = await createSupabaseBrowserClient().rpc(
-    "get_alpha_public_owner",
-    { p_public_profile_id: publicProfileId },
-  );
-  if (error) throw new Error("alpha_public_owner_load_failed");
-  return groupAlphaPublicOwnerRows(
-    (data ?? []) as AlphaPublicOwnerVehicleRow[],
-  )[0] ?? null;
+  const supabase = createSupabaseBrowserClient();
+  const [profileResult, vehicleResult] = await Promise.all([
+    supabase.rpc("get_alpha_public_profile", {
+      p_public_profile_id: publicProfileId,
+    }).maybeSingle(),
+    supabase.rpc("get_alpha_public_owner", {
+      p_public_profile_id: publicProfileId,
+    }),
+  ]);
+  if (profileResult.error || vehicleResult.error || !profileResult.data) {
+    throw new Error("alpha_public_owner_load_failed");
+  }
+  const profile = profileResult.data as AlphaPublicProfileRow;
+  const grouped = groupAlphaPublicOwnerRows(
+    (vehicleResult.data ?? []) as AlphaPublicOwnerVehicleRow[],
+  )[0];
+  return {
+    id: profile.public_profile_id,
+    displayName: profile.display_name,
+    publicUsername: profile.public_username ?? undefined,
+    bio: profile.bio ?? "",
+    vehicles: grouped?.vehicles ?? [],
+  };
 }
 
 export async function suggestAlphaPublicOwners(
@@ -104,6 +127,7 @@ export function groupAlphaPublicOwnerRows(
       id: row.public_profile_id,
       displayName: row.display_name,
       publicUsername: row.public_username ?? undefined,
+      bio: "",
       vehicles: [],
     };
     owner.vehicles.push({

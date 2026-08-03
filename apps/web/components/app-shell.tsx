@@ -10,7 +10,6 @@ import {
   Languages,
   LoaderCircle,
   LogIn,
-  LogOut,
   MessageSquareText,
   Newspaper,
   Plus,
@@ -21,8 +20,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useApp } from "@/lib/app-context";
+import { pushAnalyticsEvent } from "@/lib/analytics";
 
 const navItems: Array<{
   href: string;
@@ -40,17 +40,22 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const {
+    data,
     locale,
     setLocale,
     hydrated,
     signedIn,
     isRemoteAlpha,
-    signOut,
     persistenceError,
     clearPersistenceError,
+    contentPolicyAccepted,
+    acceptContentPolicy,
   } = useApp();
   const publicPath = isPublicPath(pathname);
+  const [acceptingPolicy, setAcceptingPolicy] = useState(false);
+  const [policyError, setPolicyError] = useState(false);
   const authenticated = hydrated && signedIn;
+  const currentProfile = data.profiles.find((profile) => profile.id === data.currentProfileId);
   const visibleNavItems = authenticated
     ? navItems
     : navItems.filter((item) => item.href === "/" || item.href === "/search");
@@ -61,14 +66,24 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }, [hydrated, pathname, publicPath, router, signedIn]);
 
-  async function logOut() {
-    try {
-      await signOut();
-      router.replace("/");
-    } catch {
-      // The shared persistence banner reports the sign-out failure.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const authEvent = url.searchParams.get("authEvent");
+    if (authEvent === "sign_up" || authEvent === "login") {
+      pushAnalyticsEvent(authEvent);
+      if (url.searchParams.get("inviteCompleted") === "1") {
+        pushAnalyticsEvent("invite_completed");
+      }
+      url.searchParams.delete("authEvent");
+      url.searchParams.delete("inviteCompleted");
+      window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    pushAnalyticsEvent("page_view", { page_path: pathname });
+  }, [hydrated, pathname]);
 
   if (pathname === "/professional") {
     return (
@@ -169,7 +184,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <UserPlus size={18} aria-hidden="true" />
                   <span className="top-bar-action-label">{locale === "ja" ? "招待" : "Invite"}</span>
                 </Link>
-                <Link href="/feedback" className="icon-text-button" aria-label={translate(locale, "feedback")} title={translate(locale, "feedback")}>
+                <Link href={`/feedback?from=${encodeURIComponent(pathname)}`} className="icon-text-button" aria-label={translate(locale, "feedback")} title={translate(locale, "feedback")}>
                   <MessageSquareText size={18} aria-hidden="true" />
                   <span className="top-bar-action-label">{translate(locale, "feedback")}</span>
                 </Link>
@@ -177,10 +192,6 @@ export function AppShell({ children }: { children: ReactNode }) {
                   <Settings2 size={18} aria-hidden="true" />
                   <span className="top-bar-action-label">{locale === "ja" ? "設定" : "Settings"}</span>
                 </Link>
-                <button className="icon-text-button" type="button" onClick={logOut} aria-label={translate(locale, "signOut")} title={translate(locale, "signOut")}>
-                  <LogOut size={18} aria-hidden="true" />
-                  <span className="top-bar-action-label">{translate(locale, "signOut")}</span>
-                </button>
               </>
             ) : pathname !== "/auth" ? (
               <Link href="/auth" className="icon-text-button" aria-label={translate(locale, "signIn")} title={translate(locale, "signIn")}>
@@ -205,6 +216,66 @@ export function AppShell({ children }: { children: ReactNode }) {
               <X size={17} aria-hidden="true" />
             </button>
           </div>
+        )}
+        {authenticated && !contentPolicyAccepted && (
+          <section className="content-policy-notice" aria-labelledby="content-policy-title">
+            <div>
+              <strong id="content-policy-title">
+                {locale === "ja" ? "公開内容について確認してください" : "Please review public content use"}
+              </strong>
+              <p>
+                {locale === "ja"
+                  ? "公開した記録や写真は、参加者が閲覧できます。個人情報や第三者の情報を含めず、公開範囲を確認して投稿してください。"
+                  : "Public records and photos can be viewed by participants. Do not include personal or third-party information, and check visibility before posting."}
+              </p>
+              <span>
+                <Link href="/privacy">{locale === "ja" ? "プライバシーポリシー" : "Privacy policy"}</Link>
+                {" / "}
+                <Link href="/ai-policy">{translate(locale, "aiTrainingPolicy")}</Link>
+              </span>
+              {policyError && (
+                <p className="form-error" role="alert">
+                  {locale === "ja" ? "確認状態を保存できませんでした。もう一度お試しください。" : "Your confirmation could not be saved. Please try again."}
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              className="primary-action"
+              disabled={acceptingPolicy}
+              onClick={async () => {
+                setAcceptingPolicy(true);
+                setPolicyError(false);
+                try {
+                  await acceptContentPolicy();
+                } catch {
+                  setPolicyError(true);
+                } finally {
+                  setAcceptingPolicy(false);
+                }
+              }}
+            >
+              {acceptingPolicy && <LoaderCircle className="spin" size={17} aria-hidden="true" />}
+              {locale === "ja" ? "確認して続ける" : "Confirm and continue"}
+            </button>
+          </section>
+        )}
+        {authenticated && contentPolicyAccepted && !currentProfile?.publicUsername && (
+          <section className="content-policy-notice" aria-labelledby="username-setup-title">
+            <div>
+              <strong id="username-setup-title">
+                {locale === "ja" ? "公開ユーザー名を設定しましょう" : "Choose your public username"}
+              </strong>
+              <p>
+                {locale === "ja"
+                  ? "友人が表示名や@usernameからあなたを見つけやすくなります。閲覧はこのまま続けられます。"
+                  : "This helps friends find you by display name or @username. You can keep browsing without setting it now."}
+              </p>
+            </div>
+            <Link href="/settings/profile" className="primary-action">
+              {locale === "ja" ? "プロフィールを設定" : "Set up profile"}
+            </Link>
+          </section>
         )}
         <main>
           {hydrated && (signedIn || publicPath) ? children : (
@@ -257,6 +328,7 @@ function isPublicPath(pathname: string): boolean {
     pathname === "/" ||
     pathname === "/search" ||
     pathname === "/auth" ||
+    pathname === "/auth/signed-out" ||
     pathname === "/privacy" ||
     pathname === "/ai-policy" ||
     pathname === "/professional" ||

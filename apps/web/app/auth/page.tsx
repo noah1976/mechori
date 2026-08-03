@@ -2,6 +2,7 @@
 
 import { useApp } from "@/lib/app-context";
 import { alphaAuthErrorMessage } from "@/lib/auth-flow";
+import { pushAnalyticsEvent } from "@/lib/analytics";
 import { sanitizeLocalReturnPath, type AuthProvider } from "@mechori/core";
 import { translate } from "@mechori/i18n";
 import { ArrowRight, CircleCheck, LockKeyhole, ShieldCheck } from "lucide-react";
@@ -30,6 +31,7 @@ function AuthContent() {
     const cleanUrl = new URL(window.location.href);
     const fragmentInvite = new URLSearchParams(cleanUrl.hash.slice(1)).get("invite");
     if (fragmentInvite) {
+      pushAnalyticsEvent("invite_opened");
       cleanUrl.hash = "";
       cleanUrl.searchParams.set("mode", "signup");
       window.history.replaceState(null, "", `${cleanUrl.pathname}${cleanUrl.search}`);
@@ -40,6 +42,7 @@ function AuthContent() {
       return;
     }
     if (!params.has("invite")) return;
+    pushAnalyticsEvent("invite_opened");
     cleanUrl.searchParams.delete("invite");
     cleanUrl.searchParams.set("mode", "signup");
     window.history.replaceState(null, "", `${cleanUrl.pathname}${cleanUrl.search}`);

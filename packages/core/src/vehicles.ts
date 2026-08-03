@@ -1,5 +1,6 @@
 import type {
   AppData,
+  OccurrencePrecision,
   Vehicle,
   VehicleDraft,
   VehicleRelationshipType,
@@ -35,6 +36,8 @@ export function createEmptyVehicleDraft(): VehicleDraft {
     ownershipType: "owned",
     ownershipStartedYear: "",
     ownershipStartedMonth: "",
+    ownershipStartedDay: "",
+    ownershipStartedPrecision: "unknown",
     ownershipEndedYear: "",
     ownershipEndedMonth: "",
     ownershipPeriodNote: "",
@@ -66,6 +69,9 @@ export function validateVehicleDraft(
     : undefined;
   const ownershipStartedMonth = draft.ownershipStartedMonth
     ? Number(draft.ownershipStartedMonth)
+    : undefined;
+  const ownershipStartedDay = draft.ownershipStartedDay
+    ? Number(draft.ownershipStartedDay)
     : undefined;
   const ownershipEndedYear = draft.ownershipEndedYear
     ? Number(draft.ownershipEndedYear)
@@ -102,6 +108,35 @@ export function validateVehicleDraft(
     errors.ownershipStartedMonth = "invalid";
   }
   if (ownershipStartedMonth !== undefined && ownershipStartedYear === undefined) {
+    errors.ownershipStartedYear = "required";
+  }
+  if (
+    ownershipStartedDay !== undefined &&
+    (!Number.isInteger(ownershipStartedDay) || ownershipStartedDay < 1 || ownershipStartedDay > 31)
+  ) {
+    errors.ownershipStartedDay = "invalid";
+  }
+  if (ownershipStartedDay !== undefined && ownershipStartedMonth === undefined) {
+    errors.ownershipStartedMonth = "required";
+  }
+  if (
+    ownershipStartedYear !== undefined &&
+    ownershipStartedMonth !== undefined &&
+    ownershipStartedDay !== undefined &&
+    !isValidCalendarDate(ownershipStartedYear, ownershipStartedMonth, ownershipStartedDay)
+  ) {
+    errors.ownershipStartedDay = "invalid";
+  }
+  if (
+    draft.ownershipStartedPrecision === "day" &&
+    (ownershipStartedYear === undefined || ownershipStartedMonth === undefined || ownershipStartedDay === undefined)
+  ) {
+    errors.ownershipStartedDay = "required";
+  }
+  if (draft.ownershipStartedPrecision === "month" && ownershipStartedMonth === undefined) {
+    errors.ownershipStartedMonth = "required";
+  }
+  if (draft.ownershipStartedPrecision === "year" && ownershipStartedYear === undefined) {
     errors.ownershipStartedYear = "required";
   }
   if (
@@ -199,6 +234,10 @@ export function addVehicleToData(
     ownershipStartedMonth: draft.ownershipStartedMonth
       ? Number(draft.ownershipStartedMonth)
       : undefined,
+    ownershipStartedDay: draft.ownershipStartedDay
+      ? Number(draft.ownershipStartedDay)
+      : undefined,
+    ownershipStartedPrecision: resolveOwnershipStartPrecision(draft),
     ownershipEndedYear: draft.ownershipEndedYear
       ? Number(draft.ownershipEndedYear)
       : undefined,
@@ -252,6 +291,13 @@ export interface VehicleSpecificationUpdate {
   steering?: string;
   transmission?: string;
   transmissionCode?: string;
+  nickname?: string;
+  imagePath?: string;
+  ownerComment?: string;
+  ownershipStartedYear?: number;
+  ownershipStartedMonth?: number;
+  ownershipStartedDay?: number;
+  ownershipStartedPrecision?: OccurrencePrecision;
 }
 
 export function updateVehicleSpecificationInData(
@@ -272,6 +318,7 @@ export function updateVehicleSpecificationInData(
   ) {
     throw new Error("invalid_vehicle_specification");
   }
+  validateOwnershipStart(update);
   if (
     update.displacementCc !== undefined &&
     (!Number.isInteger(update.displacementCc) || update.displacementCc < 1 || update.displacementCc > 30000)
@@ -313,6 +360,13 @@ export function updateVehicleSpecificationInData(
     steering: update.steering?.trim() ?? "",
     transmission: update.transmission?.trim() ?? "",
     transmissionCode: update.transmissionCode?.trim() || undefined,
+    nickname: update.nickname === undefined ? vehicle.nickname : update.nickname.trim() || undefined,
+    imagePath: update.imagePath === undefined ? vehicle.imagePath : update.imagePath || undefined,
+    ownerComment: update.ownerComment === undefined ? vehicle.ownerComment : update.ownerComment.trim() || undefined,
+    ownershipStartedYear: update.ownershipStartedPrecision === undefined ? vehicle.ownershipStartedYear : update.ownershipStartedYear,
+    ownershipStartedMonth: update.ownershipStartedPrecision === undefined ? vehicle.ownershipStartedMonth : update.ownershipStartedMonth,
+    ownershipStartedDay: update.ownershipStartedPrecision === undefined ? vehicle.ownershipStartedDay : update.ownershipStartedDay,
+    ownershipStartedPrecision: update.ownershipStartedPrecision ?? vehicle.ownershipStartedPrecision,
   };
 
   return {
@@ -422,4 +476,47 @@ function validateOwnershipUpdate(vehicle: Vehicle, update: VehicleOwnershipUpdat
   ) {
     throw new Error("invalid_ownership_end");
   }
+}
+
+function resolveOwnershipStartPrecision(
+  draft: Pick<VehicleDraft, "ownershipStartedYear" | "ownershipStartedMonth" | "ownershipStartedDay" | "ownershipStartedPrecision">,
+): OccurrencePrecision {
+  if (!draft.ownershipStartedYear) return "unknown";
+  if (draft.ownershipStartedPrecision !== "unknown") return draft.ownershipStartedPrecision;
+  if (draft.ownershipStartedDay) return "day";
+  if (draft.ownershipStartedMonth) return "month";
+  return "year";
+}
+
+function validateOwnershipStart(update: Pick<
+  VehicleSpecificationUpdate,
+  "ownershipStartedYear" | "ownershipStartedMonth" | "ownershipStartedDay" | "ownershipStartedPrecision"
+>): void {
+  const { ownershipStartedYear: year, ownershipStartedMonth: month, ownershipStartedDay: day, ownershipStartedPrecision: precision } = update;
+  if (precision === undefined && year === undefined && month === undefined && day === undefined) return;
+  const currentYear = new Date().getUTCFullYear();
+  if (year !== undefined && (!Number.isInteger(year) || year < 1886 || year > currentYear)) {
+    throw new Error("invalid_vehicle_specification");
+  }
+  if (month !== undefined && (!Number.isInteger(month) || month < 1 || month > 12)) {
+    throw new Error("invalid_vehicle_specification");
+  }
+  if (day !== undefined && (!Number.isInteger(day) || day < 1 || day > 31)) {
+    throw new Error("invalid_vehicle_specification");
+  }
+  if (month !== undefined && year === undefined) throw new Error("invalid_vehicle_specification");
+  if (day !== undefined && month === undefined) throw new Error("invalid_vehicle_specification");
+  if (year !== undefined && month !== undefined && day !== undefined && !isValidCalendarDate(year, month, day)) {
+    throw new Error("invalid_vehicle_specification");
+  }
+  if (precision === "year" && year === undefined) throw new Error("invalid_vehicle_specification");
+  if (precision === "month" && (year === undefined || month === undefined)) throw new Error("invalid_vehicle_specification");
+  if (precision === "day" && (year === undefined || month === undefined || day === undefined)) {
+    throw new Error("invalid_vehicle_specification");
+  }
+}
+
+function isValidCalendarDate(year: number, month: number, day: number): boolean {
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 }

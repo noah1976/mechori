@@ -2,13 +2,15 @@
 
 ## 現在地
 
-2026-07-29時点で、MECHORIは初期設計から遠隔α検証へ進みました。
+2026-08-03時点で、MECHORIは初期設計からP0 / Founder Testの運用改善へ進みました。
 
 `codex/remote-alpha-foundation`ブランチに、Next.js、Supabase Auth・Postgres、Netlifyを使う遠隔α基盤を実装しました。ローカルDEMOは従来どおり端末内で動き、公開αだけGoogle OAuthと利用者別の非公開Workspaceへ切り替わります。外部AI、OCR、決済、広告、独自ドメインの一般公開には接続していません。
 
 2026年7月27日、招待制αの実態に合わせた日英プライバシーポリシーを`/privacy`へ追加しました。Google OAuth、Supabase、Netlify、GA4、Clarity、Cookie、外部AI非送信、第三者AI学習拒否、問い合わせによる削除対応を明示しています。Google OAuthをテストから本番環境へ切り替えた後に、招待画面のテストユーザー案内だけを環境変数で切り替えられるようにしました。Google側の公開操作とNetlify環境変数変更は所有者作業で、コードからは実行しません。
 
 Professionalの事業仮説をαで確認するため、公開ティザー、Founding Partnerの価格仮説、工場提示画面からの紹介導線を追加しています。αの主目的はtoC検証のため、一般ホームと共通フッターにはProfessionalを掲載せず、`/professional`は独立したApp Shellで直接URLまたはオーナー紹介から入る構成です。事業モデルの正本は`docs/BUSINESS_MODEL.md`です。
+
+2026年8月3日、P0テスターが迷わず登録・投稿・交流でき、所有者が少人数テストを運営できるための統合更新を実装しました。公開プロフィールの表示名・`@username`・bio、Journalのいいね、ログアウト確認、車両登録の簡略化、愛称・所有開始時期・メイン写真編集、アプリ内フィードバック、管理者画面、管理ロール・監査ログ、Owner Plus無償利用権、GTMイベント、PWAアイコンを追加しています。DB基盤は`202608030001_alpha_operations_foundation.sql`として本番Supabaseへ適用済みです。
 
 ## 実装済み
 
@@ -192,7 +194,7 @@ Professionalの事業仮説をαで確認するため、公開ティザー、Fou
 
 - Google OAuthはαへ接続済み。Provider喪失時の復旧、将来のApple・X・メール追加条件は未確定。
 - FIAT Barchettaの仕様分類粒度が未確定。
-- 初期管理者運用が未確定。
+- 初期管理者は既存の`owner`ロールで運営画面へ入り、管理画面から`admin`、`moderator`、`support`を理由付きで付与できる。監査記録の閲覧UIは未実装で、現時点はDBへ追記保存する。
 - ロゴ、タイポグラフィはプロトタイプ用の暫定値。カラーは国籍に寄らないα案へ更新したが、αテスターの第一印象確認が必要。
 - 初期マイルストーンの数値は仮説で、実ベータ前後に固定する必要がある。
 - `mechori.com`は取得済みだが、DNS、ホスティング、本番公開には未接続。
@@ -200,6 +202,7 @@ Professionalの事業仮説をαで確認するため、公開ティザー、Fou
 - Providerの採用方針は確認済み。アカウント接続、送信データ、RLS、費用上限、秘密情報、本番利用はチェックリストと個別承認までBLOCKED。
 - OAuth callback、招待API、Workspace Adapter、所有者初期化は完了。ログイン済み利用者2人によるRLS統合テストが未完了。
 - MAU最小計測マイグレーションは未適用で、Netlifyの計測環境変数も無効のまま。
+- `202608030001_alpha_operations_foundation.sql`は本番Supabaseへ適用済み。別利用者によるいいね、フィードバックのRLS、非管理者の管理RPC拒否、無償利用権・ロール変更の監査記録は人間による統合確認が必要。
 - 愛車共有用`202607170004_public_vehicle_shares.sql`は未適用。RLS内容を所有者と確認し、別利用者・未ログインの公開／非公開境界をテストしてから適用する。
 - 共同車両カタログ用`202607290001_vehicle_catalog_collaboration.sql`はローカル実装のみで、本番Supabaseには未適用。適用前にSQLレビュー、RLS境界、運営RPC、別利用者間の提案分離を確認する。
 - α参加者向けJournal共有用`202607290002_alpha_shared_journals.sql`と、非公開Storageへ写真共有を追加する`202607290003_alpha_shared_journal_media.sql`は本番Supabaseへ適用済み。利用可否確認をStorageの空フォルダ参照に依存させない`202607290004_alpha_shared_journal_media_capability.sql`を追加し、適用後に別利用者へ明示確認済み写真だけが届くこと、未確認写真・動画・関連整備記録・内部IDが届かないこと、共有停止・未ログイン・参加停止時の取得拒否を確認する。

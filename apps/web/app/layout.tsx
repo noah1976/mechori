@@ -7,13 +7,17 @@ import "./globals.css";
 /* eslint-disable @next/next/next-script-for-ga -- MECHORI uses the owner-supplied GTM container snippet verbatim. */
 
 const remoteAlpha = process.env.NEXT_PUBLIC_MECHORI_RUNTIME === "alpha";
-const googleTagManagerId = "GTM-M54GKLLL";
-const analyticsEnabled = process.env.NODE_ENV === "production";
+const googleTagManagerId = process.env.NEXT_PUBLIC_GTM_ID?.trim() || "GTM-M54GKLLL";
+const analyticsEnabled = process.env.NODE_ENV === "production" && /^GTM-[A-Z0-9]+$/.test(googleTagManagerId);
+const siteUrl = process.env.NEXT_PUBLIC_MECHORI_SITE_URL?.trim()
+  || process.env.URL?.trim()
+  || (process.env.NODE_ENV === "production" ? "https://mechori.com" : "http://localhost:3000");
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: remoteAlpha ? "MECHORI Alpha" : "MECHORI Prototype",
   description: remoteAlpha
-    ? "愛車と整備履歴を非公開で記録するMECHORI少人数α版"
+    ? "愛車との時間、整備履歴、実体験を記録して育てるMECHORI少人数α版"
     : "Local-only vehicle maintenance knowledge prototype",
   robots: remoteAlpha
     ? {
@@ -27,6 +31,16 @@ export const metadata: Metadata = {
         },
       }
     : undefined,
+  icons: {
+    icon: [
+      { url: "/mechori-icon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/mechori-icon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/mechori-icon-48.png", sizes: "48x48", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/mechori-icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/mechori-apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

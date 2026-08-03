@@ -16,8 +16,10 @@ import type {
 import { translate } from "@mechori/i18n";
 import { ArrowRight, BookOpen, Heart, Link2, Lock, Users } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 import { JournalMedia } from "@/components/journal-media";
 import { ProfileSafetyMenu } from "@/components/profile-safety-menu";
+import { useApp } from "@/lib/app-context";
 
 export function JournalCard({
   journal,
@@ -49,6 +51,9 @@ export function JournalCard({
     onToggleBlock(): void;
   };
 }) {
+  const { data, signedIn, isRemoteAlpha, journalReaction, toggleJournalLike } = useApp();
+  const [reacting, setReacting] = useState(false);
+  const [reactionError, setReactionError] = useState(false);
   const ja = locale === "ja";
   const displayJournal = preferSharedJournalMediaForDisplay(journal, sharedJournal);
   const display = resolveJournalDisplayContent(
@@ -57,6 +62,14 @@ export function JournalCard({
     locale,
   );
   const visibleMedia = journalMediaForViewer(displayJournal, showPrivateMedia);
+  const remoteReaction = journalReaction(displayJournal.id);
+  const appreciationCount = isRemoteAlpha
+    ? remoteReaction.appreciationCount
+    : displayJournal.appreciationCount;
+  const canReact =
+    signedIn &&
+    isRemoteAlpha &&
+    displayJournal.authorProfileId !== data.currentProfileId;
   return (
     <article className="journal-card">
       <div className="journal-card-meta">
@@ -118,15 +131,34 @@ export function JournalCard({
               ? ja ? "α参加者に公開" : "Shared with alpha participants"
               : translate(locale, displayJournal.visibility)}
         </span>
-        <span>
+        <button
+          type="button"
+          className={remoteReaction.likedByMe ? "journal-like is-liked" : "journal-like"}
+          aria-pressed={remoteReaction.likedByMe}
+          aria-label={ja ? "この記録にいいね" : "Like this record"}
+          disabled={!canReact || reacting}
+          onClick={async () => {
+            if (!canReact || reacting) return;
+            setReacting(true);
+            setReactionError(false);
+            try {
+              await toggleJournalLike(displayJournal.id);
+            } catch {
+              setReactionError(true);
+            } finally {
+              setReacting(false);
+            }
+          }}
+        >
           <Heart size={15} aria-hidden="true" />
-          {displayJournal.appreciationCount}
-        </span>
+          {appreciationCount}
+        </button>
         <Link href={`/journal/${displayJournal.id}`} className="text-link">
           {ja ? "読む" : "Read"}
           <ArrowRight size={15} aria-hidden="true" />
         </Link>
       </footer>
+      {reactionError && <small className="form-error" role="alert">{ja ? "いいねを保存できませんでした。もう一度お試しください。" : "The like could not be saved. Please try again."}</small>}
     </article>
   );
 }

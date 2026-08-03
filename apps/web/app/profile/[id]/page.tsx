@@ -5,7 +5,6 @@ import { RemoteOwnerProfile } from "@/components/remote-owner-profile";
 import { useApp } from "@/lib/app-context";
 import {
   canCurrentProfileViewJournal,
-  canProfileViewProfile,
   displayVehicleModel,
   formatOwnershipDuration,
   formatOwnershipPeriod,
@@ -34,7 +33,7 @@ export default function ProfilePage() {
   const ja = locale === "ja";
   const profile = data.profiles.find((item) => item.id === id);
   const ownProfile = signedIn && id === data.currentProfileId;
-  const canView = profile && canProfileViewProfile(data, id, signedIn ? data.currentProfileId : undefined);
+  const canView = profile && (ownProfile || !signedIn || !isProfileBlocked(data, id));
 
   if (!profile && signedIn && isRemoteAlpha) {
     return <RemoteOwnerProfile publicProfileId={id} />;
@@ -51,7 +50,6 @@ export default function ProfilePage() {
     );
   }
 
-  const fields = new Set(profile.displayFields);
   const vehicles = data.vehicles.filter((vehicle) => vehicle.ownerProfileId === profile.id);
   const groupedVehicles = groupVehiclesByOwnership(vehicles);
   const journals = data.journals.filter((journal) => {
@@ -68,7 +66,7 @@ export default function ProfilePage() {
       <Link href={signedIn ? "/feed" : "/"} className="back-link"><ArrowLeft size={17} />{ja ? "戻る" : "Back"}</Link>
       <header className="profile-header">
         <span className="profile-avatar" aria-hidden="true">{profile.displayName.slice(0, 1).toLocaleUpperCase()}</span>
-        <div><span className="eyebrow">PROFILE</span><h1>{profile.displayName}</h1>{profile.publicUsername && <p className="public-username">@{profile.publicUsername}</p>}{fields.has("role") && <p>{profile.role === "mechanic" ? (ja ? "メカニック" : "Mechanic") : (ja ? "オーナー" : "Owner")}{profile.isProfessional ? " · Professional DEMO" : ""}</p>}</div>
+        <div><span className="eyebrow">PROFILE</span><h1>{profile.displayName}</h1>{profile.publicUsername && <p className="public-username">@{profile.publicUsername}</p>}<p>{profile.role === "mechanic" ? (ja ? "メカニック" : "Mechanic") : (ja ? "オーナー" : "Owner")}{profile.isProfessional ? " · Professional DEMO" : ""}</p></div>
         {ownProfile ? (
           <Link href="/settings/profile" className="secondary-action"><Settings2 size={17} />{ja ? "プロフィール編集" : "Edit profile"}</Link>
         ) : signedIn ? (
@@ -84,15 +82,15 @@ export default function ProfilePage() {
         ) : null}
       </header>
 
-      {fields.has("bio") && <section className="profile-bio"><UserRound size={21} aria-hidden="true" /><p>{profile.bio}</p></section>}
+      {profile.bio?.trim() && <section className="profile-bio"><UserRound size={21} aria-hidden="true" /><p>{profile.bio}</p></section>}
 
       <section className="profile-facts" aria-label={ja ? "公開プロフィール情報" : "Public profile information"}>
-        {fields.has("vehicles") && <div><CarFront size={20} /><span>{ja ? "愛車歴" : "Vehicle history"}</span><strong>{vehicles.length ? `${vehicles.length}${ja ? "台" : " vehicles"}` : (ja ? "公開車両なし" : "No visible vehicles")}</strong></div>}
-        {fields.has("ownership_duration") && <div><UserRound size={20} /><span>{ja ? "所有期間" : "Ownership"}</span><strong>{vehicles.map((vehicle) => formatOwnershipDuration(locale, summarizeVehicleRelationship(vehicle))).filter(Boolean).join(" / ") || (ja ? "未登録" : "Not set")}</strong></div>}
-        {fields.has("journal_count") && <div><BookOpenText size={20} /><span>{ja ? "公開中の愛車記録" : "Public vehicle records"}</span><strong>{publicJournalCount}</strong></div>}
+        <div><CarFront size={20} /><span>{ja ? "愛車歴" : "Vehicle history"}</span><strong>{vehicles.length ? `${vehicles.length}${ja ? "台" : " vehicles"}` : (ja ? "公開車両なし" : "No visible vehicles")}</strong></div>
+        <div><UserRound size={20} /><span>{ja ? "所有期間" : "Ownership"}</span><strong>{vehicles.map((vehicle) => formatOwnershipDuration(locale, summarizeVehicleRelationship(vehicle))).filter(Boolean).join(" / ") || (ja ? "未登録" : "Not set")}</strong></div>
+        <div><BookOpenText size={20} /><span>{ja ? "公開中の愛車記録" : "Public vehicle records"}</span><strong>{publicJournalCount}</strong></div>
       </section>
 
-      {fields.has("vehicles") && vehicles.length > 0 && (
+      {vehicles.length > 0 ? (
         <section className="profile-vehicle-history">
           <div className="profile-vehicle-group">
             <div className="section-heading compact"><div><span className="eyebrow">CURRENT</span><h2>{ja ? "現在のガレージ" : "Current Garage"}</h2></div><CarFront size={21} aria-hidden="true" /></div>
@@ -103,7 +101,7 @@ export default function ProfilePage() {
             {groupedVehicles.previous.length ? <div className="profile-vehicle-lines">{groupedVehicles.previous.map((vehicle) => <ProfileVehicleLine key={vehicle.id} vehicle={vehicle} period={formatOwnershipPeriod(vehicle, locale)} locale={locale} followed={!ownProfile && isFollowing(data, "vehicle", vehicle.id)} onToggleFollow={!ownProfile && signedIn ? () => toggleFollow("vehicle", vehicle.id) : undefined} />)}</div> : <p>{ja ? "これまでの愛車はまだ公開されていません。" : "No previous vehicle is public yet."}</p>}
           </div>
         </section>
-      )}
+      ) : <div className="empty-state"><CarFront size={26} /><h3>{ja ? "現在、公開中の愛車・投稿はありません" : "There are currently no public vehicles or posts"}</h3></div>}
 
       <section>
         <div className="section-heading"><div><span className="eyebrow">VEHICLE RECORDS</span><h2>{ja ? "閲覧できる愛車記録" : "Visible vehicle records"}</h2></div></div>

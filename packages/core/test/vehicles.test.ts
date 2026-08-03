@@ -182,6 +182,60 @@ test("updates a vehicle specification without losing records, image, or ownershi
   assert.deepEqual(updated.data.records, originalRecords);
 });
 
+test("updates owner-facing vehicle details and an exact ownership start", () => {
+  const data = cloneDemoData();
+  const vehicle = data.vehicles[0]!;
+  const updated = updateVehicleSpecificationInData(data, vehicle.id, {
+    vehicleCategory: vehicle.vehicleCategory,
+    make: vehicle.make,
+    model: vehicle.model,
+    year: vehicle.year,
+    nickname: "赤い相棒",
+    imagePath: "data:image/webp;base64,new-main-photo",
+    ownerComment: "これからも記録を続ける。",
+    ownershipStartedYear: 2014,
+    ownershipStartedMonth: 4,
+    ownershipStartedDay: 12,
+    ownershipStartedPrecision: "day",
+  });
+
+  assert.equal(updated.vehicle.nickname, "赤い相棒");
+  assert.equal(updated.vehicle.imagePath, "data:image/webp;base64,new-main-photo");
+  assert.equal(updated.vehicle.ownerComment, "これからも記録を続ける。");
+  assert.equal(updated.vehicle.ownershipStartedYear, 2014);
+  assert.equal(updated.vehicle.ownershipStartedMonth, 4);
+  assert.equal(updated.vehicle.ownershipStartedDay, 12);
+  assert.equal(updated.vehicle.ownershipStartedPrecision, "day");
+});
+
+test("rejects an ownership start that is not a real calendar date", () => {
+  const draft = {
+    ...createEmptyVehicleDraft(),
+    make: "FIAT",
+    model: "Barchetta",
+    ownershipStartedYear: "2024",
+    ownershipStartedMonth: "2",
+    ownershipStartedDay: "31",
+    ownershipStartedPrecision: "day" as const,
+  };
+  assert.equal(validateVehicleDraft(draft).errors.ownershipStartedDay, "invalid");
+
+  const data = cloneDemoData();
+  const vehicle = data.vehicles[0]!;
+  assert.throws(
+    () => updateVehicleSpecificationInData(data, vehicle.id, {
+      vehicleCategory: vehicle.vehicleCategory,
+      make: vehicle.make,
+      model: vehicle.model,
+      ownershipStartedYear: 2024,
+      ownershipStartedMonth: 2,
+      ownershipStartedDay: 31,
+      ownershipStartedPrecision: "day",
+    }),
+    /invalid_vehicle_specification/,
+  );
+});
+
 test("stores an owner-reported Peugeot 205 configuration as structured mechanical data", () => {
   const vehicle = addVehicleToData(cloneDemoData(), {
     ...createEmptyVehicleDraft(),

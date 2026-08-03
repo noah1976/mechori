@@ -1,6 +1,7 @@
 "use client";
 
 import { useApp } from "@/lib/app-context";
+import { imagePreparationMessageKey, preparePrivateAlphaImage } from "@/lib/image-preparation";
 import {
   resolveVehicleIdentity,
   resolveVehicleSpecification,
@@ -9,10 +10,11 @@ import {
   type VehicleDrivetrainType,
 } from "@mechori/core";
 import { translate } from "@mechori/i18n";
-import { Bike, BookOpenCheck, CarFront, Save } from "lucide-react";
+import { Bike, BookOpenCheck, Camera, CarFront, ImagePlus, Save, Trash2 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useMemo, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 
 export default function VehicleSpecificationPage() {
   const { vehicleId } = useParams<{ vehicleId: string }>();
@@ -35,6 +37,15 @@ export default function VehicleSpecificationPage() {
   const [transmission, setTransmission] = useState(ownedVehicle?.transmission ?? "");
   const [transmissionCode, setTransmissionCode] = useState(ownedVehicle?.transmissionCode ?? "");
   const [steering, setSteering] = useState(ownedVehicle?.steering ?? "");
+  const [nickname, setNickname] = useState(ownedVehicle?.nickname ?? "");
+  const [imagePath, setImagePath] = useState(ownedVehicle?.imagePath ?? "");
+  const [ownerComment, setOwnerComment] = useState(ownedVehicle?.ownerComment ?? "");
+  const [ownershipStartedYear, setOwnershipStartedYear] = useState(ownedVehicle?.ownershipStartedYear?.toString() ?? "");
+  const [ownershipStartedMonth, setOwnershipStartedMonth] = useState(ownedVehicle?.ownershipStartedMonth?.toString() ?? "");
+  const [ownershipStartedDay, setOwnershipStartedDay] = useState(ownedVehicle?.ownershipStartedDay?.toString() ?? "");
+  const [ownershipStartedPrecision, setOwnershipStartedPrecision] = useState(ownedVehicle?.ownershipStartedPrecision ?? (ownedVehicle?.ownershipStartedMonth ? "month" : ownedVehicle?.ownershipStartedYear ? "year" : "unknown"));
+  const [preparingImage, setPreparingImage] = useState(false);
+  const [imageError, setImageError] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const identity = useMemo(() => resolveVehicleIdentity(make, model), [make, model]);
@@ -55,11 +66,30 @@ export default function VehicleSpecificationPage() {
   }
   const editableVehicle = ownedVehicle;
 
+  async function selectPhoto(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setPreparingImage(true);
+    setImageError("");
+    try {
+      const prepared = await preparePrivateAlphaImage(file);
+      setImagePath(prepared.dataUrl);
+    } catch (photoError) {
+      setImageError(translate(locale, imagePreparationMessageKey(photoError)));
+    } finally {
+      setPreparingImage(false);
+    }
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     const parsedYear = year ? Number(year) : undefined;
     const parsedDisplacementCc = displacementCc ? Number(displacementCc) : undefined;
+    const parsedOwnershipStartedYear = ownershipStartedYear ? Number(ownershipStartedYear) : undefined;
+    const parsedOwnershipStartedMonth = ownershipStartedMonth ? Number(ownershipStartedMonth) : undefined;
+    const parsedOwnershipStartedDay = ownershipStartedDay ? Number(ownershipStartedDay) : undefined;
     if (
       !make.trim() ||
       !model.trim() ||
@@ -87,6 +117,13 @@ export default function VehicleSpecificationPage() {
         transmission,
         transmissionCode,
         steering,
+        nickname,
+        imagePath,
+        ownerComment,
+        ownershipStartedYear: parsedOwnershipStartedYear,
+        ownershipStartedMonth: parsedOwnershipStartedMonth,
+        ownershipStartedDay: parsedOwnershipStartedDay,
+        ownershipStartedPrecision,
       });
       router.push(`/garage?vehicle=${encodeURIComponent(editableVehicle.id)}`);
     } catch {
@@ -101,6 +138,51 @@ export default function VehicleSpecificationPage() {
         <div><span className="eyebrow">VEHICLE SPECIFICATION</span><h1>{translate(locale, "editVehicleSpecification")}</h1><p>{translate(locale, "editVehicleSpecificationIntro")}</p></div>
       </header>
       <form className="vehicle-form" onSubmit={submit} noValidate>
+        <section className="form-section">
+          <div className="section-heading compact"><div><span className="eyebrow">PROFILE</span><h2>{locale === "ja" ? "愛車ページの見え方" : "Vehicle profile"}</h2></div></div>
+          <div className="vehicle-photo-field is-optional-past-photo">
+            <div className="vehicle-photo-preview">
+              {imagePath ? (
+                <Image src={imagePath} alt="" fill sizes="(max-width: 760px) 100vw, 720px" unoptimized />
+              ) : (
+                <div><Camera size={40} aria-hidden="true" /><strong>{locale === "ja" ? "メイン写真は任意です" : "Main photo is optional"}</strong></div>
+              )}
+            </div>
+            <div className="vehicle-photo-edit-actions">
+              <label className="photo-pick-action">
+                <ImagePlus size={18} aria-hidden="true" />
+                {preparingImage ? (locale === "ja" ? "写真を準備中" : "Preparing photo") : imagePath ? (locale === "ja" ? "写真を変更" : "Change photo") : (locale === "ja" ? "写真を追加" : "Add photo")}
+                <input type="file" accept="image/*" onChange={selectPhoto} disabled={preparingImage || saving} />
+              </label>
+              {imagePath && <button type="button" className="secondary-action" onClick={() => {
+                const confirmed = window.confirm(locale === "ja" ? "メイン写真を外しますか？ 保存するまで変更は確定しません。" : "Remove the main photo? The change is not final until you save.");
+                if (confirmed) setImagePath("");
+              }}><Trash2 size={17} aria-hidden="true" />{locale === "ja" ? "写真を外す" : "Remove photo"}</button>}
+            </div>
+            {imageError && <p className="media-error" role="alert">{imageError}</p>}
+          </div>
+          <Field label={translate(locale, "nicknameOptional")}><input maxLength={30} value={nickname} onChange={(event) => setNickname(event.target.value)} /></Field>
+          <Field label={locale === "ja" ? "愛車についてのひとこと（任意）" : "A note about this vehicle (optional)"}><textarea maxLength={500} value={ownerComment} onChange={(event) => setOwnerComment(event.target.value)} /></Field>
+          <Field label={locale === "ja" ? "所有開始時期の詳しさ" : "Ownership start precision"}>
+            <select value={ownershipStartedPrecision} onChange={(event) => {
+              const precision = event.target.value as typeof ownershipStartedPrecision;
+              setOwnershipStartedPrecision(precision);
+              if (precision === "unknown") { setOwnershipStartedYear(""); setOwnershipStartedMonth(""); setOwnershipStartedDay(""); }
+              if (precision === "year") { setOwnershipStartedMonth(""); setOwnershipStartedDay(""); }
+              if (precision === "month") setOwnershipStartedDay("");
+            }}>
+              <option value="unknown">{locale === "ja" ? "不明・覚えていない" : "Unknown"}</option>
+              <option value="year">{locale === "ja" ? "年まで" : "Year"}</option>
+              <option value="month">{locale === "ja" ? "年月まで" : "Year and month"}</option>
+              <option value="day">{locale === "ja" ? "年月日" : "Exact date"}</option>
+            </select>
+          </Field>
+          {ownershipStartedPrecision !== "unknown" && <div className="form-grid three-columns">
+            <Field label={translate(locale, "ownershipStartYear")}><input type="number" min="1886" max={new Date().getFullYear()} inputMode="numeric" value={ownershipStartedYear} onChange={(event) => setOwnershipStartedYear(event.target.value)} /></Field>
+            {ownershipStartedPrecision !== "year" && <Field label={locale === "ja" ? "月" : "Month"}><input type="number" min="1" max="12" inputMode="numeric" value={ownershipStartedMonth} onChange={(event) => setOwnershipStartedMonth(event.target.value)} /></Field>}
+            {ownershipStartedPrecision === "day" && <Field label={locale === "ja" ? "日" : "Day"}><input type="number" min="1" max="31" inputMode="numeric" value={ownershipStartedDay} onChange={(event) => setOwnershipStartedDay(event.target.value)} /></Field>}
+          </div>}
+        </section>
         <section className="form-section">
           <div className="section-heading compact"><div><span className="eyebrow">01</span><h2>{translate(locale, "vehicleIdentity")}</h2></div>{vehicleCategory === "motorcycle" || vehicleCategory === "moped" ? <Bike size={22} /> : <CarFront size={22} />}</div>
           <Field label={translate(locale, "vehicleType")}>
@@ -139,7 +221,7 @@ export default function VehicleSpecificationPage() {
           </div>
         </section>
         {error && <p className="form-error-summary" role="alert">{error}</p>}
-        <div className="form-actions"><Link href={`/garage/${encodeURIComponent(editableVehicle.id)}/catalog`} className="secondary-action"><BookOpenCheck size={17} />{locale === "ja" ? "知っている仕様を届ける" : "Share a specification you know"}</Link><button type="button" className="secondary-action" onClick={() => router.back()}>{translate(locale, "back")}</button><button type="submit" className="primary-action" disabled={saving}><Save size={18} />{translate(locale, saving ? "saving" : "saveSpecification")}</button></div>
+        <div className="form-actions"><button type="submit" className="primary-action" disabled={saving || preparingImage}><Save size={18} />{translate(locale, saving ? "saving" : "saveSpecification")}</button><Link href={`/garage/${encodeURIComponent(editableVehicle.id)}/catalog`} className="secondary-action"><BookOpenCheck size={17} />{locale === "ja" ? "仕様情報を追加・修正する" : "Add or correct specification data"}</Link><button type="button" className="secondary-action" onClick={() => router.back()}>{translate(locale, "back")}</button></div>
       </form>
     </div>
   );

@@ -523,6 +523,7 @@ export function updateCurrentProfileIdentity(
   data: AppData,
   displayName: string,
   publicUsername?: string,
+  bio?: string,
 ): AppData {
   const normalizedDisplayName = displayName.trim();
   if (!normalizedDisplayName || normalizedDisplayName.length > 80) {
@@ -535,6 +536,10 @@ export function updateCurrentProfileIdentity(
   ) {
     throw new Error("invalid_public_username");
   }
+  const normalizedBio = bio?.normalize("NFKC").trim() ?? "";
+  if (normalizedBio.length > 300 || /<[^>]+>/.test(normalizedBio)) {
+    throw new Error("invalid_profile_bio");
+  }
   return {
     ...data,
     profiles: data.profiles.map((profile) =>
@@ -543,6 +548,7 @@ export function updateCurrentProfileIdentity(
             ...profile,
             displayName: normalizedDisplayName,
             publicUsername: normalizedPublicUsername,
+            bio: normalizedBio,
           }
         : profile,
     ),
