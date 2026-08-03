@@ -10,6 +10,7 @@ import {
 import { journalMediaStore } from "@/lib/media-store";
 import {
   createSharedMediaLoadDiagnostic,
+  isSharedMediaServerProbe,
   type SharedMediaLoadDiagnostic,
 } from "@/lib/shared-media-diagnostics";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -66,6 +67,7 @@ function JournalMediaItem({
   );
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [failureId, setFailureId] = useState<string | null>(null);
+  const [probeCode, setProbeCode] = useState<string | null>(null);
 
   useEffect(() => {
     if (
@@ -84,7 +86,12 @@ function JournalMediaItem({
         setSource(objectUrl);
       } else if (result.diagnostic) {
         setFailureId(result.diagnostic.errorId);
-        void reportSharedMediaDiagnostic(result.diagnostic);
+        void reportSharedMediaDiagnostic(
+          result.diagnostic,
+          attachment.assetPath,
+        ).then((code) => {
+          if (active && code) setProbeCode(code);
+        });
       }
       setLoading(false);
     });
@@ -121,6 +128,9 @@ function JournalMediaItem({
             : "Local media not found"}</span>
         {sharedPhotoUnavailable && failureId && (
           <small>{locale === "ja" ? `確認番号: ${failureId}` : `Reference: ${failureId}`}</small>
+        )}
+        {sharedPhotoUnavailable && probeCode && (
+          <small>{locale === "ja" ? `診断コード: ${probeCode}` : `Diagnostic: ${probeCode}`}</small>
         )}
         {sharedPhotoUnavailable && (
           <button
@@ -209,18 +219,25 @@ async function loadJournalMediaBlob(
 
 async function reportSharedMediaDiagnostic(
   diagnostic: SharedMediaLoadDiagnostic,
-): Promise<void> {
-  if (reportedMediaDiagnostics.has(diagnostic.errorId)) return;
+  objectPath: string | undefined,
+): Promise<string | null> {
+  if (!objectPath || reportedMediaDiagnostics.has(diagnostic.errorId)) return null;
   reportedMediaDiagnostics.add(diagnostic.errorId);
   try {
-    await fetch("/api/media-diagnostics", {
+    const response = await fetch("/api/media-diagnostics", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(diagnostic),
+      body: JSON.stringify({ diagnostic, objectPath }),
       keepalive: true,
     });
+    if (!response.ok) return null;
+    const payload: unknown = await response.json();
+    if (!payload || typeof payload !== "object") return null;
+    const probe = (payload as Record<string, unknown>).probe;
+    return isSharedMediaServerProbe(probe) ? probe.probeCode : null;
   } catch {
     // The short reference remains visible even when diagnostic delivery fails.
+    return null;
   }
 }
 

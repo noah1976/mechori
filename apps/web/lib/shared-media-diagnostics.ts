@@ -20,6 +20,15 @@ export interface SharedMediaLoadDiagnostic {
   attempts: number;
 }
 
+export interface SharedMediaServerProbe {
+  probeCode: string;
+  userVerified: boolean;
+  policyAllowsRead: boolean | null;
+  listedInVisibleShare: boolean | null;
+  serverDownloadStatus: number | null;
+  serverDownloadErrorCode: string;
+}
+
 export async function createSharedMediaLoadDiagnostic(input: {
   photoId: string;
   bucket: string;
@@ -29,7 +38,7 @@ export async function createSharedMediaLoadDiagnostic(input: {
   attempts: number;
 }): Promise<SharedMediaLoadDiagnostic> {
   const storageError = safeStorageError(input.error);
-  const objectPathHash = await hashObjectPath(input.objectPath);
+  const objectPathHash = await hashSharedMediaObjectPath(input.objectPath);
   return {
     errorId: `P069-${objectPathHash.slice(0, 10)}-${storageError.httpStatus ?? "x"}`,
     photoId: safeIdentifier(input.photoId),
@@ -44,6 +53,69 @@ export async function createSharedMediaLoadDiagnostic(input: {
     sessionPresent: input.sessionPresent,
     attempts: input.attempts,
   };
+}
+
+export function isSafeSharedMediaObjectPath(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    value.length <= 500 &&
+    /^[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\/[A-Za-z0-9_.-]+$/.test(value) &&
+    !value.includes("..")
+  );
+}
+
+export async function sharedMediaObjectPathMatchesDiagnostic(
+  objectPath: string,
+  diagnostic: SharedMediaLoadDiagnostic,
+): Promise<boolean> {
+  return (await hashSharedMediaObjectPath(objectPath)) === diagnostic.objectPathHash;
+}
+
+export function createSharedMediaServerProbe(input: {
+  userVerified: boolean;
+  policyAllowsRead: boolean | null;
+  listedInVisibleShare: boolean | null;
+  serverDownloadError: unknown;
+  serverDownloadSucceeded: boolean;
+}): SharedMediaServerProbe {
+  const storageError = input.serverDownloadSucceeded
+    ? { httpStatus: 200, code: "none" }
+    : safeStorageError(input.serverDownloadError);
+  const probeCode = [
+    input.userVerified ? "U1" : "U0",
+    `P${nullableBooleanCode(input.policyAllowsRead)}`,
+    `L${nullableBooleanCode(input.listedInVisibleShare)}`,
+    `D${storageError.httpStatus ?? "x"}`,
+    storageError.code,
+  ].join("-");
+  return {
+    probeCode,
+    userVerified: input.userVerified,
+    policyAllowsRead: input.policyAllowsRead,
+    listedInVisibleShare: input.listedInVisibleShare,
+    serverDownloadStatus: storageError.httpStatus,
+    serverDownloadErrorCode: storageError.code,
+  };
+}
+
+export function isSharedMediaServerProbe(
+  value: unknown,
+): value is SharedMediaServerProbe {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Partial<SharedMediaServerProbe>;
+  return (
+    typeof item.probeCode === "string" &&
+    /^U[01]-P[01x]-L[01x]-D(?:\d{3}|x)-[a-z0-9_.-]{1,64}$/.test(item.probeCode) &&
+    typeof item.userVerified === "boolean" &&
+    (item.policyAllowsRead === null || typeof item.policyAllowsRead === "boolean") &&
+    (item.listedInVisibleShare === null || typeof item.listedInVisibleShare === "boolean") &&
+    (item.serverDownloadStatus === null ||
+      (typeof item.serverDownloadStatus === "number" &&
+        item.serverDownloadStatus >= 100 &&
+        item.serverDownloadStatus <= 599)) &&
+    typeof item.serverDownloadErrorCode === "string" &&
+    /^[a-z0-9_.-]{1,64}$/.test(item.serverDownloadErrorCode)
+  );
 }
 
 export function isSharedMediaLoadDiagnostic(
@@ -123,7 +195,7 @@ function describeObjectPath(objectPath: string, bucket: string) {
   };
 }
 
-async function hashObjectPath(objectPath: string): Promise<string> {
+export async function hashSharedMediaObjectPath(objectPath: string): Promise<string> {
   try {
     const digest = await crypto.subtle.digest(
       "SHA-256",
@@ -133,6 +205,10 @@ async function hashObjectPath(objectPath: string): Promise<string> {
   } catch {
     return "0".repeat(64);
   }
+}
+
+function nullableBooleanCode(value: boolean | null): string {
+  return value === null ? "x" : value ? "1" : "0";
 }
 
 function safeIdentifier(value: string): string {

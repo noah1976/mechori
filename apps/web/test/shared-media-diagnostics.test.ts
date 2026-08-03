@@ -1,8 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  createSharedMediaServerProbe,
   createSharedMediaLoadDiagnostic,
+  isSafeSharedMediaObjectPath,
   isSharedMediaLoadDiagnostic,
+  isSharedMediaServerProbe,
+  sharedMediaObjectPathMatchesDiagnostic,
 } from "../lib/shared-media-diagnostics.ts";
 
 test("creates a safe shared-media diagnostic without retaining the object path", async () => {
@@ -45,4 +49,38 @@ test("flags malformed stored object paths without logging their values", async (
   assert.equal(diagnostic.pathShape.looksLikeUrl, true);
   assert.equal(diagnostic.pathShape.containsDoubleEncoding, true);
   assert.match(diagnostic.errorId, /^P069-[a-f0-9]{10}-404$/);
+});
+
+test("validates and binds a safe object path to its diagnostic hash", async () => {
+  const objectPath = "owner-id/journal-id/photo.webp";
+  const diagnostic = await createSharedMediaLoadDiagnostic({
+    photoId: "photo-1",
+    bucket: "alpha-journal-media",
+    objectPath,
+    error: { statusCode: 403, error: "AccessDenied" },
+    sessionPresent: true,
+    attempts: 2,
+  });
+
+  assert.equal(isSafeSharedMediaObjectPath(objectPath), true);
+  assert.equal(isSafeSharedMediaObjectPath(`alpha-journal-media/${objectPath}`), false);
+  assert.equal(await sharedMediaObjectPathMatchesDiagnostic(objectPath, diagnostic), true);
+  assert.equal(
+    await sharedMediaObjectPathMatchesDiagnostic("owner-id/journal-id/other.webp", diagnostic),
+    false,
+  );
+});
+
+test("creates a safe server-side access probe code", () => {
+  const probe = createSharedMediaServerProbe({
+    userVerified: true,
+    policyAllowsRead: true,
+    listedInVisibleShare: true,
+    serverDownloadError: { statusCode: 403, error: "AccessDenied" },
+    serverDownloadSucceeded: false,
+  });
+
+  assert.equal(probe.probeCode, "U1-P1-L1-D403-accessdenied");
+  assert.equal(isSharedMediaServerProbe(probe), true);
+  assert.doesNotMatch(JSON.stringify(probe), /owner-id|journal-id|token/i);
 });

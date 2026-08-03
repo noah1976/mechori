@@ -1,5 +1,12 @@
-import { isSharedMediaLoadDiagnostic } from "@/lib/shared-media-diagnostics";
+import {
+  createSharedMediaServerProbe,
+  isSafeSharedMediaObjectPath,
+  isSharedMediaLoadDiagnostic,
+  sharedMediaObjectPathMatchesDiagnostic,
+} from "@/lib/shared-media-diagnostics";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+const sharedMediaBucket = "alpha-journal-media";
 
 export const runtime = "nodejs";
 
@@ -20,10 +27,69 @@ export async function POST(request: Request): Promise<Response> {
   } catch {
     return Response.json({ error: "invalid_payload" }, { status: 400 });
   }
-  if (!isSharedMediaLoadDiagnostic(payload)) {
+  if (!payload || typeof payload !== "object") {
+    return Response.json({ error: "invalid_payload" }, { status: 400 });
+  }
+  const requestPayload = payload as Record<string, unknown>;
+  const diagnostic = requestPayload.diagnostic;
+  const objectPath = requestPayload.objectPath;
+  if (
+    !isSharedMediaLoadDiagnostic(diagnostic) ||
+    !isSafeSharedMediaObjectPath(objectPath) ||
+    !(await sharedMediaObjectPathMatchesDiagnostic(objectPath, diagnostic))
+  ) {
     return Response.json({ error: "invalid_payload" }, { status: 400 });
   }
 
-  console.warn("[P-069 shared-media-load]", payload);
-  return new Response(null, { status: 204 });
+  const [{ data: policyData, error: policyError }, { data: sharedData, error: sharedError }] =
+    await Promise.all([
+      supabase.rpc("can_read_alpha_shared_journal_media", { p_path: objectPath }),
+      supabase.rpc("list_alpha_shared_journals"),
+    ]);
+  const listedInVisibleShare = sharedError
+    ? null
+    : sharedJournalRowsContainPath(sharedData, objectPath);
+  const policyAllowsRead = policyError || typeof policyData !== "boolean"
+    ? null
+    : policyData;
+  const download = await supabase.storage.from(sharedMediaBucket).download(objectPath);
+  const probe = createSharedMediaServerProbe({
+    userVerified: true,
+    policyAllowsRead,
+    listedInVisibleShare,
+    serverDownloadError: download.error,
+    serverDownloadSucceeded: !download.error && Boolean(download.data),
+  });
+
+  console.warn("[P-069 shared-media-load]", {
+    diagnostic,
+    probe,
+    policyProbeErrorCode: safeErrorCode(policyError),
+    sharedListErrorCode: safeErrorCode(sharedError),
+  });
+  return Response.json({ probe });
+}
+
+function sharedJournalRowsContainPath(value: unknown, objectPath: string): boolean {
+  if (!Array.isArray(value)) return false;
+  return value.some((row) => {
+    if (!row || typeof row !== "object") return false;
+    const payload = (row as Record<string, unknown>).payload;
+    if (!payload || typeof payload !== "object") return false;
+    const media = (payload as Record<string, unknown>).media;
+    return Array.isArray(media) && media.some((item) =>
+      Boolean(item) &&
+      typeof item === "object" &&
+      (item as Record<string, unknown>).assetPath === objectPath
+    );
+  });
+}
+
+function safeErrorCode(value: unknown): string {
+  if (!value || typeof value !== "object") return "none";
+  const item = value as Record<string, unknown>;
+  const candidate = item.code ?? item.name;
+  if (typeof candidate !== "string") return "error";
+  const normalized = candidate.trim().toLowerCase().replace(/\s+/g, "_");
+  return /^[a-z0-9_.-]{1,64}$/.test(normalized) ? normalized : "error";
 }
