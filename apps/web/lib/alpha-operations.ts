@@ -45,6 +45,16 @@ export interface AlphaAdminUser {
   joinedAt: string;
 }
 
+export interface AlphaAdminAuditLog {
+  id: string;
+  actorDisplayName: string;
+  action: "feedback_updated" | "entitlement_granted" | "entitlement_revoked" | "staff_role_changed" | string;
+  targetType: string;
+  targetDisplayName: string;
+  detail: Record<string, unknown>;
+  createdAt: string;
+}
+
 export async function submitAlphaFeedback(input: {
   kind: AlphaFeedbackKind;
   content: string;
@@ -135,6 +145,27 @@ export async function loadAlphaAdminUsers(): Promise<AlphaAdminUser[]> {
     registeredVehicles: Number(row.registered_vehicles ?? 0),
     journalPosts: Number(row.journal_posts ?? 0),
     joinedAt: String(row.joined_at),
+  }));
+}
+
+export async function loadAlphaAdminAuditLogs(): Promise<AlphaAdminAuditLog[] | null> {
+  const { data, error } = await createSupabaseBrowserClient().rpc("admin_list_alpha_audit_logs");
+  if (error) {
+    if (error.code === "PGRST202" || error.message.includes("admin_list_alpha_audit_logs")) {
+      return null;
+    }
+    throw new Error("admin_audit_logs_load_failed");
+  }
+  return ((data ?? []) as Array<Record<string, unknown>>).map((row) => ({
+    id: String(row.id),
+    actorDisplayName: String(row.actor_display_name ?? "MECHORI"),
+    action: String(row.action ?? ""),
+    targetType: String(row.target_type ?? ""),
+    targetDisplayName: String(row.target_display_name ?? row.target_type ?? ""),
+    detail: row.detail && typeof row.detail === "object" && !Array.isArray(row.detail)
+      ? row.detail as Record<string, unknown>
+      : {},
+    createdAt: String(row.created_at),
   }));
 }
 

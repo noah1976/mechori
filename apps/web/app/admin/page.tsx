@@ -2,6 +2,7 @@
 
 import {
   grantAlphaOwnerPlus,
+  loadAlphaAdminAuditLogs,
   loadAlphaAdminDashboard,
   loadAlphaAdminFeedback,
   loadAlphaAdminUsers,
@@ -9,12 +10,13 @@ import {
   setAlphaStaffRole,
   updateAlphaAdminFeedback,
   type AlphaAdminDashboard,
+  type AlphaAdminAuditLog,
   type AlphaAdminFeedback,
   type AlphaAdminUser,
   type AlphaFeedbackStatus,
 } from "@/lib/alpha-operations";
 import { useApp } from "@/lib/app-context";
-import { BookOpenText, CarFront, CheckCircle2, Gauge, LoaderCircle, MessageSquareText, Search, ShieldCheck, UsersRound } from "lucide-react";
+import { BookOpenText, CarFront, CheckCircle2, Gauge, History, LoaderCircle, MessageSquareText, Search, ShieldCheck, UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const feedbackStatuses: AlphaFeedbackStatus[] = ["new", "reviewing", "planned", "resolved", "closed"];
@@ -31,11 +33,35 @@ function feedbackStatusLabel(status: AlphaFeedbackStatus, ja: boolean) {
   return labels[status][ja ? 0 : 1];
 }
 
+function auditActionLabel(action: string, ja: boolean) {
+  const labels: Record<string, [string, string]> = {
+    feedback_updated: ["フィードバック対応を更新", "Updated feedback response"],
+    entitlement_granted: ["Owner Plus利用権を付与", "Granted Owner Plus access"],
+    entitlement_revoked: ["無償利用権を停止", "Revoked complimentary access"],
+    staff_role_changed: ["運営ロールを変更", "Changed staff role"],
+  };
+  return labels[action]?.[ja ? 0 : 1] ?? action;
+}
+
+function auditDetailLabel(detail: Record<string, unknown>, ja: boolean) {
+  const reason = typeof detail.reason === "string" ? detail.reason.trim() : "";
+  if (reason) return `${ja ? "理由" : "Reason"}: ${reason}`;
+  const adminNote = typeof detail.adminNote === "string" ? detail.adminNote.trim() : "";
+  if (adminNote) return `${ja ? "運営メモ" : "Admin note"}: ${adminNote}`;
+  if (typeof detail.roleCode === "string") {
+    return `${detail.roleCode}: ${detail.enabled === true ? (ja ? "付与" : "granted") : (ja ? "解除" : "removed")}`;
+  }
+  if (typeof detail.status === "string") return `${ja ? "状態" : "Status"}: ${detail.status}`;
+  if (typeof detail.planCode === "string") return `${ja ? "プラン" : "Plan"}: ${detail.planCode}`;
+  return "";
+}
+
 export default function AdminPage() {
   const { locale } = useApp();
   const [dashboard, setDashboard] = useState<AlphaAdminDashboard | null>(null);
   const [feedback, setFeedback] = useState<AlphaAdminFeedback[]>([]);
   const [users, setUsers] = useState<AlphaAdminUser[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AlphaAdminAuditLog[] | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "unavailable" | "error">("loading");
   const [busyKey, setBusyKey] = useState("");
   const [actionMessage, setActionMessage] = useState<"" | "saved" | "failed">("");
@@ -56,10 +82,11 @@ export default function AdminPage() {
   async function refresh() {
     setState("loading");
     try {
-      const [nextDashboard, nextFeedback, nextUsers] = await Promise.all([
+      const [nextDashboard, nextFeedback, nextUsers, nextAuditLogs] = await Promise.all([
         loadAlphaAdminDashboard(),
         loadAlphaAdminFeedback(),
         loadAlphaAdminUsers(),
+        loadAlphaAdminAuditLogs(),
       ]);
       if (!nextDashboard) {
         setState("unavailable");
@@ -68,6 +95,7 @@ export default function AdminPage() {
       setDashboard(nextDashboard);
       setFeedback(nextFeedback);
       setUsers(nextUsers);
+      setAuditLogs(nextAuditLogs);
       setState("ready");
     } catch {
       setState("error");
@@ -80,7 +108,8 @@ export default function AdminPage() {
       loadAlphaAdminDashboard(),
       loadAlphaAdminFeedback(),
       loadAlphaAdminUsers(),
-    ]).then(([nextDashboard, nextFeedback, nextUsers]) => {
+      loadAlphaAdminAuditLogs(),
+    ]).then(([nextDashboard, nextFeedback, nextUsers, nextAuditLogs]) => {
       if (!active) return;
       if (!nextDashboard) {
         setState("unavailable");
@@ -89,6 +118,7 @@ export default function AdminPage() {
       setDashboard(nextDashboard);
       setFeedback(nextFeedback);
       setUsers(nextUsers);
+      setAuditLogs(nextAuditLogs);
       setState("ready");
     }).catch(() => {
       if (active) setState("error");
@@ -165,6 +195,26 @@ export default function AdminPage() {
           </article>
         ))}</div>
       </section>
+
+      {dashboard.isAdmin && <section className="admin-section">
+        <header><div><span className="eyebrow">AUDIT HISTORY</span><h2>{ja ? "運営操作の変更履歴" : "Operations audit history"}</h2></div><History size={24} aria-hidden="true" /></header>
+        {auditLogs === null ? (
+          <p className="settings-help">{ja ? "変更履歴の表示準備中です。既存の運営機能は引き続き利用できます。" : "Audit-history display is being prepared. Existing operations remain available."}</p>
+        ) : auditLogs.length ? (
+          <div className="admin-audit-list">{auditLogs.map((item) => {
+            const detail = auditDetailLabel(item.detail, ja);
+            return <article key={item.id}>
+              <History size={17} aria-hidden="true" />
+              <div>
+                <strong>{auditActionLabel(item.action, ja)}</strong>
+                <p>{item.actorDisplayName} → {item.targetDisplayName}</p>
+                {detail && <small>{detail}</small>}
+              </div>
+              <time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString(locale)}</time>
+            </article>;
+          })}</div>
+        ) : <p className="settings-help">{ja ? "記録された運営操作はまだありません。" : "No privileged operations have been recorded yet."}</p>}
+      </section>}
     </div>
   );
 }
