@@ -1,4 +1,8 @@
 import type { Vehicle } from "@mechori/core";
+import {
+  classifyPublicVehicleShareError,
+  type PublicVehicleShareErrorKind,
+} from "@/lib/public-vehicle-share-error";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 export interface PublicVehicleShare {
@@ -39,7 +43,7 @@ export async function publishVehicleShare(vehicle: Vehicle): Promise<PublicVehic
     .select("slug,make,model,model_year,ownership_started_year,ownership_started_month,owner_comment,image_data_url,published_at")
     .single();
 
-  if (error || !data) throw new Error("share_publish_failed");
+  if (error || !data) throw publicVehicleShareServiceError(error, "publish");
   return mapShare(data);
 }
 
@@ -51,7 +55,7 @@ export async function loadPublicVehicleShare(slug: string): Promise<PublicVehicl
     .select("slug,make,model,model_year,ownership_started_year,ownership_started_month,owner_comment,image_data_url,published_at")
     .eq("slug", slug)
     .maybeSingle();
-  if (error) throw new Error("share_load_failed");
+  if (error) throw publicVehicleShareServiceError(error, "load_public");
   return data ? mapShare(data) : null;
 }
 
@@ -60,7 +64,7 @@ export async function loadOwnVehicleShare(vehicleId: string): Promise<PublicVehi
   const { data, error } = await supabase
     .rpc("get_my_vehicle_share", { p_vehicle_id: vehicleId })
     .maybeSingle();
-  if (error) throw new Error("share_load_failed");
+  if (error) throw publicVehicleShareServiceError(error, "load_own");
   return data ? mapShare(data) : null;
 }
 
@@ -70,7 +74,35 @@ export async function unpublishVehicleShare(slug: string): Promise<void> {
     .from("alpha_public_vehicle_shares")
     .update({ is_active: false, updated_at: new Date().toISOString() })
     .eq("slug", slug);
-  if (error) throw new Error("share_unpublish_failed");
+  if (error) throw publicVehicleShareServiceError(error, "unpublish");
+}
+
+function publicVehicleShareServiceError(
+  error: unknown,
+  operation: "publish" | "load_public" | "load_own" | "unpublish",
+): Error {
+  const category = classifyPublicVehicleShareError(error);
+  const effectiveCategory: PublicVehicleShareErrorKind =
+    category === "unknown" && isLikelyTemporaryShareError(error) ? "temporary" : category;
+
+  console.error("[public-vehicle-share] operation failed", {
+    operation,
+    category: effectiveCategory,
+    serviceCode: errorDetail(error, "code"),
+    serviceMessage: errorDetail(error, "message"),
+  });
+
+  return new Error(`public_vehicle_share_${effectiveCategory}`);
+}
+
+function isLikelyTemporaryShareError(error: unknown): boolean {
+  return !error || (typeof error === "object" && !errorDetail(error, "code"));
+}
+
+function errorDetail(error: unknown, key: "code" | "message"): string | undefined {
+  if (!error || typeof error !== "object") return undefined;
+  const value = (error as Record<string, unknown>)[key];
+  return typeof value === "string" ? value : undefined;
 }
 
 function mapShare(row: Record<string, unknown>): PublicVehicleShare {

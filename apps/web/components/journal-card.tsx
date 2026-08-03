@@ -72,6 +72,11 @@ export function JournalCard({
     displayJournal.authorProfileId !== data.currentProfileId;
   return (
     <article className="journal-card">
+      <Link
+        href={`/journal/${displayJournal.id}`}
+        className="journal-card-hit-area"
+        aria-label={ja ? `${display.title}の詳細を読む` : `Read ${display.title}`}
+      />
       <div className="journal-card-meta">
         <span className="journal-avatar" aria-hidden="true">
           {(author?.displayName ?? "M").slice(0, 1).toLocaleUpperCase()}

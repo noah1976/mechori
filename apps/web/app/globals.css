@@ -875,8 +875,12 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 
 .journal-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .journal-list { display: grid; gap: 14px; }
-.journal-card { min-width: 0; padding: 20px; background: var(--surface); border: 1px solid var(--line); border-top: 3px solid #7298a8; border-radius: var(--radius); }
-.journal-card-meta { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.journal-card { position: relative; min-width: 0; padding: 20px; background: var(--surface); border: 1px solid var(--line); border-top: 3px solid #7298a8; border-radius: var(--radius); transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease; }
+.journal-card:hover { border-color: #9eb3a8; box-shadow: 0 7px 20px rgba(22, 42, 31, 0.08); }
+.journal-card:active { transform: translateY(1px); }
+.journal-card-hit-area { position: absolute; z-index: 1; inset: 0; border-radius: inherit; }
+.journal-card-hit-area:focus-visible { outline: 3px solid rgba(45, 97, 119, 0.35); outline-offset: 3px; }
+.journal-card-meta { position: relative; z-index: 2; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; }
 .journal-avatar { width: 36px; height: 36px; display: grid; place-items: center; flex: 0 0 auto; color: #fff; background: var(--brand); border-radius: 50%; font-size: 13px; font-weight: 850; }
 .journal-card-meta strong, .journal-card-meta small { display: block; }
 .journal-card-meta strong { font-size: 13px; }
@@ -892,6 +896,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .journal-record-link span { color: var(--muted); }
 .journal-record-link strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .journal-card footer { display: flex; align-items: center; gap: 15px; margin-top: 17px; padding-top: 14px; border-top: 1px solid var(--line); }
+.journal-card footer, .journal-card > .form-error { position: relative; z-index: 2; }
+.journal-card .journal-media-item video { position: relative; z-index: 2; }
 .journal-card footer > span { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-size: 11px; }
 .journal-like { display: inline-flex; align-items: center; gap: 5px; padding: 3px; color: var(--muted); background: transparent; border: 0; font-size: 11px; }
 .journal-like:not(:disabled):hover, .journal-like.is-liked { color: var(--danger); }

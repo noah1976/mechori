@@ -26,6 +26,15 @@ export function PrivacyPolicyContent() {
         {ja ? "制定・最終更新：2026年7月27日" : "Effective and last updated: July 27, 2026"}
       </p>
 
+      <aside className="settings-section privacy-policy-section" aria-label={ja ? "α版の提供について" : "About the alpha offering"}>
+        <h2>{ja ? "α版の提供について" : "About the alpha offering"}</h2>
+        <p>
+          {ja
+            ? "現在、MECHORIはα版として無料で提供しています。サービスを継続・改善するため、将来的に広告の表示や、一部機能を対象とした有料プランを導入する可能性があります。"
+            : "MECHORI is currently provided as a free alpha. To sustain and improve the service, we may introduce advertising or paid plans for selected features in the future."}
+        </p>
+      </aside>
+
       <section className="privacy-policy-principles" aria-label={ja ? "基本原則" : "Core principles"}>
         <article>
           <ShieldCheck size={22} aria-hidden="true" />
