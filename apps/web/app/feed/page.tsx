@@ -7,13 +7,14 @@ import {
   createFollowTargets,
   getFollowedSharedFeed,
   getFollowingFeed,
+  getPreferredVehicle,
   isFollowing,
   isProfileBlocked,
   isProfileMuted,
   type FollowTargetSummary,
 } from "@mechori/core";
 import { translate } from "@mechori/i18n";
-import { Ban, BookOpenText, CarFront, Plus, RotateCcw, UserRound, VolumeX, Wrench } from "lucide-react";
+import { Ban, BookOpenText, Camera, CarFront, RotateCcw, UserRound, VolumeX, Wrench } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 
@@ -30,6 +31,9 @@ export default function FeedPage() {
     recordEngagement,
   } = useApp();
   const ja = locale === "ja";
+  const preferredVehicle = getPreferredVehicle(
+    data.vehicles.filter((vehicle) => vehicle.ownerProfileId === data.currentProfileId),
+  );
   const ownJournalIds = new Set(data.journals.map((journal) => journal.id));
   const feed = [
     ...getFollowingFeed(data),
@@ -66,9 +70,16 @@ export default function FeedPage() {
               : "Follow people, individual vehicles, and models in chronological order. Popularity never changes knowledge trust."}
           </p>
         </div>
-        <Link href="/journal/new" className="primary-action">
-          <Plus size={17} aria-hidden="true" />
-          {translate(locale, "addJournal")}
+        <Link
+          href={preferredVehicle
+            ? `/garage/${encodeURIComponent(preferredVehicle.id)}/event/new`
+            : "/garage/new"}
+          className="primary-action"
+        >
+          <Camera size={17} aria-hidden="true" />
+          {preferredVehicle
+            ? ja ? "さっと記録" : "Quick record"
+            : ja ? "愛車を登録" : "Add vehicle"}
         </Link>
       </header>
 

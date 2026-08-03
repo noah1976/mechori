@@ -1,9 +1,10 @@
 "use client";
 
 import { translate, uiLocaleOptions, type TranslationKey } from "@mechori/i18n";
-import type { SupportedUiLocale } from "@mechori/core";
+import { getPreferredVehicle, type SupportedUiLocale } from "@mechori/core";
 import {
   BookOpenText,
+  Camera,
   CarFront,
   CircleAlert,
   House,
@@ -56,6 +57,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [policyError, setPolicyError] = useState(false);
   const authenticated = hydrated && signedIn;
   const currentProfile = data.profiles.find((profile) => profile.id === data.currentProfileId);
+  const preferredVehicle = getPreferredVehicle(
+    data.vehicles.filter((vehicle) => vehicle.ownerProfileId === data.currentProfileId),
+  );
   const visibleNavItems = authenticated
     ? navItems
     : navItems.filter((item) => item.href === "/" || item.href === "/search");
@@ -149,9 +153,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
         {authenticated ? (
-          <Link href="/records/new" className="primary-action nav-add">
-            <Plus size={18} aria-hidden="true" />
-            {translate(locale, "addRecord")}
+          <Link
+            href={preferredVehicle
+              ? `/garage/${encodeURIComponent(preferredVehicle.id)}/event/new`
+              : "/garage/new"}
+            className="primary-action nav-add"
+          >
+            {preferredVehicle
+              ? <Camera size={18} aria-hidden="true" />
+              : <Plus size={18} aria-hidden="true" />}
+            {preferredVehicle
+              ? locale === "ja" ? "さっと記録" : "Quick record"
+              : locale === "ja" ? "愛車を登録" : "Add vehicle"}
           </Link>
         ) : (
           <Link href="/auth" className="primary-action nav-add">
