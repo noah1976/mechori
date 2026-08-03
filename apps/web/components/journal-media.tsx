@@ -1,7 +1,7 @@
 "use client";
 
 import type { JournalMediaAttachment, Locale } from "@mechori/core";
-import { ImageIcon, LoaderCircle, Video } from "lucide-react";
+import { ImageIcon, LoaderCircle, RefreshCw, Video } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import {
@@ -31,7 +31,7 @@ export function JournalMedia({
           attachment={attachment}
           locale={locale}
           priority={priority && index === 0}
-          key={attachment.id}
+          key={`${attachment.id}:${attachment.source}:${attachment.assetPath ?? attachment.storageKey ?? ""}`}
         />
       ))}
       {compact && attachments.length > 1 && (
@@ -58,6 +58,7 @@ function JournalMediaItem({
   const [loading, setLoading] = useState(
     attachment.source === "local_blob" || attachment.source === "alpha_shared",
   );
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
     if (
@@ -68,19 +69,7 @@ function JournalMediaItem({
     }
     let active = true;
     let objectUrl: string | undefined;
-    const blobPromise =
-      attachment.source === "local_blob" && attachment.storageKey
-        ? journalMediaStore.load(attachment.storageKey)
-        : attachment.source === "alpha_shared" && attachment.assetPath
-          ? createSupabaseBrowserClient()
-              .storage
-              .from(alphaSharedJournalMediaBucket)
-              .download(attachment.assetPath)
-              .then((result: { data: Blob | null; error: unknown }) => {
-                if (result.error) return null;
-                return result.data;
-              })
-          : Promise.resolve(null);
+    const blobPromise = loadJournalMediaBlob(attachment);
     void blobPromise.then((blob: Blob | null) => {
       if (!active) return;
       if (blob) {
@@ -93,7 +82,7 @@ function JournalMediaItem({
       active = false;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [attachment.assetPath, attachment.source, attachment.storageKey]);
+  }, [attachment, loadAttempt]);
 
   if (loading) {
     return (
@@ -105,6 +94,7 @@ function JournalMediaItem({
   }
 
   if (!source) {
+    const sharedPhotoUnavailable = attachment.source === "alpha_shared";
     return (
       <div className="journal-media-placeholder">
         {attachment.kind === "image" ? (
@@ -112,13 +102,26 @@ function JournalMediaItem({
         ) : (
           <Video size={22} aria-hidden="true" />
         )}
-        {attachment.source === "alpha_shared"
+        <span>{sharedPhotoUnavailable
           ? locale === "ja"
             ? "共有写真を読み込めません"
             : "Shared photo is unavailable"
           : locale === "ja"
             ? "端末内メディアが見つかりません"
-            : "Local media not found"}
+            : "Local media not found"}</span>
+        {sharedPhotoUnavailable && (
+          <button
+            type="button"
+            className="journal-media-retry"
+            onClick={() => {
+              setLoading(true);
+              setLoadAttempt((current) => current + 1);
+            }}
+          >
+            <RefreshCw size={15} aria-hidden="true" />
+            {locale === "ja" ? "再読み込み" : "Try again"}
+          </button>
+        )}
       </div>
     );
   }
@@ -152,4 +155,29 @@ function JournalMediaItem({
       )}
     </figure>
   );
+}
+
+async function loadJournalMediaBlob(
+  attachment: JournalMediaAttachment,
+): Promise<Blob | null> {
+  if (attachment.source === "local_blob" && attachment.storageKey) {
+    return journalMediaStore.load(attachment.storageKey);
+  }
+  if (attachment.source !== "alpha_shared" || !attachment.assetPath) {
+    return null;
+  }
+
+  const storage = createSupabaseBrowserClient().storage.from(
+    alphaSharedJournalMediaBucket,
+  );
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const result = await storage.download(attachment.assetPath);
+    if (!result.error && result.data) return result.data;
+    if (attempt === 0) await wait(650);
+  }
+  return null;
+}
+
+function wait(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 }
