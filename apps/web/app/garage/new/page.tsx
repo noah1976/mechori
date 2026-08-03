@@ -1,6 +1,7 @@
 "use client";
 
 import { useApp } from "@/lib/app-context";
+import { PhotoSourceActions } from "@/components/photo-source-actions";
 import {
   imagePreparationMessageKey,
   preparePrivateAlphaImage,
@@ -17,7 +18,7 @@ import {
 } from "@mechori/core";
 import { usePublishedVehicleCatalog } from "@/lib/use-vehicle-catalog";
 import { translate } from "@mechori/i18n";
-import { Bike, Camera, CarFront, History, ImagePlus, Save, ShieldCheck } from "lucide-react";
+import { Bike, Camera, CarFront, History, Save, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useMemo, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
@@ -145,11 +146,12 @@ function NewVehicleContent() {
               <div><Camera size={44} aria-hidden="true" /><strong>{isPrevious ? translate(locale, "pastPhotoOptionalTitle") : locale === "ja" ? "愛車の写真（任意）" : "Vehicle photo (optional)"}</strong><span>{translate(locale, isPrevious ? "pastPhotoOptionalBody" : "checkPhotoPrivacy")}</span></div>
             )}
           </div>
-          <label className="photo-pick-action">
-            <ImagePlus size={18} aria-hidden="true" />
-            {translate(locale, preparingImage ? "preparingPhoto" : draft.imagePath ? "chooseAnotherPhoto" : "choosePhoto")}
-            <input type="file" accept="image/*" onChange={selectPhoto} disabled={preparingImage || saving} />
-          </label>
+          <PhotoSourceActions
+            locale={locale}
+            preparing={preparingImage}
+            disabled={preparingImage || saving}
+            onChange={selectPhoto}
+          />
           {imageError && <p className="media-error" role="alert">{imageError}</p>}
           <p className="image-preparation-note"><ShieldCheck size={15} aria-hidden="true" />{translate(locale, "privateImagePreparationNotice")}</p>
         </section>

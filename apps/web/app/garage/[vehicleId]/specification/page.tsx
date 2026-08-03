@@ -1,6 +1,7 @@
 "use client";
 
 import { useApp } from "@/lib/app-context";
+import { PhotoSourceActions } from "@/components/photo-source-actions";
 import { imagePreparationMessageKey, preparePrivateAlphaImage } from "@/lib/image-preparation";
 import {
   resolveVehicleIdentity,
@@ -10,7 +11,7 @@ import {
   type VehicleDrivetrainType,
 } from "@mechori/core";
 import { translate } from "@mechori/i18n";
-import { Bike, BookOpenCheck, Camera, CarFront, ImagePlus, Save, Trash2 } from "lucide-react";
+import { Bike, BookOpenCheck, Camera, CarFront, Save, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -149,11 +150,12 @@ export default function VehicleSpecificationPage() {
               )}
             </div>
             <div className="vehicle-photo-edit-actions">
-              <label className="photo-pick-action">
-                <ImagePlus size={18} aria-hidden="true" />
-                {preparingImage ? (locale === "ja" ? "写真を準備中" : "Preparing photo") : imagePath ? (locale === "ja" ? "写真を変更" : "Change photo") : (locale === "ja" ? "写真を追加" : "Add photo")}
-                <input type="file" accept="image/*" onChange={selectPhoto} disabled={preparingImage || saving} />
-              </label>
+              <PhotoSourceActions
+                locale={locale}
+                preparing={preparingImage}
+                disabled={preparingImage || saving}
+                onChange={selectPhoto}
+              />
               {imagePath && <button type="button" className="secondary-action" onClick={() => {
                 const confirmed = window.confirm(locale === "ja" ? "メイン写真を外しますか？ 保存するまで変更は確定しません。" : "Remove the main photo? The change is not final until you save.");
                 if (confirmed) setImagePath("");

@@ -431,6 +431,7 @@ button { cursor: pointer; }
 .vehicle-photo-preview img { object-fit: contain; }
 .quick-event-photo img { object-fit: cover; }
 .vehicle-photo-edit-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.photo-source-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .vehicle-photo-preview > div, .quick-event-photo > div { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 8px; padding: 28px; text-align: center; }
 .vehicle-photo-preview span, .quick-event-photo span { color: #bdcbc4; font-size: 12px; }
 .photo-pick-action { position: relative; min-height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 0 14px; color: var(--brand); background: #fff; border: 1px solid var(--brand); border-radius: 5px; font-size: 13px; font-weight: 800; cursor: pointer; }
@@ -1422,6 +1423,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .brief-open-items article { grid-template-columns: 1fr; }
   .brief-history-list li { grid-template-columns: 1fr; }
   .two-columns, .three-columns, .filter-grid { grid-template-columns: 1fr; }
+  .photo-source-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+  .photo-source-actions .photo-pick-action { min-width: 0; justify-content: center; padding-inline: 10px; text-align: center; }
   .date-precision-picker { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .date-precision-picker button:nth-child(3) { border-left: 0; }
   .date-precision-picker button:nth-child(n + 3) { border-top: 1px solid var(--line); }

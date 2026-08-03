@@ -19,12 +19,13 @@ import {
   type Vehicle,
 } from "@mechori/core";
 import { translate, type TranslationKey } from "@mechori/i18n";
-import { Camera, ImagePlus, Save, ShieldAlert, ShieldCheck } from "lucide-react";
+import { Camera, Save, ShieldAlert, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { OccurrenceDateFields } from "@/components/occurrence-date-fields";
+import { PhotoSourceActions } from "@/components/photo-source-actions";
 
 const eventTypes: Array<{ value: JournalEventType; label: TranslationKey }> = [
   { value: "delivery", label: "eventDelivery" },
@@ -238,7 +239,12 @@ export function QuickEventForm({
         <section className="quick-event-photo">
           {image ? <Image src={image.dataUrl} alt="" fill sizes="(max-width: 760px) 100vw, 680px" unoptimized /> : existingImageSource ? <Image src={existingImageSource} alt={existingAttachment?.altText ?? ""} fill sizes="(max-width: 760px) 100vw, 680px" unoptimized /> : <div><Camera size={38} /><strong>{translate(locale, "photoOptional")}</strong><span>{translate(locale, "addTodaysPhoto")}</span></div>}
         </section>
-        <label className="photo-pick-action"><ImagePlus size={18} />{preparing ? translate(locale, "preparingPhoto") : image || existingAttachment ? translate(locale, "chooseAnotherPhoto") : translate(locale, "addPhoto")}<input type="file" accept="image/*" onChange={selectPhoto} disabled={preparing || saving} /></label>
+        <PhotoSourceActions
+          locale={locale}
+          preparing={preparing}
+          disabled={preparing || saving}
+          onChange={selectPhoto}
+        />
         <p className="image-preparation-note">
           <ShieldCheck size={15} />
           {isRemoteAlpha
@@ -254,7 +260,7 @@ export function QuickEventForm({
           error={error === "momentDateMissing" ? translate(locale, error) : undefined}
           onChange={(patch) => setOccurrence((current) => ({ ...current, ...patch }))}
         />
-        <label className="field quick-note-field"><span>{translate(locale, "oneSentenceRequired")}</span><textarea autoFocus maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} placeholder={translate(locale, "momentPlaceholder")} /></label>
+        <label className="field quick-note-field"><span>{translate(locale, "oneSentenceRequired")}</span><textarea maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} placeholder={translate(locale, "momentPlaceholder")} /></label>
         <section className="quick-event-audience" aria-labelledby="quick-event-audience-heading">
           <div>
             <strong id="quick-event-audience-heading">
