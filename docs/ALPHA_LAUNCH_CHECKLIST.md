@@ -70,6 +70,7 @@ Google OAuthを`本番環境`へ公開し、Netlifyの`NEXT_PUBLIC_GOOGLE_OAUTH_
 16. `/admin`でフィードバック確認とFounding TesterのOwner Plus付与・停止ができ、一般参加者は運営情報を取得できないこと
 17. favicon、ホーム画面追加時のApple Touch Icon、スマートフォン表示を確認すること
 18. GTM Previewで`page_view`等を確認し、GA4 RealtimeとClarityの両方で閲覧を確認すること
+19. 工場提示用の車両履歴がα環境ではオーナー記録と明示され、記録が0件でも次に何を追加すればよいか分かること
 
 管理画面のロール・利用権変更には必ず理由を入力します。利用権の付与対象は表示名または`@username`で本人を確認し、内部IDをチャットへ貼りません。
 

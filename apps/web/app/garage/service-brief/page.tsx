@@ -20,7 +20,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
 function ServiceBriefContent() {
-  const { data, locale } = useApp();
+  const { data, locale, isRemoteAlpha } = useApp();
   const params = useSearchParams();
   const vehicle = data.vehicles.find((item) => item.id === params.get("vehicle")) ?? getPreferredVehicle(data.vehicles);
   const ja = locale === "ja";
@@ -42,7 +42,7 @@ function ServiceBriefContent() {
       </div>
 
       <header className="service-brief-header">
-        <div><span className="eyebrow">MECHORI VEHICLE HISTORY · DEMO</span><h1>{translate(locale, "serviceBrief")}</h1><p>{translate(locale, "serviceBriefIntro")}</p></div>
+        <div><span className="eyebrow">MECHORI VEHICLE HISTORY · {isRemoteAlpha ? "OWNER-RECORDED" : "DEMO"}</span><h1>{translate(locale, "serviceBrief")}</h1><p>{translate(locale, "serviceBriefIntro")}</p></div>
         <div className="service-brief-vehicle"><strong>{vehicle.make} {vehicleModel}</strong><span>{[vehicle.year, vehicle.engine, vehicle.transmission, vehicle.steering].filter(Boolean).join(" · ") || (ja ? "仕様未登録" : "Specifications not set")}</span></div>
       </header>
 
@@ -68,6 +68,13 @@ function ServiceBriefContent() {
               <ul>{record.actions.map((action) => <li key={action.id}><strong>{action.summary}</strong><span>{action.workPerformed || (ja ? "作業内容の記録なし" : "No work details recorded")}</span><small>{action.result || (ja ? "結果の記録なし" : "No result recorded")}</small></li>)}</ul>
             </article>
           ))}
+          {records.length === 0 && (
+            <p className="legal-note">
+              {ja
+                ? "この車両には、まだ整備記録がありません。工場へ伝えたい過去の整備や症状を追加すると、ここへまとまります。"
+                : "This vehicle has no maintenance records yet. Past work and symptoms you add will be collected here for a workshop."}
+            </p>
+          )}
         </div>
       </section>
 
@@ -80,7 +87,9 @@ function ServiceBriefContent() {
         <WorkshopIntroductionActions locale={locale} />
       </section>
 
-      <p className="service-brief-footer">MECHORI · Fix. Share. Drive on. · DEMO / SAMPLE</p>
+      <p className="service-brief-footer">
+        MECHORI · Fix. Share. Drive on. · {isRemoteAlpha ? (ja ? "ALPHA / オーナー記録" : "ALPHA / OWNER-RECORDED") : "DEMO / SAMPLE"}
+      </p>
     </div>
   );
 }
