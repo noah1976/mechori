@@ -78,9 +78,14 @@ test("creates a safe server-side access probe code", () => {
     listedInVisibleShare: true,
     serverDownloadError: { statusCode: 403, error: "AccessDenied" },
     serverDownloadSucceeded: false,
+    manualDownloadStatus: 403,
+    manualDownloadErrorCode: "accessdenied",
   });
 
-  assert.equal(probe.probeCode, "U1-P1-L1-D403-accessdenied");
+  assert.equal(
+    probe.probeCode,
+    "U1-P1-L1-D403-accessdenied-M403-accessdenied",
+  );
   assert.equal(isSharedMediaServerProbe(probe), true);
   assert.doesNotMatch(JSON.stringify(probe), /owner-id|journal-id|token/i);
 });

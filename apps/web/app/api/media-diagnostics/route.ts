@@ -4,6 +4,7 @@ import {
   isSharedMediaLoadDiagnostic,
   sharedMediaObjectPathMatchesDiagnostic,
 } from "@/lib/shared-media-diagnostics";
+import { requireAlphaSupabaseConfig } from "@/lib/runtime-config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const sharedMediaBucket = "alpha-journal-media";
@@ -53,12 +54,19 @@ export async function POST(request: Request): Promise<Response> {
     ? null
     : policyData;
   const download = await supabase.storage.from(sharedMediaBucket).download(objectPath);
+  const { data: sessionData } = await supabase.auth.getSession();
+  const manualDownload = await probeAuthenticatedStorageDownload(
+    objectPath,
+    sessionData.session?.access_token ?? null,
+  );
   const probe = createSharedMediaServerProbe({
     userVerified: true,
     policyAllowsRead,
     listedInVisibleShare,
     serverDownloadError: download.error,
     serverDownloadSucceeded: !download.error && Boolean(download.data),
+    manualDownloadStatus: manualDownload.status,
+    manualDownloadErrorCode: manualDownload.errorCode,
   });
 
   console.warn("[P-069 shared-media-load]", {
@@ -68,6 +76,43 @@ export async function POST(request: Request): Promise<Response> {
     sharedListErrorCode: safeErrorCode(sharedError),
   });
   return Response.json({ probe });
+}
+
+async function probeAuthenticatedStorageDownload(
+  objectPath: string,
+  accessToken: string | null,
+): Promise<{ status: number | null; errorCode: string }> {
+  if (!accessToken) return { status: null, errorCode: "session_token_unavailable" };
+  const config = requireAlphaSupabaseConfig();
+  const encodedPath = objectPath.split("/").map(encodeURIComponent).join("/");
+  try {
+    const response = await fetch(
+      `${config.url}/storage/v1/object/authenticated/${sharedMediaBucket}/${encodedPath}`,
+      {
+        headers: {
+          apikey: config.publishableKey,
+          authorization: `Bearer ${accessToken}`,
+        },
+        cache: "no-store",
+      },
+    );
+    const errorCode = response.ok ? "none" : await safeStorageResponseCode(response);
+    if (response.body) await response.body.cancel().catch(() => undefined);
+    return { status: response.status, errorCode };
+  } catch {
+    return { status: null, errorCode: "manual_request_failed" };
+  }
+}
+
+async function safeStorageResponseCode(response: Response): Promise<string> {
+  try {
+    const payload: unknown = await response.clone().json();
+    if (!payload || typeof payload !== "object") return "storage_error";
+    const item = payload as Record<string, unknown>;
+    return safeErrorCode({ code: item.error ?? item.code ?? item.name });
+  } catch {
+    return "storage_error";
+  }
 }
 
 function sharedJournalRowsContainPath(value: unknown, objectPath: string): boolean {

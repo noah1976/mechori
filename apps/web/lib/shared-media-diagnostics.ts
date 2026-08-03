@@ -27,6 +27,8 @@ export interface SharedMediaServerProbe {
   listedInVisibleShare: boolean | null;
   serverDownloadStatus: number | null;
   serverDownloadErrorCode: string;
+  manualDownloadStatus: number | null;
+  manualDownloadErrorCode: string;
 }
 
 export async function createSharedMediaLoadDiagnostic(input: {
@@ -77,6 +79,8 @@ export function createSharedMediaServerProbe(input: {
   listedInVisibleShare: boolean | null;
   serverDownloadError: unknown;
   serverDownloadSucceeded: boolean;
+  manualDownloadStatus: number | null;
+  manualDownloadErrorCode: string;
 }): SharedMediaServerProbe {
   const storageError = input.serverDownloadSucceeded
     ? { httpStatus: 200, code: "none" }
@@ -87,6 +91,8 @@ export function createSharedMediaServerProbe(input: {
     `L${nullableBooleanCode(input.listedInVisibleShare)}`,
     `D${storageError.httpStatus ?? "x"}`,
     storageError.code,
+    `M${input.manualDownloadStatus ?? "x"}`,
+    input.manualDownloadErrorCode,
   ].join("-");
   return {
     probeCode,
@@ -95,6 +101,8 @@ export function createSharedMediaServerProbe(input: {
     listedInVisibleShare: input.listedInVisibleShare,
     serverDownloadStatus: storageError.httpStatus,
     serverDownloadErrorCode: storageError.code,
+    manualDownloadStatus: input.manualDownloadStatus,
+    manualDownloadErrorCode: input.manualDownloadErrorCode,
   };
 }
 
@@ -105,7 +113,7 @@ export function isSharedMediaServerProbe(
   const item = value as Partial<SharedMediaServerProbe>;
   return (
     typeof item.probeCode === "string" &&
-    /^U[01]-P[01x]-L[01x]-D(?:\d{3}|x)-[a-z0-9_.-]{1,64}$/.test(item.probeCode) &&
+    /^U[01]-P[01x]-L[01x]-D(?:\d{3}|x)-[a-z0-9_.-]{1,64}-M(?:\d{3}|x)-[a-z0-9_.-]{1,64}$/.test(item.probeCode) &&
     typeof item.userVerified === "boolean" &&
     (item.policyAllowsRead === null || typeof item.policyAllowsRead === "boolean") &&
     (item.listedInVisibleShare === null || typeof item.listedInVisibleShare === "boolean") &&
@@ -114,7 +122,13 @@ export function isSharedMediaServerProbe(
         item.serverDownloadStatus >= 100 &&
         item.serverDownloadStatus <= 599)) &&
     typeof item.serverDownloadErrorCode === "string" &&
-    /^[a-z0-9_.-]{1,64}$/.test(item.serverDownloadErrorCode)
+    /^[a-z0-9_.-]{1,64}$/.test(item.serverDownloadErrorCode) &&
+    (item.manualDownloadStatus === null ||
+      (typeof item.manualDownloadStatus === "number" &&
+        item.manualDownloadStatus >= 100 &&
+        item.manualDownloadStatus <= 599)) &&
+    typeof item.manualDownloadErrorCode === "string" &&
+    /^[a-z0-9_.-]{1,64}$/.test(item.manualDownloadErrorCode)
   );
 }
 
