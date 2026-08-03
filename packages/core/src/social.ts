@@ -555,6 +555,29 @@ export function updateCurrentProfileIdentity(
   };
 }
 
+export function updateCurrentProfileImage(
+  data: AppData,
+  profileImagePath?: string,
+): AppData {
+  const normalizedPath = profileImagePath?.trim() || undefined;
+  if (
+    normalizedPath &&
+    (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\/avatar-[A-Za-z0-9_.-]+\.(?:jpg|webp)$/.test(normalizedPath) ||
+      normalizedPath.includes("..") ||
+      normalizedPath.length > 240)
+  ) {
+    throw new Error("invalid_profile_image_path");
+  }
+  return {
+    ...data,
+    profiles: data.profiles.map((profile) =>
+      profile.id === data.currentProfileId
+        ? { ...profile, profileImagePath: normalizedPath }
+        : profile,
+    ),
+  };
+}
+
 export function getFollowingFeed(data: AppData): GarageJournalPost[] {
   const follows = data.follows.filter(
     (follow) => follow.followerProfileId === data.currentProfileId,

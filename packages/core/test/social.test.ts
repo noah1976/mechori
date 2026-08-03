@@ -23,6 +23,7 @@ import {
   toggleMuteProfileInData,
   updateCurrentProfilePrivacy,
   updateCurrentProfileIdentity,
+  updateCurrentProfileImage,
   updateJournalInData,
   validateJournalDraft,
   type JournalDraft,
@@ -439,6 +440,24 @@ test("updates the current profile identity without changing its immutable id", (
   assert.throws(
     () => updateCurrentProfileIdentity(data, "Noah", "no"),
     /invalid_public_username/,
+  );
+});
+
+test("updates only the current profile image path and supports removal", () => {
+  const data = cloneDemoData();
+  const path = "daed5df5-a404-4c89-82f6-ec92c085d2b4/avatar-123.webp";
+  const updated = updateCurrentProfileImage(data, path);
+  const current = updated.profiles.find(
+    (profile) => profile.id === updated.currentProfileId,
+  );
+
+  assert.equal(current?.profileImagePath, path);
+  assert.equal(updateCurrentProfileImage(updated).profiles.find(
+    (profile) => profile.id === updated.currentProfileId,
+  )?.profileImagePath, undefined);
+  assert.throws(
+    () => updateCurrentProfileImage(data, "../another-user/avatar.webp"),
+    /invalid_profile_image_path/,
   );
 });
 

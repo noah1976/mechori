@@ -26,14 +26,15 @@ export async function loadAlphaWorkspace(profileId: string): Promise<AppData> {
 
 export async function saveAlphaWorkspace(data: AppData): Promise<void> {
   const supabase = createSupabaseBrowserClient();
-  const { data: authData, error: authError } = await supabase.auth.getUser();
-  if (authError || !authData.user || authData.user.id !== data.currentProfileId) {
+  const { data: authData, error: authError } = await supabase.auth.getSession();
+  const user = authData.session?.user;
+  if (authError || !user || user.id !== data.currentProfileId) {
     throw new Error("alpha_workspace_user_mismatch");
   }
 
   const { error } = await supabase.from("alpha_private_workspaces").upsert(
     {
-      user_id: authData.user.id,
+      user_id: user.id,
       schema_version: data.schemaVersion,
       payload: data,
       updated_at: new Date().toISOString(),

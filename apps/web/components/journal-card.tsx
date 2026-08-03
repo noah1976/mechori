@@ -18,6 +18,7 @@ import { ArrowRight, BookOpen, Heart, Link2, Lock, Users } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { JournalMedia } from "@/components/journal-media";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { ProfileSafetyMenu } from "@/components/profile-safety-menu";
 import { useApp } from "@/lib/app-context";
 
@@ -78,9 +79,11 @@ export function JournalCard({
         aria-label={ja ? `${display.title}の詳細を読む` : `Read ${display.title}`}
       />
       <div className="journal-card-meta">
-        <span className="journal-avatar" aria-hidden="true">
-          {(author?.displayName ?? "M").slice(0, 1).toLocaleUpperCase()}
-        </span>
+        <ProfileAvatar
+          displayName={author?.displayName ?? "M"}
+          imagePath={author?.profileImagePath}
+          className="journal-avatar"
+        />
         <div>
           <strong>
             {author && authorLinkEnabled ? (

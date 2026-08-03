@@ -1,6 +1,7 @@
 "use client";
 
 import { JournalCard } from "@/components/journal-card";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { RemoteOwnerProfile } from "@/components/remote-owner-profile";
 import { useApp } from "@/lib/app-context";
 import {
@@ -65,7 +66,7 @@ export default function ProfilePage() {
     <div className="page-stack profile-page">
       <Link href={signedIn ? "/feed" : "/"} className="back-link"><ArrowLeft size={17} />{ja ? "戻る" : "Back"}</Link>
       <header className="profile-header">
-        <span className="profile-avatar" aria-hidden="true">{profile.displayName.slice(0, 1).toLocaleUpperCase()}</span>
+        <ProfileAvatar displayName={profile.displayName} imagePath={profile.profileImagePath} />
         <div><span className="eyebrow">PROFILE</span><h1>{profile.displayName}</h1>{profile.publicUsername && <p className="public-username">@{profile.publicUsername}</p>}<p>{profile.role === "mechanic" ? (ja ? "メカニック" : "Mechanic") : (ja ? "オーナー" : "Owner")}{profile.isProfessional ? " · Professional DEMO" : ""}</p></div>
         {ownProfile ? (
           <Link href="/settings/profile" className="secondary-action"><Settings2 size={17} />{ja ? "プロフィール編集" : "Edit profile"}</Link>

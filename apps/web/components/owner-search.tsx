@@ -1,6 +1,7 @@
 "use client";
 
 import { useApp } from "@/lib/app-context";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import {
   searchAlphaPublicOwners,
   type AlphaPublicOwnerSummary,
@@ -105,9 +106,11 @@ export function OwnerSearch() {
         <div className="owner-search-results">
           {results.map((owner) => (
             <Link key={owner.id} href={`/profile/${owner.id}`}>
-              <span className="owner-search-avatar" aria-hidden="true">
-                {owner.displayName.slice(0, 1).toLocaleUpperCase()}
-              </span>
+              <ProfileAvatar
+                displayName={owner.displayName}
+                imagePath={owner.profileImagePath}
+                className="owner-search-avatar"
+              />
               <span>
                 <strong>{owner.displayName}</strong>
                 {owner.publicUsername && <small>@{owner.publicUsername}</small>}

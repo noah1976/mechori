@@ -347,6 +347,7 @@ export interface SocialProfile {
   id: string;
   displayName: string;
   publicUsername?: string;
+  profileImagePath?: string;
   role: SocialProfileRole;
   bio: string;
   visibility: ProfileVisibility;

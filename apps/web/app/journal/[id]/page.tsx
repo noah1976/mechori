@@ -32,6 +32,7 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { JournalContent } from "@/components/journal-content";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { ProfileSafetyMenu } from "@/components/profile-safety-menu";
 import { recordOdometerLabel } from "@/components/record-card";
 
@@ -166,9 +167,11 @@ export default function JournalDetailPage() {
       <article className="journal-detail">
         <header>
           <div className="journal-author-line">
-            <span className="journal-avatar" aria-hidden="true">
-              {(author?.displayName ?? "M").slice(0, 1).toLocaleUpperCase()}
-            </span>
+            <ProfileAvatar
+              displayName={author?.displayName ?? "M"}
+              imagePath={author?.profileImagePath}
+              className="journal-avatar"
+            />
             <div>
               <strong>
                 {author && (

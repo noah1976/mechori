@@ -17,6 +17,7 @@ import {
   isFollowing,
   isProfileBlocked,
   updateCurrentProfileIdentity,
+  updateCurrentProfileImage,
   updateCurrentProfilePrivacy,
   updateJournalInData,
   upsertJournalTranslationInData,
@@ -59,6 +60,8 @@ import {
 } from "@/lib/alpha-user-follows";
 import {
   loadMyAlphaProfileIdentity,
+  removeMyAlphaProfileImage,
+  replaceMyAlphaProfileImage,
   updateMyAlphaProfileIdentity,
   acceptAlphaContentPolicy,
 } from "@/lib/alpha-profile";
@@ -67,6 +70,7 @@ import {
   setAlphaJournalLike,
   type AlphaJournalReaction,
 } from "@/lib/alpha-journal-likes";
+import { loadAlphaPublicProfileImages } from "@/lib/alpha-public-owners";
 import { loadAlphaWorkspace, saveAlphaWorkspace } from "@/lib/alpha-workspace";
 import { journalMediaStore } from "@/lib/media-store";
 import {
@@ -144,6 +148,7 @@ interface AppContextValue {
     publicUsername: string,
     bio: string,
   ): Promise<void>;
+  updateProfileImage(file: File | null): Promise<void>;
   acceptContentPolicy(): Promise<void>;
   journalReaction(journalId: string): { appreciationCount: number; likedByMe: boolean };
   toggleJournalLike(journalId: string): Promise<void>;
@@ -192,18 +197,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const storedAuthSession = isRemoteAlpha
           ? await loadAlphaAuthSession()
           : readStoredAuthSession();
-        let storedData = isRemoteAlpha
-          ? isSignedIn(storedAuthSession)
-            ? await loadAlphaWorkspace(storedAuthSession.profileId)
-            : null
-          : await dataProvider.load();
-        if (isRemoteAlpha && isSignedIn(storedAuthSession) && storedData) {
-          const [identity, profileFollows] = await Promise.all([
+        let storedData: AppData | null;
+        let sharedContent: AlphaSharedJournal[] = [];
+        if (isRemoteAlpha && isSignedIn(storedAuthSession)) {
+          const [
+            loadedWorkspace,
+            identity,
+            profileFollows,
+            loadedSharedContent,
+            reactions,
+            mediaSharingAvailable,
+            publicProfileImages,
+          ] = await Promise.all([
+            loadAlphaWorkspace(storedAuthSession.profileId),
             loadMyAlphaProfileIdentity().catch(() => null),
-            loadMyAlphaUserFollows(storedData.currentProfileId).catch(
-              () => null,
-            ),
+            loadMyAlphaUserFollows(storedAuthSession.profileId).catch(() => null),
+            loadAlphaSharedJournals().catch(() => null),
+            loadAlphaJournalReactions().catch(() => []),
+            alphaSharedJournalMediaAvailable().catch(() => false),
+            loadAlphaPublicProfileImages().catch(() => new Map<string, string>()),
           ]);
+          storedData = loadedWorkspace;
           if (identity) {
             storedData = updateCurrentProfileIdentity(
               storedData,
@@ -211,6 +225,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
               identity.publicUsername,
               identity.bio,
             );
+            if (identity.profileImagePath) {
+              storedData = updateCurrentProfileImage(
+                storedData,
+                identity.profileImagePath,
+              );
+            }
             if (active) {
               setContentPolicyAccepted(
                 identity.contentPolicyVersion === alphaContentPolicyVersion &&
@@ -229,29 +249,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
               ],
             };
           }
-        }
-        let sharedContent: AlphaSharedJournal[] = [];
-        if (isRemoteAlpha && isSignedIn(storedAuthSession)) {
-          try {
-            const [loadedSharedContent, reactions] = await Promise.all([
-              loadAlphaSharedJournals(),
-              loadAlphaJournalReactions().catch(() => []),
-            ]);
-            sharedContent = loadedSharedContent;
-            if (active) {
-              setAlphaJournalReactions(
-                new Map(reactions.map((reaction) => [reaction.journalId, reaction])),
-              );
-            }
+          if (loadedSharedContent) {
+            sharedContent = loadedSharedContent.map((item) => ({
+              ...item,
+              author: {
+                ...item.author,
+                profileImagePath: publicProfileImages.get(item.author.id),
+              },
+            }));
             if (active) setAlphaJournalSharingAvailable(true);
-          } catch {
-            if (active) setAlphaJournalSharingAvailable(false);
+          } else if (active) {
+            setAlphaJournalSharingAvailable(false);
           }
-          const mediaSharingAvailable =
-            await alphaSharedJournalMediaAvailable().catch(() => false);
           if (active) {
+            setAlphaJournalReactions(
+              new Map(reactions.map((reaction) => [reaction.journalId, reaction])),
+            );
             setAlphaJournalMediaSharingAvailable(mediaSharingAvailable);
           }
+        } else {
+          storedData = isRemoteAlpha ? null : await dataProvider.load();
         }
 
         if (!active) return;
@@ -706,6 +723,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [authSession, data, persist],
   );
 
+  const updateProfileImage = useCallback(
+    async (file: File | null) => {
+      if (!isSignedIn(authSession)) throw new Error("authentication_required");
+      if (!isRemoteAlpha) throw new Error("profile_image_remote_alpha_required");
+      const previousPath = data.profiles.find(
+        (profile) => profile.id === data.currentProfileId,
+      )?.profileImagePath;
+      const nextPath = file
+        ? await replaceMyAlphaProfileImage(file, previousPath)
+        : undefined;
+      if (!file) await removeMyAlphaProfileImage(previousPath);
+      setData((current) => updateCurrentProfileImage(current, nextPath));
+      setPersistenceError(false);
+    },
+    [authSession, data],
+  );
+
   const acceptContentPolicy = useCallback(async () => {
     if (!isSignedIn(authSession)) throw new Error("authentication_required");
     if (isRemoteAlpha) {
@@ -839,6 +873,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       moderateReport,
       updateProfilePrivacy,
       updateProfileIdentity,
+      updateProfileImage,
       acceptContentPolicy,
       journalReaction,
       toggleJournalLike,
@@ -874,6 +909,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       moderateReport,
       updateProfilePrivacy,
       updateProfileIdentity,
+      updateProfileImage,
       acceptContentPolicy,
       journalReaction,
       toggleJournalLike,

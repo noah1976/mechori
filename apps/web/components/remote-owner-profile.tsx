@@ -1,6 +1,7 @@
 "use client";
 
 import { JournalCard } from "@/components/journal-card";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { useApp } from "@/lib/app-context";
 import {
   loadAlphaPublicOwner,
@@ -108,6 +109,7 @@ export function RemoteOwnerProfile({
     id: owner.id,
     displayName: owner.displayName,
     publicUsername: owner.publicUsername,
+    profileImagePath: owner.profileImagePath,
     role: "owner",
     bio: owner.bio,
     visibility: "public",
@@ -123,9 +125,7 @@ export function RemoteOwnerProfile({
         {ja ? "オーナー検索へ戻る" : "Back to owner search"}
       </Link>
       <header className="profile-header">
-        <span className="profile-avatar" aria-hidden="true">
-          {owner.displayName.slice(0, 1).toLocaleUpperCase()}
-        </span>
+        <ProfileAvatar displayName={owner.displayName} imagePath={owner.profileImagePath} />
         <div>
           <span className="eyebrow">PUBLIC OWNER</span>
           <h1>{owner.displayName}</h1>

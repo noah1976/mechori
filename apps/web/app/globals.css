@@ -881,7 +881,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .journal-card-hit-area { position: absolute; z-index: 1; inset: 0; border-radius: inherit; }
 .journal-card-hit-area:focus-visible { outline: 3px solid rgba(45, 97, 119, 0.35); outline-offset: 3px; }
 .journal-card-meta { position: relative; z-index: 2; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; }
-.journal-avatar { width: 36px; height: 36px; display: grid; place-items: center; flex: 0 0 auto; color: #fff; background: var(--brand); border-radius: 50%; font-size: 13px; font-weight: 850; }
+.journal-avatar { position: relative; width: 36px; height: 36px; display: grid; place-items: center; flex: 0 0 auto; overflow: hidden; color: #fff; background: var(--brand); border-radius: 50%; font-size: 13px; font-weight: 850; }
+.journal-avatar img, .profile-avatar img, .owner-search-avatar img { object-fit: cover; }
 .journal-card-meta strong, .journal-card-meta small { display: block; }
 .journal-card-meta strong { font-size: 13px; }
 .journal-card-meta small { margin-top: 3px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
@@ -1077,7 +1078,18 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .profile-header p { margin: 0; color: var(--muted); font-size: 12px; }
 .profile-header .public-username { margin: -1px 0 5px; color: var(--brand); font-weight: 750; }
 .profile-header > .follow-button { min-height: 40px; display: inline-flex; align-items: center; gap: 7px; padding-inline: 12px; font-size: 12px; }
-.profile-avatar { width: 58px; height: 58px; display: grid; place-items: center; color: #fff; background: var(--brand); border-radius: 50%; font-size: 20px; font-weight: 850; }
+.profile-avatar { position: relative; width: 58px; height: 58px; display: grid; place-items: center; overflow: hidden; color: #fff; background: var(--brand); border-radius: 50%; font-size: 20px; font-weight: 850; }
+.profile-avatar-large { width: 82px; height: 82px; font-size: 28px; }
+.profile-image-settings { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 18px; }
+.profile-image-settings h2 { margin: 0 0 5px; font-size: 17px; }
+.profile-image-settings p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.profile-image-settings small { display: block; margin-top: 7px; color: var(--muted); font-size: 10px; line-height: 1.55; }
+.profile-image-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.profile-image-actions .secondary-action, .profile-image-actions .text-action { min-height: 40px; }
+.text-action { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 7px 9px; color: var(--brand); background: transparent; border: 0; font: inherit; font-size: 12px; font-weight: 750; cursor: pointer; }
+.text-action:disabled { opacity: 0.55; cursor: not-allowed; }
+.danger-text-action { color: var(--danger); }
+.profile-image-status { grid-column: 2 / -1; margin: 0; }
 .profile-bio { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding: 20px 24px; background: var(--surface-soft); border-left: 4px solid #8ca99c; }
 .profile-bio svg { color: var(--brand); }
 .profile-bio p { margin: 0; line-height: 1.7; }
@@ -1107,7 +1119,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .owner-search-results strong, .owner-search-results small { display: block; }
 .owner-search-results strong { overflow-wrap: anywhere; font-size: 13px; }
 .owner-search-results small { margin-top: 3px; color: var(--muted); font-size: 10px; }
-.owner-search-avatar { width: 38px; height: 38px; display: grid; place-items: center; color: #fff; background: var(--brand); border-radius: 50%; font-size: 13px; font-weight: 850; }
+.owner-search-avatar { position: relative; width: 38px; height: 38px; display: grid; place-items: center; overflow: hidden; color: #fff; background: var(--brand); border-radius: 50%; font-size: 13px; font-weight: 850; }
 .owner-search-results > a > svg { color: var(--brand); }
 .owner-suggestions { display: grid; gap: 16px; }
 .owner-suggestion-list { display: grid; border-top: 1px solid var(--line); }
@@ -1516,6 +1528,9 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .journal-media { grid-template-columns: 1fr; }
   .journal-detail h1 { font-size: 31px; }
   .report-form, .settings-section { padding: 19px 15px; }
+  .profile-image-settings { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
+  .profile-image-actions, .profile-image-status { grid-column: 1 / -1; justify-content: flex-start; }
+  .profile-image-actions > * { flex: 1 1 150px; }
   .content-policy-notice { grid-template-columns: 1fr; padding: 14px 16px; }
   .content-policy-notice .primary-action { justify-self: start; }
   .settings-danger-zone { grid-template-columns: 1fr; padding: 19px 15px; }

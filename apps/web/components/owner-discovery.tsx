@@ -1,6 +1,7 @@
 "use client";
 
 import { OwnerSearch } from "@/components/owner-search";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { useApp } from "@/lib/app-context";
 import {
   suggestAlphaPublicOwners,
@@ -118,9 +119,11 @@ export function OwnerDiscovery() {
             {visibleOwners.map((owner) => (
               <article key={owner.id} className="owner-suggestion">
                 <header>
-                  <span className="owner-search-avatar" aria-hidden="true">
-                    {owner.displayName.slice(0, 1).toLocaleUpperCase()}
-                  </span>
+                  <ProfileAvatar
+                    displayName={owner.displayName}
+                    imagePath={owner.profileImagePath}
+                    className="owner-search-avatar"
+                  />
                   <div>
                     <Link href={`/profile/${owner.id}`}>
                       <strong>{owner.displayName}</strong>

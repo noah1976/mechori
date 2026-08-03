@@ -4,6 +4,7 @@ export interface AlphaPublicOwnerSummary {
   id: string;
   displayName: string;
   publicUsername?: string;
+  profileImagePath?: string;
   vehicleCount: number;
 }
 
@@ -24,6 +25,7 @@ export interface AlphaPublicOwner {
   id: string;
   displayName: string;
   publicUsername?: string;
+  profileImagePath?: string;
   bio: string;
   vehicles: AlphaPublicVehicle[];
 }
@@ -58,6 +60,11 @@ export interface AlphaPublicOwnerVehicleRow {
   published_at: string;
 }
 
+interface AlphaPublicProfileImageRow {
+  public_profile_id: string;
+  profile_image_path: string;
+}
+
 export async function searchAlphaPublicOwners(
   query: string,
 ): Promise<AlphaPublicOwnerSummary[]> {
@@ -68,11 +75,16 @@ export async function searchAlphaPublicOwners(
     { p_query: normalizedQuery },
   );
   if (error) throw new Error("alpha_public_owner_search_failed");
-  return ((data ?? []) as AlphaPublicOwnerSearchRow[]).map((row) => ({
+  const owners = ((data ?? []) as AlphaPublicOwnerSearchRow[]).map((row) => ({
     id: row.public_profile_id,
     displayName: row.display_name,
     publicUsername: row.public_username ?? undefined,
     vehicleCount: Number(row.vehicle_count) || 0,
+  }));
+  const images = await loadAlphaPublicProfileImages(owners.map((owner) => owner.id));
+  return owners.map((owner) => ({
+    ...owner,
+    profileImagePath: images.get(owner.id),
   }));
 }
 
@@ -81,13 +93,14 @@ export async function loadAlphaPublicOwner(
 ): Promise<AlphaPublicOwner | null> {
   if (!isUuid(publicProfileId)) return null;
   const supabase = createSupabaseBrowserClient();
-  const [profileResult, vehicleResult] = await Promise.all([
+  const [profileResult, vehicleResult, images] = await Promise.all([
     supabase.rpc("get_alpha_public_profile", {
       p_public_profile_id: publicProfileId,
     }).maybeSingle(),
     supabase.rpc("get_alpha_public_owner", {
       p_public_profile_id: publicProfileId,
     }),
+    loadAlphaPublicProfileImages([publicProfileId]),
   ]);
   if (profileResult.error || vehicleResult.error || !profileResult.data) {
     throw new Error("alpha_public_owner_load_failed");
@@ -100,6 +113,7 @@ export async function loadAlphaPublicOwner(
     id: profile.public_profile_id,
     displayName: profile.display_name,
     publicUsername: profile.public_username ?? undefined,
+    profileImagePath: images.get(publicProfileId),
     bio: profile.bio ?? "",
     vehicles: grouped?.vehicles ?? [],
   };
@@ -113,8 +127,33 @@ export async function suggestAlphaPublicOwners(
     { p_limit: Math.min(Math.max(Math.trunc(limit), 1), 10) },
   );
   if (error) throw new Error("alpha_public_owner_suggestions_failed");
-  return groupAlphaPublicOwnerRows(
+  const owners = groupAlphaPublicOwnerRows(
     (data ?? []) as AlphaPublicOwnerVehicleRow[],
+  );
+  const images = await loadAlphaPublicProfileImages(owners.map((owner) => owner.id));
+  return owners.map((owner) => ({
+    ...owner,
+    profileImagePath: images.get(owner.id),
+  }));
+}
+
+export async function loadAlphaPublicProfileImages(
+  publicProfileIds?: string[],
+): Promise<Map<string, string>> {
+  const ids = publicProfileIds
+    ? [...new Set(publicProfileIds.filter(isUuid))]
+    : undefined;
+  if (ids && ids.length === 0) return new Map();
+  const { data, error } = await createSupabaseBrowserClient().rpc(
+    "get_alpha_public_profile_images",
+    { p_public_profile_ids: ids ?? null },
+  );
+  if (error) return new Map();
+  return new Map(
+    ((data ?? []) as AlphaPublicProfileImageRow[]).map((row) => [
+      row.public_profile_id,
+      row.profile_image_path,
+    ]),
   );
 }
 

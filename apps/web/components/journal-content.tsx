@@ -10,14 +10,25 @@ export function JournalContent({
   locale: Locale;
   contentBlocks?: JournalContentBlock[];
 }) {
+  const firstMediaBlockId = contentBlocks.find(
+    (block) =>
+      block.type === "media" &&
+      journal.media.some((attachment) => attachment.id === block.mediaId),
+  )?.id;
   return (
     <div className="journal-content">
       {contentBlocks.map((block) => {
         if (block.type === "media") {
           const attachment = journal.media.find((item) => item.id === block.mediaId);
-          return attachment ? (
-            <JournalMedia attachments={[attachment]} locale={locale} key={block.id} />
-          ) : null;
+          if (!attachment) return null;
+          return (
+            <JournalMedia
+              attachments={[attachment]}
+              locale={locale}
+              priority={block.id === firstMediaBlockId}
+              key={block.id}
+            />
+          );
         }
         if (block.style === "heading") return <h2 key={block.id}>{block.text}</h2>;
         if (block.style === "quote") return <blockquote key={block.id}>{block.text}</blockquote>;

@@ -30,7 +30,7 @@ export function JournalMedia({
         <JournalMediaItem
           attachment={attachment}
           locale={locale}
-          priority={priority || (!compact && index === 0)}
+          priority={priority && index === 0}
           key={attachment.id}
         />
       ))}
