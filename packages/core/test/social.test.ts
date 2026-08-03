@@ -208,6 +208,107 @@ test("lets only the author correct a journal date without replacing its identity
   assert.deepEqual(result.journal.media, previous.media);
 });
 
+test("edits a detailed month-level record with a described photo and optional maintenance link", () => {
+  for (const linkedRecordId of ["", "record-demo-oil"]) {
+    const data = cloneDemoData();
+    const previous = data.journals.find(
+      (journal) => journal.id === "journal-demo-owner-private",
+    );
+    assert.ok(previous);
+    const photo = {
+      id: "journal-media-bumper",
+      kind: "image" as const,
+      source: "local_blob" as const,
+      storageKey: "journal-media-bumper",
+      mimeType: "image/webp",
+      sizeBytes: 420_000,
+      altText: "破損したフロントバンパー",
+      privacyState: "public_ready" as const,
+      createdAt: "2026-02-20T12:00:00.000Z",
+      isDemo: false,
+    };
+    const result = updateJournalInData(
+      data,
+      previous.id,
+      {
+        ...journalToDraft(previous),
+        title: "バンパー破損",
+        occurredOn: undefined,
+        occurredYear: 2026,
+        occurredMonth: 2,
+        occurredPrecision: "month",
+        linkedRecordId,
+        media: [photo],
+        contentBlocks: [
+          {
+            id: "journal-block-bumper-photo",
+            type: "media",
+            mediaId: photo.id,
+          },
+          {
+            id: "journal-block-bumper-text",
+            type: "text",
+            style: "paragraph",
+            text: "雪の塊に当たり、バンパーが割れた。",
+          },
+        ],
+        visibility: "public",
+        knowledgeExtractionConsent: true,
+      },
+      "2026-08-03T12:00:00.000Z",
+    );
+
+    assert.equal(result.journal.id, previous.id);
+    assert.equal(result.journal.title, "バンパー破損");
+    assert.equal(result.journal.occurredOn, undefined);
+    assert.equal(result.journal.occurredYear, 2026);
+    assert.equal(result.journal.occurredMonth, 2);
+    assert.equal(result.journal.linkedRecordId, linkedRecordId || undefined);
+    assert.equal(result.journal.media[0]?.id, photo.id);
+    assert.equal(result.journal.media[0]?.altText, photo.altText);
+    assert.equal(result.journal.bodyOriginal, "雪の塊に当たり、バンパーが割れた。");
+    assert.equal(result.journal.knowledgeExtractionConsent, true);
+  }
+});
+
+test("edits the same detailed record without a photo", () => {
+  const data = cloneDemoData();
+  const previous = data.journals.find(
+    (journal) => journal.id === "journal-demo-owner-private",
+  );
+  assert.ok(previous);
+
+  const result = updateJournalInData(
+    data,
+    previous.id,
+    {
+      ...journalToDraft(previous),
+      title: "バンパー破損",
+      occurredOn: undefined,
+      occurredYear: 2026,
+      occurredMonth: 2,
+      occurredPrecision: "month",
+      media: [],
+      contentBlocks: [{
+        id: "journal-block-bumper-text-only",
+        type: "text",
+        style: "paragraph",
+        text: "写真なしで経緯だけを追記した。",
+      }],
+      visibility: "public",
+      knowledgeExtractionConsent: false,
+    },
+    "2026-08-03T12:00:00.000Z",
+  );
+
+  assert.equal(result.journal.id, previous.id);
+  assert.deepEqual(result.journal.media, []);
+  assert.equal(result.journal.bodyOriginal, "写真なしで経緯だけを追記した。");
+  assert.equal(result.journal.occurredYear, 2026);
+  assert.equal(result.journal.occurredMonth, 2);
+  assert.equal(result.journal.knowledgeExtractionConsent, false);
+});
+
 test("does not let the current profile edit another owner's journal", () => {
   const data = cloneDemoData();
   const other = data.journals.find((journal) => journal.authorProfileId !== data.currentProfileId);

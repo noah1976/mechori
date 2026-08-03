@@ -73,6 +73,39 @@ export function preferSharedJournalMediaForDisplay(
   return changed ? { ...journal, media } : journal;
 }
 
+export function reusableAlphaSharedJournalMedia(
+  journal: GarageJournalPost,
+  previousSharedJournal?: GarageJournalPost,
+): JournalMediaAttachment[] {
+  if (!previousSharedJournal || journal.id !== previousSharedJournal.id) return [];
+  const previousById = new Map(
+    previousSharedJournal.media.map((attachment) => [attachment.id, attachment]),
+  );
+  return journal.media.flatMap((attachment) => {
+    if (
+      attachment.kind !== "image" ||
+      attachment.privacyState !== "public_ready"
+    ) {
+      return [];
+    }
+    const previous = previousById.get(attachment.id);
+    if (
+      !previous ||
+      previous.kind !== "image" ||
+      previous.source !== "alpha_shared" ||
+      previous.privacyState !== "public_ready" ||
+      !previous.assetPath
+    ) {
+      return [];
+    }
+    return [{
+      ...previous,
+      altText: attachment.altText,
+      createdAt: attachment.createdAt,
+    }];
+  });
+}
+
 export function createAlphaSharedJournalPayload(
   journal: GarageJournalPost,
   options: AlphaSharedJournalPayloadOptions = {},

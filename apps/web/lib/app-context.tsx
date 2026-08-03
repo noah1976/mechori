@@ -82,6 +82,7 @@ import {
 import { getMechoriRuntime } from "@/lib/runtime-config";
 import { clearAllLocalDrafts } from "@/lib/local-draft-store";
 import { pushAnalyticsEvent } from "@/lib/analytics";
+import { alphaJournalSyncError } from "@/lib/journal-save-error";
 import {
   recordLocalEngagement,
   resetLocalEngagement,
@@ -559,14 +560,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
             const author = result.data.profiles.find(
               (profile) => profile.id === result.data.currentProfileId,
             );
+            const previousSharedJournal = alphaSharedContent.find(
+              (item) => item.journal.id === result.journal.id,
+            )?.journal;
             await publishAlphaSharedJournal(
               result.journal,
               author?.displayName ?? "MECHORI User",
+              previousSharedJournal,
             );
           } else if (previous.visibility === "public") {
             await withdrawAlphaSharedJournal(result.journal.id);
           }
-        } catch {
+        } catch (error) {
           await saveAlphaWorkspace(data);
           setData(data);
           await Promise.all(
@@ -575,7 +580,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               .filter((key): key is string => Boolean(key))
               .map((key) => journalMediaStore.delete(key)),
           );
-          throw new Error("alpha_shared_journal_sync_failed");
+          throw alphaJournalSyncError(error);
         }
         await refreshAlphaSharedContent();
       }
@@ -594,6 +599,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     [
       alphaJournalSharingAvailable,
+      alphaSharedContent,
       authSession,
       data,
       persist,

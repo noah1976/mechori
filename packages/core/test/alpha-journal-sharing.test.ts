@@ -4,6 +4,7 @@ import {
   createAlphaSharedJournalPayload,
   parseAlphaSharedJournalRow,
   preferSharedJournalMediaForDisplay,
+  reusableAlphaSharedJournalMedia,
   type GarageJournalPost,
 } from "../src/index.ts";
 
@@ -86,6 +87,74 @@ test("explicitly prepared alpha images are included without private storage keys
   assert.deepEqual(
     payload.contentBlocks.map((block) => block.type),
     ["media", "text"],
+  );
+});
+
+test("reuses an existing server photo when a public journal is edited", () => {
+  const edited = {
+    ...journal(),
+    title: "バンパー破損",
+    occurredOn: undefined,
+    occurredYear: 2026,
+    occurredMonth: 2,
+    occurredPrecision: "month" as const,
+    updatedAt: "2026-08-03T12:00:00.000Z",
+    media: journal().media.map((attachment) => ({
+      ...attachment,
+      altText: "破損したフロントバンパー",
+    })),
+  };
+  const { storageKey: _storageKey, ...previousPrivateMedia } = journal().media[0]!;
+  const previousShared = {
+    ...journal(),
+    media: [{
+      ...previousPrivateMedia,
+      source: "alpha_shared" as const,
+      assetPath:
+        "daed5df5-a404-4c89-82f6-ec92c085d2b4/journal-1/original-media-1.webp",
+    }],
+  };
+
+  const reusable = reusableAlphaSharedJournalMedia(edited, previousShared);
+  const payload = createAlphaSharedJournalPayload(edited, {
+    sharedMedia: reusable,
+  });
+
+  assert.equal(reusable.length, 1);
+  assert.equal(reusable[0]?.assetPath, previousShared.media[0]?.assetPath);
+  assert.equal(reusable[0]?.altText, "破損したフロントバンパー");
+  assert.equal(payload.media[0]?.storageKey, undefined);
+  assert.equal(payload.occurredOn, undefined);
+  assert.equal(payload.occurredYear, 2026);
+  assert.equal(payload.occurredMonth, 2);
+});
+
+test("does not reuse a server photo that was removed or made private", () => {
+  const source = journal();
+  const { storageKey: _storageKey, ...previousPrivateMedia } = source.media[0]!;
+  const previousShared = {
+    ...source,
+    media: [{
+      ...previousPrivateMedia,
+      source: "alpha_shared" as const,
+      assetPath:
+        "daed5df5-a404-4c89-82f6-ec92c085d2b4/journal-1/original-media-1.webp",
+    }],
+  };
+
+  assert.deepEqual(
+    reusableAlphaSharedJournalMedia({ ...source, media: [] }, previousShared),
+    [],
+  );
+  assert.deepEqual(
+    reusableAlphaSharedJournalMedia({
+      ...source,
+      media: source.media.map((attachment) => ({
+        ...attachment,
+        privacyState: "private_only" as const,
+      })),
+    }, previousShared),
+    [],
   );
 });
 

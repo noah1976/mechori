@@ -2,6 +2,7 @@ import {
   alphaSharedJournalMaxMediaBytes,
   createAlphaSharedJournalPayload,
   parseAlphaSharedJournalRow,
+  reusableAlphaSharedJournalMedia,
   type AlphaSharedJournal,
   type AlphaSharedJournalRow,
   type GarageJournalPost,
@@ -35,20 +36,22 @@ export async function loadAlphaSharedJournals(): Promise<AlphaSharedJournal[]> {
 export async function publishAlphaSharedJournal(
   journal: GarageJournalPost,
   authorDisplayName: string,
+  previousSharedJournal?: GarageJournalPost,
 ): Promise<void> {
   const supabase = createSupabaseBrowserClient();
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user) throw new Error("authentication_required");
 
-  const sharedMedia = await uploadSharedJournalImages(
+  const { sharedMedia, uploadedPaths } = await uploadSharedJournalImages(
     journal,
     userData.user.id,
+    previousSharedJournal,
   );
   let payload: ReturnType<typeof createAlphaSharedJournalPayload>;
   try {
     payload = createAlphaSharedJournalPayload(journal, { sharedMedia });
   } catch (error) {
-    await removeSharedMediaQuietly(sharedMedia.map((attachment) => attachment.assetPath));
+    await removeSharedMediaQuietly(uploadedPaths);
     throw error;
   }
   const { error } = await supabase.rpc("publish_alpha_shared_journal", {
@@ -58,7 +61,7 @@ export async function publishAlphaSharedJournal(
     p_published_at: payload.publishedAt,
   });
   if (error) {
-    await removeSharedMediaQuietly(sharedMedia.map((attachment) => attachment.assetPath));
+    await removeSharedMediaQuietly(uploadedPaths);
     throw new Error("alpha_shared_journal_publish_failed");
   }
   await removeStaleSharedJournalImagesQuietly(
@@ -86,7 +89,11 @@ export async function withdrawAlphaSharedJournal(journalId: string): Promise<voi
 async function uploadSharedJournalImages(
   journal: GarageJournalPost,
   userId: string,
-): Promise<JournalMediaAttachment[]> {
+  previousSharedJournal?: GarageJournalPost,
+): Promise<{
+  sharedMedia: JournalMediaAttachment[];
+  uploadedPaths: string[];
+}> {
   const candidates = journal.media.filter(
     (attachment) =>
       attachment.kind === "image" &&
@@ -94,10 +101,20 @@ async function uploadSharedJournalImages(
   );
   const uploadedPaths: string[] = [];
   const revision = safePathSegment(journal.updatedAt);
+  const reusableById = new Map(
+    reusableAlphaSharedJournalMedia(journal, previousSharedJournal).map(
+      (attachment) => [attachment.id, attachment],
+    ),
+  );
 
   try {
     const sharedMedia: JournalMediaAttachment[] = [];
     for (const attachment of candidates) {
+      const reusable = reusableById.get(attachment.id);
+      if (reusable) {
+        sharedMedia.push(reusable);
+        continue;
+      }
       const privateBlob = await loadPrivateAttachmentBlob(attachment);
       if (!privateBlob) throw new Error("shared_image_not_found");
       const prepared = await prepareSharedJournalImage(privateBlob, attachment);
@@ -134,7 +151,7 @@ async function uploadSharedJournalImages(
         isDemo: false,
       });
     }
-    return sharedMedia;
+    return { sharedMedia, uploadedPaths };
   } catch (error) {
     await removeSharedMediaQuietly(uploadedPaths);
     throw error;

@@ -44,6 +44,7 @@ import { useApp } from "@/lib/app-context";
 import { JournalMedia } from "@/components/journal-media";
 import { OccurrenceDateFields } from "@/components/occurrence-date-fields";
 import { localDateInputValue } from "@/lib/date-input";
+import { journalSaveErrorMessage } from "@/lib/journal-save-error";
 import {
   imagePreparationMessageKey,
   preparePrivateAlphaImage,
@@ -368,14 +369,10 @@ export function JournalForm({
       clearLocalDraft(localDraftKey);
       window.clearTimeout(slowSaveTimer);
       router.push(`/journal/${savedJournal.id}${journal ? "?updated=1" : ""}`);
-    } catch {
+    } catch (error) {
       window.clearTimeout(slowSaveTimer);
       setSaveTakingLong(false);
-      setSaveError(
-        ja
-          ? "保存できませんでした。入力内容はこの画面に残っています。通信状態を確認して、もう一度お試しください。"
-          : "This record could not be saved. Your changes remain on this screen. Check your connection and try again.",
-      );
+      setSaveError(journalSaveErrorMessage(error, ja));
       setSaving(false);
     }
   }
