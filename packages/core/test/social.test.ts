@@ -354,8 +354,8 @@ test("allows a linked maintenance record without requiring journal prose", () =>
   assert.equal(result.valid, true);
 });
 
-test("preserves private media on a shared journal without exposing it to other viewers", () => {
-  const media = [{
+test("derives photo privacy from the record audience and ignores client photo flags", () => {
+  const photo = {
     id: "media-test",
     kind: "image" as const,
     source: "local_blob" as const,
@@ -366,41 +366,191 @@ test("preserves private media on a shared journal without exposing it to other v
     privacyState: "private_only" as const,
     createdAt: "2026-07-15T10:00:00.000Z",
     isDemo: false,
-  }];
-  const privateDraft = validDraft({ media });
-  assert.equal(validateJournalDraft(privateDraft).valid, true);
-
-  const publicValidation = validateJournalDraft({
-    ...privateDraft,
-    visibility: "public",
-  });
-  assert.equal(publicValidation.valid, true);
-
-  const publicPost = {
-    ...addJournalToData(
-      cloneDemoData(),
-      { ...privateDraft, visibility: "public" },
-      "ja",
-      "2026-07-15T10:00:00.000Z",
-    ).journal,
   };
-  assert.equal(journalMediaForViewer(publicPost, true).length, 1);
-  assert.equal(journalMediaForViewer(publicPost, false).length, 0);
+  const contentBlocks = [{
+    id: "journal-block-media",
+    type: "media" as const,
+    mediaId: photo.id,
+  }];
+
+  const privatePost = addJournalToData(
+    cloneDemoData(),
+    validDraft({
+      visibility: "private",
+      media: [{ ...photo, privacyState: "public_ready" }],
+      contentBlocks,
+    }),
+    "ja",
+    "2026-07-15T10:00:00.000Z",
+  ).journal;
+  assert.equal(privatePost.media[0]?.privacyState, "private_only");
+  assert.equal(journalMediaForViewer(privatePost, false).length, 0);
   assert.equal(
-    journalContentBlocksForViewer(publicPost, false).some(
-      (block) => block.type === "media",
-    ),
-    false,
+    journalMediaForViewer({
+      ...privatePost,
+      media: privatePost.media.map((attachment) => ({
+        ...attachment,
+        privacyState: "public_ready",
+      })),
+    }, false).length,
+    0,
   );
 
+  const publicPost = addJournalToData(
+    cloneDemoData(),
+    validDraft({ visibility: "public", media: [photo], contentBlocks }),
+    "ja",
+    "2026-07-15T10:00:00.000Z",
+  ).journal;
+  assert.equal(publicPost.media[0]?.privacyState, "public_ready");
+  assert.equal(journalMediaForViewer(publicPost, false).length, 1);
+  assert.equal(journalContentBlocksForViewer(publicPost, false).length, 1);
+
+  const { privacyState: _privacyState, ...photoWithoutPrivacyFlag } = photo;
+  const withoutPhotoFlag = addJournalToData(
+    cloneDemoData(),
+    validDraft({
+      visibility: "public",
+      media: [photoWithoutPrivacyFlag as typeof photo],
+      contentBlocks,
+    }),
+    "ja",
+    "2026-07-15T10:00:00.000Z",
+  ).journal;
+  assert.equal(withoutPhotoFlag.media[0]?.privacyState, "public_ready");
+});
+
+test("keeps photo privacy synchronized when a record audience changes", () => {
+  const photo = {
+    id: "media-audience-change",
+    kind: "image" as const,
+    source: "local_blob" as const,
+    storageKey: "media-audience-change",
+    mimeType: "image/jpeg",
+    sizeBytes: 1024,
+    altText: "DEMO image",
+    privacyState: "private_only" as const,
+    createdAt: "2026-07-15T10:00:00.000Z",
+    isDemo: false,
+  };
+  const contentBlocks = [{
+    id: "journal-block-audience-change",
+    type: "media" as const,
+    mediaId: photo.id,
+  }];
   const created = addJournalToData(
     cloneDemoData(),
-    privateDraft,
+    validDraft({ visibility: "public", media: [photo], contentBlocks }),
     "ja",
     "2026-07-15T10:00:00.000Z",
   );
-  assert.deepEqual(created.journal.media, media);
-  assert.notEqual(created.journal.media, media);
+
+  const madePrivate = updateJournalInData(
+    created.data,
+    created.journal.id,
+    { ...journalToDraft(created.journal), visibility: "private" },
+    "2026-07-15T11:00:00.000Z",
+  );
+  assert.equal(madePrivate.journal.media[0]?.privacyState, "private_only");
+  assert.equal(journalMediaForViewer(madePrivate.journal, false).length, 0);
+
+  const madePublicAgain = updateJournalInData(
+    madePrivate.data,
+    madePrivate.journal.id,
+    { ...journalToDraft(madePrivate.journal), visibility: "public" },
+    "2026-07-15T12:00:00.000Z",
+  );
+  assert.equal(madePublicAgain.journal.media[0]?.privacyState, "public_ready");
+  assert.equal(journalMediaForViewer(madePublicAgain.journal, false).length, 1);
+});
+
+test("does not publish a legacy private photo during an unrelated public-record edit", () => {
+  const created = addJournalToData(
+    cloneDemoData(),
+    validDraft({
+      visibility: "public",
+      media: [{
+        id: "media-legacy-private",
+        kind: "image",
+        source: "local_blob",
+        storageKey: "media-legacy-private",
+        mimeType: "image/jpeg",
+        sizeBytes: 1024,
+        altText: "DEMO legacy private image",
+        privacyState: "private_only",
+        createdAt: "2026-07-15T10:00:00.000Z",
+        isDemo: false,
+      }],
+      contentBlocks: [{
+        id: "journal-block-legacy-private",
+        type: "media",
+        mediaId: "media-legacy-private",
+      }],
+    }),
+    "ja",
+    "2026-07-15T10:00:00.000Z",
+  );
+  const legacyJournal = {
+    ...created.journal,
+    media: created.journal.media.map((attachment) => ({
+      ...attachment,
+      privacyState: "private_only" as const,
+    })),
+  };
+  const legacyData = {
+    ...created.data,
+    journals: created.data.journals.map((journal) =>
+      journal.id === legacyJournal.id ? legacyJournal : journal,
+    ),
+  };
+
+  const edited = updateJournalInData(
+    legacyData,
+    legacyJournal.id,
+    {
+      ...journalToDraft(legacyJournal),
+      title: "本文だけを編集",
+      media: legacyJournal.media.map((attachment) => ({
+        ...attachment,
+        privacyState: "public_ready",
+      })),
+    },
+    "2026-07-15T11:00:00.000Z",
+  ).journal;
+
+  assert.equal(edited.visibility, "public");
+  assert.equal(edited.media[0]?.privacyState, "private_only");
+  assert.equal(journalMediaForViewer(edited, false).length, 0);
+
+  const newPhoto = {
+    ...legacyJournal.media[0]!,
+    id: "media-new-under-unified-audience",
+    storageKey: "media-new-under-unified-audience",
+    altText: "DEMO new public image",
+  };
+  const withNewPhoto = updateJournalInData(
+    legacyData,
+    legacyJournal.id,
+    {
+      ...journalToDraft(legacyJournal),
+      media: [...legacyJournal.media, newPhoto],
+      contentBlocks: [
+        ...legacyJournal.contentBlocks,
+        {
+          id: "journal-block-new-under-unified-audience",
+          type: "media",
+          mediaId: newPhoto.id,
+        },
+      ],
+    },
+    "2026-07-15T12:00:00.000Z",
+  ).journal;
+  assert.equal(withNewPhoto.media[0]?.privacyState, "private_only");
+  assert.equal(withNewPhoto.media[1]?.privacyState, "public_ready");
+  assert.deepEqual(
+    journalMediaForViewer(withNewPhoto, false).map((attachment) => attachment.id),
+    [newPhoto.id],
+  );
 });
 
 test("requires descriptions only for media displayed in journal content", () => {

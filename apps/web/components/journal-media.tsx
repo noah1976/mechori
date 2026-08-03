@@ -146,11 +146,11 @@ function JournalMediaItem({
         <figcaption>
           {attachment.privacyState === "public_ready"
             ? locale === "ja"
-              ? "公開確認済み画像"
-              : "Confirmed for sharing"
+              ? "記録と同じ範囲で公開"
+              : "Shared with the record audience"
             : locale === "ja"
-              ? "端末内保存・非公開メディア"
-              : "Stored on this device · private media"}
+              ? "非公開メディア"
+              : "Private media"}
         </figcaption>
       )}
     </figure>

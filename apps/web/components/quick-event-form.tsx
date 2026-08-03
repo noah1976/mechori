@@ -48,8 +48,6 @@ type OccurrenceDraft = Pick<
   "occurredOn" | "occurredYear" | "occurredMonth" | "occurredPrecision" | "occurredPeriodNote"
 >;
 
-type AlphaPhotoSharingDecision = "share" | "private" | null;
-
 export function QuickEventForm({
   vehicle,
   journal,
@@ -92,19 +90,11 @@ export function QuickEventForm({
       : journal?.visibility ?? "private",
   );
   const existingAttachment = journal?.media[0];
+  const hasLegacyPrivatePhoto =
+    journal?.visibility === "public" &&
+    existingAttachment?.kind === "image" &&
+    existingAttachment.privacyState === "private_only";
   const [publicationError, setPublicationError] = useState("");
-  const [photoSharingDecision, setPhotoSharingDecision] =
-    useState<AlphaPhotoSharingDecision>(() => {
-      if (
-        journal?.visibility !== "public" ||
-        existingAttachment?.kind !== "image"
-      ) {
-        return null;
-      }
-      return existingAttachment.privacyState === "public_ready"
-        ? "share"
-        : null;
-    });
   const router = useRouter();
   const vehicleModel = displayVehicleModel(vehicle, locale);
 
@@ -116,7 +106,6 @@ export function QuickEventForm({
     setError("");
     try {
       setImage(await preparePrivateAlphaImage(file, { maxDimension: 1400, maxOutputBytes: 460 * 1024 }));
-      setPhotoSharingDecision(null);
     } catch (error) {
       setError(imagePreparationMessageKey(error));
     } finally {
@@ -141,15 +130,14 @@ export function QuickEventForm({
     }
     if (
       isRemoteAlpha &&
-      alphaJournalMediaSharingAvailable &&
+      !alphaJournalMediaSharingAvailable &&
       visibility === "public" &&
-      (image || existingAttachment?.kind === "image") &&
-      photoSharingDecision === null
+      (image || existingAttachment?.kind === "image")
     ) {
       setPublicationError(
         locale === "ja"
-          ? "写真をα参加者にも公開するか、自分だけに残すかを選んでください。"
-          : "Choose whether to share the photo with alpha participants or keep it private.",
+          ? "写真共有の準備が完了していないため、写真付き記録はいまは自分だけに保存してください。"
+          : "Photo sharing is not ready. Save this record with a photo for yourself for now.",
       );
       return;
     }
@@ -170,8 +158,7 @@ export function QuickEventForm({
         altText: `${vehicle.make} ${vehicleModel}`,
         privacyState:
           visibility === "public" &&
-          alphaJournalMediaSharingAvailable &&
-          photoSharingDecision === "share"
+          alphaJournalMediaSharingAvailable
             ? "public_ready"
             : "private_only",
         createdAt: new Date().toISOString(),
@@ -183,8 +170,7 @@ export function QuickEventForm({
               ...existingAttachment,
               privacyState:
                 visibility === "public" &&
-                alphaJournalMediaSharingAvailable &&
-                photoSharingDecision === "share"
+                alphaJournalMediaSharingAvailable
                   ? "public_ready" as const
                   : "private_only" as const,
             }
@@ -256,8 +242,8 @@ export function QuickEventForm({
           <ShieldCheck size={15} />
           {isRemoteAlpha
             ? locale === "ja"
-              ? "写真はまず自分の履歴へ保存します。α参加者へ見せるかは公開範囲で選べます。"
-              : "The photo is first saved to your history. You choose below whether alpha participants can see it."
+              ? "写真は記録本文と同じ公開範囲で保存します。"
+              : "The photo uses the same audience as the record."
             : translate(locale, "momentPrivateFirst")}
         </p>
         <fieldset className="event-type-picker"><legend>{translate(locale, "momentKindQuestion")}</legend>{eventTypes.map((item) => <button type="button" key={item.value} className={eventType === item.value ? "is-selected" : ""} aria-pressed={eventType === item.value} onClick={() => setEventType(item.value)}>{translate(locale, item.label)}</button>)}</fieldset>
@@ -286,7 +272,6 @@ export function QuickEventForm({
               aria-pressed={visibility === "private"}
               onClick={() => {
                 setVisibility("private");
-                setPhotoSharingDecision(null);
                 setPublicationError("");
               }}
             >
@@ -323,56 +308,26 @@ export function QuickEventForm({
           {isRemoteAlpha && visibility === "public" && (
             <p className="settings-help">
               {locale === "ja"
-                ? "ログイン済みのP0・α参加者に、本文と表示用車名を共有します。"
-                : "The text and vehicle label are shared with signed-in P0 and alpha participants."}
+                ? "ログイン済みのP0・α参加者に、本文、写真、表示用車名を共有します。"
+                : "The text, photo, and vehicle label are shared with signed-in P0 and alpha participants."}
+            </p>
+          )}
+          {visibility === "public" && hasLegacyPrivatePhoto && !image && (
+            <p className="settings-help">
+              {locale === "ja"
+                ? "以前の設定で非公開にした写真は、この編集だけで公開へ変更しません。"
+                : "The photo kept private under the previous setting will not be published by this edit."}
             </p>
           )}
           {isRemoteAlpha &&
             alphaJournalMediaSharingAvailable &&
             visibility === "public" &&
             (image || existingAttachment?.kind === "image") && (
-            <fieldset className={`alpha-media-sharing-choice${photoSharingDecision === null ? " needs-decision" : ""}`}>
-              <legend>
-                {locale === "ja" ? "この投稿の写真" : "Photo in this post"}
-              </legend>
-              <div className="segmented-control has-two-options">
-                <button
-                  type="button"
-                  className={photoSharingDecision === "share" ? "is-selected" : ""}
-                  aria-pressed={photoSharingDecision === "share"}
-                  onClick={() => {
-                    setPhotoSharingDecision("share");
-                    setPublicationError("");
-                  }}
-                >
-                  {locale === "ja" ? "写真も公開" : "Share photo"}
-                </button>
-                <button
-                  type="button"
-                  className={photoSharingDecision === "private" ? "is-selected" : ""}
-                  aria-pressed={photoSharingDecision === "private"}
-                  onClick={() => {
-                    setPhotoSharingDecision("private");
-                    setPublicationError("");
-                  }}
-                >
-                  {locale === "ja" ? "写真は自分だけ" : "Keep photo private"}
-                </button>
-              </div>
-              <small>
-                {photoSharingDecision === "share"
-                  ? locale === "ja"
-                    ? "軽量化した共有版をSupabaseへ保存し、α参加者と自分の別端末で表示します。ナンバー、人物、住所が分かる背景を確認してください。"
-                    : "A reduced copy is stored in Supabase for alpha participants and your other devices. Check plates, people, and address-revealing backgrounds."
-                  : photoSharingDecision === "private"
-                    ? locale === "ja"
-                      ? "写真は自分だけに表示し、α参加者には公開しません。"
-                      : "The photo remains visible only to you and is not shared with alpha participants."
-                    : locale === "ja"
-                      ? "保存前に、写真の公開範囲を選んでください。"
-                      : "Choose the photo audience before saving."}
-              </small>
-            </fieldset>
+            <p className="settings-help">
+              {locale === "ja"
+                ? "写真は記録本文と同じ範囲で公開します。ナンバー、人物、住所が分かる背景を保存前に確認してください。"
+                : "The photo uses the same audience as the record. Check plates, people, and address-revealing backgrounds before saving."}
+            </p>
           )}
           {isRemoteAlpha &&
             !alphaJournalMediaSharingAvailable &&
@@ -381,8 +336,8 @@ export function QuickEventForm({
             <p className="media-publication-gate">
               <ShieldAlert size={18} aria-hidden="true" />
               {locale === "ja"
-                ? "写真共有の準備中です。今回は本文だけを共有し、写真は自分の履歴に残します。"
-                : "Photo sharing is still being prepared. This time only the text is shared; the photo remains in your history."}
+                ? "写真共有の準備中です。本文と写真の公開範囲を一致させるため、今回は自分だけに保存してください。"
+                : "Photo sharing is still being prepared. Save this for yourself so the text and photo audience remain consistent."}
             </p>
           )}
           {isRemoteAlpha && !alphaJournalSharingAvailable && (

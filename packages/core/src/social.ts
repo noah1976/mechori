@@ -69,9 +69,11 @@ export function journalMediaForViewer(
   journal: GarageJournalPost,
   viewerIsAuthor: boolean,
 ): GarageJournalPost["media"] {
-  return viewerIsAuthor
-    ? journal.media
-    : journal.media.filter((attachment) => attachment.privacyState === "public_ready");
+  if (viewerIsAuthor) return journal.media;
+  if (journal.visibility === "private") return [];
+  return journal.media.filter(
+    (attachment) => attachment.privacyState === "public_ready",
+  );
 }
 
 export function journalContentBlocksForViewer(
@@ -92,6 +94,7 @@ export function createJournalPost(
   draft: JournalDraft,
   sourceLanguage: GarageJournalPost["sourceLanguage"],
   now = new Date().toISOString(),
+  previousJournal?: GarageJournalPost,
 ): GarageJournalPost {
   const vehicle = data.vehicles.find((item) => item.id === draft.vehicleId);
   if (!vehicle) throw new Error("vehicle_required");
@@ -123,7 +126,7 @@ export function createJournalPost(
     moderationState: "visible",
     linkedRecordId: draft.linkedRecordId || undefined,
     displayFields: draft.linkedRecordId ? [...draft.displayFields] : [],
-    media: draft.media.map((attachment) => ({ ...attachment })),
+    media: journalMediaWithDerivedPrivacy(draft, previousJournal),
     contentBlocks: draft.contentBlocks.map((block) => ({ ...block })),
     knowledgeExtractionConsent: draft.knowledgeExtractionConsent,
     appreciationCount: 0,
@@ -133,6 +136,37 @@ export function createJournalPost(
     publishedAt: draft.visibility === "private" ? undefined : now,
     isDemo: false,
   };
+}
+
+function journalMediaWithDerivedPrivacy(
+  draft: JournalDraft,
+  previousJournal?: GarageJournalPost,
+): GarageJournalPost["media"] {
+  const previousMediaById = new Map(
+    previousJournal?.media.map((attachment) => [attachment.id, attachment]) ?? [],
+  );
+
+  return draft.media.map((attachment) => {
+    if (attachment.kind !== "image") {
+      return { ...attachment, privacyState: "private_only" };
+    }
+    if (draft.visibility === "private") {
+      return { ...attachment, privacyState: "private_only" };
+    }
+
+    const previousAttachment = previousMediaById.get(attachment.id);
+    const isLegacyPrivatePhoto =
+      draft.visibility === "public" &&
+      previousJournal?.visibility === "public" &&
+      previousAttachment?.privacyState === "private_only";
+
+    // Preserve old public-post/private-photo choices until the owner explicitly
+    // changes the record audience; new writes always derive from the record.
+    return {
+      ...attachment,
+      privacyState: isLegacyPrivatePhoto ? "private_only" : "public_ready",
+    };
+  });
 }
 
 export function journalOccurrenceDate(journal: GarageJournalPost): string {
@@ -264,7 +298,7 @@ export function updateJournalInData(
   }
   if (!validateJournalDraft(draft).valid) throw new Error("journal_invalid");
 
-  const next = createJournalPost(data, draft, previous.sourceLanguage, now);
+  const next = createJournalPost(data, draft, previous.sourceLanguage, now, previous);
   const journal: GarageJournalPost = {
     ...next,
     id: previous.id,

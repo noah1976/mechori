@@ -485,13 +485,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (isRemoteAlpha && draft.visibility === "public" && !alphaJournalSharingAvailable) {
         throw new Error("alpha_journal_sharing_unavailable");
       }
+      const result = addJournalToData(data, draft, locale);
+      if (
+        isRemoteAlpha &&
+        result.journal.visibility === "public" &&
+        result.journal.media.some(
+          (attachment) =>
+            attachment.kind === "image" && attachment.privacyState === "public_ready",
+        ) &&
+        !alphaJournalMediaSharingAvailable
+      ) {
+        throw new Error("alpha_shared_image_sync_failed");
+      }
       await Promise.all(
         uploads.map(({ attachment, blob }) => {
           if (!attachment.storageKey) throw new Error("media_storage_key_required");
           return journalMediaStore.save(attachment.storageKey, blob);
         }),
       );
-      const result = addJournalToData(data, draft, locale);
       await persist(result.data);
       if (isRemoteAlpha && result.journal.visibility === "public") {
         const author = result.data.profiles.find(
@@ -525,6 +536,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     [
       alphaJournalSharingAvailable,
+      alphaJournalMediaSharingAvailable,
       authSession,
       contentPolicyAccepted,
       data,
@@ -546,13 +558,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ) {
         throw new Error("alpha_journal_sharing_unavailable");
       }
+      const result = updateJournalInData(data, id, draft);
+      if (
+        isRemoteAlpha &&
+        result.journal.visibility === "public" &&
+        result.journal.media.some(
+          (attachment) =>
+            attachment.kind === "image" && attachment.privacyState === "public_ready",
+        ) &&
+        !alphaJournalMediaSharingAvailable
+      ) {
+        throw new Error("alpha_shared_image_sync_failed");
+      }
       await Promise.all(
         uploads.map(({ attachment, blob }) => {
           if (!attachment.storageKey) throw new Error("media_storage_key_required");
           return journalMediaStore.save(attachment.storageKey, blob);
         }),
       );
-      const result = updateJournalInData(data, id, draft);
       await persist(result.data);
       if (isRemoteAlpha) {
         try {
@@ -599,6 +622,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     [
       alphaJournalSharingAvailable,
+      alphaJournalMediaSharingAvailable,
       alphaSharedContent,
       authSession,
       data,
