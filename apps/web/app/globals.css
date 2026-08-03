@@ -514,8 +514,12 @@ button { cursor: pointer; }
 
 .vehicle-welcome-page { width: min(100%, 1080px); margin-inline: auto; }
 .vehicle-welcome-photo { position: relative; min-height: min(68vh, 680px); overflow: hidden; background: #252927; }
+.vehicle-welcome-photo.without-photo { min-height: min(55vh, 520px); background: #303638; }
 .vehicle-welcome-photo > img, .public-vehicle-hero > img { object-fit: cover; }
 .vehicle-welcome-shade, .public-vehicle-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(18, 22, 20, 0.04) 20%, rgba(18, 22, 20, 0.84) 100%); }
+.vehicle-welcome-no-photo { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 8px; padding: 48px 50px 190px; color: #d8dfdc; }
+.vehicle-welcome-no-photo span { margin-top: 16px; font-size: 13px; font-weight: 800; text-transform: uppercase; }
+.vehicle-welcome-no-photo strong { max-width: 820px; color: #fff; font-size: clamp(30px, 5vw, 54px); line-height: 1.08; overflow-wrap: anywhere; }
 .vehicle-welcome-copy { position: absolute; inset: auto 0 0; z-index: 1; max-width: 850px; padding: 50px; color: #fff; }
 .welcome-check { display: inline-flex; align-items: center; gap: 7px; color: #e9ca70; font-size: 12px; font-weight: 850; }
 .vehicle-welcome-copy h1 { margin: 12px 0 10px; font-size: clamp(31px, 5vw, 55px); line-height: 1.12; letter-spacing: 0; }
@@ -1399,6 +1403,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .record-grid, .record-grid.wide { grid-template-columns: 1fr; }
   .garage-photo { min-height: 300px; }
   .vehicle-welcome-photo { min-height: 540px; }
+  .vehicle-welcome-photo.without-photo { min-height: 480px; }
+  .vehicle-welcome-no-photo { padding: 32px 22px 190px; }
   .vehicle-welcome-copy, .public-vehicle-identity { padding: 28px 22px; }
   .welcome-next-actions, .public-vehicle-about { padding: 24px 20px; }
   .vehicle-timeline-item { grid-template-columns: 34px minmax(0, 1fr); gap: 10px; }

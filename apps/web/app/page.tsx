@@ -111,9 +111,9 @@ export default function HomePage() {
           <span className="eyebrow">WELCOME TO MECHORI</span>
           <CarFront size={42} aria-hidden="true" />
           <h1>{ja ? "あなたのクルマを、ここから主役に。" : "Put your vehicle at the center."}</h1>
-          <p>{ja ? "写真を一枚選び、車名とおおよその年月を入れるだけ。3分ほどで、最初の愛車ページができます。" : "Choose one photo and add its name and approximate dates. Your first vehicle page takes about three minutes."}</p>
+          <p>{ja ? "メーカーと車名だけで始められます。写真、年式、詳しい仕様は、分かるときに後から足せます。" : "Make and model are enough to begin. Add a photo, year, and detailed specifications whenever you know them."}</p>
           <Link href="/garage/new" className="primary-action"><ArrowRight size={18} />{ja ? "愛車ページをつくる" : "Create my vehicle page"}</Link>
-          <small>{ja ? "車種が候補になくても、その場で自由に登録できます。" : "Unlisted and rare vehicles are always welcome."}</small>
+          <small>{ja ? "クルマもバイクも、候補にない車種はその場で自由入力できます。" : "Cars and motorcycles can be entered freely, including unlisted and rare models."}</small>
         </section>
       </div>
     );

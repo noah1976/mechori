@@ -3,7 +3,7 @@
 import { useApp } from "@/lib/app-context";
 import { displayVehicleModel, formatOwnershipDuration, summarizeVehicleRelationship } from "@mechori/core";
 import { translate } from "@mechori/i18n";
-import { ArrowRight, BookOpenCheck, Camera, CarFront, CheckCircle2, Plus } from "lucide-react";
+import { ArrowRight, Bike, BookOpenCheck, Camera, CarFront, CheckCircle2, Plus } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -20,6 +20,9 @@ export default function VehicleWelcomePage() {
 
   const relationship = summarizeVehicleRelationship(vehicle);
   const vehicleModel = displayVehicleModel(vehicle, locale);
+  const VehicleIcon = vehicle.vehicleCategory === "motorcycle" || vehicle.vehicleCategory === "moped"
+    ? Bike
+    : CarFront;
   const ownership = formatOwnershipDuration(locale, relationship);
   const vehicleSummary = ja
     ? [
@@ -35,8 +38,15 @@ export default function VehicleWelcomePage() {
 
   return (
     <div className="vehicle-welcome-page">
-      <section className="vehicle-welcome-photo">
+      <section className={`vehicle-welcome-photo${vehicle.imagePath ? " has-photo" : " without-photo"}`}>
         {vehicle.imagePath && <Image src={vehicle.imagePath} alt={`${vehicle.make} ${vehicleModel}`} fill sizes="100vw" unoptimized priority />}
+        {!vehicle.imagePath && (
+          <div className="vehicle-welcome-no-photo" aria-hidden="true">
+            <VehicleIcon size={46} strokeWidth={1.5} />
+            <span>{vehicle.make}</span>
+            <strong>{vehicle.year ? `${vehicle.year} ` : ""}{vehicleModel}</strong>
+          </div>
+        )}
         <div className="vehicle-welcome-shade" />
         <div className="vehicle-welcome-copy">
           <span className="welcome-check"><CheckCircle2 size={18} />{translate(locale, "vehiclePageReady")}</span>
