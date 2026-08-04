@@ -17,6 +17,7 @@ test("creates a safe shared-media diagnostic without retaining the object path",
     objectPath,
     error: {
       name: "StorageApiError",
+      status: 400,
       statusCode: "403",
       message: `secret detail for ${objectPath}`,
     },
@@ -24,9 +25,9 @@ test("creates a safe shared-media diagnostic without retaining the object path",
     attempts: 2,
   });
 
-  assert.equal(diagnostic.httpStatus, 403);
+  assert.equal(diagnostic.httpStatus, 400);
   assert.equal(diagnostic.supabaseErrorCode, "storageapierror");
-  assert.equal(diagnostic.safeSummary, "Storage access was denied");
+  assert.equal(diagnostic.safeSummary, "Storage rejected the object request");
   assert.equal(diagnostic.pathShape.segmentCount, 3);
   assert.equal(diagnostic.objectPathHash.length, 64);
   assert.equal(JSON.stringify(diagnostic).includes(objectPath), false);
@@ -39,7 +40,7 @@ test("flags malformed stored object paths without logging their values", async (
     photoId: "photo-2",
     bucket: "alpha-journal-media",
     objectPath: "https://example.invalid/alpha-journal-media%252Fowner%252Fphoto.webp",
-    error: { error: "not_found", statusCode: 404 },
+    error: { error: "not_found", status: 404, statusCode: "not_found" },
     sessionPresent: false,
     attempts: 2,
   });
@@ -57,7 +58,7 @@ test("validates and binds a safe object path to its diagnostic hash", async () =
     photoId: "photo-1",
     bucket: "alpha-journal-media",
     objectPath,
-    error: { statusCode: 403, error: "AccessDenied" },
+    error: { status: 403, statusCode: "AccessDenied", error: "AccessDenied" },
     sessionPresent: true,
     attempts: 2,
   });
@@ -76,15 +77,25 @@ test("creates a safe server-side access probe code", () => {
     userVerified: true,
     policyAllowsRead: true,
     listedInVisibleShare: true,
-    serverDownloadError: { statusCode: 403, error: "AccessDenied" },
+    serverDownloadError: {
+      status: 400,
+      statusCode: "unauthorized",
+      name: "StorageApiError",
+    },
     serverDownloadSucceeded: false,
-    manualDownloadStatus: 403,
-    manualDownloadErrorCode: "accessdenied",
+    objectDownloadStatus: 400,
+    objectDownloadErrorCode: "unauthorized",
+    authenticatedDownloadStatus: 400,
+    authenticatedDownloadErrorCode: "unauthorized",
+    signedUrlCreateError: { status: 400, statusCode: "unauthorized", name: "StorageApiError" },
+    signedUrlCreated: false,
+    signedUrlFetchStatus: null,
+    signedUrlFetchErrorCode: "signed_url_unavailable",
   });
 
   assert.equal(
     probe.probeCode,
-    "U1-P1-L1-D403-accessdenied-M403-accessdenied",
+    "U1-P1-L1-D400-storageapierror-unauthorized-O400-unauthorized-A400-unauthorized-S400-storageapierror-Fx-signed_url_unavailable",
   );
   assert.equal(isSharedMediaServerProbe(probe), true);
   assert.doesNotMatch(JSON.stringify(probe), /owner-id|journal-id|token/i);

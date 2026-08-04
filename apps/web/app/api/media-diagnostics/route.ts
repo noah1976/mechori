@@ -55,18 +55,36 @@ export async function POST(request: Request): Promise<Response> {
     : policyData;
   const download = await supabase.storage.from(sharedMediaBucket).download(objectPath);
   const { data: sessionData } = await supabase.auth.getSession();
-  const manualDownload = await probeAuthenticatedStorageDownload(
+  const objectDownload = await probeStorageDownload(
     objectPath,
     sessionData.session?.access_token ?? null,
+    "object",
   );
+  const authenticatedDownload = await probeStorageDownload(
+    objectPath,
+    sessionData.session?.access_token ?? null,
+    "object/authenticated",
+  );
+  const signedUrl = await supabase.storage
+    .from(sharedMediaBucket)
+    .createSignedUrl(objectPath, 60);
+  const signedUrlFetch = signedUrl.error || !signedUrl.data?.signedUrl
+    ? { status: null, errorCode: "signed_url_unavailable" }
+    : await probeSignedStorageDownload(signedUrl.data.signedUrl);
   const probe = createSharedMediaServerProbe({
     userVerified: true,
     policyAllowsRead,
     listedInVisibleShare,
     serverDownloadError: download.error,
     serverDownloadSucceeded: !download.error && Boolean(download.data),
-    manualDownloadStatus: manualDownload.status,
-    manualDownloadErrorCode: manualDownload.errorCode,
+    objectDownloadStatus: objectDownload.status,
+    objectDownloadErrorCode: objectDownload.errorCode,
+    authenticatedDownloadStatus: authenticatedDownload.status,
+    authenticatedDownloadErrorCode: authenticatedDownload.errorCode,
+    signedUrlCreateError: signedUrl.error,
+    signedUrlCreated: !signedUrl.error && Boolean(signedUrl.data?.signedUrl),
+    signedUrlFetchStatus: signedUrlFetch.status,
+    signedUrlFetchErrorCode: signedUrlFetch.errorCode,
   });
 
   console.warn("[P-069 shared-media-load]", {
@@ -78,16 +96,17 @@ export async function POST(request: Request): Promise<Response> {
   return Response.json({ probe });
 }
 
-async function probeAuthenticatedStorageDownload(
+async function probeStorageDownload(
   objectPath: string,
   accessToken: string | null,
+  route: "object" | "object/authenticated",
 ): Promise<{ status: number | null; errorCode: string }> {
   if (!accessToken) return { status: null, errorCode: "session_token_unavailable" };
   const config = requireAlphaSupabaseConfig();
   const encodedPath = objectPath.split("/").map(encodeURIComponent).join("/");
   try {
     const response = await fetch(
-      `${config.url}/storage/v1/object/authenticated/${sharedMediaBucket}/${encodedPath}`,
+      `${config.url}/storage/v1/${route}/${sharedMediaBucket}/${encodedPath}`,
       {
         headers: {
           apikey: config.publishableKey,
@@ -101,6 +120,19 @@ async function probeAuthenticatedStorageDownload(
     return { status: response.status, errorCode };
   } catch {
     return { status: null, errorCode: "manual_request_failed" };
+  }
+}
+
+async function probeSignedStorageDownload(
+  signedUrl: string,
+): Promise<{ status: number | null; errorCode: string }> {
+  try {
+    const response = await fetch(signedUrl, { cache: "no-store" });
+    const errorCode = response.ok ? "none" : await safeStorageResponseCode(response);
+    if (response.body) await response.body.cancel().catch(() => undefined);
+    return { status: response.status, errorCode };
+  } catch {
+    return { status: null, errorCode: "signed_request_failed" };
   }
 }
 

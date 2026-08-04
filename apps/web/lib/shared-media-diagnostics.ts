@@ -27,8 +27,15 @@ export interface SharedMediaServerProbe {
   listedInVisibleShare: boolean | null;
   serverDownloadStatus: number | null;
   serverDownloadErrorCode: string;
-  manualDownloadStatus: number | null;
-  manualDownloadErrorCode: string;
+  serverDownloadServiceCode: string;
+  objectDownloadStatus: number | null;
+  objectDownloadErrorCode: string;
+  authenticatedDownloadStatus: number | null;
+  authenticatedDownloadErrorCode: string;
+  signedUrlCreateStatus: number | null;
+  signedUrlCreateErrorCode: string;
+  signedUrlFetchStatus: number | null;
+  signedUrlFetchErrorCode: string;
 }
 
 export async function createSharedMediaLoadDiagnostic(input: {
@@ -79,20 +86,36 @@ export function createSharedMediaServerProbe(input: {
   listedInVisibleShare: boolean | null;
   serverDownloadError: unknown;
   serverDownloadSucceeded: boolean;
-  manualDownloadStatus: number | null;
-  manualDownloadErrorCode: string;
+  objectDownloadStatus: number | null;
+  objectDownloadErrorCode: string;
+  authenticatedDownloadStatus: number | null;
+  authenticatedDownloadErrorCode: string;
+  signedUrlCreateError: unknown;
+  signedUrlCreated: boolean;
+  signedUrlFetchStatus: number | null;
+  signedUrlFetchErrorCode: string;
 }): SharedMediaServerProbe {
   const storageError = input.serverDownloadSucceeded
-    ? { httpStatus: 200, code: "none" }
+    ? { httpStatus: 200, code: "none", serviceCode: "none" }
     : safeStorageError(input.serverDownloadError);
+  const signedUrlError = input.signedUrlCreated
+    ? { httpStatus: 200, code: "none", serviceCode: "none" }
+    : safeStorageError(input.signedUrlCreateError);
   const probeCode = [
     input.userVerified ? "U1" : "U0",
     `P${nullableBooleanCode(input.policyAllowsRead)}`,
     `L${nullableBooleanCode(input.listedInVisibleShare)}`,
     `D${storageError.httpStatus ?? "x"}`,
     storageError.code,
-    `M${input.manualDownloadStatus ?? "x"}`,
-    input.manualDownloadErrorCode,
+    storageError.serviceCode,
+    `O${input.objectDownloadStatus ?? "x"}`,
+    input.objectDownloadErrorCode,
+    `A${input.authenticatedDownloadStatus ?? "x"}`,
+    input.authenticatedDownloadErrorCode,
+    `S${signedUrlError.httpStatus ?? "x"}`,
+    signedUrlError.code,
+    `F${input.signedUrlFetchStatus ?? "x"}`,
+    input.signedUrlFetchErrorCode,
   ].join("-");
   return {
     probeCode,
@@ -101,8 +124,15 @@ export function createSharedMediaServerProbe(input: {
     listedInVisibleShare: input.listedInVisibleShare,
     serverDownloadStatus: storageError.httpStatus,
     serverDownloadErrorCode: storageError.code,
-    manualDownloadStatus: input.manualDownloadStatus,
-    manualDownloadErrorCode: input.manualDownloadErrorCode,
+    serverDownloadServiceCode: storageError.serviceCode,
+    objectDownloadStatus: input.objectDownloadStatus,
+    objectDownloadErrorCode: input.objectDownloadErrorCode,
+    authenticatedDownloadStatus: input.authenticatedDownloadStatus,
+    authenticatedDownloadErrorCode: input.authenticatedDownloadErrorCode,
+    signedUrlCreateStatus: signedUrlError.httpStatus,
+    signedUrlCreateErrorCode: signedUrlError.code,
+    signedUrlFetchStatus: input.signedUrlFetchStatus,
+    signedUrlFetchErrorCode: input.signedUrlFetchErrorCode,
   };
 }
 
@@ -113,7 +143,7 @@ export function isSharedMediaServerProbe(
   const item = value as Partial<SharedMediaServerProbe>;
   return (
     typeof item.probeCode === "string" &&
-    /^U[01]-P[01x]-L[01x]-D(?:\d{3}|x)-[a-z0-9_.-]{1,64}-M(?:\d{3}|x)-[a-z0-9_.-]{1,64}$/.test(item.probeCode) &&
+    /^U[01]-P[01x]-L[01x]-D(?:\d{3}|x)(?:-[a-z0-9_.-]{1,64}){2}-O(?:\d{3}|x)-[a-z0-9_.-]{1,64}-A(?:\d{3}|x)-[a-z0-9_.-]{1,64}-S(?:\d{3}|x)-[a-z0-9_.-]{1,64}-F(?:\d{3}|x)-[a-z0-9_.-]{1,64}$/.test(item.probeCode) &&
     typeof item.userVerified === "boolean" &&
     (item.policyAllowsRead === null || typeof item.policyAllowsRead === "boolean") &&
     (item.listedInVisibleShare === null || typeof item.listedInVisibleShare === "boolean") &&
@@ -123,12 +153,16 @@ export function isSharedMediaServerProbe(
         item.serverDownloadStatus <= 599)) &&
     typeof item.serverDownloadErrorCode === "string" &&
     /^[a-z0-9_.-]{1,64}$/.test(item.serverDownloadErrorCode) &&
-    (item.manualDownloadStatus === null ||
-      (typeof item.manualDownloadStatus === "number" &&
-        item.manualDownloadStatus >= 100 &&
-        item.manualDownloadStatus <= 599)) &&
-    typeof item.manualDownloadErrorCode === "string" &&
-    /^[a-z0-9_.-]{1,64}$/.test(item.manualDownloadErrorCode)
+    typeof item.serverDownloadServiceCode === "string" &&
+    /^[a-z0-9_.-]{1,64}$/.test(item.serverDownloadServiceCode) &&
+    isNullableHttpStatus(item.objectDownloadStatus) &&
+    isSafeErrorCode(item.objectDownloadErrorCode) &&
+    isNullableHttpStatus(item.authenticatedDownloadStatus) &&
+    isSafeErrorCode(item.authenticatedDownloadErrorCode) &&
+    isNullableHttpStatus(item.signedUrlCreateStatus) &&
+    isSafeErrorCode(item.signedUrlCreateErrorCode) &&
+    isNullableHttpStatus(item.signedUrlFetchStatus) &&
+    isSafeErrorCode(item.signedUrlFetchErrorCode)
   );
 }
 
@@ -163,15 +197,32 @@ export function isSharedMediaLoadDiagnostic(
 function safeStorageError(error: unknown): {
   httpStatus: number | null;
   code: string;
+  serviceCode: string;
   summary: string;
 } {
   if (!error || typeof error !== "object") {
-    return { httpStatus: null, code: "unknown_storage_error", summary: "Storage request failed" };
+    return {
+      httpStatus: null,
+      code: "unknown_storage_error",
+      serviceCode: "unknown_storage_error",
+      summary: "Storage request failed",
+    };
   }
   const item = error as Record<string, unknown>;
-  const httpStatus = parseHttpStatus(item.statusCode ?? item.status);
+  const httpStatus = parseHttpStatus(item.status);
   const code = safeErrorCode(item.error ?? item.code ?? item.name);
-  return { httpStatus, code, summary: storageErrorSummary(httpStatus) };
+  const serviceCode = safeErrorCode(item.statusCode ?? item.code ?? item.error);
+  return { httpStatus, code, serviceCode, summary: storageErrorSummary(httpStatus) };
+}
+
+function isNullableHttpStatus(value: unknown): boolean {
+  return value === null || (
+    typeof value === "number" && value >= 100 && value <= 599
+  );
+}
+
+function isSafeErrorCode(value: unknown): boolean {
+  return typeof value === "string" && /^[a-z0-9_.-]{1,64}$/.test(value);
 }
 
 function parseHttpStatus(value: unknown): number | null {
