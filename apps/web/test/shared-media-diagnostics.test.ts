@@ -75,6 +75,7 @@ test("validates and binds a safe object path to its diagnostic hash", async () =
 test("creates a safe server-side access probe code", () => {
   const probe = createSharedMediaServerProbe({
     userVerified: true,
+    objectOwnedByUser: true,
     policyAllowsRead: true,
     listedInVisibleShare: true,
     serverDownloadError: {
@@ -87,6 +88,8 @@ test("creates a safe server-side access probe code", () => {
     objectDownloadErrorCode: "unauthorized",
     authenticatedDownloadStatus: 400,
     authenticatedDownloadErrorCode: "unauthorized",
+    authOnlyDownloadStatus: 200,
+    authOnlyDownloadErrorCode: "none",
     signedUrlCreateError: { status: 400, statusCode: "unauthorized", name: "StorageApiError" },
     signedUrlCreated: false,
     signedUrlFetchStatus: null,
@@ -95,7 +98,7 @@ test("creates a safe server-side access probe code", () => {
 
   assert.equal(
     probe.probeCode,
-    "U1-P1-L1-D400-storageapierror-unauthorized-O400-unauthorized-A400-unauthorized-S400-storageapierror-Fx-signed_url_unavailable",
+    "U1-W1-P1-L1-D400-storageapierror-unauthorized-O400-unauthorized-A400-unauthorized-B200-none-S400-storageapierror-Fx-signed_url_unavailable",
   );
   assert.equal(isSharedMediaServerProbe(probe), true);
   assert.doesNotMatch(JSON.stringify(probe), /owner-id|journal-id|token/i);

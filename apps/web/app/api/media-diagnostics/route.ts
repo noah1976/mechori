@@ -65,6 +65,12 @@ export async function POST(request: Request): Promise<Response> {
     sessionData.session?.access_token ?? null,
     "object/authenticated",
   );
+  const authOnlyDownload = await probeStorageDownload(
+    objectPath,
+    sessionData.session?.access_token ?? null,
+    "object/authenticated",
+    false,
+  );
   const signedUrl = await supabase.storage
     .from(sharedMediaBucket)
     .createSignedUrl(objectPath, 60);
@@ -73,6 +79,7 @@ export async function POST(request: Request): Promise<Response> {
     : await probeSignedStorageDownload(signedUrl.data.signedUrl);
   const probe = createSharedMediaServerProbe({
     userVerified: true,
+    objectOwnedByUser: objectPath.split("/", 1)[0] === data.user.id,
     policyAllowsRead,
     listedInVisibleShare,
     serverDownloadError: download.error,
@@ -81,6 +88,8 @@ export async function POST(request: Request): Promise<Response> {
     objectDownloadErrorCode: objectDownload.errorCode,
     authenticatedDownloadStatus: authenticatedDownload.status,
     authenticatedDownloadErrorCode: authenticatedDownload.errorCode,
+    authOnlyDownloadStatus: authOnlyDownload.status,
+    authOnlyDownloadErrorCode: authOnlyDownload.errorCode,
     signedUrlCreateError: signedUrl.error,
     signedUrlCreated: !signedUrl.error && Boolean(signedUrl.data?.signedUrl),
     signedUrlFetchStatus: signedUrlFetch.status,
@@ -100,6 +109,7 @@ async function probeStorageDownload(
   objectPath: string,
   accessToken: string | null,
   route: "object" | "object/authenticated",
+  includeApiKey = true,
 ): Promise<{ status: number | null; errorCode: string }> {
   if (!accessToken) return { status: null, errorCode: "session_token_unavailable" };
   const config = requireAlphaSupabaseConfig();
@@ -109,7 +119,7 @@ async function probeStorageDownload(
       `${config.url}/storage/v1/${route}/${sharedMediaBucket}/${encodedPath}`,
       {
         headers: {
-          apikey: config.publishableKey,
+          ...(includeApiKey ? { apikey: config.publishableKey } : {}),
           authorization: `Bearer ${accessToken}`,
         },
         cache: "no-store",

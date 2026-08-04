@@ -23,6 +23,7 @@ export interface SharedMediaLoadDiagnostic {
 export interface SharedMediaServerProbe {
   probeCode: string;
   userVerified: boolean;
+  objectOwnedByUser: boolean;
   policyAllowsRead: boolean | null;
   listedInVisibleShare: boolean | null;
   serverDownloadStatus: number | null;
@@ -32,6 +33,8 @@ export interface SharedMediaServerProbe {
   objectDownloadErrorCode: string;
   authenticatedDownloadStatus: number | null;
   authenticatedDownloadErrorCode: string;
+  authOnlyDownloadStatus: number | null;
+  authOnlyDownloadErrorCode: string;
   signedUrlCreateStatus: number | null;
   signedUrlCreateErrorCode: string;
   signedUrlFetchStatus: number | null;
@@ -82,6 +85,7 @@ export async function sharedMediaObjectPathMatchesDiagnostic(
 
 export function createSharedMediaServerProbe(input: {
   userVerified: boolean;
+  objectOwnedByUser: boolean;
   policyAllowsRead: boolean | null;
   listedInVisibleShare: boolean | null;
   serverDownloadError: unknown;
@@ -90,6 +94,8 @@ export function createSharedMediaServerProbe(input: {
   objectDownloadErrorCode: string;
   authenticatedDownloadStatus: number | null;
   authenticatedDownloadErrorCode: string;
+  authOnlyDownloadStatus: number | null;
+  authOnlyDownloadErrorCode: string;
   signedUrlCreateError: unknown;
   signedUrlCreated: boolean;
   signedUrlFetchStatus: number | null;
@@ -103,6 +109,7 @@ export function createSharedMediaServerProbe(input: {
     : safeStorageError(input.signedUrlCreateError);
   const probeCode = [
     input.userVerified ? "U1" : "U0",
+    input.objectOwnedByUser ? "W1" : "W0",
     `P${nullableBooleanCode(input.policyAllowsRead)}`,
     `L${nullableBooleanCode(input.listedInVisibleShare)}`,
     `D${storageError.httpStatus ?? "x"}`,
@@ -112,6 +119,8 @@ export function createSharedMediaServerProbe(input: {
     input.objectDownloadErrorCode,
     `A${input.authenticatedDownloadStatus ?? "x"}`,
     input.authenticatedDownloadErrorCode,
+    `B${input.authOnlyDownloadStatus ?? "x"}`,
+    input.authOnlyDownloadErrorCode,
     `S${signedUrlError.httpStatus ?? "x"}`,
     signedUrlError.code,
     `F${input.signedUrlFetchStatus ?? "x"}`,
@@ -120,6 +129,7 @@ export function createSharedMediaServerProbe(input: {
   return {
     probeCode,
     userVerified: input.userVerified,
+    objectOwnedByUser: input.objectOwnedByUser,
     policyAllowsRead: input.policyAllowsRead,
     listedInVisibleShare: input.listedInVisibleShare,
     serverDownloadStatus: storageError.httpStatus,
@@ -129,6 +139,8 @@ export function createSharedMediaServerProbe(input: {
     objectDownloadErrorCode: input.objectDownloadErrorCode,
     authenticatedDownloadStatus: input.authenticatedDownloadStatus,
     authenticatedDownloadErrorCode: input.authenticatedDownloadErrorCode,
+    authOnlyDownloadStatus: input.authOnlyDownloadStatus,
+    authOnlyDownloadErrorCode: input.authOnlyDownloadErrorCode,
     signedUrlCreateStatus: signedUrlError.httpStatus,
     signedUrlCreateErrorCode: signedUrlError.code,
     signedUrlFetchStatus: input.signedUrlFetchStatus,
@@ -143,8 +155,9 @@ export function isSharedMediaServerProbe(
   const item = value as Partial<SharedMediaServerProbe>;
   return (
     typeof item.probeCode === "string" &&
-    /^U[01]-P[01x]-L[01x]-D(?:\d{3}|x)(?:-[a-z0-9_.-]{1,64}){2}-O(?:\d{3}|x)-[a-z0-9_.-]{1,64}-A(?:\d{3}|x)-[a-z0-9_.-]{1,64}-S(?:\d{3}|x)-[a-z0-9_.-]{1,64}-F(?:\d{3}|x)-[a-z0-9_.-]{1,64}$/.test(item.probeCode) &&
+    /^U[01]-W[01]-P[01x]-L[01x]-D(?:\d{3}|x)(?:-[a-z0-9_.-]{1,64}){2}-O(?:\d{3}|x)-[a-z0-9_.-]{1,64}-A(?:\d{3}|x)-[a-z0-9_.-]{1,64}-B(?:\d{3}|x)-[a-z0-9_.-]{1,64}-S(?:\d{3}|x)-[a-z0-9_.-]{1,64}-F(?:\d{3}|x)-[a-z0-9_.-]{1,64}$/.test(item.probeCode) &&
     typeof item.userVerified === "boolean" &&
+    typeof item.objectOwnedByUser === "boolean" &&
     (item.policyAllowsRead === null || typeof item.policyAllowsRead === "boolean") &&
     (item.listedInVisibleShare === null || typeof item.listedInVisibleShare === "boolean") &&
     (item.serverDownloadStatus === null ||
@@ -159,6 +172,8 @@ export function isSharedMediaServerProbe(
     isSafeErrorCode(item.objectDownloadErrorCode) &&
     isNullableHttpStatus(item.authenticatedDownloadStatus) &&
     isSafeErrorCode(item.authenticatedDownloadErrorCode) &&
+    isNullableHttpStatus(item.authOnlyDownloadStatus) &&
+    isSafeErrorCode(item.authOnlyDownloadErrorCode) &&
     isNullableHttpStatus(item.signedUrlCreateStatus) &&
     isSafeErrorCode(item.signedUrlCreateErrorCode) &&
     isNullableHttpStatus(item.signedUrlFetchStatus) &&
