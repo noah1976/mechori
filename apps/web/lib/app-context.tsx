@@ -93,6 +93,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -188,6 +189,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [alphaJournalReactions, setAlphaJournalReactions] = useState<
     Map<string, AlphaJournalReaction>
   >(new Map());
+  const journalLikeRequests = useRef(new Set<string>());
   const [contentPolicyAccepted, setContentPolicyAccepted] = useState(!isRemoteAlpha);
 
   useEffect(() => {
@@ -791,8 +793,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const toggleJournalLike = useCallback(async (journalId: string) => {
     if (!isRemoteAlpha || !isSignedIn(authSession)) return;
+    if (journalLikeRequests.current.has(journalId)) return;
     const shared = alphaSharedContent.find((item) => item.journal.id === journalId);
     if (!shared || shared.journal.authorProfileId === data.currentProfileId) return;
+    journalLikeRequests.current.add(journalId);
     const previous = alphaJournalReactions.get(journalId) ?? {
       shareId: shared.shareId,
       journalId,
@@ -812,14 +816,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
       return next;
     });
-    let result: AlphaJournalReaction;
     try {
       const saved = await setAlphaJournalLike(shared.shareId, nextLiked);
-      result = {
+      const result: AlphaJournalReaction = {
         shareId: shared.shareId,
         journalId,
         ...saved,
       };
+      setAlphaJournalReactions((current) => {
+        const next = new Map(current);
+        next.set(journalId, result);
+        return next;
+      });
+      if (result.likedByMe) pushAnalyticsEvent("like_added");
     } catch (error) {
       setAlphaJournalReactions((current) => {
         const next = new Map(current);
@@ -827,13 +836,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return next;
       });
       throw error;
+    } finally {
+      journalLikeRequests.current.delete(journalId);
     }
-    setAlphaJournalReactions((current) => {
-      const next = new Map(current);
-      next.set(journalId, result);
-      return next;
-    });
-    if (result.likedByMe) pushAnalyticsEvent("like_added");
   }, [alphaJournalReactions, alphaSharedContent, authSession, data.currentProfileId]);
 
   const resetDemo = useCallback(async () => {

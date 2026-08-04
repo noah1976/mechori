@@ -71,6 +71,9 @@ export function JournalCard({
     signedIn &&
     isRemoteAlpha &&
     displayJournal.authorProfileId !== data.currentProfileId;
+  const isOwnJournal =
+    isRemoteAlpha &&
+    displayJournal.authorProfileId === data.currentProfileId;
   return (
     <article className="journal-card">
       <Link
@@ -139,28 +142,37 @@ export function JournalCard({
               ? ja ? "α参加者に公開" : "Shared with alpha participants"
               : translate(locale, displayJournal.visibility)}
         </span>
-        <button
-          type="button"
-          className={remoteReaction.likedByMe ? "journal-like is-liked" : "journal-like"}
-          aria-pressed={remoteReaction.likedByMe}
-          aria-label={ja ? "この記録にいいね" : "Like this record"}
-          disabled={!canReact || reacting}
-          onClick={async () => {
-            if (!canReact || reacting) return;
-            setReacting(true);
-            setReactionError(false);
-            try {
-              await toggleJournalLike(displayJournal.id);
-            } catch {
-              setReactionError(true);
-            } finally {
-              setReacting(false);
-            }
-          }}
-        >
-          <Heart size={15} aria-hidden="true" />
-          {appreciationCount}
-        </button>
+        {isOwnJournal ? (
+          <span className="journal-like-status">
+            <Heart size={15} aria-hidden="true" />
+            {appreciationCount}
+          </span>
+        ) : (
+          <button
+            type="button"
+            className={remoteReaction.likedByMe ? "journal-like is-liked" : "journal-like"}
+            aria-pressed={remoteReaction.likedByMe}
+            aria-label={ja ? "この記録にいいね" : "Like this record"}
+            disabled={!canReact || reacting}
+            onClick={async (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              if (!canReact || reacting) return;
+              setReacting(true);
+              setReactionError(false);
+              try {
+                await toggleJournalLike(displayJournal.id);
+              } catch {
+                setReactionError(true);
+              } finally {
+                setReacting(false);
+              }
+            }}
+          >
+            <Heart size={15} aria-hidden="true" />
+            {appreciationCount}
+          </button>
+        )}
         <Link href={`/journal/${displayJournal.id}`} className="text-link">
           {ja ? "読む" : "Read"}
           <ArrowRight size={15} aria-hidden="true" />

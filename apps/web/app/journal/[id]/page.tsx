@@ -128,6 +128,7 @@ export default function JournalDetailPage() {
   const appreciationCount = isRemoteAlpha
     ? reaction.appreciationCount
     : journal.appreciationCount;
+  const canReact = signedIn && !ownJournal && isRemoteAlpha;
 
   return (
     <div className="page-stack journal-detail-page">
@@ -227,27 +228,35 @@ export default function JournalDetailPage() {
                 ? ja ? "α参加者に公開" : "Shared with alpha participants"
                 : visibilityLabel(journal.visibility, ja)}
             </span>
-            <button
-              type="button"
-              className={reaction.likedByMe ? "journal-like is-liked" : "journal-like"}
-              aria-pressed={reaction.likedByMe}
-              aria-label={ja ? "この記録にいいね" : "Like this record"}
-              disabled={!signedIn || ownJournal || !isRemoteAlpha || reacting}
-              onClick={async () => {
-                setReacting(true);
-                setReactionError(false);
-                try {
-                  await toggleJournalLike(journal.id);
-                } catch {
-                  setReactionError(true);
-                } finally {
-                  setReacting(false);
-                }
-              }}
-            >
-              <Heart size={16} aria-hidden="true" />
-              {appreciationCount}
-            </button>
+            {ownJournal && isRemoteAlpha ? (
+              <span className="journal-like-status">
+                <Heart size={16} aria-hidden="true" />
+                {appreciationCount}
+              </span>
+            ) : (
+              <button
+                type="button"
+                className={reaction.likedByMe ? "journal-like is-liked" : "journal-like"}
+                aria-pressed={reaction.likedByMe}
+                aria-label={ja ? "この記録にいいね" : "Like this record"}
+                disabled={!canReact || reacting}
+                onClick={async () => {
+                  if (!canReact || reacting) return;
+                  setReacting(true);
+                  setReactionError(false);
+                  try {
+                    await toggleJournalLike(journal.id);
+                  } catch {
+                    setReactionError(true);
+                  } finally {
+                    setReacting(false);
+                  }
+                }}
+              >
+                <Heart size={16} aria-hidden="true" />
+                {appreciationCount}
+              </button>
+            )}
           </div>
           {reactionError && <p className="form-error" role="alert">{ja ? "いいねを保存できませんでした。もう一度お試しください。" : "The like could not be saved. Please try again."}</p>}
         </header>

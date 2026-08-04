@@ -905,7 +905,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .journal-card footer, .journal-card > .form-error { position: relative; z-index: 2; }
 .journal-card .journal-media-item video { position: relative; z-index: 2; }
 .journal-card footer > span { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-size: 11px; }
-.journal-like { display: inline-flex; align-items: center; gap: 5px; padding: 3px; color: var(--muted); background: transparent; border: 0; font-size: 11px; }
+.journal-like, .journal-like-status { display: inline-flex; align-items: center; gap: 5px; padding: 3px; color: var(--muted); background: transparent; border: 0; font-size: 11px; }
 .journal-like:not(:disabled):hover, .journal-like.is-liked { color: var(--danger); }
 .journal-like.is-liked svg { fill: currentColor; }
 .journal-like:disabled { cursor: default; opacity: 0.75; }
