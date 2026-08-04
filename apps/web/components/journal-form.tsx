@@ -42,6 +42,7 @@ import {
 } from "react";
 import { useApp } from "@/lib/app-context";
 import { JournalMedia } from "@/components/journal-media";
+import { JournalCompletion } from "@/components/journal-completion";
 import { OccurrenceDateFields } from "@/components/occurrence-date-fields";
 import { localDateInputValue } from "@/lib/date-input";
 import { findJournalPrompt } from "@/lib/journal-prompts";
@@ -144,7 +145,7 @@ export function JournalForm({
       ) ?? getPreferredVehicle(
         data.vehicles.filter((item) => item.ownerProfileId === data.currentProfileId),
       );
-  const localDraftKey = journalLocalDraftKey();
+  const localDraftKey = journalLocalDraftKey(data.currentProfileId, journal?.id, promptId);
   const initialDraft = useMemo(
     () => journal
       ? journalToDraft(journal)
@@ -160,6 +161,8 @@ export function JournalForm({
   const [mediaError, setMediaError] = useState("");
   const [draftReady, setDraftReady] = useState(Boolean(journal));
   const [draftStatus, setDraftStatus] = useState<"idle" | "restored" | "saved" | "error">("idle");
+  const [pendingDraft, setPendingDraft] = useState<ReturnType<typeof loadJournalLocalDraft>>(null);
+  const [completion, setCompletion] = useState<GarageJournalPost | null>(null);
   const [omittedMediaCount, setOmittedMediaCount] = useState(0);
   const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([]);
   const [insertAfterBlockId, setInsertAfterBlockId] = useState<string | null>(null);
@@ -168,6 +171,7 @@ export function JournalForm({
   const formRef = useRef<HTMLFormElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const submitFeedbackRef = useRef<HTMLDivElement>(null);
+  const draftRef = useRef(draft);
   const validation = validateJournalDraft(draft);
   const imageAttachments = draft.media.filter((attachment) => attachment.kind === "image");
   const legacyPrivatePhotoCount = journal?.visibility === "public"
@@ -178,13 +182,17 @@ export function JournalForm({
     : 0;
 
   useEffect(() => {
+    draftRef.current = draft;
+  }, [draft]);
+
+  useEffect(() => {
     pendingMediaRef.current = pendingMedia;
   }, [pendingMedia]);
 
   useEffect(() => {
     if (journal) return;
     const timer = window.setTimeout(() => {
-      const stored = loadJournalLocalDraft();
+      const stored = loadJournalLocalDraft(localDraftKey);
       if (stored) {
         const storedDraft = stored.value.draft;
         const vehicleExists = data.vehicles.some((item) => item.id === storedDraft.vehicleId);
@@ -203,11 +211,11 @@ export function JournalForm({
             : [newTextBlock()],
         };
         if (hasMeaningfulJournalDraft(restoredDraft)) {
-          setDraft(restoredDraft);
-          setOmittedMediaCount(stored.value.omittedMediaCount);
-          setDraftStatus("restored");
-        } else {
-          clearLocalDraft(localDraftKey);
+          if (hasMeaningfulJournalDraft(draftRef.current)) {
+            setPendingDraft({ ...stored, value: { ...stored.value, draft: restoredDraft } });
+          } else {
+            setPendingDraft({ ...stored, value: { ...stored.value, draft: restoredDraft } });
+          }
         }
       }
       setDraftReady(true);
@@ -218,19 +226,25 @@ export function JournalForm({
   useEffect(() => {
     if (journal) return;
     if (!draftReady) return;
-    if (!hasMeaningfulJournalDraft(draft)) {
-      clearLocalDraft(localDraftKey);
-      return;
-    }
+    if (!hasMeaningfulJournalDraft(draft)) return;
     const timer = window.setTimeout(() => {
       const restorable = createRestorableJournalDraft(draft);
-      setOmittedMediaCount(restorable.omittedMediaCount);
+      const omittedMediaCountToSave = Math.max(
+        restorable.omittedMediaCount,
+        omittedMediaCount,
+      );
+      setOmittedMediaCount(omittedMediaCountToSave);
       setDraftStatus(
-        saveLocalDraft(localDraftKey, restorable) ? "saved" : "error",
+        saveLocalDraft(localDraftKey, {
+          ...restorable,
+          omittedMediaCount: omittedMediaCountToSave,
+        })
+          ? "saved"
+          : "error",
       );
     }, 600);
     return () => window.clearTimeout(timer);
-  }, [draft, draftReady, journal, localDraftKey]);
+  }, [draft, draftReady, journal, localDraftKey, omittedMediaCount]);
 
   function discardDraft() {
     pendingMediaRef.current.forEach(({ previewUrl }) => URL.revokeObjectURL(previewUrl));
@@ -238,9 +252,28 @@ export function JournalForm({
     setPendingMedia([]);
     setDraft(initialDraft);
     setDraftStatus("idle");
+    setPendingDraft(null);
     setOmittedMediaCount(0);
     setSubmitted(false);
     setMediaError("");
+  }
+
+  function restoreDraft() {
+    const stored = pendingDraft;
+    if (!stored) return;
+    const restoredDraft = stored.value.draft;
+    setDraft(restoredDraft);
+    setOmittedMediaCount(stored.value.omittedMediaCount);
+    setPendingDraft(null);
+    setDraftStatus("restored");
+  }
+
+  function startNewDraft() {
+    clearLocalDraft(localDraftKey);
+    setPendingDraft(null);
+    setDraft(initialDraft);
+    setDraftStatus("idle");
+    setOmittedMediaCount(0);
   }
 
   function changeVisibility(visibility: JournalVisibility) {
@@ -334,7 +367,12 @@ export function JournalForm({
           );
       clearLocalDraft(localDraftKey);
       window.clearTimeout(slowSaveTimer);
-      router.push(`/journal/${savedJournal.id}${journal ? "?updated=1" : ""}`);
+      if (journal) {
+        router.push(`/journal/${savedJournal.id}?updated=1`);
+      } else {
+        setSaving(false);
+        setCompletion(savedJournal);
+      }
     } catch (error) {
       window.clearTimeout(slowSaveTimer);
       setSaveTakingLong(false);
@@ -461,6 +499,7 @@ export function JournalForm({
           previewUrl: URL.createObjectURL(blob),
         });
       }
+      setOmittedMediaCount(0);
     } catch (error) {
       additions.forEach(({ previewUrl }) => URL.revokeObjectURL(previewUrl));
       setMediaError(translate(locale, imagePreparationMessageKey(error)));
@@ -524,6 +563,10 @@ export function JournalForm({
     }));
   }
 
+  if (completion) {
+    return <JournalCompletion journal={completion} vehicle={vehicle} locale={locale} mode="detailed" />;
+  }
+
   return (
     <form ref={formRef} className="journal-form note-editor-form" onSubmit={submit} noValidate aria-busy={saving || preparingMedia}>
       <section className="note-editor-shell">
@@ -554,6 +597,20 @@ export function JournalForm({
           ja={ja}
           onDiscard={discardDraft}
         />
+        {pendingDraft && (
+          <div className="local-draft-status is-restored" role="status">
+            <span>
+              <strong>{ja ? "書きかけの記録があります" : "You have an unfinished record"}</strong>
+              <br />
+              {ja ? "前回入力していた内容を復元できます。" : "You can restore what you entered last time."}
+            </span>
+            <span className="local-draft-actions">
+              <button type="button" onClick={restoreDraft}>{ja ? "下書きを復元" : "Restore draft"}</button>
+              <button type="button" onClick={() => { clearLocalDraft(localDraftKey); setPendingDraft(null); }}>{ja ? "下書きを削除" : "Delete draft"}</button>
+              <button type="button" onClick={startNewDraft}>{ja ? "新しく書く" : "Start new"}</button>
+            </span>
+          </div>
+        )}
 
         <label className={submitted && validation.errors.title ? "note-title has-error" : "note-title"}>
           <span className="sr-only">{ja ? "タイトル" : "Title"}</span>

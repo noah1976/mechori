@@ -23,9 +23,16 @@ import { Camera, LoaderCircle, Save, ShieldAlert, ShieldCheck } from "lucide-rea
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { OccurrenceDateFields } from "@/components/occurrence-date-fields";
 import { PhotoSourceActions } from "@/components/photo-source-actions";
+import { JournalCompletion } from "@/components/journal-completion";
+import {
+  clearLocalDraft,
+  loadQuickEventLocalDraft,
+  quickEventLocalDraftKey,
+  saveLocalDraft,
+} from "@/lib/local-draft-store";
 
 const eventTypes: Array<{ value: JournalEventType; label: TranslationKey }> = [
   { value: "delivery", label: "eventDelivery" },
@@ -56,6 +63,7 @@ export function QuickEventForm({
   journal?: GarageJournalPost;
 }) {
   const {
+    data,
     locale,
     addJournal,
     updateJournal,
@@ -95,8 +103,73 @@ export function QuickEventForm({
     existingAttachment?.kind === "image" &&
     existingAttachment.privacyState === "private_only";
   const [publicationError, setPublicationError] = useState("");
+  const [draftReady, setDraftReady] = useState(Boolean(journal));
+  const [draftStatus, setDraftStatus] = useState<"idle" | "restored" | "saved" | "error">("idle");
+  const [pendingDraft, setPendingDraft] = useState<ReturnType<typeof loadQuickEventLocalDraft>>(null);
+  const [omittedMediaCount, setOmittedMediaCount] = useState(0);
+  const [completion, setCompletion] = useState<GarageJournalPost | null>(null);
   const router = useRouter();
   const vehicleModel = displayVehicleModel(vehicle, locale);
+  const localDraftKey = quickEventLocalDraftKey(data.currentProfileId, vehicle.id, journal?.id);
+
+  useEffect(() => {
+    if (journal) return;
+    const timer = window.setTimeout(() => {
+      const stored = loadQuickEventLocalDraft(localDraftKey);
+      if (stored && (stored.value.note.trim() || stored.value.hasPhoto || stored.value.visibility !== "private")) {
+        setPendingDraft(stored);
+      }
+      setDraftReady(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [journal, localDraftKey]);
+
+  useEffect(() => {
+    if (journal || !draftReady || (!note.trim() && !image && visibility === "private")) return;
+    const timer = window.setTimeout(() => {
+      setDraftStatus(
+        saveLocalDraft(localDraftKey, {
+          eventType,
+          ...occurrence,
+          note,
+          visibility,
+          hasPhoto: Boolean(image) || omittedMediaCount > 0,
+        })
+          ? "saved"
+          : "error",
+      );
+    }, 600);
+    return () => window.clearTimeout(timer);
+  }, [draftReady, eventType, image, journal, localDraftKey, note, occurrence, omittedMediaCount, visibility]);
+
+  function restoreDraft() {
+    const stored = pendingDraft;
+    if (!stored) return;
+    setEventType(stored.value.eventType as JournalEventType);
+    setOccurrence({
+      occurredOn: stored.value.occurredOn,
+      occurredYear: stored.value.occurredYear,
+      occurredMonth: stored.value.occurredMonth,
+      occurredPrecision: stored.value.occurredPrecision as OccurrenceDraft["occurredPrecision"],
+      occurredPeriodNote: stored.value.occurredPeriodNote,
+    });
+    setNote(stored.value.note);
+    setVisibility(stored.value.visibility as JournalVisibility);
+    setOmittedMediaCount(stored.value.hasPhoto ? 1 : 0);
+    setPendingDraft(null);
+    setDraftStatus("restored");
+  }
+
+  function startNewDraft() {
+    clearLocalDraft(localDraftKey);
+    setPendingDraft(null);
+    setEventType("photo");
+    setOccurrence({ occurredOn: localDateInputValue(), occurredPrecision: "day" });
+    setNote("");
+    setVisibility("private");
+    setOmittedMediaCount(0);
+    setDraftStatus("idle");
+  }
 
   async function selectPhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -106,6 +179,7 @@ export function QuickEventForm({
     setError("");
     try {
       setImage(await preparePrivateAlphaImage(file, { maxDimension: 1400, maxOutputBytes: 460 * 1024 }));
+      setOmittedMediaCount(0);
     } catch (error) {
       setError(imagePreparationMessageKey(error));
     } finally {
@@ -209,10 +283,15 @@ export function QuickEventForm({
       slowSaveTimer = window.setTimeout(() => {
         setSaveTakingLong(true);
       }, 8000);
-      if (journal) await updateJournal(journal.id, draft);
-      else await addJournal(draft);
+      const savedJournal = journal ? await updateJournal(journal.id, draft) : await addJournal(draft);
       window.clearTimeout(slowSaveTimer);
-      router.push(journal ? `/journal/${journal.id}?updated=1` : `/garage?moment=added&vehicle=${encodeURIComponent(vehicle.id)}`);
+      clearLocalDraft(localDraftKey);
+      if (journal) {
+        router.push(`/journal/${journal.id}?updated=1`);
+      } else {
+        setSaving(false);
+        setCompletion(savedJournal);
+      }
     } catch {
       if (slowSaveTimer !== undefined) window.clearTimeout(slowSaveTimer);
       setSaveTakingLong(false);
@@ -225,10 +304,41 @@ export function QuickEventForm({
     ? existingAttachment.assetPath
     : undefined;
 
+  if (completion) {
+    return <JournalCompletion journal={completion} vehicle={vehicle} locale={locale} mode="quick" />;
+  }
+
   return (
     <div className="page-stack narrow-page quick-event-page">
       <header className="page-header"><div><span className="eyebrow">{editing ? "EDIT A MOMENT" : "ADD A MOMENT"}</span><h1>{editing ? (locale === "ja" ? "短い記録を編集" : "Edit quick record") : translate(locale, "momentWithVehicle", { vehicle: vehicleModel })}</h1><p>{locale === "ja" ? "写真と一言で残す、短い愛車記録です。日付や内容はあとから直せます。" : "A quick vehicle record with a photo and a short note. You can edit it later."}</p></div></header>
       <form className="quick-event-form" onSubmit={submit} aria-busy={saving || preparing}>
+        {pendingDraft && (
+          <div className="local-draft-status is-restored" role="status">
+            <span>
+              <strong>{locale === "ja" ? "書きかけの記録があります" : "You have an unfinished record"}</strong>
+              <br />
+              {locale === "ja" ? "前回入力していた内容を復元できます。" : "You can restore what you entered last time."}
+            </span>
+            <span className="local-draft-actions">
+              <button type="button" onClick={restoreDraft}>{locale === "ja" ? "下書きを復元" : "Restore draft"}</button>
+              <button type="button" onClick={() => { clearLocalDraft(localDraftKey); setPendingDraft(null); }}>{locale === "ja" ? "下書きを削除" : "Delete draft"}</button>
+              <button type="button" onClick={startNewDraft}>{locale === "ja" ? "新しく書く" : "Start new"}</button>
+            </span>
+          </div>
+        )}
+        {draftStatus !== "idle" && (
+          <div className={`local-draft-status is-${draftStatus}`} role={draftStatus === "error" ? "alert" : "status"}>
+            <span>
+              {draftStatus === "restored"
+                ? locale === "ja" ? "下書きを復元しました。" : "Draft restored."
+                : draftStatus === "saved"
+                  ? locale === "ja" ? "下書きを端末内へ保存しました。" : "Draft saved on this device."
+                  : locale === "ja" ? "下書きを保存できません。投稿フォームはそのまま使えます。" : "The draft could not be saved. You can still post."}
+              {omittedMediaCount > 0 && (locale === "ja" ? " 未送信の写真は再度選択してください。" : " Re-select the unsent photo before posting.")}
+            </span>
+            <button type="button" onClick={startNewDraft}>{locale === "ja" ? "下書きを破棄" : "Discard draft"}</button>
+          </div>
+        )}
         <section className="quick-event-photo">
           {image ? <Image src={image.dataUrl} alt="" fill sizes="(max-width: 760px) 100vw, 680px" unoptimized /> : existingImageSource ? <Image src={existingImageSource} alt={existingAttachment?.altText ?? ""} fill sizes="(max-width: 760px) 100vw, 680px" unoptimized /> : <div><Camera size={38} /><strong>{translate(locale, "photoOptional")}</strong><span>{translate(locale, "addTodaysPhoto")}</span></div>}
         </section>

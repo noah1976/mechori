@@ -134,5 +134,5 @@ test("keeps journal text but omits local media from a restorable draft", () => {
   assert.equal(result.omittedMediaCount, 1);
   assert.equal(result.draft.media.length, 0);
   assert.deepEqual(result.draft.contentBlocks, journalDraft.contentBlocks);
-  assert.equal(result.draft.visibility, "private");
+  assert.equal(result.draft.visibility, "public");
 });

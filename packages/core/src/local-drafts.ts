@@ -64,7 +64,7 @@ export function createRestorableJournalDraft(draft: JournalDraft): RestorableJou
       ...draft,
       media: [],
       contentBlocks: textBlocks.map((block) => ({ ...block })),
-      visibility: draft.media.length > 0 ? "private" : draft.visibility,
+      visibility: draft.visibility,
     },
     omittedMediaCount: draft.media.length,
   };
