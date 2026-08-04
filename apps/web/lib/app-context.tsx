@@ -194,6 +194,49 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
+    async function hydrateAlphaSocialContent(profileId: string): Promise<void> {
+      const [profileFollows, loadedSharedContent, reactions, mediaSharingAvailable] =
+        await Promise.all([
+          loadMyAlphaUserFollows(profileId).catch(() => null),
+          loadAlphaSharedJournals().catch(() => null),
+          loadAlphaJournalReactions().catch(() => []),
+          alphaSharedJournalMediaAvailable().catch(() => false),
+        ]);
+      if (!active) return;
+
+      if (profileFollows) {
+        setData((current) => ({
+          ...current,
+          follows: [
+            ...current.follows.filter((follow) => follow.targetType !== "profile"),
+            ...profileFollows,
+          ],
+        }));
+      }
+      if (loadedSharedContent) {
+        setAlphaSharedContent(loadedSharedContent);
+        setAlphaJournalSharingAvailable(true);
+        const authorIds = [...new Set(loadedSharedContent.map((item) => item.author.id))];
+        if (authorIds.length > 0) {
+          void loadAlphaPublicProfileImages(authorIds)
+            .then((images) => {
+              if (!active) return;
+              setAlphaSharedContent((current) => current.map((item) => ({
+                ...item,
+                author: { ...item.author, profileImagePath: images.get(item.author.id) },
+              })));
+            })
+            .catch(() => undefined);
+        }
+      } else {
+        setAlphaJournalSharingAvailable(false);
+      }
+      setAlphaJournalReactions(
+        new Map(reactions.map((reaction) => [reaction.journalId, reaction])),
+      );
+      setAlphaJournalMediaSharingAvailable(mediaSharingAvailable);
+    }
+
     async function hydrate() {
       const storedLocale = readStorageValue(localeKey) ?? readStorageValue(legacyLocaleKey);
       try {
@@ -201,24 +244,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
           ? await loadAlphaAuthSession()
           : readStoredAuthSession();
         let storedData: AppData | null;
-        let sharedContent: AlphaSharedJournal[] = [];
         if (isRemoteAlpha && isSignedIn(storedAuthSession)) {
           const [
             loadedWorkspace,
             identity,
-            profileFollows,
-            loadedSharedContent,
-            reactions,
-            mediaSharingAvailable,
-            publicProfileImages,
           ] = await Promise.all([
             loadAlphaWorkspace(storedAuthSession.profileId),
             loadMyAlphaProfileIdentity().catch(() => null),
-            loadMyAlphaUserFollows(storedAuthSession.profileId).catch(() => null),
-            loadAlphaSharedJournals().catch(() => null),
-            loadAlphaJournalReactions().catch(() => []),
-            alphaSharedJournalMediaAvailable().catch(() => false),
-            loadAlphaPublicProfileImages().catch(() => new Map<string, string>()),
           ]);
           storedData = loadedWorkspace;
           if (identity) {
@@ -241,42 +273,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
               );
             }
           }
-          if (profileFollows) {
-            storedData = {
-              ...storedData,
-              follows: [
-                ...storedData.follows.filter(
-                  (follow) => follow.targetType !== "profile",
-                ),
-                ...profileFollows,
-              ],
-            };
-          }
-          if (loadedSharedContent) {
-            sharedContent = loadedSharedContent.map((item) => ({
-              ...item,
-              author: {
-                ...item.author,
-                profileImagePath: publicProfileImages.get(item.author.id),
-              },
-            }));
-            if (active) setAlphaJournalSharingAvailable(true);
-          } else if (active) {
-            setAlphaJournalSharingAvailable(false);
-          }
-          if (active) {
-            setAlphaJournalReactions(
-              new Map(reactions.map((reaction) => [reaction.journalId, reaction])),
-            );
-            setAlphaJournalMediaSharingAvailable(mediaSharingAvailable);
-          }
         } else {
           storedData = isRemoteAlpha ? null : await dataProvider.load();
         }
 
         if (!active) return;
         if (storedData) setData(storedData);
-        setAlphaSharedContent(sharedContent);
         setAuthSession(storedAuthSession);
         if (isSupportedUiLocale(storedLocale)) {
           setLocaleState(storedLocale);
@@ -286,6 +288,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           } catch {
             setPersistenceError(true);
           }
+        }
+        if (isRemoteAlpha && isSignedIn(storedAuthSession)) {
+          void hydrateAlphaSocialContent(storedAuthSession.profileId);
         }
       } catch {
         if (!active) return;
