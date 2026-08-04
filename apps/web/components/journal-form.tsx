@@ -44,6 +44,7 @@ import { useApp } from "@/lib/app-context";
 import { JournalMedia } from "@/components/journal-media";
 import { OccurrenceDateFields } from "@/components/occurrence-date-fields";
 import { localDateInputValue } from "@/lib/date-input";
+import { findJournalPrompt } from "@/lib/journal-prompts";
 import { journalSaveErrorMessage } from "@/lib/journal-save-error";
 import {
   imagePreparationMessageKey,
@@ -118,9 +119,11 @@ function hasMeaningfulJournalDraft(draft: JournalDraft): boolean {
 export function JournalForm({
   journal,
   vehicleId,
+  promptId,
 }: {
   journal?: GarageJournalPost;
   vehicleId?: string;
+  promptId?: string;
 }) {
   const {
     data,
@@ -133,6 +136,7 @@ export function JournalForm({
   } = useApp();
   const router = useRouter();
   const ja = locale === "ja";
+  const selectedPrompt = findJournalPrompt(promptId);
   const vehicle = journal?.vehicleId
     ? data.vehicles.find((item) => item.id === journal.vehicleId)
     : data.vehicles.find(
@@ -538,6 +542,12 @@ export function JournalForm({
             {ja ? "整備記録だけ残す" : "Maintenance record only"}
           </Link>
         </header>
+        {selectedPrompt && (
+          <aside className="journal-prompt-hint" aria-label={selectedPrompt.label}>
+            <strong>{selectedPrompt.label}</strong>
+            <ul>{selectedPrompt.hint.map((item) => <li key={item}>{item}</li>)}</ul>
+          </aside>
+        )}
         <JournalDraftStatus
           status={draftStatus}
           omittedMediaCount={omittedMediaCount}

@@ -21,6 +21,7 @@ import { JournalMedia } from "@/components/journal-media";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { ProfileSafetyMenu } from "@/components/profile-safety-menu";
 import { useApp } from "@/lib/app-context";
+import { publicProfileHref } from "@/lib/public-profile-url";
 
 export function JournalCard({
   journal,
@@ -74,6 +75,12 @@ export function JournalCard({
   const isOwnJournal =
     isRemoteAlpha &&
     displayJournal.authorProfileId === data.currentProfileId;
+  const authorHref = author && authorLinkEnabled ? publicProfileHref(author) : undefined;
+  const vehicleHref = displayJournal.vehicleId
+    ? `/garage/${encodeURIComponent(displayJournal.vehicleId)}`
+    : displayJournal.vehicleTargetId
+      ? `/v/${encodeURIComponent(displayJournal.vehicleTargetId)}`
+      : undefined;
   return (
     <article className="journal-card">
       <Link
@@ -82,17 +89,30 @@ export function JournalCard({
         aria-label={ja ? `${display.title}の詳細を読む` : `Read ${display.title}`}
       />
       <div className="journal-card-meta">
-        <ProfileAvatar
-          displayName={author?.displayName ?? "M"}
-          imagePath={author?.profileImagePath}
-          className="journal-avatar"
-        />
+        {authorHref ? (
+          <Link href={authorHref} className="journal-author-link" aria-label={ja ? `${author?.displayName}のガレージ` : `${author?.displayName}'s garage`}>
+            <ProfileAvatar
+              displayName={author?.displayName ?? "M"}
+              imagePath={author?.profileImagePath}
+              className="journal-avatar"
+            />
+          </Link>
+        ) : (
+          <ProfileAvatar
+            displayName={author?.displayName ?? "M"}
+            imagePath={author?.profileImagePath}
+            className="journal-avatar"
+          />
+        )}
         <div>
           <strong>
-            {author && authorLinkEnabled ? (
-              <Link href={`/profile/${author.id}`}>{author.displayName}</Link>
-            ) : author ? author.displayName : ja ? "不明な投稿者" : "Unknown author"} / {journal.vehicleLabel}
+            {authorHref ? (
+              <Link href={authorHref}>{author?.displayName}</Link>
+            ) : author ? author.displayName : ja ? "不明な投稿者" : "Unknown author"}
           </strong>
+          <small>
+            {vehicleHref ? <Link href={vehicleHref} className="journal-vehicle-link">{journal.vehicleLabel}</Link> : journal.vehicleLabel}
+          </small>
           <small>
             {journalOccurrenceLabel(journal, locale)}
           </small>
@@ -112,7 +132,7 @@ export function JournalCard({
           )}
         </div>
       </div>
-      <JournalMedia attachments={visibleMedia} locale={locale} compact priority={mediaPriority} />
+      <JournalMedia attachments={visibleMedia} locale={locale} compact priority={mediaPriority} vehicleHref={vehicleHref} />
       <h3>{display.title}</h3>
       <p>{display.body}</p>
       {!display.translated && display.sourceLanguage !== locale && (

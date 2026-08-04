@@ -32,12 +32,13 @@ export default function ProfilePage() {
     toggleMuteProfile,
   } = useApp();
   const ja = locale === "ja";
-  const profile = data.profiles.find((item) => item.id === id);
-  const ownProfile = signedIn && id === data.currentProfileId;
-  const canView = profile && (ownProfile || !signedIn || !isProfileBlocked(data, id));
+  const profile = data.profiles.find((item) => item.id === id || item.publicUsername?.toLowerCase() === id.toLowerCase());
+  const profileId = profile?.id ?? id;
+  const ownProfile = signedIn && profileId === data.currentProfileId;
+  const canView = profile && (ownProfile || !signedIn || !isProfileBlocked(data, profileId));
 
   if (!profile && signedIn && isRemoteAlpha) {
-    return <RemoteOwnerProfile publicProfileId={id} />;
+    return <RemoteOwnerProfile publicProfileKey={id} />;
   }
 
   if (!profile || !canView) {

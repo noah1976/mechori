@@ -5,6 +5,7 @@ import { ProfileAvatar } from "@/components/profile-avatar";
 import { useApp } from "@/lib/app-context";
 import {
   loadAlphaPublicOwner,
+  searchAlphaPublicOwners,
   type AlphaPublicOwner,
 } from "@/lib/alpha-public-owners";
 import {
@@ -29,9 +30,9 @@ import { useEffect, useMemo, useState } from "react";
 type LoadState = "loading" | "ready" | "unavailable";
 
 export function RemoteOwnerProfile({
-  publicProfileId,
+  publicProfileKey,
 }: {
-  publicProfileId: string;
+  publicProfileKey: string;
 }) {
   const {
     data,
@@ -43,14 +44,38 @@ export function RemoteOwnerProfile({
   } = useApp();
   const [owner, setOwner] = useState<AlphaPublicOwner | null>(null);
   const [state, setState] = useState<LoadState>("loading");
+  const [resolvedProfileId, setResolvedProfileId] = useState<string | null>(null);
+  const [resolvedKey, setResolvedKey] = useState<string | null>(null);
   const ja = locale === "ja";
-  const blocked = isProfileBlocked(data, publicProfileId);
-  const profileFollowed = isFollowing(data, "profile", publicProfileId);
+  const keyIsUuid = /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(publicProfileKey);
+  const resolutionReady = keyIsUuid || resolvedKey === publicProfileKey;
+  const activeProfileId = resolutionReady ? (keyIsUuid ? publicProfileKey : resolvedProfileId) : null;
+  const blocked = activeProfileId ? isProfileBlocked(data, activeProfileId) : false;
+  const profileFollowed = activeProfileId ? isFollowing(data, "profile", activeProfileId) : false;
 
   useEffect(() => {
     let active = true;
-    if (blocked) return;
-    void loadAlphaPublicOwner(publicProfileId)
+    if (keyIsUuid) return () => { active = false; };
+    void searchAlphaPublicOwners(publicProfileKey)
+      .then((matches) => {
+        if (!active) return;
+        const match = matches.find((item) => item.publicUsername?.toLowerCase() === publicProfileKey.toLowerCase());
+        if (match) {
+          setResolvedProfileId(match.id);
+          setResolvedKey(publicProfileKey);
+        }
+        else setState("unavailable");
+      })
+      .catch(() => {
+        if (active) setState("unavailable");
+      });
+    return () => { active = false; };
+  }, [keyIsUuid, publicProfileKey]);
+
+  useEffect(() => {
+    let active = true;
+    if (!activeProfileId || blocked) return;
+    void loadAlphaPublicOwner(activeProfileId)
       .then((loadedOwner) => {
         if (!active) return;
         setOwner(loadedOwner);
@@ -62,7 +87,7 @@ export function RemoteOwnerProfile({
     return () => {
       active = false;
     };
-  }, [blocked, publicProfileId]);
+  }, [activeProfileId, blocked]);
 
   const vehicleTargetIds = useMemo(
     () => new Set(owner?.vehicles.map((vehicle) => vehicle.targetId) ?? []),
@@ -70,7 +95,7 @@ export function RemoteOwnerProfile({
   );
   const journals = sharedJournals.filter(
     (journal) =>
-      journal.authorProfileId === publicProfileId &&
+      journal.authorProfileId === activeProfileId &&
       Boolean(journal.vehicleTargetId) &&
       vehicleTargetIds.has(journal.vehicleTargetId!),
   );
@@ -96,7 +121,7 @@ export function RemoteOwnerProfile({
     );
   }
 
-  if (state === "loading" || !owner) {
+  if (!resolutionReady || state === "loading" || !owner) {
     return (
       <div className="empty-state" role="status">
         <LoaderCircle className="loading-spinner" size={30} aria-hidden="true" />

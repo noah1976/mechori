@@ -1,6 +1,7 @@
 "use client";
 
 import { JournalForm } from "@/components/journal-form";
+import { JournalPrompts } from "@/components/journal-prompts";
 import { useApp } from "@/lib/app-context";
 import { Camera } from "lucide-react";
 import Link from "next/link";
@@ -15,6 +16,7 @@ function NewJournalContent() {
   const { locale } = useApp();
   const searchParams = useSearchParams();
   const vehicleId = searchParams.get("vehicle") ?? undefined;
+  const promptId = searchParams.get("prompt") ?? undefined;
   const ja = locale === "ja";
   return (
     <div className="page-stack narrow-page">
@@ -35,7 +37,8 @@ function NewJournalContent() {
           </Link>
         )}
       </header>
-      <JournalForm vehicleId={vehicleId} />
+      {!promptId && <JournalPrompts vehicleId={vehicleId} />}
+      <JournalForm vehicleId={vehicleId} promptId={promptId} />
     </div>
   );
 }

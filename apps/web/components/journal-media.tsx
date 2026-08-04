@@ -3,6 +3,7 @@
 import type { JournalMediaAttachment, Locale } from "@mechori/core";
 import { ImageIcon, LoaderCircle, RefreshCw, Video } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   alphaSharedJournalMediaBucket,
@@ -22,11 +23,13 @@ export function JournalMedia({
   locale,
   compact = false,
   priority = false,
+  vehicleHref,
 }: {
   attachments: JournalMediaAttachment[];
   locale: Locale;
   compact?: boolean;
   priority?: boolean;
+  vehicleHref?: string;
 }) {
   if (attachments.length === 0) return null;
   const visibleAttachments = compact ? attachments.slice(0, 1) : attachments;
@@ -38,6 +41,7 @@ export function JournalMedia({
           attachment={attachment}
           locale={locale}
           priority={priority && index === 0}
+          vehicleHref={vehicleHref}
           key={`${attachment.id}:${attachment.source}:${attachment.assetPath ?? attachment.storageKey ?? ""}`}
         />
       ))}
@@ -52,10 +56,12 @@ function JournalMediaItem({
   attachment,
   locale,
   priority,
+  vehicleHref,
 }: {
   attachment: JournalMediaAttachment;
   locale: Locale;
   priority: boolean;
+  vehicleHref?: string;
 }) {
   const [source, setSource] = useState<string | null>(
     attachment.source === "demo_asset" || attachment.source === "alpha_inline"
@@ -149,17 +155,20 @@ function JournalMediaItem({
     );
   }
 
+  const image = attachment.kind === "image" ? (
+    <Image
+      src={source}
+      alt={attachment.altText}
+      fill
+      sizes="(max-width: 760px) 100vw, 820px"
+      unoptimized
+      priority={priority}
+    />
+  ) : null;
   return (
     <figure className="journal-media-item">
-      {attachment.kind === "image" ? (
-        <Image
-          src={source}
-          alt={attachment.altText}
-          fill
-          sizes="(max-width: 760px) 100vw, 820px"
-          unoptimized
-          priority={priority}
-        />
+      {image ? (
+        vehicleHref ? <Link href={vehicleHref} aria-label={locale === "ja" ? "車両プロフィールを開く" : "Open vehicle profile"}>{image}</Link> : image
       ) : (
         <video controls preload="metadata" aria-label={attachment.altText}>
           <source src={source} type={attachment.mimeType} />

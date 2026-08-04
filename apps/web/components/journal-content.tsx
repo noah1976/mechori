@@ -5,10 +5,12 @@ export function JournalContent({
   journal,
   locale,
   contentBlocks = journal.contentBlocks,
+  vehicleHref,
 }: {
   journal: GarageJournalPost;
   locale: Locale;
   contentBlocks?: JournalContentBlock[];
+  vehicleHref?: string;
 }) {
   const firstMediaBlockId = contentBlocks.find(
     (block) =>
@@ -26,6 +28,7 @@ export function JournalContent({
               attachments={[attachment]}
               locale={locale}
               priority={block.id === firstMediaBlockId}
+              vehicleHref={vehicleHref}
               key={block.id}
             />
           );

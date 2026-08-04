@@ -35,6 +35,7 @@ import { JournalContent } from "@/components/journal-content";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { ProfileSafetyMenu } from "@/components/profile-safety-menu";
 import { recordOdometerLabel } from "@/components/record-card";
+import { publicProfileHref } from "@/lib/public-profile-url";
 
 export default function JournalDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -108,6 +109,12 @@ export default function JournalDetailPage() {
   const author = data.profiles.find(
     (profile) => profile.id === journal.authorProfileId,
   ) ?? sharedProfiles.find((profile) => profile.id === journal.authorProfileId);
+  const authorHref = author ? publicProfileHref(author) : undefined;
+  const vehicleHref = journal.vehicleId
+    ? `/garage/${encodeURIComponent(journal.vehicleId)}`
+    : journal.vehicleTargetId
+      ? `/v/${encodeURIComponent(journal.vehicleTargetId)}`
+      : undefined;
   const record = data.records.find((item) => item.id === journal.linkedRecordId);
   const knowledgeClass = classifyJournalForKnowledge(journal);
   const ownJournal = signedIn && journal.authorProfileId === data.currentProfileId;
@@ -168,20 +175,26 @@ export default function JournalDetailPage() {
       <article className="journal-detail">
         <header>
           <div className="journal-author-line">
-            <ProfileAvatar
-              displayName={author?.displayName ?? "M"}
-              imagePath={author?.profileImagePath}
-              className="journal-avatar"
-            />
+            {authorHref ? (
+              <Link href={authorHref} className="journal-author-link" aria-label={ja ? `${author?.displayName}のガレージ` : `${author?.displayName}'s garage`}>
+                <ProfileAvatar
+                  displayName={author?.displayName ?? "M"}
+                  imagePath={author?.profileImagePath}
+                  className="journal-avatar"
+                />
+              </Link>
+            ) : (
+              <ProfileAvatar
+                displayName={author?.displayName ?? "M"}
+                imagePath={author?.profileImagePath}
+                className="journal-avatar"
+              />
+            )}
             <div>
               <strong>
-                {author && (
-                  isSharedPost
-                    ? author.displayName
-                    : <Link href={`/profile/${author.id}`}>{author.displayName}</Link>
-                )}
+                {author && (authorHref ? <Link href={authorHref}>{author.displayName}</Link> : author.displayName)}
               </strong>
-              <small>{journal.vehicleLabel}</small>
+              <small>{vehicleHref ? <Link href={vehicleHref} className="journal-vehicle-link">{journal.vehicleLabel}</Link> : journal.vehicleLabel}</small>
             </div>
             <div className="journal-author-actions">
               {journal.isDemo && <span className="demo-label">DEMO</span>}
@@ -277,7 +290,7 @@ export default function JournalDetailPage() {
           </div>
         )}
 
-        <JournalContent journal={visibleJournal} locale={locale} contentBlocks={displayContentBlocks} />
+        <JournalContent journal={visibleJournal} locale={locale} contentBlocks={displayContentBlocks} vehicleHref={vehicleHref} />
       </article>
 
       {record && (
