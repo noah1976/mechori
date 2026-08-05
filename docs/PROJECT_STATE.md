@@ -2,7 +2,7 @@
 
 - 更新日時: 2026-08-05
 - 対象ブランチ: `codex/remote-alpha-foundation`
-- HEADコミット: `43b926c feat: preserve post drafts and improve completion flow`
+- HEADコミット: `2adc291 feat: trial simplified app navigation`
 - 本番URL: `https://mechori-alpha.netlify.app`
 - 状態文書のルール: 実装、テスト、本番反映、人間QAを別々に判定する。コード、テスト、Git履歴、既存の運用記録を照合し、根拠のない項目は完了にしない。本書を現在の実装状態の正本とする。
 
