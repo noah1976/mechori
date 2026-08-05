@@ -1,41 +1,52 @@
 "use client";
 
-import { translate, uiLocaleOptions, type TranslationKey } from "@mechori/i18n";
+import { translate, uiLocaleOptions } from "@mechori/i18n";
 import { getPreferredVehicle, type SupportedUiLocale } from "@mechori/core";
 import {
-  BookOpenText,
   Camera,
   CarFront,
   CircleAlert,
+  CircleHelp,
+  FileText,
   House,
   Languages,
   LoaderCircle,
+  LogOut,
   LogIn,
   MessageSquareText,
-  Newspaper,
+  Menu,
+  Bell,
   Plus,
   Search,
   Settings2,
+  ShieldCheck,
+  UserRound,
   UserPlus,
   X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useApp } from "@/lib/app-context";
 import { pushAnalyticsEvent } from "@/lib/analytics";
+import { ProfileAvatar } from "@/components/profile-avatar";
+import { loadAlphaAdminDashboard } from "@/lib/alpha-operations";
+import {
+  appNavigationItems,
+  isActiveNavigation,
+  navigationLabel,
+  screenTitle,
+  shouldShowRecordFab,
+} from "@/lib/navigation";
 
-const navItems: Array<{
-  href: string;
-  label: TranslationKey;
-  icon: typeof House;
-}> = [
-  { href: "/", label: "home", icon: House },
-  { href: "/feed", label: "feed", icon: Newspaper },
-  { href: "/garage", label: "garage", icon: CarFront },
-  { href: "/records", label: "records", icon: BookOpenText },
-  { href: "/search", label: "search", icon: Search },
-];
+const menuLinks = [
+  { href: "/", label: "ホーム", icon: House },
+  { href: "/search", label: "探す", icon: Search },
+  { href: "/notifications", label: "通知", icon: Bell },
+  { href: "/garage", label: "ガレージ", icon: CarFront },
+  { href: "/connections", label: "つながり", icon: UserRound },
+] as const;
+
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -51,18 +62,59 @@ export function AppShell({ children }: { children: ReactNode }) {
     clearPersistenceError,
     contentPolicyAccepted,
     acceptContentPolicy,
+    signOut,
   } = useApp();
   const publicPath = isPublicPath(pathname);
   const [acceptingPolicy, setAcceptingPolicy] = useState(false);
   const [policyError, setPolicyError] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [adminVisible, setAdminVisible] = useState(false);
+  const menuCloseRef = useRef<HTMLButtonElement>(null);
   const authenticated = hydrated && signedIn;
+  const showRecordFab = authenticated && shouldShowRecordFab(pathname) && !menuOpen;
   const currentProfile = data.profiles.find((profile) => profile.id === data.currentProfileId);
   const preferredVehicle = getPreferredVehicle(
     data.vehicles.filter((vehicle) => vehicle.ownerProfileId === data.currentProfileId),
   );
   const visibleNavItems = authenticated
-    ? navItems
-    : navItems.filter((item) => item.href === "/" || item.href === "/search");
+    ? appNavigationItems
+    : appNavigationItems.filter((item) => item.href === "/" || item.href === "/search");
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    menuCloseRef.current?.focus();
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setMenuOpen(false);
+    }
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("keydown", closeOnEscape);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!menuOpen || !authenticated || !isRemoteAlpha) return;
+    let active = true;
+    void loadAlphaAdminDashboard()
+      .then((dashboard) => {
+        if (active) setAdminVisible(dashboard?.isAdmin === true);
+      })
+      .catch(() => {
+        if (active) setAdminVisible(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [authenticated, isRemoteAlpha, menuOpen]);
+
+  async function handleSignOut() {
+    setMenuOpen(false);
+    await signOut();
+    router.replace("/auth/signed-out");
+  }
 
   useEffect(() => {
     if (hydrated && !signedIn && !publicPath) {
@@ -142,12 +194,12 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Link>
         <nav>
           {visibleNavItems.map((item) => {
-            const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+            const active = isActiveNavigation(pathname, item.href);
             const Icon = item.icon;
             return (
               <Link key={item.href} href={item.href} className={active ? "active" : ""}>
                 <Icon size={20} aria-hidden="true" />
-                <span>{translate(locale, item.label)}</span>
+                <span>{navigationLabel(item.label, locale)}</span>
               </Link>
             );
           })}
@@ -163,7 +215,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               ? <Camera size={18} aria-hidden="true" />
               : <Plus size={18} aria-hidden="true" />}
             {preferredVehicle
-              ? locale === "ja" ? "さっと記録" : "Quick record"
+              ? locale === "ja" ? "記録する" : "Record"
               : locale === "ja" ? "愛車を登録" : "Add vehicle"}
           </Link>
         ) : (
@@ -176,37 +228,21 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="content-column">
         <header className="top-bar">
-          <Link href="/" className="mobile-brand">MECHORI</Link>
+          {authenticated ? (
+            <button
+              type="button"
+              className="menu-trigger"
+              aria-label={locale === "ja" ? "メニューを開く" : "Open menu"}
+              aria-expanded={menuOpen}
+              aria-controls="app-menu-drawer"
+              onClick={() => setMenuOpen(true)}
+            >
+              <Menu size={22} aria-hidden="true" />
+            </button>
+          ) : <Link href="/" className="mobile-brand">MECHORI</Link>}
+          <strong className="top-bar-title">{authenticated ? screenTitle(pathname, locale) : ""}</strong>
           <div className="top-bar-actions">
-            <label className="locale-select">
-              <Languages size={18} aria-hidden="true" />
-              <span className="sr-only">{translate(locale, "displayLanguage")}</span>
-              <select
-                value={locale}
-                onChange={(event) => setLocale(event.target.value as SupportedUiLocale)}
-                aria-label={translate(locale, "displayLanguage")}
-              >
-                {uiLocaleOptions.map((option) => (
-                  <option value={option.value} key={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </label>
-            {authenticated ? (
-              <>
-                <Link href="/invite" className="icon-text-button" aria-label={locale === "ja" ? "友人を招待" : "Invite a friend"} title={locale === "ja" ? "友人を招待" : "Invite a friend"}>
-                  <UserPlus size={18} aria-hidden="true" />
-                  <span className="top-bar-action-label">{locale === "ja" ? "招待" : "Invite"}</span>
-                </Link>
-                <Link href={`/feedback?from=${encodeURIComponent(pathname)}`} className="icon-text-button" aria-label={translate(locale, "feedback")} title={translate(locale, "feedback")}>
-                  <MessageSquareText size={18} aria-hidden="true" />
-                  <span className="top-bar-action-label">{translate(locale, "feedback")}</span>
-                </Link>
-                <Link href="/settings/profile" className="icon-text-button" aria-label={locale === "ja" ? "プロフィール設定" : "Profile settings"} title={locale === "ja" ? "プロフィール設定" : "Profile settings"}>
-                  <Settings2 size={18} aria-hidden="true" />
-                  <span className="top-bar-action-label">{locale === "ja" ? "設定" : "Settings"}</span>
-                </Link>
-              </>
-            ) : pathname !== "/auth" ? (
+            {!authenticated && pathname !== "/auth" ? (
               <Link href="/auth" className="icon-text-button" aria-label={translate(locale, "signIn")} title={translate(locale, "signIn")}>
                 <LogIn size={18} aria-hidden="true" />
                 <span className="top-bar-action-label">{translate(locale, "signIn")}</span>
@@ -290,7 +326,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           </section>
         )}
-        <main>
+        <main className={showRecordFab ? "has-record-fab" : undefined}>
           {hydrated && (signedIn || publicPath) ? children : (
             <div className="app-loading" role="status" aria-live="polite">
               <LoaderCircle className="spin" size={24} aria-hidden="true" />
@@ -316,12 +352,12 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <nav className={authenticated ? "bottom-nav" : "bottom-nav signed-out"} aria-label="Mobile navigation">
         {visibleNavItems.map((item) => {
-          const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+          const active = isActiveNavigation(pathname, item.href);
           const Icon = item.icon;
           return (
-            <Link key={item.href} href={item.href} className={active ? "active" : ""}>
+            <Link key={item.href} href={item.href} className={active ? "active" : ""} aria-current={active ? "page" : undefined}>
               <Icon size={20} aria-hidden="true" />
-              <span>{translate(locale, item.label)}</span>
+              <span>{navigationLabel(item.label, locale)}</span>
             </Link>
           );
         })}
@@ -332,6 +368,57 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Link>
         )}
       </nav>
+
+      {showRecordFab && (
+        <Link
+          href={preferredVehicle ? `/garage/${encodeURIComponent(preferredVehicle.id)}/event/new` : "/journal/new"}
+          className="record-fab"
+          aria-label={locale === "ja" ? "記録する" : "Create a record"}
+        >
+          <Plus size={19} aria-hidden="true" />
+          <span>{locale === "ja" ? "記録する" : "Record"}</span>
+        </Link>
+      )}
+
+      {authenticated && menuOpen && (
+        <div className="app-menu-layer" role="presentation">
+          <button type="button" className="app-menu-backdrop" aria-label={locale === "ja" ? "メニューを閉じる" : "Close menu"} onClick={() => setMenuOpen(false)} />
+          <aside id="app-menu-drawer" className="app-menu-drawer" aria-label={locale === "ja" ? "メニュー" : "Menu"}>
+            <div className="app-menu-header">
+              <Link href="/garage" className="app-menu-profile" onClick={() => setMenuOpen(false)}>
+                <ProfileAvatar displayName={currentProfile?.displayName ?? "MECHORI"} imagePath={currentProfile?.profileImagePath} />
+                <span>
+                  <strong>{currentProfile?.displayName ?? "MECHORI"}</strong>
+                  {currentProfile?.publicUsername && <small>@{currentProfile.publicUsername}</small>}
+                </span>
+              </Link>
+              <button ref={menuCloseRef} type="button" className="icon-action" aria-label={locale === "ja" ? "メニューを閉じる" : "Close menu"} onClick={() => setMenuOpen(false)}>
+                <X size={21} aria-hidden="true" />
+              </button>
+            </div>
+            <nav className="app-menu-links" aria-label={locale === "ja" ? "主要導線" : "Main links"}>
+              {menuLinks.map(({ href, label, icon: Icon }) => (
+                <Link key={href} href={href} className={isActiveNavigation(pathname, href) ? "active" : ""} aria-current={isActiveNavigation(pathname, href) ? "page" : undefined} onClick={() => setMenuOpen(false)}>
+                  <Icon size={19} aria-hidden="true" />
+                  <span>{locale === "ja" ? label : href === "/connections" ? "Connections" : navigationLabel(appNavigationItems.find((item) => item.href === href)?.label ?? "home", locale)}</span>
+                </Link>
+              ))}
+            </nav>
+            <div className="app-menu-links app-menu-secondary">
+              <Link href="/settings/profile" onClick={() => setMenuOpen(false)}><Settings2 size={18} aria-hidden="true" /><span>{locale === "ja" ? "プロフィールを編集" : "Edit profile"}</span></Link>
+              <Link href="/invite" onClick={() => setMenuOpen(false)}><UserPlus size={18} aria-hidden="true" /><span>{locale === "ja" ? "友達を招待" : "Invite friends"}</span></Link>
+              <label className="app-menu-locale"><Languages size={18} aria-hidden="true" /><span>{locale === "ja" ? "言語" : "Language"}</span><select value={locale} onChange={(event) => setLocale(event.target.value as SupportedUiLocale)} aria-label={locale === "ja" ? "言語" : "Language"}>{uiLocaleOptions.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}</select></label>
+              <Link href={`/feedback?from=${encodeURIComponent(pathname)}`} onClick={() => setMenuOpen(false)}><MessageSquareText size={18} aria-hidden="true" /><span>{translate(locale, "feedback")}</span></Link>
+              <Link href="/help" onClick={() => setMenuOpen(false)}><CircleHelp size={18} aria-hidden="true" /><span>{locale === "ja" ? "ヘルプ" : "Help"}</span></Link>
+              <Link href="/settings/profile" onClick={() => setMenuOpen(false)}><Settings2 size={18} aria-hidden="true" /><span>{locale === "ja" ? "設定" : "Settings"}</span></Link>
+              <Link href="/terms" onClick={() => setMenuOpen(false)}><FileText size={18} aria-hidden="true" /><span>{locale === "ja" ? "利用規約" : "Terms"}</span></Link>
+              <Link href="/privacy" onClick={() => setMenuOpen(false)}><FileText size={18} aria-hidden="true" /><span>{locale === "ja" ? "プライバシーポリシー" : "Privacy policy"}</span></Link>
+              {adminVisible && <Link href="/admin" onClick={() => setMenuOpen(false)}><ShieldCheck size={18} aria-hidden="true" /><span>{locale === "ja" ? "管理画面" : "Admin"}</span></Link>}
+              <button type="button" onClick={() => void handleSignOut()}><LogOut size={18} aria-hidden="true" /><span>{locale === "ja" ? "ログアウト" : "Log out"}</span></button>
+            </div>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }

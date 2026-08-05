@@ -21,7 +21,7 @@
 - **スマートフォン／アクセシビリティ**: 主ボタンは親指で届く位置。更新状態を色だけで伝えず、見出しと件数を使う。
 - **戻る操作**: 下部ナビゲーションの他領域へ戻る。深いリンクではブラウザ戻るで直前へ。
 - **関連する計測イベント**: `home_opened`、`record_entry_opened`、`draft_resume_selected`、`feed_record_opened`。
-- **CURRENTで再利用できるもの**: ホーム、フィード、Garage要約、下書き、既存の作成導線。
+- **CURRENTで再利用できるもの**: ホーム、フィード、Garage要約、下書き、既存の作成導線。P-074試験実装では4項目ナビとメニューを共通シェルから再利用する。
 - **NEEDS_DECISION**: ホームをフォロー中の記録中心にするか、愛車中心にするか。推奨は愛車要約を先頭、フォロー中の記録を次に置く。
 
 ## 2. マイガレージ
@@ -38,7 +38,7 @@
 - **スマートフォン／アクセシビリティ**: 現在車と過去車を見出しで分け、カード全体を多重リンクにしない。
 - **戻る操作**: 下部ナビでホームへ。車両ページからはGarageへ。
 - **関連する計測イベント**: `garage_opened`、`vehicle_selected`、`vehicle_add_started`、`record_entry_opened`。
-- **CURRENTで再利用できるもの**: `/garage`、現在車・過去車の表示、車両追加、Garage内作成導線。
+- **CURRENTで再利用できるもの**: `/garage`、現在車・過去車の表示、車両追加、Garage内作成導線。記録作成は共通FABから既存ルートへ接続する。
 - **NEEDS_DECISION**: 複数台所有時に「代表の愛車」を固定するか。推奨は最終閲覧車両または明示選択で、勝手に代表を決めない。
 
 ## 3. 他人のガレージ
@@ -142,4 +142,3 @@
 - **関連する計測イベント**: `record_completion_viewed`、`completion_garage_selected`、`completion_record_selected`、`completion_next_record_selected`、`completion_home_selected`。
 - **CURRENTで再利用できるもの**: `journal-completion`、保存成功後の遷移、同一車両での再作成導線。
 - **NEEDS_DECISION**: 完了画面から共有を出すか。推奨は、新しい外部共有を作らず、現在の共有範囲を人間QAで確認するまで出さない。
-
