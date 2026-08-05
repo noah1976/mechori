@@ -1,8 +1,10 @@
 "use client";
 
+/* Signed private Storage URLs are rendered natively instead of through Next's image proxy. */
+/* eslint-disable @next/next/no-img-element */
+
 import { alphaProfileImageBucket } from "@/lib/alpha-profile";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import Image from "next/image";
 import { useEffect, useState } from "react";
 
 const signedUrlCache = new Map<string, { url: string; expiresAt: number }>();
@@ -60,6 +62,9 @@ function ProfileAvatarImage({
           expiresAt: Date.now() + 4 * 60 * 1000,
         });
         setSource(result.data.signedUrl);
+      })
+      .catch(() => {
+        if (active) setFailed(true);
       });
 
     return () => {
@@ -67,15 +72,15 @@ function ProfileAvatarImage({
     };
   }, [imagePath, source]);
 
+  // A native image lets the browser request the refreshed signed URL directly.
   return (
     <span className={className} aria-hidden="true">
       {source && !failed ? (
-        <Image
+        <img
           src={source}
           alt=""
-          fill
-          sizes="64px"
-          unoptimized
+          loading="lazy"
+          decoding="async"
           onError={() => setFailed(true)}
         />
       ) : (

@@ -180,6 +180,8 @@ button { cursor: pointer; }
 
 .eyebrow { color: var(--brand); font-size: 11px; font-weight: 850; letter-spacing: 0.08em; text-transform: uppercase; }
 .page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+.garage-header-owner { min-width: 0; display: flex; align-items: center; gap: 14px; }
+.garage-header-owner > div { min-width: 0; }
 .page-header-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; }
 .page-header h1, .detail-header h1 { margin: 5px 0 8px; font-size: 44px; line-height: 1.08; letter-spacing: 0; }
 .page-header p { max-width: 690px; margin: 0; color: var(--muted); line-height: 1.65; }
@@ -577,6 +579,17 @@ button { cursor: pointer; }
 .date-precision-picker button:first-child { border-left: 0; }
 .date-precision-picker button.is-selected { color: #fff; background: var(--brand); }
 .occurrence-partial-date { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.7fr); gap: 10px; }
+.occurrence-date-fields .field { min-width: 0; }
+.occurrence-date-fields input[type="date"] {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 50px;
+  padding: 0 12px;
+  font-size: 16px;
+  line-height: normal;
+}
 .occurrence-period-note { margin-top: 1px; }
 .occurrence-date-help { color: var(--muted); line-height: 1.5; }
 .occurrence-date-fields.has-error { border-color: var(--danger); }
@@ -921,7 +934,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .journal-card-hit-area:focus-visible { outline: 3px solid rgba(45, 97, 119, 0.35); outline-offset: 3px; }
 .journal-card-meta { position: relative; z-index: 2; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; }
 .journal-avatar { position: relative; width: 36px; height: 36px; display: grid; place-items: center; flex: 0 0 auto; overflow: hidden; color: #fff; background: var(--brand); border-radius: 50%; font-size: 13px; font-weight: 850; }
-.journal-avatar img, .profile-avatar img, .owner-search-avatar img { object-fit: cover; }
+.journal-avatar img, .profile-avatar img, .owner-search-avatar img { width: 100%; height: 100%; display: block; object-fit: cover; }
 .journal-card-meta strong, .journal-card-meta small { display: block; }
 .journal-card-meta strong { font-size: 13px; }
 .journal-card-meta small { margin-top: 3px; color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }

@@ -95,7 +95,7 @@ export function QuickEventForm({
   const [visibility, setVisibility] = useState<JournalVisibility>(
     isRemoteAlpha && journal?.visibility === "followers"
       ? "private"
-      : journal?.visibility ?? "private",
+      : journal?.visibility ?? "public",
   );
   const existingAttachment = journal?.media[0];
   const hasLegacyPrivatePhoto =
@@ -125,7 +125,7 @@ export function QuickEventForm({
   }, [journal, localDraftKey]);
 
   useEffect(() => {
-    if (journal || !draftReady || (!note.trim() && !image && visibility === "private")) return;
+    if (journal || !draftReady || (!note.trim() && !image && omittedMediaCount === 0)) return;
     const timer = window.setTimeout(() => {
       setDraftStatus(
         saveLocalDraft(localDraftKey, {
@@ -166,7 +166,7 @@ export function QuickEventForm({
     setEventType("photo");
     setOccurrence({ occurredOn: localDateInputValue(), occurredPrecision: "day" });
     setNote("");
-    setVisibility("private");
+    setVisibility("public");
     setOmittedMediaCount(0);
     setDraftStatus("idle");
   }
@@ -370,9 +370,13 @@ export function QuickEventForm({
               {locale === "ja" ? "この記録を見る人" : "Who can see this record"}
             </strong>
             <small>
-              {locale === "ja"
-                ? "公開は自分で選んだ記録だけ。初期値は自分だけです。"
-                : "Only records you explicitly choose are shared. The default is private."}
+              {isRemoteAlpha
+                ? locale === "ja"
+                  ? "初期値は『α参加者に公開』です。自分だけの記録として保存することもできます。"
+                  : "The default is shared with alpha participants. You can also save a record for yourself only."
+                : locale === "ja"
+                  ? "初期値は公開です。自分だけの記録として保存することもできます。"
+                  : "The default is public. You can also save a record for yourself only."}
             </small>
           </div>
           <div className={`segmented-control ${isRemoteAlpha ? "has-two-options" : ""}`} role="group" aria-label={locale === "ja" ? "公開範囲" : "Audience"}>

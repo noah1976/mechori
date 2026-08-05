@@ -101,7 +101,7 @@ function createInitialJournalDraft(vehicleId: string, sourceLanguage: "ja" | "en
     displayFields: ["service_date", "odometer", "actions"],
     media: [],
     contentBlocks: [newTextBlock()],
-    visibility: "private",
+    visibility: "public",
     knowledgeExtractionConsent: false,
   };
 }
@@ -112,7 +112,6 @@ function hasMeaningfulJournalDraft(draft: JournalDraft): boolean {
     draft.linkedRecordId ||
     draft.media.length ||
     draft.contentBlocks.some((block) => block.type === "text" && block.text.trim()) ||
-    draft.visibility !== "private" ||
     draft.knowledgeExtractionConsent,
   );
 }
@@ -739,8 +738,8 @@ export function JournalForm({
           <div className="media-privacy-notice">
             <ShieldAlert size={20} aria-hidden="true" />
             <div>
-              <strong>{ja ? "写真は自分の履歴に非公開保存します" : "Photos stay private in your history"}</strong>
-              <p>{ja ? "記録を公開すると、本文と写真は同じ公開範囲になります。" : "When you share the record, its text and photos use the same audience."}</p>
+              <strong>{ja ? "写真は記録の公開範囲に従って保存します" : "Photos use the record audience"}</strong>
+              <p>{ja ? "本文と写真は同じ公開範囲になります。" : "The text and photos use the same audience."}</p>
             </div>
           </div>
         )}
@@ -754,6 +753,17 @@ export function JournalForm({
 
       <section className="journal-settings">
         <div className="section-heading compact"><div><span className="eyebrow">PRIVACY</span><h2>{ja ? "公開範囲" : "Audience"}</h2></div><ShieldCheck size={21} aria-hidden="true" /></div>
+        {!journal && (
+          <p className="settings-help">
+            {isRemoteAlpha
+              ? ja
+                ? "初期値は『α参加者に公開』です。自分だけの記録として保存することもできます。"
+                : "The default is shared with alpha participants. You can also save a record for yourself only."
+              : ja
+                ? "初期値は公開です。自分だけの記録として保存することもできます。"
+                : "The default is public. You can also save a record for yourself only."}
+          </p>
+        )}
         <div className={`segmented-control ${isRemoteAlpha ? "has-two-options" : ""}`} role="group" aria-label={ja ? "公開範囲" : "Audience"}>
           {([
             ["private", ja ? "自分だけ" : "Only me"],

@@ -40,3 +40,13 @@ test("successful new posts clear drafts and show completion actions", () => {
   assert.match(completion, /もう1つ記録を残す/);
   assert.match(completion, /ホームへ戻る/);
 });
+
+test("new records default to the alpha audience while edits keep saved visibility", () => {
+  assert.match(detailed, /visibility: "public"/);
+  assert.match(quick, /journal\?\.visibility \?\? "public"/);
+  assert.match(quick, /setVisibility\("public"\)/);
+  assert.match(detailed, /初期値は『α参加者に公開』です/);
+  assert.match(quick, /初期値は『α参加者に公開』です/);
+  assert.match(detailed, /journal\s*\?\s*journalToDraft\(journal\)/);
+  assert.match(quick, /journal\?\.visibility === "followers"/);
+});

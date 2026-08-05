@@ -2,6 +2,7 @@
 
 import { DemoNotice } from "@/components/demo-notice";
 import { JournalCard } from "@/components/journal-card";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { RecordCard } from "@/components/record-card";
 import { useApp } from "@/lib/app-context";
 import {
@@ -152,7 +153,10 @@ function GarageContent() {
         </div>
       )}
       <header className="page-header">
-        <div><span className="eyebrow">{isPreviousVehicle ? "GARAGE HISTORY" : "MY GARAGE"}</span><h1>{vehicle.year ? `${vehicle.year}${ja ? "年式の" : " "}` : ""}{vehicleLabel}</h1><p>{isPreviousVehicle ? ownershipPeriod : (ja ? `${owner?.displayName ?? "オーナー"}と、この一台の時間。` : `The time shared by ${owner?.displayName ?? "its owner"} and this vehicle.`)}</p></div>
+        <div className="garage-header-owner">
+          <ProfileAvatar displayName={owner?.displayName ?? "MECHORI"} imagePath={owner?.profileImagePath} />
+          <div><span className="eyebrow">{isPreviousVehicle ? "GARAGE HISTORY" : "MY GARAGE"}</span><h1>{vehicle.year ? `${vehicle.year}${ja ? "年式の" : " "}` : ""}{vehicleLabel}</h1><p>{isPreviousVehicle ? ownershipPeriod : (ja ? `${owner?.displayName ?? "オーナー"}と、この一台の時間。` : `The time shared by ${owner?.displayName ?? "its owner"} and this vehicle.`)}</p></div>
+        </div>
         <div className="page-header-actions">
           <Link href="/garage/new" className="secondary-action"><Plus size={17} />{ja ? "愛車を追加" : "Add vehicle"}</Link>
           <Link href="/garage/new?ownership=previously_owned" className="secondary-action"><History size={17} />{ja ? "以前の愛車" : "Previous vehicle"}</Link>
