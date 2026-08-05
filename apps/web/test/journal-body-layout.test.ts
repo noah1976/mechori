@@ -22,10 +22,12 @@ test("body media keeps intrinsic ratio and renders its description after the ima
   assert.doesNotMatch(css, /\.journal-media\.body .*object-fit: (?:cover|contain)/);
 });
 
-test("body media has responsive portrait, square, and landscape bounds without changing compact thumbnails", () => {
-  assert.match(css, /\.journal-media\.body .*body-portrait.*max-width: 540px/);
-  assert.match(css, /\.journal-media\.body .*body-square.*max-width: 720px/);
-  assert.match(css, /\.journal-media\.body .*body-landscape.*max-width: 960px/);
-  assert.match(css, /\.journal-media\.body .*width: 100%/);
+test("body media is full width on mobile and applies aspect bounds only on desktop", () => {
+  assert.match(css, /\.journal-media\.body \.journal-media-item \{ width: 100%; min-width: 0; max-width: none; margin: 0;/);
+  assert.match(css, /\.journal-media\.body \.journal-media-item img, \.journal-media\.body \.journal-media-item video \{ display: block; width: 100%; max-width: 100%; height: auto; margin: 0;/);
+  const desktopBodyMedia = css.slice(css.indexOf("@media (min-width: 768px)"));
+  assert.match(desktopBodyMedia, /body-portrait \{ max-width: 540px/);
+  assert.match(desktopBodyMedia, /body-square \{ max-width: 720px/);
+  assert.match(desktopBodyMedia, /body-landscape \{ max-width: 960px/);
   assert.match(css, /\.journal-media\.compact \.journal-media-item \{ aspect-ratio: 16 \/ 8; \}/);
 });

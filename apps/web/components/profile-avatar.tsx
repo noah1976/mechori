@@ -1,13 +1,11 @@
 "use client";
 
-/* Signed private Storage URLs are rendered natively instead of through Next's image proxy. */
+/* Private profile images are fetched through the authenticated browser client. */
 /* eslint-disable @next/next/no-img-element */
 
 import { alphaProfileImageBucket } from "@/lib/alpha-profile";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
-
-const signedUrlCache = new Map<string, { url: string; expiresAt: number }>();
 
 export function ProfileAvatar({
   displayName,
@@ -40,28 +38,28 @@ function ProfileAvatarImage({
   imagePath: string;
   className: string;
 }) {
-  const [source, setSource] = useState<string | null>(() => cachedUrl(imagePath));
+  const [source, setSource] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let active = true;
-    if (source) return;
+    let objectUrl: string | null = null;
+
+    setSource(null);
+    setFailed(false);
 
     void createSupabaseBrowserClient()
       .storage
       .from(alphaProfileImageBucket)
-      .createSignedUrl(imagePath, 5 * 60)
-      .then((result: { data: { signedUrl: string } | null; error: unknown }) => {
+      .download(imagePath)
+      .then((result: { data: Blob | null; error: unknown }) => {
         if (!active) return;
-        if (result.error || !result.data?.signedUrl) {
+        if (result.error || !result.data) {
           setFailed(true);
           return;
         }
-        signedUrlCache.set(imagePath, {
-          url: result.data.signedUrl,
-          expiresAt: Date.now() + 4 * 60 * 1000,
-        });
-        setSource(result.data.signedUrl);
+        objectUrl = URL.createObjectURL(result.data);
+        setSource(objectUrl);
       })
       .catch(() => {
         if (active) setFailed(true);
@@ -69,10 +67,11 @@ function ProfileAvatarImage({
 
     return () => {
       active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [imagePath, source]);
+  }, [imagePath]);
 
-  // A native image lets the browser request the refreshed signed URL directly.
+  // A native image keeps private Storage blobs out of Next's image proxy.
   return (
     <span className={className} aria-hidden="true">
       {source && !failed ? (
@@ -106,14 +105,4 @@ function ProfileAvatarFallback({
 
 function ProfileAvatarInitial({ displayName }: { displayName: string }) {
   return displayName.slice(0, 1).toLocaleUpperCase();
-}
-
-function cachedUrl(imagePath?: string): string | null {
-  if (!imagePath) return null;
-  const cached = signedUrlCache.get(imagePath);
-  if (!cached || cached.expiresAt <= Date.now()) {
-    signedUrlCache.delete(imagePath);
-    return null;
-  }
-  return cached.url;
 }
