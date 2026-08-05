@@ -1360,6 +1360,15 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .journal-media-item img, .journal-media-item video { width: 100%; height: 100%; display: block; object-fit: cover; }
 .journal-media:not(.compact) .journal-media-item img, .journal-media:not(.compact) .journal-media-item video { object-fit: contain; }
 .journal-media-item figcaption { position: absolute; inset: auto 8px 8px; padding: 5px 7px; color: #fff; background: rgba(20, 23, 22, 0.84); border-radius: 3px; font-size: 10px; }
+.journal-media.body { display: block; width: 100%; margin-block: 0; }
+.journal-media.body .journal-media-item { width: fit-content; max-width: 100%; margin-inline: auto; overflow: visible; aspect-ratio: auto; background: transparent; }
+.journal-media.body .journal-media-item.body-portrait { max-width: 540px; }
+.journal-media.body .journal-media-item.body-square { max-width: 720px; }
+.journal-media.body .journal-media-item.body-landscape { max-width: 960px; }
+.journal-media.body .journal-media-item > a { position: static; display: block; width: auto; height: auto; }
+.journal-media.body .journal-media-item img, .journal-media.body .journal-media-item video { display: block; width: auto; max-width: 100%; height: auto; margin-inline: auto; object-fit: initial; }
+.journal-media.body .journal-media-caption { position: static; display: block; margin-top: 8px; padding: 0; color: var(--muted); background: transparent; border-radius: 0; font-size: 12px; line-height: 1.55; }
+.journal-media.body .journal-media-privacy-caption { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .journal-media.compact { display: block; }
 .journal-media.compact .journal-media-item { aspect-ratio: 16 / 8; }
 .journal-media-count { position: absolute; inset: auto 10px 10px auto; display: grid; place-items: center; min-width: 32px; height: 28px; padding: 0 7px; color: #fff; background: rgba(20, 23, 22, 0.84); border-radius: 4px; font-size: 11px; font-weight: 800; }
@@ -1599,6 +1608,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .journal-detail > .journal-media { margin-inline: -19px; }
   .journal-content > .journal-media { margin-inline: -19px; }
   .journal-media { grid-template-columns: 1fr; }
+  .journal-media.body .journal-media-item, .journal-media.body .journal-media-item.body-portrait, .journal-media.body .journal-media-item.body-square, .journal-media.body .journal-media-item.body-landscape { width: 100%; max-width: none; }
+  .journal-media.body .journal-media-item img, .journal-media.body .journal-media-item video { width: 100%; }
   .journal-detail h1 { font-size: 31px; }
   .report-form, .settings-section { padding: 19px 15px; }
   .profile-image-settings { grid-template-columns: auto minmax(0, 1fr); align-items: start; }

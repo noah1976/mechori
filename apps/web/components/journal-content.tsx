@@ -26,6 +26,7 @@ export function JournalContent({
           return (
             <JournalMedia
               attachments={[attachment]}
+              body
               locale={locale}
               priority={block.id === firstMediaBlockId}
               vehicleHref={vehicleHref}

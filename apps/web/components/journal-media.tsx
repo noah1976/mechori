@@ -22,12 +22,14 @@ export function JournalMedia({
   attachments,
   locale,
   compact = false,
+  body = false,
   priority = false,
   vehicleHref,
 }: {
   attachments: JournalMediaAttachment[];
   locale: Locale;
   compact?: boolean;
+  body?: boolean;
   priority?: boolean;
   vehicleHref?: string;
 }) {
@@ -35,10 +37,11 @@ export function JournalMedia({
   const visibleAttachments = compact ? attachments.slice(0, 1) : attachments;
 
   return (
-    <div className={compact ? "journal-media compact" : "journal-media"}>
+    <div className={compact ? "journal-media compact" : body ? "journal-media body" : "journal-media"}>
       {visibleAttachments.map((attachment, index) => (
         <JournalMediaItem
           attachment={attachment}
+          body={body}
           locale={locale}
           priority={priority && index === 0}
           vehicleHref={vehicleHref}
@@ -54,11 +57,13 @@ export function JournalMedia({
 
 function JournalMediaItem({
   attachment,
+  body,
   locale,
   priority,
   vehicleHref,
 }: {
   attachment: JournalMediaAttachment;
+  body: boolean;
   locale: Locale;
   priority: boolean;
   vehicleHref?: string;
@@ -74,6 +79,7 @@ function JournalMediaItem({
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [failureId, setFailureId] = useState<string | null>(null);
   const [probeCode, setProbeCode] = useState<string | null>(null);
+  const [aspectClass, setAspectClass] = useState<"unknown" | "portrait" | "square" | "landscape">("unknown");
 
   useEffect(() => {
     if (
@@ -155,7 +161,20 @@ function JournalMediaItem({
     );
   }
 
-  const image = attachment.kind === "image" ? (
+  const image = attachment.kind === "image" ? body ? (
+    // Body images need their intrinsic ratio; compact cards intentionally keep their fixed thumbnail layout.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={source}
+      alt={attachment.altText}
+      loading={priority ? "eager" : "lazy"}
+      decoding="async"
+      onLoad={(event) => {
+        const ratio = event.currentTarget.naturalWidth / event.currentTarget.naturalHeight;
+        setAspectClass(ratio < 0.85 ? "portrait" : ratio > 1.35 ? "landscape" : "square");
+      }}
+    />
+  ) : (
     <Image
       src={source}
       alt={attachment.altText}
@@ -166,7 +185,7 @@ function JournalMediaItem({
     />
   ) : null;
   return (
-    <figure className="journal-media-item">
+    <figure className={`journal-media-item${body ? ` body-${aspectClass}` : ""}`}>
       {image ? (
         vehicleHref ? <Link href={vehicleHref} aria-label={locale === "ja" ? "車両プロフィールを開く" : "Open vehicle profile"}>{image}</Link> : image
       ) : (
@@ -174,16 +193,31 @@ function JournalMediaItem({
           <source src={source} type={attachment.mimeType} />
         </video>
       )}
+      {body && attachment.altText.trim() && (
+        <figcaption className="journal-media-caption">{attachment.altText}</figcaption>
+      )}
       {!attachment.isDemo && attachment.source === "local_blob" && (
-        <figcaption>
-          {attachment.privacyState === "public_ready"
-            ? locale === "ja"
-              ? "記録と同じ範囲で公開"
-              : "Shared with the record audience"
-            : locale === "ja"
-              ? "非公開メディア"
-              : "Private media"}
-        </figcaption>
+        body ? (
+          <small className="journal-media-privacy-caption">
+            {attachment.privacyState === "public_ready"
+              ? locale === "ja"
+                ? "記録と同じ範囲で公開"
+                : "Shared with the record audience"
+              : locale === "ja"
+                ? "非公開メディア"
+                : "Private media"}
+          </small>
+        ) : (
+          <figcaption>
+            {attachment.privacyState === "public_ready"
+              ? locale === "ja"
+                ? "記録と同じ範囲で公開"
+                : "Shared with the record audience"
+              : locale === "ja"
+                ? "非公開メディア"
+                : "Private media"}
+          </figcaption>
+        )
       )}
     </figure>
   );
