@@ -5,6 +5,7 @@ import { JournalCard } from "@/components/journal-card";
 import { JournalMedia } from "@/components/journal-media";
 import { RecordCard } from "@/components/record-card";
 import { useApp } from "@/lib/app-context";
+import { journalDetailHref } from "@/lib/journal-detail-route";
 import {
   buildMonthlyOwnerSummary,
   getFollowedSharedFeed,
@@ -201,7 +202,7 @@ export default function HomePage() {
         </div>
 
         {featuredJournal && (
-          <Link href={`/journal/${featuredJournal.id}`} className="home-featured-journal">
+          <Link href={journalDetailHref(featuredJournal.id)} prefetch={false} className="home-featured-journal">
             <JournalMedia attachments={visibleMediaFor(featuredJournal)} locale={locale} compact priority />
             <div className="home-featured-copy">
               <span className="eyebrow">{signedIn ? isRemoteAlpha ? "FROM ALPHA GARAGES" : "FROM YOUR FOLLOWING" : "PUBLIC RECORD"}</span>

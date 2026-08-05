@@ -79,6 +79,7 @@ import {
   publishAlphaSharedJournal,
   withdrawAlphaSharedJournal,
 } from "@/lib/alpha-shared-journals";
+import type { SharedJournalLoadState } from "@/lib/journal-detail-route";
 import { getMechoriRuntime } from "@/lib/runtime-config";
 import { clearAllLocalDrafts } from "@/lib/local-draft-store";
 import { pushAnalyticsEvent } from "@/lib/analytics";
@@ -104,6 +105,7 @@ interface AppContextValue {
   hydrated: boolean;
   isRemoteAlpha: boolean;
   alphaJournalSharingAvailable: boolean;
+  sharedJournalLoadState: SharedJournalLoadState;
   alphaJournalMediaSharingAvailable: boolean;
   sharedJournals: GarageJournalPost[];
   sharedProfiles: SocialProfile[];
@@ -154,6 +156,7 @@ interface AppContextValue {
   acceptContentPolicy(): Promise<void>;
   journalReaction(journalId: string): { appreciationCount: number; likedByMe: boolean };
   toggleJournalLike(journalId: string): Promise<void>;
+  refreshSharedJournals(): Promise<void>;
   recordEngagement(name: EngagementEventName): void;
   resetDemo(): Promise<void>;
 }
@@ -181,6 +184,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [alphaJournalSharingAvailable, setAlphaJournalSharingAvailable] = useState(
     !isRemoteAlpha,
   );
+  const [sharedJournalLoadState, setSharedJournalLoadState] =
+    useState<SharedJournalLoadState>(isRemoteAlpha ? "idle" : "ready");
   const [
     alphaJournalMediaSharingAvailable,
     setAlphaJournalMediaSharingAvailable,
@@ -216,6 +221,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (loadedSharedContent) {
         setAlphaSharedContent(loadedSharedContent);
         setAlphaJournalSharingAvailable(true);
+        setSharedJournalLoadState("ready");
         const authorIds = [...new Set(loadedSharedContent.map((item) => item.author.id))];
         if (authorIds.length > 0) {
           void loadAlphaPublicProfileImages(authorIds)
@@ -230,6 +236,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       } else {
         setAlphaJournalSharingAvailable(false);
+        setSharedJournalLoadState("error");
       }
       setAlphaJournalReactions(
         new Map(reactions.map((reaction) => [reaction.journalId, reaction])),
@@ -290,6 +297,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
         }
         if (isRemoteAlpha && isSignedIn(storedAuthSession)) {
+          setSharedJournalLoadState("loading");
           void hydrateAlphaSocialContent(storedAuthSession.profileId);
         }
       } catch {
@@ -298,6 +306,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setData(cloneDemoData());
         setAlphaSharedContent([]);
         setAlphaJournalReactions(new Map());
+        setSharedJournalLoadState(isRemoteAlpha ? "idle" : "ready");
         setContentPolicyAccepted(!isRemoteAlpha);
         setPersistenceError(true);
       } finally {
@@ -382,6 +391,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const refreshAlphaSharedContent = useCallback(async () => {
     if (!isRemoteAlpha || !isSignedIn(authSession)) return;
+    setSharedJournalLoadState("loading");
     try {
       const [sharedContent, reactions] = await Promise.all([
         loadAlphaSharedJournals(),
@@ -392,8 +402,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         new Map(reactions.map((reaction) => [reaction.journalId, reaction])),
       );
       setAlphaJournalSharingAvailable(true);
+      setSharedJournalLoadState("ready");
     } catch {
       setAlphaJournalSharingAvailable(false);
+      setSharedJournalLoadState("error");
     }
   }, [authSession]);
 
@@ -883,6 +895,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       hydrated,
       isRemoteAlpha,
       alphaJournalSharingAvailable,
+      sharedJournalLoadState,
       alphaJournalMediaSharingAvailable,
       sharedJournals: alphaSharedContent.map((item) => item.journal),
       sharedProfiles: [
@@ -917,6 +930,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       acceptContentPolicy,
       journalReaction,
       toggleJournalLike,
+      refreshSharedJournals: refreshAlphaSharedContent,
       recordEngagement,
       resetDemo,
     }),
@@ -926,6 +940,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       hydrated,
       authSession,
       alphaJournalSharingAvailable,
+      sharedJournalLoadState,
       alphaJournalMediaSharingAvailable,
       alphaSharedContent,
       persistenceError,
@@ -953,6 +968,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       acceptContentPolicy,
       journalReaction,
       toggleJournalLike,
+      refreshAlphaSharedContent,
       recordEngagement,
       resetDemo,
     ],

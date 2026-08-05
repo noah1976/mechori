@@ -11,6 +11,8 @@ const prompts = read("../components/journal-prompts.tsx");
 const promptData = read("../lib/journal-prompts.ts");
 const newJournal = read("../app/journal/new/page.tsx");
 const form = read("../components/journal-form.tsx");
+const detailRoute = read("../lib/journal-detail-route.ts");
+const home = read("../app/page.tsx");
 
 test("post authors and vehicles have separate public destinations", () => {
   assert.match(card, /publicProfileHref/);
@@ -39,4 +41,11 @@ test("fixed prompts remain optional and route into the existing journal form", (
 test("legacy profile IDs remain compatible while public usernames resolve", () => {
   assert.match(profile, /item\.id === id \|\| item\.publicUsername\?\.toLowerCase\(\) === id\.toLowerCase\(\)/);
   assert.match(profile, /publicProfileKey=\{id\}/);
+});
+
+test("journal detail links use one encoded path and skip speculative prefetch", () => {
+  assert.match(card, /journalDetailHref/);
+  assert.match(card, /prefetch=\{false\}/);
+  assert.match(home, /journalDetailHref\(featuredJournal\.id\).*prefetch=\{false\}/);
+  assert.match(detailRoute, /encodeURIComponent\(journalId\)/);
 });

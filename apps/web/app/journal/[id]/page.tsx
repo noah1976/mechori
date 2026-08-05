@@ -36,6 +36,7 @@ import { ProfileAvatar } from "@/components/profile-avatar";
 import { ProfileSafetyMenu } from "@/components/profile-safety-menu";
 import { recordOdometerLabel } from "@/components/record-card";
 import { publicProfileHref } from "@/lib/public-profile-url";
+import { journalDetailAvailability } from "@/lib/journal-detail-route";
 
 export default function JournalDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -44,13 +45,16 @@ export default function JournalDetailPage() {
     data,
     locale,
     signedIn,
+    hydrated,
     isRemoteAlpha,
+    sharedJournalLoadState,
     sharedJournals,
     sharedProfiles,
     toggleMuteProfile,
     toggleBlockProfile,
     journalReaction,
     toggleJournalLike,
+    refreshSharedJournals,
   } = useApp();
   const [showOriginal, setShowOriginal] = useState(false);
   const [reacting, setReacting] = useState(false);
@@ -62,6 +66,14 @@ export default function JournalDetailPage() {
     ? preferSharedJournalMediaForDisplay(localJournal, sharedJournal)
     : sharedJournal;
   const isSharedPost = !localJournal && Boolean(sharedJournal);
+  const availability = journalDetailAvailability({
+    hydrated,
+    isRemoteAlpha,
+    signedIn,
+    localJournal,
+    sharedJournal,
+    sharedLoadState: sharedJournalLoadState,
+  });
   const blocked = signedIn && journal ? isProfileBlocked(data, journal.authorProfileId) : false;
   const canView = journal && (
     isSharedPost
@@ -70,6 +82,28 @@ export default function JournalDetailPage() {
       ? canCurrentProfileViewJournal(data, journal)
       : journal.visibility === "public" && journal.moderationState === "visible"
   );
+  if (availability === "loading") {
+    return (
+      <div className="empty-state" role="status" aria-live="polite">
+        <h1>{ja ? "記録を開いています" : "Opening record"}</h1>
+        <p>{ja ? "公開中の記録を確認しています。" : "Checking the shared record."}</p>
+      </div>
+    );
+  }
+
+  if (availability === "retryable_error") {
+    return (
+      <div className="empty-state">
+        <h1>{ja ? "記録を読み込めませんでした" : "The record could not be loaded"}</h1>
+        <p>{ja ? "一時的に公開中の記録を確認できませんでした。もう一度お試しください。" : "The shared record could not be checked just now. Please try again."}</p>
+        <button type="button" className="primary-action" onClick={() => void refreshSharedJournals()}>
+          {ja ? "再読み込み" : "Try again"}
+        </button>
+        <Link href="/feed" className="secondary-action">{ja ? "フィードへ戻る" : "Back to feed"}</Link>
+      </div>
+    );
+  }
+
   if (!journal || !canView) {
     return (
       <div className="empty-state">

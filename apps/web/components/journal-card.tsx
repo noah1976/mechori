@@ -21,6 +21,7 @@ import { JournalMedia } from "@/components/journal-media";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { ProfileSafetyMenu } from "@/components/profile-safety-menu";
 import { useApp } from "@/lib/app-context";
+import { journalDetailHref } from "@/lib/journal-detail-route";
 import { publicProfileHref } from "@/lib/public-profile-url";
 
 export function JournalCard({
@@ -76,6 +77,7 @@ export function JournalCard({
     isRemoteAlpha &&
     displayJournal.authorProfileId === data.currentProfileId;
   const authorHref = author && authorLinkEnabled ? publicProfileHref(author) : undefined;
+  const detailHref = journalDetailHref(displayJournal.id);
   const vehicleHref = displayJournal.vehicleId
     ? `/garage/${encodeURIComponent(displayJournal.vehicleId)}`
     : displayJournal.vehicleTargetId
@@ -84,7 +86,8 @@ export function JournalCard({
   return (
     <article className="journal-card">
       <Link
-        href={`/journal/${displayJournal.id}`}
+        href={detailHref}
+        prefetch={false}
         className="journal-card-hit-area"
         aria-label={ja ? `${display.title}の詳細を読む` : `Read ${display.title}`}
       />
@@ -193,7 +196,7 @@ export function JournalCard({
             {appreciationCount}
           </button>
         )}
-        <Link href={`/journal/${displayJournal.id}`} className="text-link">
+        <Link href={detailHref} prefetch={false} className="text-link">
           {ja ? "読む" : "Read"}
           <ArrowRight size={15} aria-hidden="true" />
         </Link>
