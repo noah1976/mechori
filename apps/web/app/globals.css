@@ -1431,7 +1431,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .side-nav { display: none; }
   .top-bar { height: 54px; padding: 0 14px; }
   .bottom-nav { position: fixed; inset: auto 0 0; z-index: 20; min-height: 68px; display: grid; grid-template-columns: repeat(4, 1fr); background: rgba(255, 255, 255, 0.97); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
-  .bottom-nav.signed-out { grid-template-columns: repeat(2, 1fr); }
+  .bottom-nav.signed-out { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .bottom-nav a { min-width: 0; min-height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: var(--muted); font-size: 10px; }
   .bottom-nav a.active { color: var(--brand); font-weight: 750; }
   .record-fab { right: 16px; bottom: calc(82px + env(safe-area-inset-bottom)); }
@@ -1636,6 +1636,10 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .catalog-review-facts div:nth-child(even) { padding-left: 0; border-left: 0; }
   .catalog-contribution-path { grid-template-columns: 1fr; }
   .catalog-contribution-path > div + div { border-left: 0; border-top: 1px solid var(--line); }
+}
+
+@media (max-width: 760px) {
+  .logged-out-header-login { display: none; }
 }
 
 @media (max-width: 420px) {

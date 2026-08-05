@@ -35,6 +35,7 @@ function GarageContent() {
   const {
     data,
     locale,
+    signedIn,
     isRemoteAlpha,
     sharedJournals,
     resetDemo,
@@ -57,7 +58,9 @@ function GarageContent() {
   const records = data.records.filter((record) => record.vehicleId === vehicle?.id);
   const journals = getOwnJournals(data).filter((journal) => journal.vehicleId === vehicle?.id);
   const ja = locale === "ja";
-  useEffect(() => recordEngagement("garage_viewed"), [recordEngagement]);
+  useEffect(() => {
+    if (signedIn) recordEngagement("garage_viewed");
+  }, [recordEngagement, signedIn]);
   useEffect(() => {
     const selected = params.get("vehicle");
     if (params.get("moment") !== "added") {
@@ -70,6 +73,20 @@ function GarageContent() {
     window.history.replaceState({}, "", "/garage");
     return () => window.clearTimeout(timer);
   }, [params]);
+  if (!signedIn) {
+    return (
+      <div className="page-stack narrow-page">
+        <header className="page-header">
+          <div>
+            <span className="eyebrow">MY GARAGE</span>
+            <h1>{ja ? "ガレージを見るにはログインが必要です" : "Log in to view your Garage"}</h1>
+            <p>{ja ? "ログインすると、愛車やこれまでの記録を確認できます。" : "Log in to view your vehicles and records."}</p>
+          </div>
+        </header>
+        <Link href={`/auth?returnTo=${encodeURIComponent("/garage")}`} className="primary-action">{ja ? "ログイン" : "Log in"}</Link>
+      </div>
+    );
+  }
   if (!vehicle) {
     return (
       <div className="page-stack">

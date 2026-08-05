@@ -33,6 +33,7 @@ import { ProfileAvatar } from "@/components/profile-avatar";
 import { loadAlphaAdminDashboard } from "@/lib/alpha-operations";
 import {
   appNavigationItems,
+  authDisplayState,
   isActiveNavigation,
   navigationLabel,
   screenTitle,
@@ -70,7 +71,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [adminVisible, setAdminVisible] = useState(false);
   const menuCloseRef = useRef<HTMLButtonElement>(null);
-  const authenticated = hydrated && signedIn;
+  const authState = authDisplayState(hydrated, signedIn);
+  const authenticated = authState === "authenticated";
+  const loggedOut = authState === "signed-out";
+  const navigationReady = authState !== "loading";
   const showRecordFab = authenticated && shouldShowRecordFab(pathname) && !menuOpen;
   const currentProfile = data.profiles.find((profile) => profile.id === data.currentProfileId);
   const preferredVehicle = getPreferredVehicle(
@@ -192,7 +196,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <small>{translate(locale, "tagline")}</small>
           </span>
         </Link>
-        <nav>
+        {navigationReady && <nav>
           {visibleNavItems.map((item) => {
             const active = isActiveNavigation(pathname, item.href);
             const Icon = item.icon;
@@ -203,7 +207,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             );
           })}
-        </nav>
+        </nav>}
         {authenticated ? (
           <Link
             href={preferredVehicle
@@ -218,12 +222,12 @@ export function AppShell({ children }: { children: ReactNode }) {
               ? locale === "ja" ? "記録する" : "Record"
               : locale === "ja" ? "愛車を登録" : "Add vehicle"}
           </Link>
-        ) : (
+        ) : loggedOut ? (
           <Link href="/auth" className="primary-action nav-add">
             <LogIn size={18} aria-hidden="true" />
             {translate(locale, "signIn")}
           </Link>
-        )}
+        ) : null}
       </aside>
 
       <div className="content-column">
@@ -242,8 +246,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           ) : <Link href="/" className="mobile-brand">MECHORI</Link>}
           <strong className="top-bar-title">{authenticated ? screenTitle(pathname, locale) : ""}</strong>
           <div className="top-bar-actions">
-            {!authenticated && pathname !== "/auth" ? (
-              <Link href="/auth" className="icon-text-button" aria-label={translate(locale, "signIn")} title={translate(locale, "signIn")}>
+            {loggedOut && pathname !== "/auth" ? (
+              <Link href="/auth" className="icon-text-button logged-out-header-login" aria-label={translate(locale, "signIn")} title={translate(locale, "signIn")}>
                 <LogIn size={18} aria-hidden="true" />
                 <span className="top-bar-action-label">{translate(locale, "signIn")}</span>
               </Link>
@@ -350,7 +354,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </footer>
       </div>
 
-      <nav className={authenticated ? "bottom-nav" : "bottom-nav signed-out"} aria-label="Mobile navigation">
+      {navigationReady && <nav className={authenticated ? "bottom-nav" : "bottom-nav signed-out"} aria-label="Mobile navigation">
         {visibleNavItems.map((item) => {
           const active = isActiveNavigation(pathname, item.href);
           const Icon = item.icon;
@@ -361,13 +365,13 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           );
         })}
-        {!authenticated && (
-          <Link href="/auth" className={pathname === "/auth" ? "active" : ""}>
+        {loggedOut && (
+          <Link href="/auth" className={pathname === "/auth" ? "active" : ""} aria-current={pathname === "/auth" ? "page" : undefined}>
             <LogIn size={20} aria-hidden="true" />
             <span>{translate(locale, "signIn")}</span>
           </Link>
         )}
-      </nav>
+      </nav>}
 
       {showRecordFab && (
         <Link
@@ -426,6 +430,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 function isPublicPath(pathname: string): boolean {
   return (
     pathname === "/" ||
+    pathname === "/garage" ||
     pathname === "/search" ||
     pathname === "/auth" ||
     pathname === "/auth/signed-out" ||

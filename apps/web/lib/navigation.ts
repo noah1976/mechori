@@ -8,6 +8,13 @@ export const appNavigationItems = [
   { href: "/garage", label: "garage", icon: CarFront },
 ] as const;
 
+export type AuthDisplayState = "loading" | "authenticated" | "signed-out";
+
+export function authDisplayState(hydrated: boolean, signedIn: boolean): AuthDisplayState {
+  if (!hydrated) return "loading";
+  return signedIn ? "authenticated" : "signed-out";
+}
+
 export function navigationLabel(label: (typeof appNavigationItems)[number]["label"], locale: SupportedUiLocale) {
   if (locale === "ja") {
     return { home: "ホーム", search: "探す", notifications: "通知", garage: "ガレージ" }[label];
