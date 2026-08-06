@@ -45,9 +45,6 @@ function ProfileAvatarImage({
     let active = true;
     let objectUrl: string | null = null;
 
-    setSource(null);
-    setFailed(false);
-
     void createSupabaseBrowserClient()
       .storage
       .from(alphaProfileImageBucket)

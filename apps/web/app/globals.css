@@ -1364,7 +1364,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .journal-media.body .journal-media-item { width: 100%; min-width: 0; max-width: none; margin: 0; overflow: visible; aspect-ratio: auto; background: transparent; }
 .journal-media.body .journal-media-item > a { position: static; display: block; width: 100%; max-width: 100%; height: auto; }
 .journal-media.body .journal-media-item img, .journal-media.body .journal-media-item video { display: block; width: 100%; max-width: 100%; height: auto; margin: 0; object-fit: initial; }
-.journal-media.body .journal-media-caption { position: static; display: block; margin-top: 8px; padding: 0; color: var(--muted); background: transparent; border-radius: 0; font-size: 12px; line-height: 1.55; }
+.journal-media.body .journal-media-caption { position: static; display: block; margin: 8px 0 14px; padding: 0 16px; color: var(--muted); background: transparent; border-radius: 0; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
 .journal-media.body .journal-media-privacy-caption { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.5; }
 @media (min-width: 768px) {
   .journal-media.body .journal-media-item { width: fit-content; max-width: 100%; margin-inline: auto; }

@@ -18,6 +18,8 @@ test("body media keeps intrinsic ratio and renders its description after the ima
   assert.match(media, /naturalWidth \/ event\.currentTarget\.naturalHeight/);
   assert.match(media, /className="journal-media-caption"/);
   assert.match(media, /<figcaption className="journal-media-caption">\{attachment\.altText\}<\/figcaption>/);
+  assert.match(css, /\.journal-media\.body \.journal-media-caption \{ position: static; display: block; margin: 8px 0 14px; padding: 0 16px;/);
+  assert.match(css, /\.journal-media\.body \.journal-media-caption .*overflow-wrap: anywhere/);
   assert.match(css, /\.journal-media\.body .*object-fit: initial/);
   assert.doesNotMatch(css, /\.journal-media\.body .*object-fit: (?:cover|contain)/);
 });

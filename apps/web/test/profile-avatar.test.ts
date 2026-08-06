@@ -14,6 +14,8 @@ test("profile avatars download private image paths and render the resulting blob
   assert.match(avatar, /\.download\(imagePath\)/);
   assert.match(avatar, /URL\.createObjectURL\(result\.data\)/);
   assert.match(avatar, /URL\.revokeObjectURL\(objectUrl\)/);
+  assert.doesNotMatch(avatar, /setSource\(null\)/);
+  assert.doesNotMatch(avatar, /setFailed\(false\)/);
   assert.doesNotMatch(avatar, /createSignedUrl\(imagePath/);
   assert.match(avatar, /<img/);
   assert.match(avatar, /src=\{source\}/);
