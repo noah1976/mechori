@@ -20,6 +20,8 @@ test("record FAB is hidden from record entry and edit routes", () => {
   assert.equal(shouldShowRecordFab("/journal/abc/edit"), false);
   assert.equal(shouldShowRecordFab("/garage/vehicle-1/event/new"), false);
   assert.equal(shouldShowRecordFab("/journal/abc"), true);
+  assert.equal(shouldShowRecordFab("/search"), false);
+  assert.equal(shouldShowRecordFab("/search/results"), false);
 });
 
 test("auth display state separates loading, signed-out, and signed-in navigation", () => {

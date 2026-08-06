@@ -688,6 +688,10 @@ button { cursor: pointer; }
 .filter-grid { display: grid; grid-template-columns: 1.25fr 1fr 1fr 1fr; gap: 12px; margin-top: 15px; }
 .filter-grid label { display: grid; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 700; }
 .search-scope { margin: 15px 0 0; color: var(--muted); font-size: 12px; }
+.search-submit { width: 100%; min-height: 50px; justify-content: center; margin-top: 16px; }
+.search-result-state { gap: 12px; }
+.search-result-state h2 { margin: 0; font-size: 20px; }
+.search-result-state .secondary-action { justify-self: center; }
 .synthesis-section { padding-block: 26px; border-block: 1px solid var(--line); }
 .synthesis-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
 .synthesis-header h2 { margin: 5px 0 7px; font-size: 25px; }
