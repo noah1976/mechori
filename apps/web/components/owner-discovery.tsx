@@ -135,7 +135,9 @@ export function OwnerDiscovery() {
                   <button
                     type="button"
                     className="follow-button"
-                    onClick={() => toggleFollow("profile", owner.id)}
+                    onClick={() => {
+                      void toggleFollow("profile", owner.id);
+                    }}
                   >
                     <UserRoundPlus size={16} aria-hidden="true" />
                     {ja ? "この人をフォロー" : "Follow this person"}
@@ -166,7 +168,7 @@ export function OwnerDiscovery() {
                           }
                           aria-pressed={followed}
                           onClick={() =>
-                            toggleFollow("vehicle", vehicle.targetId)
+                            void toggleFollow("vehicle", vehicle.targetId)
                           }
                         >
                           {followed

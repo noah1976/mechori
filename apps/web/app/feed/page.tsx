@@ -169,7 +169,9 @@ export default function FeedPage() {
                 key={`${target.type}:${target.id}`}
                 target={target}
                 followed={isFollowing(data, target.type, target.id)}
-                onToggle={() => toggleFollow(target.type, target.id)}
+                onToggle={() => {
+                  void toggleFollow(target.type, target.id);
+                }}
                 ja={ja}
               />
             ))}

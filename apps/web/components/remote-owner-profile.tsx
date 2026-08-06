@@ -172,7 +172,9 @@ export function RemoteOwnerProfile({
               : "follow-button"
           }
           aria-pressed={profileFollowed}
-          onClick={() => toggleFollow("profile", owner.id)}
+          onClick={() => {
+            void toggleFollow("profile", owner.id);
+          }}
         >
           <UserRoundPlus size={16} aria-hidden="true" />
           {profileFollowed
@@ -220,7 +222,9 @@ export function RemoteOwnerProfile({
                       type="button"
                       className={followed ? "follow-button is-following" : "follow-button"}
                       aria-pressed={followed}
-                      onClick={() => toggleFollow("vehicle", vehicle.targetId)}
+                      onClick={() => {
+                        void toggleFollow("vehicle", vehicle.targetId);
+                      }}
                     >
                       <CarFront size={16} aria-hidden="true" />
                       {followed

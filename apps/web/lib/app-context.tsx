@@ -85,6 +85,12 @@ import { clearAllLocalDrafts } from "@/lib/local-draft-store";
 import { pushAnalyticsEvent } from "@/lib/analytics";
 import { alphaJournalSyncError } from "@/lib/journal-save-error";
 import {
+  createFollowActionController,
+  followActionKey,
+  type FollowActionController,
+  type FollowActionResult,
+} from "@/lib/follow-action";
+import {
   recordLocalEngagement,
   resetLocalEngagement,
 } from "@/lib/local-engagement-store";
@@ -135,7 +141,8 @@ interface AppContextValue {
     uploads?: JournalMediaUpload[],
   ): Promise<GarageJournalPost>;
   updateJournalTranslation(id: string, draft: JournalTranslationDraft): Promise<void>;
-  toggleFollow(targetType: FollowTargetType, targetId: string): void;
+  toggleFollow(targetType: FollowTargetType, targetId: string): Promise<FollowActionResult>;
+  isFollowPending(targetType: FollowTargetType, targetId: string): boolean;
   toggleMuteProfile(profileId: string): void;
   toggleBlockProfile(profileId: string): void;
   submitReport(draft: ContentReportDraft): Promise<ContentReport>;
@@ -195,7 +202,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     Map<string, AlphaJournalReaction>
   >(new Map());
   const journalLikeRequests = useRef(new Set<string>());
+  const [followPendingKeys, setFollowPendingKeys] = useState<Set<string>>(new Set());
+  const followDataRef = useRef(data);
+  const followAuthRef = useRef(authSession);
+  const followWriteChainRef = useRef(Promise.resolve());
+  const followControllerRef = useRef<FollowActionController | null>(null);
   const [contentPolicyAccepted, setContentPolicyAccepted] = useState(!isRemoteAlpha);
+
+  useEffect(() => {
+    followDataRef.current = data;
+    followAuthRef.current = authSession;
+  }, [authSession, data]);
 
   useEffect(() => {
     let active = true;
@@ -348,6 +365,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
       throw new Error("persistence_failed");
     }
   }, []);
+
+  const persistFollowToggle = useCallback(
+    (
+      targetType: FollowTargetType,
+      targetId: string,
+      following: boolean,
+    ): Promise<void> => {
+      const operation = followWriteChainRef.current.then(async () => {
+        const currentData = followDataRef.current;
+        if (isFollowing(currentData, targetType, targetId) === following) return;
+        const nextData = toggleFollowInData(currentData, targetType, targetId);
+        await persist(nextData);
+        followDataRef.current = nextData;
+      });
+      followWriteChainRef.current = operation.catch(() => undefined);
+      return operation;
+    },
+    [persist],
+  );
 
   const setLocale = useCallback((nextLocale: Locale) => {
     setLocaleState(nextLocale);
@@ -659,24 +695,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const toggleFollow = useCallback(
-    (targetType: FollowTargetType, targetId: string) => {
-      if (!isSignedIn(authSession)) return;
-      const following = isFollowing(data, targetType, targetId);
-      const nextData = toggleFollowInData(data, targetType, targetId);
-      if (nextData === data) return;
-      void (async () => {
-        if (isRemoteAlpha && targetType === "profile") {
-          await setAlphaUserFollow(targetId, !following);
-        }
-        await persist(nextData);
-        if (!following) {
-          pushAnalyticsEvent(
-            targetType === "profile" ? "user_followed" : "vehicle_followed",
-          );
-        }
-      })().catch(() => setPersistenceError(true));
+    (targetType: FollowTargetType, targetId: string): Promise<FollowActionResult> => {
+      if (!followControllerRef.current) {
+        followControllerRef.current = createFollowActionController<AppData>({
+          isAuthenticated: () => isSignedIn(followAuthRef.current),
+          getData: () => followDataRef.current,
+          isFollowing,
+          syncRemote: async (type, id, following) => {
+            if (isRemoteAlpha && type === "profile") {
+              await setAlphaUserFollow(id, following);
+            }
+          },
+          persistToggle: persistFollowToggle,
+          onSuccess: (type, following) => {
+            if (following) {
+              pushAnalyticsEvent(type === "profile" ? "user_followed" : "vehicle_followed");
+            }
+          },
+          onFailure: () => setPersistenceError(true),
+          onPendingChange: (key, pending) => {
+            setFollowPendingKeys((current) => {
+              const next = new Set(current);
+              if (pending) next.add(key);
+              else next.delete(key);
+              return next;
+            });
+          },
+        });
+      }
+      return followControllerRef.current.toggleFollow(targetType, targetId);
     },
-    [authSession, data, persist],
+    [persistFollowToggle],
+  );
+
+  const isFollowPending = useCallback(
+    (targetType: FollowTargetType, targetId: string) =>
+      followPendingKeys.has(followActionKey(targetType, targetId)),
+    [followPendingKeys],
   );
 
   const toggleMuteProfile = useCallback(
@@ -920,6 +975,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateJournal,
       updateJournalTranslation,
       toggleFollow,
+      isFollowPending,
       toggleMuteProfile,
       toggleBlockProfile,
       submitReport,
@@ -958,6 +1014,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateJournal,
       updateJournalTranslation,
       toggleFollow,
+      isFollowPending,
       toggleMuteProfile,
       toggleBlockProfile,
       submitReport,

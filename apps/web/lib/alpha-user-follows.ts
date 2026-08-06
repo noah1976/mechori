@@ -1,4 +1,8 @@
 import type { FollowRelation } from "@mechori/core";
+import {
+  AlphaUserFollowError,
+  classifyFollowActionError,
+} from "@/lib/follow-action";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 interface AlphaUserFollowRow {
@@ -33,5 +37,9 @@ export async function setAlphaUserFollow(
       p_follow: follow,
     },
   );
-  if (error || data !== follow) throw new Error("alpha_user_follow_update_failed");
+  if (error) {
+    const status = classifyFollowActionError(error);
+    throw new AlphaUserFollowError(status === "not_authenticated" ? "unknown" : status);
+  }
+  if (data !== follow) throw new AlphaUserFollowError("unknown");
 }
