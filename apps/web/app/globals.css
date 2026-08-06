@@ -1332,7 +1332,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .consent-option small { margin-top: 4px; color: var(--muted); line-height: 1.5; }
 
 .journal-detail-page { width: min(100%, 850px); margin-inline: auto; }
-.journal-detail { padding: 34px 38px; background: var(--surface); border: 1px solid var(--line); border-top: 5px solid var(--brand); }
+.journal-detail { --journal-body-media-bleed: 38px; padding: 34px 38px; background: var(--surface); border: 1px solid var(--line); border-top: 5px solid var(--brand); }
 .journal-author-line { display: flex; align-items: center; gap: 11px; }
 .journal-author-line strong, .journal-author-line small { display: block; }
 .journal-author-line small { margin-top: 3px; color: var(--muted); font-size: 12px; }
@@ -1388,7 +1388,14 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .journal-content p { color: #2d3933; font-size: 16px; line-height: 1.95; }
 .journal-content h2 { font-size: 26px; line-height: 1.4; }
 .journal-content blockquote { padding: 4px 0 4px 20px; color: #4f5f57; border-left: 4px solid #94aa9f; font-size: 18px; font-style: italic; line-height: 1.8; }
-.journal-content > .journal-media { margin-inline: -38px; }
+.journal-content > .journal-media.body {
+  inline-size: calc(100% + var(--journal-body-media-bleed) + var(--journal-body-media-bleed));
+  min-inline-size: 0;
+  max-inline-size: none;
+  align-self: stretch;
+  justify-self: stretch;
+  margin-inline: calc(0px - var(--journal-body-media-bleed));
+}
 .linked-record-panel { display: grid; gap: 18px; padding: 23px; background: var(--surface); border: 1px solid var(--line); }
 .linked-record-facts { display: grid; border-block: 1px solid var(--line); }
 .linked-record-facts > div { display: grid; grid-template-columns: auto minmax(120px, 0.35fr) minmax(0, 1fr); align-items: start; gap: 10px; padding: 13px 0; }
@@ -1609,9 +1616,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .media-draft-grid { grid-template-columns: 1fr; }
   .media-publication-gate { grid-template-columns: auto 1fr; align-items: start; }
   .media-publication-gate .secondary-action { grid-column: 2; justify-self: start; }
-  .journal-detail { padding: 25px 19px; }
+  .journal-detail { --journal-body-media-bleed: 19px; padding: 25px 19px; }
   .journal-detail > .journal-media { margin-inline: -19px; }
-  .journal-content > .journal-media { margin-inline: -19px; }
   .journal-media { grid-template-columns: 1fr; }
   .journal-detail h1 { font-size: 31px; }
   .report-form, .settings-section { padding: 19px 15px; }

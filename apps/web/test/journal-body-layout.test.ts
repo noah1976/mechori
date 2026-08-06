@@ -23,6 +23,10 @@ test("body media keeps intrinsic ratio and renders its description after the ima
 });
 
 test("body media is full width on mobile and applies aspect bounds only on desktop", () => {
+  assert.match(css, /\.journal-detail \{ --journal-body-media-bleed: 38px;/);
+  assert.match(css, /\.journal-content > \.journal-media\.body \{[\s\S]*inline-size: calc\(100% \+ var\(--journal-body-media-bleed\) \+ var\(--journal-body-media-bleed\)\);/);
+  assert.match(css, /\.journal-content > \.journal-media\.body \{[\s\S]*max-inline-size: none;[\s\S]*align-self: stretch;[\s\S]*justify-self: stretch;/);
+  assert.match(css, /\.journal-detail \{ --journal-body-media-bleed: 19px; padding: 25px 19px;/);
   assert.match(css, /\.journal-media\.body \.journal-media-item \{ width: 100%; min-width: 0; max-width: none; margin: 0;/);
   assert.match(css, /\.journal-media\.body \.journal-media-item img, \.journal-media\.body \.journal-media-item video \{ display: block; width: 100%; max-width: 100%; height: auto; margin: 0;/);
   const desktopBodyMedia = css.slice(css.indexOf("@media (min-width: 768px)"));
