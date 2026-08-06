@@ -4,24 +4,13 @@ import { translate, uiLocaleOptions } from "@mechori/i18n";
 import { getPreferredVehicle, type SupportedUiLocale } from "@mechori/core";
 import {
   Camera,
-  CarFront,
   CircleAlert,
-  CircleHelp,
-  FileText,
-  House,
   Languages,
   LoaderCircle,
   LogOut,
   LogIn,
-  MessageSquareText,
   Menu,
-  Bell,
   Plus,
-  Search,
-  Settings2,
-  ShieldCheck,
-  UserRound,
-  UserPlus,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -32,21 +21,13 @@ import { pushAnalyticsEvent } from "@/lib/analytics";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { loadAlphaAdminDashboard } from "@/lib/alpha-operations";
 import {
-  appNavigationItems,
   authDisplayState,
+  getNavigationItems,
   isActiveNavigation,
   navigationLabel,
   screenTitle,
   shouldShowRecordFab,
 } from "@/lib/navigation";
-
-const menuLinks = [
-  { href: "/", label: "ホーム", icon: House },
-  { href: "/search", label: "探す", icon: Search },
-  { href: "/notifications", label: "通知", icon: Bell },
-  { href: "/garage", label: "ガレージ", icon: CarFront },
-  { href: "/connections", label: "つながり", icon: UserRound },
-] as const;
 
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -80,9 +61,11 @@ export function AppShell({ children }: { children: ReactNode }) {
   const preferredVehicle = getPreferredVehicle(
     data.vehicles.filter((vehicle) => vehicle.ownerProfileId === data.currentProfileId),
   );
-  const visibleNavItems = authenticated
-    ? appNavigationItems
-    : appNavigationItems.filter((item) => item.href === "/" || item.href === "/search");
+  const desktopNavItems = getNavigationItems("desktopSide", authState);
+  const mobileNavItems = getNavigationItems("mobileBottom", authState);
+  const drawerPrimaryItems = getNavigationItems("drawer", authState, adminVisible).filter((item) => item.group === "primary");
+  const drawerSecondaryItems = getNavigationItems("drawer", authState, adminVisible).filter((item) => item.group === "secondary");
+  const drawerAdminItems = getNavigationItems("drawer", authState, adminVisible).filter((item) => item.group === "admin");
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -197,7 +180,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </span>
         </Link>
         {navigationReady && <nav>
-          {visibleNavItems.map((item) => {
+          {desktopNavItems.map((item) => {
             const active = isActiveNavigation(pathname, item.href);
             const Icon = item.icon;
             return (
@@ -355,7 +338,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       {navigationReady && <nav className={authenticated ? "bottom-nav" : "bottom-nav signed-out"} aria-label="Mobile navigation">
-        {visibleNavItems.map((item) => {
+        {mobileNavItems.map((item) => {
           const active = isActiveNavigation(pathname, item.href);
           const Icon = item.icon;
           return (
@@ -365,12 +348,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           );
         })}
-        {loggedOut && (
-          <Link href="/auth" className={pathname === "/auth" ? "active" : ""} aria-current={pathname === "/auth" ? "page" : undefined}>
-            <LogIn size={20} aria-hidden="true" />
-            <span>{translate(locale, "signIn")}</span>
-          </Link>
-        )}
       </nav>}
 
       {showRecordFab && (
@@ -401,23 +378,35 @@ export function AppShell({ children }: { children: ReactNode }) {
               </button>
             </div>
             <nav className="app-menu-links" aria-label={locale === "ja" ? "主要導線" : "Main links"}>
-              {menuLinks.map(({ href, label, icon: Icon }) => (
-                <Link key={href} href={href} className={isActiveNavigation(pathname, href) ? "active" : ""} aria-current={isActiveNavigation(pathname, href) ? "page" : undefined} onClick={() => setMenuOpen(false)}>
+              {drawerPrimaryItems.map((item) => {
+                const Icon = item.icon;
+                const active = isActiveNavigation(pathname, item.href);
+                return (
+                <Link key={item.id} href={item.href} className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => setMenuOpen(false)}>
                   <Icon size={19} aria-hidden="true" />
-                  <span>{locale === "ja" ? label : href === "/connections" ? "Connections" : navigationLabel(appNavigationItems.find((item) => item.href === href)?.label ?? "home", locale)}</span>
+                  <span>{navigationLabel(item.label, locale)}</span>
                 </Link>
-              ))}
+                );
+              })}
             </nav>
             <div className="app-menu-links app-menu-secondary">
-              <Link href="/settings/profile" onClick={() => setMenuOpen(false)}><Settings2 size={18} aria-hidden="true" /><span>{locale === "ja" ? "プロフィールを編集" : "Edit profile"}</span></Link>
-              <Link href="/invite" onClick={() => setMenuOpen(false)}><UserPlus size={18} aria-hidden="true" /><span>{locale === "ja" ? "友達を招待" : "Invite friends"}</span></Link>
+              {drawerSecondaryItems.map((item) => {
+                const Icon = item.icon;
+                const href = item.id === "feedback"
+                  ? `/feedback?from=${encodeURIComponent(pathname)}`
+                  : item.href;
+                return (
+                  <Link key={item.id} href={href} onClick={() => setMenuOpen(false)}>
+                    <Icon size={18} aria-hidden="true" />
+                    <span>{navigationLabel(item.label, locale)}</span>
+                  </Link>
+                );
+              })}
               <label className="app-menu-locale"><Languages size={18} aria-hidden="true" /><span>{locale === "ja" ? "言語" : "Language"}</span><select value={locale} onChange={(event) => setLocale(event.target.value as SupportedUiLocale)} aria-label={locale === "ja" ? "言語" : "Language"}>{uiLocaleOptions.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}</select></label>
-              <Link href={`/feedback?from=${encodeURIComponent(pathname)}`} onClick={() => setMenuOpen(false)}><MessageSquareText size={18} aria-hidden="true" /><span>{translate(locale, "feedback")}</span></Link>
-              <Link href="/help" onClick={() => setMenuOpen(false)}><CircleHelp size={18} aria-hidden="true" /><span>{locale === "ja" ? "ヘルプ" : "Help"}</span></Link>
-              <Link href="/settings/profile" onClick={() => setMenuOpen(false)}><Settings2 size={18} aria-hidden="true" /><span>{locale === "ja" ? "設定" : "Settings"}</span></Link>
-              <Link href="/terms" onClick={() => setMenuOpen(false)}><FileText size={18} aria-hidden="true" /><span>{locale === "ja" ? "利用規約" : "Terms"}</span></Link>
-              <Link href="/privacy" onClick={() => setMenuOpen(false)}><FileText size={18} aria-hidden="true" /><span>{locale === "ja" ? "プライバシーポリシー" : "Privacy policy"}</span></Link>
-              {adminVisible && <Link href="/admin" onClick={() => setMenuOpen(false)}><ShieldCheck size={18} aria-hidden="true" /><span>{locale === "ja" ? "管理画面" : "Admin"}</span></Link>}
+              {drawerAdminItems.map((item) => {
+                const Icon = item.icon;
+                return <Link key={item.id} href={item.href} onClick={() => setMenuOpen(false)}><Icon size={18} aria-hidden="true" /><span>{navigationLabel(item.label, locale)}</span></Link>;
+              })}
               <button type="button" onClick={() => void handleSignOut()}><LogOut size={18} aria-hidden="true" /><span>{locale === "ja" ? "ログアウト" : "Log out"}</span></button>
             </div>
           </aside>

@@ -1,30 +1,289 @@
 import type { SupportedUiLocale } from "@mechori/core";
-import { Bell, CarFront, House, Search } from "lucide-react";
+import {
+  Bell,
+  CarFront,
+  CircleHelp,
+  FileText,
+  House,
+  MessageSquareText,
+  Search,
+  Settings2,
+  ShieldCheck,
+  UserPlus,
+  UserRound,
+  type LucideIcon,
+} from "lucide-react";
 
-export const appNavigationItems = [
-  { href: "/", label: "home", icon: House },
-  { href: "/search", label: "search", icon: Search },
-  { href: "/notifications", label: "notifications", icon: Bell },
-  { href: "/garage", label: "garage", icon: CarFront },
-] as const;
-
+export type NavigationSurface = "mobileBottom" | "desktopSide" | "drawer";
+export type NavigationAuth = "public" | "signed-out" | "authenticated" | "admin";
+export type NavigationStatus = "active" | "comingSoon";
 export type AuthDisplayState = "loading" | "authenticated" | "signed-out";
+export type NavigationLabelKey =
+  | "home"
+  | "search"
+  | "notifications"
+  | "garage"
+  | "signIn"
+  | "connections"
+  | "profileEdit"
+  | "invite"
+  | "feedback"
+  | "help"
+  | "settings"
+  | "terms"
+  | "privacy"
+  | "admin";
+export type NavigationGroup = "primary" | "secondary" | "admin";
+
+export interface NavigationItem {
+  id: string;
+  href: string;
+  label: NavigationLabelKey;
+  icon: LucideIcon;
+  surfaces: readonly NavigationSurface[];
+  auth: NavigationAuth;
+  activeMatch: string;
+  order: number;
+  status: NavigationStatus;
+  group?: NavigationGroup;
+}
+
+const allNavigationItems: readonly NavigationItem[] = [
+  {
+    id: "home",
+    href: "/",
+    label: "home",
+    icon: House,
+    surfaces: ["mobileBottom", "desktopSide", "drawer"],
+    auth: "public",
+    activeMatch: "home",
+    order: 10,
+    status: "active",
+    group: "primary",
+  },
+  {
+    id: "search",
+    href: "/search",
+    label: "search",
+    icon: Search,
+    surfaces: ["mobileBottom", "desktopSide", "drawer"],
+    auth: "public",
+    activeMatch: "search",
+    order: 20,
+    status: "active",
+    group: "primary",
+  },
+  {
+    id: "notifications",
+    href: "/notifications",
+    label: "notifications",
+    icon: Bell,
+    surfaces: ["mobileBottom", "desktopSide", "drawer"],
+    auth: "authenticated",
+    activeMatch: "notifications",
+    order: 30,
+    status: "comingSoon",
+    group: "primary",
+  },
+  {
+    id: "garage",
+    href: "/garage",
+    label: "garage",
+    icon: CarFront,
+    surfaces: ["mobileBottom", "desktopSide", "drawer"],
+    auth: "authenticated",
+    activeMatch: "garage",
+    order: 40,
+    status: "active",
+    group: "primary",
+  },
+  {
+    id: "sign-in",
+    href: "/auth",
+    label: "signIn",
+    icon: UserRound,
+    surfaces: ["mobileBottom"],
+    auth: "signed-out",
+    activeMatch: "sign-in",
+    order: 90,
+    status: "active",
+  },
+  {
+    id: "connections",
+    href: "/connections",
+    label: "connections",
+    icon: UserRound,
+    surfaces: ["drawer"],
+    auth: "authenticated",
+    activeMatch: "connections",
+    order: 50,
+    status: "comingSoon",
+    group: "primary",
+  },
+  {
+    id: "profile-edit",
+    href: "/settings/profile",
+    label: "profileEdit",
+    icon: Settings2,
+    surfaces: ["drawer"],
+    auth: "authenticated",
+    activeMatch: "profile-edit",
+    order: 60,
+    status: "active",
+    group: "secondary",
+  },
+  {
+    id: "invite",
+    href: "/invite",
+    label: "invite",
+    icon: UserPlus,
+    surfaces: ["drawer"],
+    auth: "authenticated",
+    activeMatch: "invite",
+    order: 70,
+    status: "active",
+    group: "secondary",
+  },
+  {
+    id: "feedback",
+    href: "/feedback",
+    label: "feedback",
+    icon: MessageSquareText,
+    surfaces: ["drawer"],
+    auth: "authenticated",
+    activeMatch: "feedback",
+    order: 80,
+    status: "active",
+    group: "secondary",
+  },
+  {
+    id: "help",
+    href: "/help",
+    label: "help",
+    icon: CircleHelp,
+    surfaces: ["drawer"],
+    auth: "authenticated",
+    activeMatch: "help",
+    order: 90,
+    status: "active",
+    group: "secondary",
+  },
+  {
+    id: "terms",
+    href: "/terms",
+    label: "terms",
+    icon: FileText,
+    surfaces: ["drawer"],
+    auth: "authenticated",
+    activeMatch: "terms",
+    order: 100,
+    status: "active",
+    group: "secondary",
+  },
+  {
+    id: "privacy",
+    href: "/privacy",
+    label: "privacy",
+    icon: FileText,
+    surfaces: ["drawer"],
+    auth: "authenticated",
+    activeMatch: "privacy",
+    order: 110,
+    status: "active",
+    group: "secondary",
+  },
+  {
+    id: "admin",
+    href: "/admin",
+    label: "admin",
+    icon: ShieldCheck,
+    surfaces: ["drawer"],
+    auth: "admin",
+    activeMatch: "admin",
+    order: 120,
+    status: "active",
+    group: "admin",
+  },
+];
+
+export const navigationItems = allNavigationItems;
+export const appNavigationItems = allNavigationItems.filter((item) =>
+  item.surfaces.includes("mobileBottom") && item.auth !== "signed-out",
+);
+
+const labelMap: Record<NavigationLabelKey, { ja: string; en: string }> = {
+  home: { ja: "ホーム", en: "Home" },
+  search: { ja: "探す", en: "Search" },
+  notifications: { ja: "通知", en: "Notifications" },
+  garage: { ja: "ガレージ", en: "Garage" },
+  signIn: { ja: "ログイン", en: "Sign in" },
+  connections: { ja: "つながり", en: "Connections" },
+  profileEdit: { ja: "プロフィールを編集", en: "Edit profile" },
+  invite: { ja: "友達を招待", en: "Invite friends" },
+  feedback: { ja: "感想", en: "Feedback" },
+  help: { ja: "ヘルプ", en: "Help" },
+  settings: { ja: "設定", en: "Settings" },
+  terms: { ja: "利用規約", en: "Terms" },
+  privacy: { ja: "プライバシーポリシー", en: "Privacy policy" },
+  admin: { ja: "管理画面", en: "Admin" },
+};
 
 export function authDisplayState(hydrated: boolean, signedIn: boolean): AuthDisplayState {
   if (!hydrated) return "loading";
   return signedIn ? "authenticated" : "signed-out";
 }
 
-export function navigationLabel(label: (typeof appNavigationItems)[number]["label"], locale: SupportedUiLocale) {
-  if (locale === "ja") {
-    return { home: "ホーム", search: "探す", notifications: "通知", garage: "ガレージ" }[label];
+export function canShowNavigationItem(
+  item: NavigationItem,
+  authState: AuthDisplayState,
+  isAdmin = false,
+): boolean {
+  if (authState === "loading") return false;
+  if (item.auth === "public") return true;
+  if (item.auth === "signed-out") return authState === "signed-out";
+  if (authState !== "authenticated") return false;
+  return item.auth !== "admin" || isAdmin;
+}
+
+export function getNavigationItems(
+  surface: NavigationSurface,
+  authState: AuthDisplayState,
+  isAdmin = false,
+): NavigationItem[] {
+  return allNavigationItems
+    .filter((item) => item.surfaces.includes(surface))
+    .filter((item) => canShowNavigationItem(item, authState, isAdmin))
+    .sort((left, right) => left.order - right.order);
+}
+
+export function navigationLabel(label: NavigationLabelKey, locale: SupportedUiLocale) {
+  return labelMap[label][locale === "ja" ? "ja" : "en"];
+}
+
+export function isNavigationItemActive(pathname: string, item: NavigationItem): boolean {
+  switch (item.activeMatch) {
+    case "home":
+      return pathname === "/" || pathname === "/feed" || pathname.startsWith("/journal/") || pathname.startsWith("/records/");
+    case "search":
+      return pathname === "/search" || pathname.startsWith("/search/") || pathname === "/people" || pathname.startsWith("/people/");
+    case "notifications":
+      return pathname === "/notifications" || pathname.startsWith("/notifications/");
+    case "garage":
+      return pathname === "/garage" || pathname.startsWith("/garage/") || pathname.startsWith("/profile/") || pathname.startsWith("/v/");
+    case "sign-in":
+      return pathname === "/auth" || pathname.startsWith("/auth/");
+    case "connections":
+      return pathname === "/connections" || pathname.startsWith("/connections/");
+    case "profile-edit":
+      return pathname === "/settings/profile" || pathname.startsWith("/settings/profile/");
+    default:
+      return pathname === item.href || pathname.startsWith(`${item.href}/`);
   }
-  return { home: "Home", search: "Search", notifications: "Notifications", garage: "Garage" }[label];
 }
 
 export function isActiveNavigation(pathname: string, href: string) {
-  if (href === "/") return pathname === "/" || pathname === "/feed" || pathname.startsWith("/journal/");
-  return pathname === href || pathname.startsWith(`${href}/`);
+  const item = allNavigationItems.find((candidate) => candidate.href === href);
+  return item ? isNavigationItemActive(pathname, item) : pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export function screenTitle(pathname: string, locale: SupportedUiLocale) {
