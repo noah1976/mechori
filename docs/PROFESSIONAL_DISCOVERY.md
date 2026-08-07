@@ -91,11 +91,11 @@ DEMO情報を実在事例と誤認させません。実データが不足する�
 
 最初に提示する価格仮説:
 
-- Founding Partner: 月額4,980円前後
+- Founding Garage: 価格・契約条件は別途検証。正式Professionalの廉価版とは扱わない
 - Professional Solo: 月額9,800円前後
 - Professional Team: 月額19,800円前後
 
-Founding Partnerは無料モニターではなく、先行10拠点程度・3か月の有償検証を想定します。ただし、契約、決済、返金、含有機能は実証前に確定しません。
+Founding Garageは無料モニターでも正式Professionalの廉価版でもなく、実際の整備現場とProfessionalを共同開発する初期提携制度です。資格は工場組織へ付与し、契約、決済、返金、含有機能、将来の基本プラン無償条件は実証前に確定しません。
 
 ## ティザーLPの検証
 

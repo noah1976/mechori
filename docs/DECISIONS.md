@@ -505,6 +505,14 @@
 - 決定: 写真単独の公開設定を廃止し、共有Journalの再生成済み写真は本文と同じく、有効な参加状態を持つログイン済みMECHORI利用者へ表示する。Storage bucketは非公開のままとし、未ログイン閲覧、原本、下書き・非公開記録、動画は対象外とする。
 - 影響: 既存写真レコードやStorage objectを一括変更しない。現在の共有用コピーは有効なMECHORI利用者が取得できるようStorage SELECT policyを整合させる。将来の未ログインWeb公開や有料プランの非公開機能は、公開条件、移行、既存データ保護を別途決定する。
 
+### 決定: 直近のプロダクト判断を既存文書へ正式反映する
+
+- 日付: 2026-08-07
+- 状態: 決定
+- 決定: P-075は人と愛車のつながりを管理・探索するA/B/C段階で設計する。βまでにFounding Garageを少なくとも1軒、個人アカウント・組織・多対多membership・工場内roleで共同開発する。MECHORI運営の`platform_super_admin`は工場membershipと分離する。基本体験は無料とし、AI/OCRの通常利用、記録、閲覧、共有等を意図的に課金壁で不便にしない。原価上限と利用枠を計測してから追加枠・決済を判断する。ネイティブアプリは正式公開後ではなくβ中盤に着手する。P-074のPCは常設左サイドバーへ統合し、PCのハンバーガー、drawer、FABを廃止する。フィードバックは種別選択、管理用status、絞り込み、一括出力を備える方向とする。ビジュアルは`Global Product / Hokkaido Born`を恒常方針とする。
+- 正本: 詳細は`docs/SOCIAL_LAYER.md`、`docs/PROFESSIONAL_PLATFORM.md`、`docs/MONETIZATION.md`、`docs/MEASUREMENT_PLAN.md`、`docs/ROADMAP.md`、`docs/DESIGN_DIRECTION.md`、`docs/ux/`の各文書に置く。
+- 影響: これは採用済みの設計判断であり、直ちにコード、DB、課金、外部サービスを変更するものではない。各項目の実装・検証・人間QAは、現在の状態文書とロードマップで別々に管理する。
+
 ## 未確定
 
 - 認証方式
