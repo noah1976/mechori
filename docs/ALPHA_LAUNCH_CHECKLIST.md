@@ -89,7 +89,7 @@
 - `[~]` Owner Plus／Founding Testerの利用権を理由付きで付与・確認できる
 - `[~]` GA4／GTM／Clarityの送信範囲とマスキングを確認する
 - `[~]` favicon、Apple Touch Icon、PWA manifestを確認する
-- `[ ]` P-070: 初回表示速度はPARTIAL／既知の懸案として追加確認する
+- `[~]` P-070 Phase 1: auth後にshellを先出しし、Workspace依存UIを局所loadingへ分離、shared social取得を必要routeへ遅延化した。Home／フォロー中／投稿詳細／Garage／つながりと、検索・フィードバック・管理画面の初期表示を人間QAする。AppContext全面分割、Avatar cache、Workspace JSON正規化は未着手。
 
 ## 7. 未実装・延期
 

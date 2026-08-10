@@ -38,6 +38,8 @@ function GarageContent() {
     locale,
     signedIn,
     isRemoteAlpha,
+    workspaceLoadState,
+    retryWorkspace,
     sharedJournals,
     resetDemo,
     recordEngagement,
@@ -85,6 +87,22 @@ function GarageContent() {
           </div>
         </header>
         <Link href={`/auth?returnTo=${encodeURIComponent("/garage")}`} className="primary-action">{ja ? "ログイン" : "Log in"}</Link>
+      </div>
+    );
+  }
+  if (workspaceLoadState === "loading") {
+    return (
+      <div className="page-stack narrow-page">
+        <header className="page-header"><div><span className="eyebrow">MY GARAGE</span><h1>{ja ? "ガレージを準備しています" : "Preparing your Garage"}</h1><p>{ja ? "愛車と記録を読み込んでいます。" : "Loading your vehicles and records."}</p></div></header>
+        <div className="empty-state" role="status"><CarFront size={28} aria-hidden="true" /><p>{ja ? "読み込み中…" : "Loading…"}</p></div>
+      </div>
+    );
+  }
+  if (workspaceLoadState === "error") {
+    return (
+      <div className="page-stack narrow-page">
+        <header className="page-header"><div><span className="eyebrow">MY GARAGE</span><h1>{ja ? "ガレージを読み込めませんでした" : "Your Garage could not be loaded"}</h1><p>{ja ? "通信を確認して、もう一度お試しください。" : "Check your connection and try again."}</p></div></header>
+        <div className="empty-state"><button type="button" className="primary-action" onClick={() => void retryWorkspace()}>{ja ? "もう一度試す" : "Try again"}</button></div>
       </div>
     );
   }

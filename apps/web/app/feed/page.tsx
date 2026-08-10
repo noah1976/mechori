@@ -22,7 +22,13 @@ export default function FeedPage() {
   const {
     data,
     locale,
+    signedIn,
     isRemoteAlpha,
+    workspaceLoadState,
+    ensureSocialData,
+    sharedJournalLoadState,
+    refreshSharedJournals,
+    retryWorkspace,
     sharedJournals,
     sharedProfiles,
     toggleFollow,
@@ -52,6 +58,19 @@ export default function FeedPage() {
     (relation) => relation.actorProfileId === data.currentProfileId,
   );
   useEffect(() => recordEngagement("feed_viewed"), [recordEngagement]);
+  useEffect(() => {
+    if (signedIn && isRemoteAlpha && workspaceLoadState === "ready") {
+      void ensureSocialData().catch(() => undefined);
+    }
+  }, [ensureSocialData, isRemoteAlpha, signedIn, workspaceLoadState]);
+
+  if (signedIn && workspaceLoadState === "loading") {
+    return <div className="page-stack"><header className="page-header"><div><span className="eyebrow">FOLLOWING</span><h1>{translate(locale, "feed")}</h1></div></header><div className="empty-state" role="status"><BookOpenText size={28} aria-hidden="true" /><p>{ja ? "フォロー中の記録を準備しています…" : "Preparing followed records…"}</p></div></div>;
+  }
+
+  if (signedIn && workspaceLoadState === "error") {
+    return <div className="page-stack"><header className="page-header"><div><span className="eyebrow">FOLLOWING</span><h1>{translate(locale, "feed")}</h1></div></header><div className="empty-state"><p>{ja ? "フィードを準備できませんでした。" : "The feed could not be prepared."}</p><button type="button" className="primary-action" onClick={() => void retryWorkspace()}>{ja ? "もう一度試す" : "Try again"}</button></div></div>;
+  }
 
   return (
     <div className="page-stack">
@@ -91,7 +110,13 @@ export default function FeedPage() {
               <h2>{ja ? "フォロー中の人・クルマの新着" : "Latest from followed people and vehicles"}</h2>
             </div>
           </div>
-          {feed.length ? (
+          {isRemoteAlpha && sharedJournalLoadState === "loading" && (
+            <p className="muted-copy" role="status">{ja ? "フォロー中の記録を読み込んでいます…" : "Loading followed records…"}</p>
+          )}
+          {isRemoteAlpha && sharedJournalLoadState === "error" && (
+            <div className="empty-state"><p>{ja ? "公開記録を読み込めませんでした。" : "Shared records could not be loaded."}</p><button type="button" className="secondary-action" onClick={() => void refreshSharedJournals()}>{ja ? "もう一度試す" : "Try again"}</button></div>
+          )}
+          {sharedJournalLoadState !== "error" && feed.length ? (
             <div className="journal-list">
               {feed.map((journal, index) => {
                 const author = data.profiles.find(

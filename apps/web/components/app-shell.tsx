@@ -38,6 +38,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     locale,
     setLocale,
     hydrated,
+    workspaceLoadState,
     signedIn,
     isRemoteAlpha,
     persistenceError,
@@ -56,11 +57,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   const authenticated = authState === "authenticated";
   const loggedOut = authState === "signed-out";
   const navigationReady = authState !== "loading";
-  const showRecordFab = authenticated && shouldShowRecordFab(pathname) && !menuOpen;
-  const currentProfile = data.profiles.find((profile) => profile.id === data.currentProfileId);
-  const preferredVehicle = getPreferredVehicle(
-    data.vehicles.filter((vehicle) => vehicle.ownerProfileId === data.currentProfileId),
-  );
+  const workspaceReady = workspaceLoadState === "ready";
+  const showRecordFab = authenticated && workspaceReady && shouldShowRecordFab(pathname) && !menuOpen;
+  const currentProfile = workspaceReady
+    ? data.profiles.find((profile) => profile.id === data.currentProfileId)
+    : undefined;
+  const preferredVehicle = workspaceReady
+    ? getPreferredVehicle(
+        data.vehicles.filter((vehicle) => vehicle.ownerProfileId === data.currentProfileId),
+      )
+    : undefined;
   const desktopNavItems = getNavigationItems("desktopSide", authState, adminVisible);
   const desktopPrimaryItems = desktopNavItems.filter((item) => item.group === "primary");
   const desktopSecondaryItems = desktopNavItems.filter((item) => item.group === "secondary");
@@ -234,7 +240,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </select>
           </label>
         )}
-        {authenticated ? (
+        {authenticated && workspaceReady ? (
           <Link
             href={preferredVehicle
               ? `/garage/${encodeURIComponent(preferredVehicle.id)}/event/new`
@@ -302,7 +308,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </button>
           </div>
         )}
-        {authenticated && !contentPolicyAccepted && (
+        {authenticated && workspaceReady && !contentPolicyAccepted && (
           <section className="content-policy-notice" aria-labelledby="content-policy-title">
             <div>
               <strong id="content-policy-title">
@@ -345,7 +351,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </button>
           </section>
         )}
-        {authenticated && contentPolicyAccepted && !currentProfile?.publicUsername && (
+        {authenticated && workspaceReady && contentPolicyAccepted && !currentProfile?.publicUsername && (
           <section className="content-policy-notice" aria-labelledby="username-setup-title">
             <div>
               <strong id="username-setup-title">

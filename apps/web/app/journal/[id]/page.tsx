@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { JournalContent } from "@/components/journal-content";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { ProfileSafetyMenu } from "@/components/profile-safety-menu";
@@ -47,6 +47,8 @@ export default function JournalDetailPage() {
     signedIn,
     hydrated,
     isRemoteAlpha,
+    workspaceLoadState,
+    ensureSocialData,
     sharedJournalLoadState,
     sharedJournals,
     sharedProfiles,
@@ -60,6 +62,11 @@ export default function JournalDetailPage() {
   const [reacting, setReacting] = useState(false);
   const [reactionError, setReactionError] = useState(false);
   const ja = locale === "ja";
+  useEffect(() => {
+    if (signedIn && isRemoteAlpha && workspaceLoadState === "ready") {
+      void ensureSocialData().catch(() => undefined);
+    }
+  }, [ensureSocialData, isRemoteAlpha, signedIn, workspaceLoadState]);
   const localJournal = data.journals.find((item) => item.id === id);
   const sharedJournal = sharedJournals.find((item) => item.id === id);
   const journal = localJournal
@@ -70,6 +77,7 @@ export default function JournalDetailPage() {
     hydrated,
     isRemoteAlpha,
     signedIn,
+    workspaceLoadState,
     localJournal,
     sharedJournal,
     sharedLoadState: sharedJournalLoadState,

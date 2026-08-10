@@ -27,12 +27,16 @@ export default function ProfilePage() {
     locale,
     signedIn,
     isRemoteAlpha,
+    workspaceLoadState,
     sharedJournals,
     toggleFollow,
     toggleBlockProfile,
     toggleMuteProfile,
   } = useApp();
   const ja = locale === "ja";
+  if (signedIn && workspaceLoadState === "loading") {
+    return <div className="empty-state" role="status"><CarFront size={28} aria-hidden="true" /><h1>{ja ? "プロフィールを開いています" : "Opening profile"}</h1></div>;
+  }
   const profile = data.profiles.find((item) => item.id === id || item.publicUsername?.toLowerCase() === id.toLowerCase());
   const profileId = profile?.id ?? id;
   const ownProfile = signedIn && profileId === data.currentProfileId;

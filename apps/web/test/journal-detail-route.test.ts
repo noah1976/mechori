@@ -29,6 +29,16 @@ test("a shared record loading in the background is not treated as missing", () =
   }), "ready");
 });
 
+test("workspace hydration is not treated as a missing shared record", () => {
+  assert.equal(journalDetailAvailability({
+    hydrated: true,
+    isRemoteAlpha: true,
+    signedIn: true,
+    workspaceLoadState: "loading",
+    sharedLoadState: "idle",
+  }), "loading");
+});
+
 test("a transient shared lookup failure remains retryable, while a completed miss is missing", () => {
   assert.equal(journalDetailAvailability({
     hydrated: true,

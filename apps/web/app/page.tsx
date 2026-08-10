@@ -35,7 +35,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 export default function HomePage() {
   const {
@@ -43,6 +43,11 @@ export default function HomePage() {
     locale,
     signedIn,
     isRemoteAlpha,
+    workspaceLoadState,
+    retryWorkspace,
+    ensureSocialData,
+    sharedJournalLoadState,
+    refreshSharedJournals,
     sharedJournals,
     sharedProfiles,
   } = useApp();
@@ -94,6 +99,11 @@ export default function HomePage() {
   const [query, setQuery] = useState("");
   const router = useRouter();
   const ja = locale === "ja";
+  useEffect(() => {
+    if (signedIn && isRemoteAlpha && workspaceLoadState === "ready") {
+      void ensureSocialData().catch(() => undefined);
+    }
+  }, [ensureSocialData, isRemoteAlpha, signedIn, workspaceLoadState]);
   const monthly = buildMonthlyOwnerSummary(data);
   const monthLabel = new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
     month: "long",
@@ -103,6 +113,24 @@ export default function HomePage() {
   function search(event: FormEvent) {
     event.preventDefault();
     router.push(`/search?q=${encodeURIComponent(query)}`);
+  }
+
+  if (signedIn && workspaceLoadState === "loading") {
+    return (
+      <div className="page-stack">
+        <header className="page-header"><div><span className="eyebrow">MY GARAGE</span><h1>{ja ? "ガレージを準備しています" : "Preparing your Garage"}</h1><p>{ja ? "愛車と記録を読み込んでいます。" : "Loading your vehicles and records."}</p></div></header>
+        <div className="empty-state" role="status"><CarFront size={28} aria-hidden="true" /><p>{ja ? "読み込み中…" : "Loading…"}</p></div>
+      </div>
+    );
+  }
+
+  if (signedIn && workspaceLoadState === "error") {
+    return (
+      <div className="page-stack">
+        <header className="page-header"><div><span className="eyebrow">MY GARAGE</span><h1>{ja ? "ガレージを読み込めませんでした" : "Your Garage could not be loaded"}</h1><p>{ja ? "通信を確認して、もう一度お試しください。" : "Check your connection and try again."}</p></div></header>
+        <div className="empty-state"><button type="button" className="primary-action" onClick={() => void retryWorkspace()}>{ja ? "もう一度試す" : "Try again"}</button></div>
+      </div>
+    );
   }
 
   if (!vehicle && signedIn) {
@@ -125,6 +153,13 @@ export default function HomePage() {
   return (
     <div className="page-stack">
       {signedIn && <DemoNotice />}
+
+      {signedIn && isRemoteAlpha && sharedJournalLoadState === "loading" && (
+        <p className="muted-copy" role="status">{ja ? "みんなの記録を読み込んでいます…" : "Loading shared records…"}</p>
+      )}
+      {signedIn && isRemoteAlpha && sharedJournalLoadState === "error" && (
+        <div className="empty-state"><p>{ja ? "みんなの記録を読み込めませんでした。" : "Shared records could not be loaded."}</p><button type="button" className="secondary-action" onClick={() => void refreshSharedJournals()}>{ja ? "もう一度試す" : "Try again"}</button></div>
+      )}
 
       {!signedIn ? (
         <section className="signed-out-hero" aria-labelledby="signed-out-hero-heading">

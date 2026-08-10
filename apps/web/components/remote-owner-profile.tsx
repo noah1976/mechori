@@ -38,6 +38,10 @@ export function RemoteOwnerProfile({
   const {
     data,
     locale,
+    signedIn,
+    isRemoteAlpha,
+    workspaceLoadState,
+    ensureSocialData,
     sharedJournals,
     toggleBlockProfile,
     toggleFollow,
@@ -53,6 +57,12 @@ export function RemoteOwnerProfile({
   const activeProfileId = resolutionReady ? (keyIsUuid ? publicProfileKey : resolvedProfileId) : null;
   const blocked = activeProfileId ? isProfileBlocked(data, activeProfileId) : false;
   const profileFollowed = activeProfileId ? isFollowing(data, "profile", activeProfileId) : false;
+
+  useEffect(() => {
+    if (signedIn && isRemoteAlpha && workspaceLoadState === "ready") {
+      void ensureSocialData().catch(() => undefined);
+    }
+  }, [ensureSocialData, isRemoteAlpha, signedIn, workspaceLoadState]);
 
   useEffect(() => {
     let active = true;

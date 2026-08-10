@@ -7,24 +7,25 @@ const source = readFileSync(
   "utf8",
 );
 
-test("initial alpha hydration does not wait for social feed reads", () => {
+test("initial alpha hydration resolves auth before starting workspace hydration", () => {
   const hydrateStart = source.indexOf("async function hydrate() {");
-  const backgroundStart = source.indexOf("void hydrateAlphaSocialContent");
-  const criticalHydration = source.slice(hydrateStart, backgroundStart);
+  const workspaceStart = source.indexOf("void loadWorkspace(storedAuthSession)");
+  const criticalHydration = source.slice(hydrateStart, workspaceStart);
 
   assert.ok(hydrateStart >= 0);
-  assert.ok(backgroundStart > hydrateStart);
-  assert.match(criticalHydration, /loadAlphaWorkspace/);
-  assert.match(criticalHydration, /loadMyAlphaProfileIdentity/);
+  assert.ok(workspaceStart > hydrateStart);
+  assert.match(criticalHydration, /setHydrated\(true\)/);
+  assert.doesNotMatch(criticalHydration, /loadAlphaWorkspace/);
+  assert.doesNotMatch(criticalHydration, /loadMyAlphaProfileIdentity/);
   assert.doesNotMatch(criticalHydration, /loadAlphaSharedJournals/);
   assert.doesNotMatch(criticalHydration, /loadAlphaJournalReactions/);
   assert.doesNotMatch(criticalHydration, /alphaSharedJournalMediaAvailable/);
   assert.doesNotMatch(criticalHydration, /loadMyAlphaUserFollows/);
 });
 
-test("background social hydration bounds profile image reads to shared authors", () => {
+test("lazy social hydration bounds profile image reads to shared authors", () => {
   assert.match(source, /const authorIds = \[\.\.\.new Set\(loadedSharedContent\.map\(\(item\) => item\.author\.id\)\)\]/);
   assert.match(source, /loadAlphaPublicProfileImages\(authorIds\)/);
   assert.doesNotMatch(source, /loadAlphaPublicProfileImages\(\)\./);
-  assert.match(source, /if \(!active\) return;/);
+  assert.match(source, /socialProfileRef\.current !== profileId/);
 });

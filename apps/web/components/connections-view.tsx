@@ -69,6 +69,8 @@ export function ConnectionsView({
     locale,
     signedIn,
     isRemoteAlpha,
+    workspaceLoadState,
+    retryWorkspace,
     toggleFollow,
     isFollowPending,
   } = useApp();
@@ -84,7 +86,7 @@ export function ConnectionsView({
   const ja = locale === "ja";
 
   const loadPeople = useCallback(async () => {
-    if (!canLoadAlphaConnections(signedIn, isRemoteAlpha)) return;
+    if (!canLoadAlphaConnections(signedIn, isRemoteAlpha) || workspaceLoadState !== "ready") return;
     setPeopleLoading(true);
     setPeopleFailed(false);
     try {
@@ -95,10 +97,10 @@ export function ConnectionsView({
     } finally {
       setPeopleLoading(false);
     }
-  }, [isRemoteAlpha, ownerPublicProfileId, personList, signedIn]);
+  }, [isRemoteAlpha, ownerPublicProfileId, personList, signedIn, workspaceLoadState]);
 
   const loadVehicles = useCallback(async () => {
-    if (!canLoadAlphaConnections(signedIn, isRemoteAlpha)) return;
+    if (!canLoadAlphaConnections(signedIn, isRemoteAlpha) || workspaceLoadState !== "ready") return;
     setVehiclesLoading(true);
     setVehiclesFailed(false);
     try {
@@ -109,7 +111,7 @@ export function ConnectionsView({
     } finally {
       setVehiclesLoading(false);
     }
-  }, [isRemoteAlpha, signedIn]);
+  }, [isRemoteAlpha, signedIn, workspaceLoadState]);
 
   useEffect(() => {
     if (category !== "people") return;
@@ -151,8 +153,16 @@ export function ConnectionsView({
     setVehicles((current) => removeVehicleAfterUnfollow(current, vehicle.targetId, result));
   }
 
-  const peopleState = connectionCollectionState(peopleLoading, peopleFailed, people);
-  const vehiclesState = connectionCollectionState(vehiclesLoading, vehiclesFailed, vehicles);
+  const peopleState = connectionCollectionState(
+    peopleLoading || workspaceLoadState === "loading",
+    peopleFailed || workspaceLoadState === "error",
+    people,
+  );
+  const vehiclesState = connectionCollectionState(
+    vehiclesLoading || workspaceLoadState === "loading",
+    vehiclesFailed || workspaceLoadState === "error",
+    vehicles,
+  );
 
   if (!signedIn) {
     return (
@@ -212,7 +222,7 @@ export function ConnectionsView({
             {personList === "following" ? (ja ? "フォロー中" : "Following") : (ja ? "フォロワー" : "Followers")}
           </h2>
           {peopleState === "loading" && <ConnectionLoading label={ja ? "つながりを読み込み中" : "Loading connections"} />}
-          {peopleState === "error" && <ConnectionError onRetry={() => void loadPeople()} label={ja ? "つながりを読み込めませんでした。" : "Connections could not be loaded."} retryLabel={ja ? "もう一度試す" : "Retry"} />}
+          {peopleState === "error" && <ConnectionError onRetry={() => workspaceLoadState === "error" ? void retryWorkspace() : void loadPeople()} label={ja ? "つながりを読み込めませんでした。" : "Connections could not be loaded."} retryLabel={ja ? "もう一度試す" : "Retry"} />}
           {peopleState === "empty" && (
             <ConnectionEmpty
               icon={personList === "following" ? UserCheck : UsersRound}
@@ -251,7 +261,7 @@ export function ConnectionsView({
         <section className="connections-section" aria-labelledby="connections-vehicles-heading">
           <div className="section-heading compact"><div><span className="eyebrow">FOLLOWED VEHICLES</span><h2 id="connections-vehicles-heading">{ja ? "フォロー中のクルマ" : "Followed vehicles"}</h2></div></div>
           {vehiclesState === "loading" && <ConnectionLoading label={ja ? "フォロー中のクルマを読み込み中" : "Loading followed vehicles"} />}
-          {vehiclesState === "error" && <ConnectionError onRetry={() => void loadVehicles()} label={ja ? "フォロー中のクルマを読み込めませんでした。" : "Followed vehicles could not be loaded."} retryLabel={ja ? "もう一度試す" : "Retry"} />}
+          {vehiclesState === "error" && <ConnectionError onRetry={() => workspaceLoadState === "error" ? void retryWorkspace() : void loadVehicles()} label={ja ? "フォロー中のクルマを読み込めませんでした。" : "Followed vehicles could not be loaded."} retryLabel={ja ? "もう一度試す" : "Retry"} />}
           {vehiclesState === "empty" && <ConnectionEmpty icon={CarFront} title={ja ? "まだフォローしているクルマはありません" : "You are not following vehicles yet"} action={<Link href="/people" className="secondary-action"><Search size={17} aria-hidden="true" />{ja ? "探す" : "Search"}</Link>} />}
           {vehiclesState === "ready" && (
             <div className="connections-list connections-vehicle-list">

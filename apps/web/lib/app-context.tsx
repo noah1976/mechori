@@ -85,6 +85,11 @@ import { clearAllLocalDrafts } from "@/lib/local-draft-store";
 import { pushAnalyticsEvent } from "@/lib/analytics";
 import { alphaJournalSyncError } from "@/lib/journal-save-error";
 import {
+  createKeyedSingleFlight,
+  shouldLoadSocialData,
+  type WorkspaceLoadState,
+} from "@/lib/hydration-state";
+import {
   createFollowActionController,
   followActionKey,
   type FollowActionController,
@@ -109,6 +114,7 @@ interface AppContextValue {
   data: AppData;
   locale: Locale;
   hydrated: boolean;
+  workspaceLoadState: WorkspaceLoadState;
   isRemoteAlpha: boolean;
   alphaJournalSharingAvailable: boolean;
   sharedJournalLoadState: SharedJournalLoadState;
@@ -163,7 +169,9 @@ interface AppContextValue {
   acceptContentPolicy(): Promise<void>;
   journalReaction(journalId: string): { appreciationCount: number; likedByMe: boolean };
   toggleJournalLike(journalId: string): Promise<void>;
+  ensureSocialData(): Promise<void>;
   refreshSharedJournals(): Promise<void>;
+  retryWorkspace(): Promise<void>;
   recordEngagement(name: EngagementEventName): void;
   resetDemo(): Promise<void>;
 }
@@ -187,6 +195,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>("ja");
   const [authSession, setAuthSession] = useState<AuthSession>(signedOutSession);
   const [hydrated, setHydrated] = useState(false);
+  const [workspaceLoadState, setWorkspaceLoadState] = useState<WorkspaceLoadState>(
+    isRemoteAlpha ? "loading" : "ready",
+  );
   const [persistenceError, setPersistenceError] = useState(false);
   const [alphaJournalSharingAvailable, setAlphaJournalSharingAvailable] = useState(
     !isRemoteAlpha,
@@ -207,6 +218,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const followAuthRef = useRef(authSession);
   const followWriteChainRef = useRef(Promise.resolve());
   const followControllerRef = useRef<FollowActionController | null>(null);
+  const workspaceRequestRef = useRef(0);
+  const socialLoadCoordinatorRef = useRef(createKeyedSingleFlight());
+  const socialProfileRef = useRef<string | null>(null);
+  const socialCapabilitiesRef = useRef({
+    sharing: !isRemoteAlpha,
+    mediaSharing: !isRemoteAlpha,
+  });
   const [contentPolicyAccepted, setContentPolicyAccepted] = useState(!isRemoteAlpha);
 
   useEffect(() => {
@@ -214,19 +232,83 @@ export function AppProvider({ children }: { children: ReactNode }) {
     followAuthRef.current = authSession;
   }, [authSession, data]);
 
-  useEffect(() => {
-    let active = true;
-    async function hydrateAlphaSocialContent(profileId: string): Promise<void> {
-      const [profileFollows, loadedSharedContent, reactions, mediaSharingAvailable] =
-        await Promise.all([
-          loadMyAlphaUserFollows(profileId).catch(() => null),
-          loadAlphaSharedJournals().catch(() => null),
-          loadAlphaJournalReactions().catch(() => []),
-          alphaSharedJournalMediaAvailable().catch(() => false),
-        ]);
-      if (!active) return;
+  const resetAlphaSocialData = useCallback(() => {
+    socialLoadCoordinatorRef.current.reset();
+    socialProfileRef.current = null;
+    socialCapabilitiesRef.current = {
+      sharing: !isRemoteAlpha,
+      mediaSharing: !isRemoteAlpha,
+    };
+    setAlphaSharedContent([]);
+    setAlphaJournalReactions(new Map());
+    setAlphaJournalSharingAvailable(!isRemoteAlpha);
+    setAlphaJournalMediaSharingAvailable(!isRemoteAlpha);
+    setSharedJournalLoadState(isRemoteAlpha ? "idle" : "ready");
+  }, []);
 
-      if (profileFollows) {
+  const loadWorkspace = useCallback(async (session: AuthSession) => {
+    if (!isRemoteAlpha || !isSignedIn(session)) {
+      setWorkspaceLoadState("ready");
+      return;
+    }
+    const requestId = workspaceRequestRef.current + 1;
+    workspaceRequestRef.current = requestId;
+    setWorkspaceLoadState("loading");
+    try {
+      const [loadedWorkspace, identity] = await Promise.all([
+        loadAlphaWorkspace(session.profileId),
+        loadMyAlphaProfileIdentity().catch(() => null),
+      ]);
+      if (workspaceRequestRef.current !== requestId) return;
+      let nextData = loadedWorkspace;
+      if (identity) {
+        nextData = updateCurrentProfileIdentity(
+          nextData,
+          identity.displayName,
+          identity.publicUsername,
+          identity.bio,
+        );
+        if (identity.profileImagePath) {
+          nextData = updateCurrentProfileImage(nextData, identity.profileImagePath);
+        }
+        setContentPolicyAccepted(
+          identity.contentPolicyVersion === alphaContentPolicyVersion &&
+            Boolean(identity.contentPolicyAcceptedAt),
+        );
+      }
+      setData(nextData);
+      setWorkspaceLoadState("ready");
+    } catch {
+      if (workspaceRequestRef.current !== requestId) return;
+      setWorkspaceLoadState("error");
+    }
+  }, []);
+
+  const ensureSocialData = useCallback(async () => {
+    if (!isSignedIn(authSession)) return;
+    if (!shouldLoadSocialData({
+      isRemoteAlpha,
+      signedIn: true,
+      workspaceLoadState,
+    })) return;
+
+    const profileId = authSession.profileId;
+    await socialLoadCoordinatorRef.current.run(profileId, async () => {
+      socialProfileRef.current = profileId;
+      setSharedJournalLoadState("loading");
+      try {
+        const [profileFollows, loadedSharedContent, reactions, mediaSharingAvailable] =
+          await Promise.all([
+            loadMyAlphaUserFollows(profileId),
+            loadAlphaSharedJournals(),
+            loadAlphaJournalReactions().catch(() => []),
+            alphaSharedJournalMediaAvailable().catch(() => false),
+          ]);
+        if (socialProfileRef.current !== profileId) return;
+        socialCapabilitiesRef.current = {
+          sharing: true,
+          mediaSharing: mediaSharingAvailable,
+        };
         setData((current) => ({
           ...current,
           follows: [
@@ -234,16 +316,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
             ...profileFollows,
           ],
         }));
-      }
-      if (loadedSharedContent) {
         setAlphaSharedContent(loadedSharedContent);
+        setAlphaJournalReactions(
+          new Map(reactions.map((reaction) => [reaction.journalId, reaction])),
+        );
         setAlphaJournalSharingAvailable(true);
+        setAlphaJournalMediaSharingAvailable(mediaSharingAvailable);
         setSharedJournalLoadState("ready");
+
         const authorIds = [...new Set(loadedSharedContent.map((item) => item.author.id))];
         if (authorIds.length > 0) {
           void loadAlphaPublicProfileImages(authorIds)
             .then((images) => {
-              if (!active) return;
+              if (socialProfileRef.current !== profileId) return;
               setAlphaSharedContent((current) => current.map((item) => ({
                 ...item,
                 author: { ...item.author, profileImagePath: images.get(item.author.id) },
@@ -251,58 +336,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
             })
             .catch(() => undefined);
         }
-      } else {
+      } catch (error) {
+        if (socialProfileRef.current !== profileId) return;
+        socialCapabilitiesRef.current = { sharing: false, mediaSharing: false };
         setAlphaJournalSharingAvailable(false);
+        setAlphaJournalMediaSharingAvailable(false);
         setSharedJournalLoadState("error");
+        throw error;
       }
-      setAlphaJournalReactions(
-        new Map(reactions.map((reaction) => [reaction.journalId, reaction])),
-      );
-      setAlphaJournalMediaSharingAvailable(mediaSharingAvailable);
-    }
+    });
+  }, [authSession, workspaceLoadState]);
 
+  const refreshAlphaSharedContent = useCallback(async () => {
+    if (!shouldLoadSocialData({
+      isRemoteAlpha,
+      signedIn: isSignedIn(authSession),
+      workspaceLoadState,
+    })) return;
+    socialLoadCoordinatorRef.current.reset();
+    await ensureSocialData();
+  }, [authSession, ensureSocialData, workspaceLoadState]);
+
+  const retryWorkspace = useCallback(async () => {
+    if (!isSignedIn(authSession)) return;
+    await loadWorkspace(authSession);
+  }, [authSession, loadWorkspace]);
+
+  useEffect(() => {
+    let active = true;
     async function hydrate() {
       const storedLocale = readStorageValue(localeKey) ?? readStorageValue(legacyLocaleKey);
       try {
         const storedAuthSession = isRemoteAlpha
           ? await loadAlphaAuthSession()
           : readStoredAuthSession();
-        let storedData: AppData | null;
-        if (isRemoteAlpha && isSignedIn(storedAuthSession)) {
-          const [
-            loadedWorkspace,
-            identity,
-          ] = await Promise.all([
-            loadAlphaWorkspace(storedAuthSession.profileId),
-            loadMyAlphaProfileIdentity().catch(() => null),
-          ]);
-          storedData = loadedWorkspace;
-          if (identity) {
-            storedData = updateCurrentProfileIdentity(
-              storedData,
-              identity.displayName,
-              identity.publicUsername,
-              identity.bio,
-            );
-            if (identity.profileImagePath) {
-              storedData = updateCurrentProfileImage(
-                storedData,
-                identity.profileImagePath,
-              );
-            }
-            if (active) {
-              setContentPolicyAccepted(
-                identity.contentPolicyVersion === alphaContentPolicyVersion &&
-                  Boolean(identity.contentPolicyAcceptedAt),
-              );
-            }
-          }
-        } else {
-          storedData = isRemoteAlpha ? null : await dataProvider.load();
-        }
-
         if (!active) return;
-        if (storedData) setData(storedData);
         setAuthSession(storedAuthSession);
         if (isSupportedUiLocale(storedLocale)) {
           setLocaleState(storedLocale);
@@ -313,28 +381,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
             setPersistenceError(true);
           }
         }
-        if (isRemoteAlpha && isSignedIn(storedAuthSession)) {
-          setSharedJournalLoadState("loading");
-          void hydrateAlphaSocialContent(storedAuthSession.profileId);
+
+        if (isRemoteAlpha) {
+          setHydrated(true);
+          if (isSignedIn(storedAuthSession)) {
+            void loadWorkspace(storedAuthSession);
+          } else {
+            setData(cloneDemoData());
+            setWorkspaceLoadState("ready");
+            setContentPolicyAccepted(false);
+          }
+          return;
         }
+
+        const storedData = await dataProvider.load();
+        if (!active) return;
+        if (storedData) setData(storedData);
+        setWorkspaceLoadState("ready");
       } catch {
         if (!active) return;
         setAuthSession(signedOutSession);
         setData(cloneDemoData());
-        setAlphaSharedContent([]);
-        setAlphaJournalReactions(new Map());
-        setSharedJournalLoadState(isRemoteAlpha ? "idle" : "ready");
+        setWorkspaceLoadState("error");
+        resetAlphaSocialData();
         setContentPolicyAccepted(!isRemoteAlpha);
         setPersistenceError(true);
       } finally {
-        if (active) setHydrated(true);
+        if (active && !isRemoteAlpha) setHydrated(true);
       }
     }
     void hydrate();
     return () => {
       active = false;
+      workspaceRequestRef.current += 1;
     };
-  }, []);
+  }, [loadWorkspace, resetAlphaSocialData]);
 
   useEffect(() => {
     if (hydrated && isSignedIn(authSession)) {
@@ -409,9 +490,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       if (isRemoteAlpha) {
         await signOutFromAlpha();
+        workspaceRequestRef.current += 1;
         setData(cloneDemoData());
-        setAlphaSharedContent([]);
-        setAlphaJournalReactions(new Map());
+        setWorkspaceLoadState("ready");
+        resetAlphaSocialData();
         setContentPolicyAccepted(!isRemoteAlpha);
       } else {
         window.localStorage.setItem(authKey, JSON.stringify(signedOutSession));
@@ -421,29 +503,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setPersistenceError(true);
       throw new Error("sign_out_failed");
     }
-  }, []);
+  }, [resetAlphaSocialData]);
 
   const clearPersistenceError = useCallback(() => setPersistenceError(false), []);
-
-  const refreshAlphaSharedContent = useCallback(async () => {
-    if (!isRemoteAlpha || !isSignedIn(authSession)) return;
-    setSharedJournalLoadState("loading");
-    try {
-      const [sharedContent, reactions] = await Promise.all([
-        loadAlphaSharedJournals(),
-        loadAlphaJournalReactions().catch(() => []),
-      ]);
-      setAlphaSharedContent(sharedContent);
-      setAlphaJournalReactions(
-        new Map(reactions.map((reaction) => [reaction.journalId, reaction])),
-      );
-      setAlphaJournalSharingAvailable(true);
-      setSharedJournalLoadState("ready");
-    } catch {
-      setAlphaJournalSharingAvailable(false);
-      setSharedJournalLoadState("error");
-    }
-  }, [authSession]);
 
   const recordEngagement = useCallback((name: EngagementEventName) => {
     if (!isSignedIn(authSession)) return;
@@ -537,8 +599,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (isRemoteAlpha && !contentPolicyAccepted) {
         throw new Error("content_policy_acceptance_required");
       }
-      if (isRemoteAlpha && draft.visibility === "public" && !alphaJournalSharingAvailable) {
-        throw new Error("alpha_journal_sharing_unavailable");
+      if (isRemoteAlpha && draft.visibility === "public") {
+        try {
+          await ensureSocialData();
+        } catch {
+          throw new Error("alpha_journal_sharing_unavailable");
+        }
+        if (!socialCapabilitiesRef.current.sharing) {
+          throw new Error("alpha_journal_sharing_unavailable");
+        }
       }
       const result = addJournalToData(data, draft, locale);
       if (
@@ -548,7 +617,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           (attachment) =>
             attachment.kind === "image" && attachment.privacyState === "public_ready",
         ) &&
-        !alphaJournalMediaSharingAvailable
+        !socialCapabilitiesRef.current.mediaSharing
       ) {
         throw new Error("alpha_shared_image_sync_failed");
       }
@@ -590,11 +659,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return result.journal;
     },
     [
-      alphaJournalSharingAvailable,
-      alphaJournalMediaSharingAvailable,
       authSession,
       contentPolicyAccepted,
       data,
+      ensureSocialData,
       locale,
       persist,
       refreshAlphaSharedContent,
@@ -608,10 +676,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!previous) throw new Error("journal_not_found");
       if (
         isRemoteAlpha &&
-        (draft.visibility === "public" || previous.visibility === "public") &&
-        !alphaJournalSharingAvailable
+        (draft.visibility === "public" || previous.visibility === "public")
       ) {
-        throw new Error("alpha_journal_sharing_unavailable");
+        try {
+          await ensureSocialData();
+        } catch {
+          throw new Error("alpha_journal_sharing_unavailable");
+        }
+        if (!socialCapabilitiesRef.current.sharing) {
+          throw new Error("alpha_journal_sharing_unavailable");
+        }
       }
       const result = updateJournalInData(data, id, draft);
       if (
@@ -621,7 +695,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           (attachment) =>
             attachment.kind === "image" && attachment.privacyState === "public_ready",
         ) &&
-        !alphaJournalMediaSharingAvailable
+        !socialCapabilitiesRef.current.mediaSharing
       ) {
         throw new Error("alpha_shared_image_sync_failed");
       }
@@ -676,11 +750,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return result.journal;
     },
     [
-      alphaJournalSharingAvailable,
-      alphaJournalMediaSharingAvailable,
       alphaSharedContent,
       authSession,
       data,
+      ensureSocialData,
       persist,
       refreshAlphaSharedContent,
     ],
@@ -928,8 +1001,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           ...sharedJournalIds.map(withdrawAlphaSharedJournal),
         ]);
         setData(emptyData);
-        setAlphaSharedContent([]);
-        setAlphaJournalReactions(new Map());
+        resetAlphaSocialData();
       } else {
         await Promise.all([dataProvider.reset(), journalMediaStore.reset()]);
         setData(cloneDemoData());
@@ -941,13 +1013,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setPersistenceError(true);
       throw new Error("local_reset_failed");
     }
-  }, [alphaJournalSharingAvailable, authSession, data.journals]);
+  }, [alphaJournalSharingAvailable, authSession, data.journals, resetAlphaSocialData]);
 
   const value = useMemo(
     () => ({
       data,
       locale,
       hydrated,
+      workspaceLoadState,
       isRemoteAlpha,
       alphaJournalSharingAvailable,
       sharedJournalLoadState,
@@ -986,7 +1059,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       acceptContentPolicy,
       journalReaction,
       toggleJournalLike,
+      ensureSocialData,
       refreshSharedJournals: refreshAlphaSharedContent,
+      retryWorkspace,
       recordEngagement,
       resetDemo,
     }),
@@ -994,6 +1069,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       data,
       locale,
       hydrated,
+      workspaceLoadState,
       authSession,
       alphaJournalSharingAvailable,
       sharedJournalLoadState,
@@ -1025,7 +1101,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       acceptContentPolicy,
       journalReaction,
       toggleJournalLike,
+      ensureSocialData,
       refreshAlphaSharedContent,
+      retryWorkspace,
       recordEngagement,
       resetDemo,
     ],
