@@ -1,6 +1,7 @@
 "use client";
 
 import { JournalCard } from "@/components/journal-card";
+import { ConnectionsProfileLinks } from "@/components/connections-view";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { useApp } from "@/lib/app-context";
 import {
@@ -186,6 +187,8 @@ export function RemoteOwnerProfile({
               : "Follow this person"}
         </button>
       </header>
+
+      <ConnectionsProfileLinks profileId={owner.id} locale={locale} />
 
       <section className="remote-owner-vehicles" aria-labelledby="remote-owner-vehicles-heading">
         <div className="section-heading">

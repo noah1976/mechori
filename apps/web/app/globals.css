@@ -1160,6 +1160,36 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .profile-facts svg { grid-row: 1 / span 2; color: var(--brand); }
 .profile-facts span { color: var(--muted); font-size: 10px; }
 .profile-facts strong { overflow-wrap: anywhere; font-size: 12px; }
+.profile-connections-links { display: flex; flex-wrap: wrap; gap: 10px; }
+.profile-connections-links a { min-height: 42px; display: inline-flex; align-items: center; gap: 7px; padding: 0 12px; color: var(--brand); background: var(--surface); border: 1px solid var(--line); text-decoration: none; font-size: 12px; font-weight: 750; }
+.profile-connections-links a:hover { border-color: var(--brand); }
+.connections-page { gap: 20px; }
+.connections-category-tabs, .connections-person-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--line); }
+.connections-category-tabs button, .connections-person-tabs button { min-height: 44px; display: inline-flex; align-items: center; gap: 7px; padding: 0 13px; color: var(--muted); background: transparent; border: 0; border-bottom: 3px solid transparent; font: inherit; font-size: 13px; font-weight: 750; cursor: pointer; }
+.connections-category-tabs button[aria-selected="true"], .connections-person-tabs button[aria-selected="true"] { color: var(--brand); border-bottom-color: var(--brand); }
+.connections-category-tabs button:disabled { opacity: 0.45; cursor: not-allowed; }
+.connections-section { display: grid; gap: 16px; }
+.connections-list { display: grid; border-top: 1px solid var(--line); background: var(--surface); }
+.connection-person-row { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+.connection-person-main { min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 11px; color: var(--ink); text-decoration: none; }
+.connection-person-main > span { min-width: 0; }
+.connection-person-main strong, .connection-person-main small { display: block; overflow-wrap: anywhere; }
+.connection-person-main strong { font-size: 14px; }
+.connection-person-main small { margin-top: 3px; color: var(--muted); font-size: 11px; }
+.connection-relationship { white-space: nowrap; color: var(--muted); font-size: 11px; font-weight: 750; }
+.connection-mutual { color: var(--brand); }
+.connection-person-row .follow-button, .connection-vehicle-row .follow-button { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding-inline: 11px; font-size: 12px; }
+.connections-vehicle-list { gap: 0; }
+.connection-vehicle-row { min-width: 0; display: grid; grid-template-columns: 112px minmax(0, 1fr) auto; align-items: center; gap: 13px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+.connection-vehicle-image { position: relative; min-height: 78px; overflow: hidden; background: var(--surface-soft); }
+.connection-vehicle-image img { object-fit: cover; }
+.connection-vehicle-copy { min-width: 0; display: grid; gap: 7px; }
+.connection-vehicle-copy > a:first-child { color: var(--ink); text-decoration: none; }
+.connection-vehicle-copy strong { display: block; overflow-wrap: anywhere; font-size: 14px; }
+.connection-owner-link { min-width: 0; display: inline-flex; align-items: center; gap: 7px; color: var(--muted); text-decoration: none; font-size: 11px; }
+.connection-owner-link span { overflow-wrap: anywhere; }
+.connection-owner-avatar { position: relative; width: 23px; height: 23px; display: grid; place-items: center; flex: none; overflow: hidden; color: #fff; background: var(--brand); border-radius: 50%; font-size: 9px; font-weight: 850; }
+.connection-owner-following { color: var(--brand); font-size: 10px; font-weight: 750; }
 .owner-search-panel { display: grid; gap: 18px; padding: 22px; background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--brand); }
 .owner-search-heading { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 12px; }
 .owner-search-heading > svg { margin-top: 3px; color: var(--brand); }
@@ -1661,6 +1691,12 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .owner-suggestion-vehicles .follow-button { grid-column: 2; justify-self: start; }
   .profile-facts, .moderation-summary { grid-template-columns: 1fr; }
   .profile-facts > div + div, .moderation-summary > div + div { border-left: 0; border-top: 1px solid var(--line); }
+  .connection-person-row { grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+  .connection-person-row .connection-relationship { grid-column: 1; }
+  .connection-person-row .follow-button { grid-column: 2; grid-row: 1 / span 2; }
+  .connection-vehicle-row { grid-template-columns: 82px minmax(0, 1fr); gap: 11px; }
+  .connection-vehicle-image { min-height: 70px; }
+  .connection-vehicle-row .follow-button { grid-column: 2; justify-self: start; }
   .moderation-item { padding: 18px 15px; }
   .moderation-item dl { grid-template-columns: 1fr; }
   .moderation-item dl > div + div { border-top: 1px solid var(--line); }

@@ -1,5 +1,11 @@
-import { NavigationComingSoon } from "@/components/navigation-coming-soon";
+"use client";
+
+import { ConnectionsView } from "@/components/connections-view";
+import { useSearchParams } from "next/navigation";
 
 export default function ConnectionsPage() {
-  return <NavigationComingSoon kind="connections" />;
+  const searchParams = useSearchParams();
+  const profile = searchParams.get("profile");
+  const tab = searchParams.get("tab") === "followers" ? "followers" : "following";
+  return <ConnectionsView ownerPublicProfileId={profile} initialList={tab} />;
 }

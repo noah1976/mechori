@@ -117,7 +117,7 @@ const allNavigationItems: readonly NavigationItem[] = [
     auth: "authenticated",
     activeMatch: "connections",
     order: 50,
-    status: "comingSoon",
+    status: "active",
     group: "primary",
   },
   {

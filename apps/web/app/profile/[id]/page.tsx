@@ -1,6 +1,7 @@
 "use client";
 
 import { JournalCard } from "@/components/journal-card";
+import { ConnectionsProfileLinks } from "@/components/connections-view";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { RemoteOwnerProfile } from "@/components/remote-owner-profile";
 import { useApp } from "@/lib/app-context";
@@ -87,6 +88,7 @@ export default function ProfilePage() {
       </header>
 
       {profile.bio?.trim() && <section className="profile-bio"><UserRound size={21} aria-hidden="true" /><p>{profile.bio}</p></section>}
+      {signedIn && <ConnectionsProfileLinks profileId={profile.id} ownProfile={ownProfile} locale={locale} />}
 
       <section className="profile-facts" aria-label={ja ? "公開プロフィール情報" : "Public profile information"}>
         <div><CarFront size={20} /><span>{ja ? "愛車歴" : "Vehicle history"}</span><strong>{vehicles.length ? `${vehicles.length}${ja ? "台" : " vehicles"}` : (ja ? "公開車両なし" : "No visible vehicles")}</strong></div>
