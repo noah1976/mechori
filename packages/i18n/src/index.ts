@@ -85,7 +85,7 @@ const ja = {
   invitedAlphaOnly: "招待URLを受け取った方だけが参加できるα版です。",
   invitedDemoOnly: "招待URLを受け取った方だけが参加できるDEMOです。",
   invitedSignupInstruction: "下のボタンからGoogleアカウントを選ぶと、MECHORIへの登録が完了します。",
-  feedback: "感想",
+  feedback: "フィードバック",
   feedbackTitle: "使っていて気づいたこと",
   feedbackIntro: "短い一言でも助かります。送る前にメール画面で内容を確認できます。",
   feedbackType: "どんな気づきですか？",

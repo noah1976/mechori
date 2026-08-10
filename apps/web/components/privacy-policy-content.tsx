@@ -89,7 +89,7 @@ export function PrivacyPolicyContent() {
           </li>
           <li>
             {ja
-              ? "利用者が入力する情報：車両、所有期間、整備・故障・修理・部品・出来事、ジャーナル、公開範囲、感想、通報。写真・動画は利用者が選択した場合だけ扱います。"
+              ? "利用者が入力する情報：車両、所有期間、整備・故障・修理・部品・出来事、ジャーナル、公開範囲、フィードバック、通報。写真・動画は利用者が選択した場合だけ扱います。"
               : "User-provided data: vehicles, ownership periods, maintenance, faults, repairs, parts, events, journal entries, visibility choices, feedback, and reports. Photos and videos are handled only when selected by the user."}
           </li>
           <li>
@@ -111,7 +111,7 @@ export function PrivacyPolicyContent() {
           <li>{ja ? "本人認証、招待制αへの参加確認、セッション維持" : "Authentication, invite-only alpha access control, and session management"}</li>
           <li>{ja ? "愛車・整備・出来事の保存、編集、表示、共有範囲の適用" : "Storing, editing, displaying, and applying visibility choices to vehicle, maintenance, and event data"}</li>
           <li>{ja ? "不正利用防止、障害調査、セキュリティ、バックアップ" : "Abuse prevention, incident investigation, security, and backups"}</li>
-          <li>{ja ? "感想・通報への対応、少人数αの使い勝手と品質改善" : "Responding to feedback and reports and improving alpha usability and quality"}</li>
+          <li>{ja ? "フィードバック・通報への対応、少人数αの使い勝手と品質改善" : "Responding to feedback and reports and improving alpha usability and quality"}</li>
           <li>{ja ? "法令上必要な対応と権利保護" : "Legal compliance and protection of rights"}</li>
         </ul>
       </section>

@@ -113,7 +113,7 @@ const allNavigationItems: readonly NavigationItem[] = [
     href: "/connections",
     label: "connections",
     icon: UserRound,
-    surfaces: ["drawer"],
+    surfaces: ["desktopSide", "drawer"],
     auth: "authenticated",
     activeMatch: "connections",
     order: 50,
@@ -125,7 +125,7 @@ const allNavigationItems: readonly NavigationItem[] = [
     href: "/settings/profile",
     label: "profileEdit",
     icon: Settings2,
-    surfaces: ["drawer"],
+    surfaces: ["desktopSide", "drawer"],
     auth: "authenticated",
     activeMatch: "profile-edit",
     order: 60,
@@ -137,7 +137,7 @@ const allNavigationItems: readonly NavigationItem[] = [
     href: "/invite",
     label: "invite",
     icon: UserPlus,
-    surfaces: ["drawer"],
+    surfaces: ["desktopSide", "drawer"],
     auth: "authenticated",
     activeMatch: "invite",
     order: 70,
@@ -149,7 +149,7 @@ const allNavigationItems: readonly NavigationItem[] = [
     href: "/feedback",
     label: "feedback",
     icon: MessageSquareText,
-    surfaces: ["drawer"],
+    surfaces: ["desktopSide", "drawer"],
     auth: "authenticated",
     activeMatch: "feedback",
     order: 80,
@@ -161,10 +161,22 @@ const allNavigationItems: readonly NavigationItem[] = [
     href: "/help",
     label: "help",
     icon: CircleHelp,
-    surfaces: ["drawer"],
+    surfaces: ["desktopSide", "drawer"],
     auth: "authenticated",
     activeMatch: "help",
     order: 90,
+    status: "active",
+    group: "secondary",
+  },
+  {
+    id: "settings",
+    href: "/settings/privacy",
+    label: "settings",
+    icon: Settings2,
+    surfaces: ["desktopSide", "drawer"],
+    auth: "authenticated",
+    activeMatch: "settings",
+    order: 105,
     status: "active",
     group: "secondary",
   },
@@ -173,7 +185,7 @@ const allNavigationItems: readonly NavigationItem[] = [
     href: "/terms",
     label: "terms",
     icon: FileText,
-    surfaces: ["drawer"],
+    surfaces: ["desktopSide", "drawer"],
     auth: "authenticated",
     activeMatch: "terms",
     order: 100,
@@ -185,7 +197,7 @@ const allNavigationItems: readonly NavigationItem[] = [
     href: "/privacy",
     label: "privacy",
     icon: FileText,
-    surfaces: ["drawer"],
+    surfaces: ["desktopSide", "drawer"],
     auth: "authenticated",
     activeMatch: "privacy",
     order: 110,
@@ -197,7 +209,7 @@ const allNavigationItems: readonly NavigationItem[] = [
     href: "/admin",
     label: "admin",
     icon: ShieldCheck,
-    surfaces: ["drawer"],
+    surfaces: ["desktopSide", "drawer"],
     auth: "admin",
     activeMatch: "admin",
     order: 120,
@@ -220,7 +232,7 @@ const labelMap: Record<NavigationLabelKey, { ja: string; en: string }> = {
   connections: { ja: "つながり", en: "Connections" },
   profileEdit: { ja: "プロフィールを編集", en: "Edit profile" },
   invite: { ja: "友達を招待", en: "Invite friends" },
-  feedback: { ja: "感想", en: "Feedback" },
+  feedback: { ja: "フィードバック", en: "Feedback" },
   help: { ja: "ヘルプ", en: "Help" },
   settings: { ja: "設定", en: "Settings" },
   terms: { ja: "利用規約", en: "Terms" },
@@ -276,6 +288,8 @@ export function isNavigationItemActive(pathname: string, item: NavigationItem): 
       return pathname === "/connections" || pathname.startsWith("/connections/");
     case "profile-edit":
       return pathname === "/settings/profile" || pathname.startsWith("/settings/profile/");
+    case "settings":
+      return pathname === "/settings/privacy" || pathname.startsWith("/settings/privacy/");
     default:
       return pathname === item.href || pathname.startsWith(`${item.href}/`);
   }
@@ -311,6 +325,10 @@ export function shouldShowRecordFab(pathname: string) {
     pathname === "/journal/new" ||
     (pathname.startsWith("/journal/") && pathname.endsWith("/edit")) ||
     (pathname.startsWith("/garage/") && pathname.endsWith("/event/new")) ||
-    pathname.startsWith("/records/")
+    pathname.startsWith("/records/") ||
+    pathname === "/feedback" ||
+    pathname.startsWith("/feedback/") ||
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/")
   );
 }

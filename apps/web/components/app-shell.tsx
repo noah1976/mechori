@@ -61,7 +61,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const preferredVehicle = getPreferredVehicle(
     data.vehicles.filter((vehicle) => vehicle.ownerProfileId === data.currentProfileId),
   );
-  const desktopNavItems = getNavigationItems("desktopSide", authState);
+  const desktopNavItems = getNavigationItems("desktopSide", authState, adminVisible);
+  const desktopPrimaryItems = desktopNavItems.filter((item) => item.group === "primary");
+  const desktopSecondaryItems = desktopNavItems.filter((item) => item.group === "secondary");
+  const desktopAdminItems = desktopNavItems.filter((item) => item.group === "admin");
   const mobileNavItems = getNavigationItems("mobileBottom", authState);
   const drawerPrimaryItems = getNavigationItems("drawer", authState, adminVisible).filter((item) => item.group === "primary");
   const drawerSecondaryItems = getNavigationItems("drawer", authState, adminVisible).filter((item) => item.group === "secondary");
@@ -83,7 +86,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [menuOpen]);
 
   useEffect(() => {
-    if (!menuOpen || !authenticated || !isRemoteAlpha) return;
+    if (!authenticated || !isRemoteAlpha) return;
     let active = true;
     void loadAlphaAdminDashboard()
       .then((dashboard) => {
@@ -95,7 +98,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => {
       active = false;
     };
-  }, [authenticated, isRemoteAlpha, menuOpen]);
+  }, [authenticated, isRemoteAlpha]);
 
   async function handleSignOut() {
     setMenuOpen(false);
@@ -179,8 +182,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <small>{translate(locale, "tagline")}</small>
           </span>
         </Link>
-        {navigationReady && <nav>
-          {desktopNavItems.map((item) => {
+        {navigationReady && <>
+          <nav className="side-nav-links side-nav-primary">
+          {desktopPrimaryItems.map((item) => {
             const active = isActiveNavigation(pathname, item.href);
             const Icon = item.icon;
             return (
@@ -190,7 +194,46 @@ export function AppShell({ children }: { children: ReactNode }) {
               </Link>
             );
           })}
-        </nav>}
+          </nav>
+          {desktopSecondaryItems.length > 0 && (
+            <nav className="side-nav-links side-nav-secondary" aria-label={locale === "ja" ? "アカウントと補助" : "Account and support"}>
+              {desktopSecondaryItems.map((item) => {
+                const active = isActiveNavigation(pathname, item.href);
+                const Icon = item.icon;
+                const href = item.id === "feedback"
+                  ? `/feedback?from=${encodeURIComponent(pathname)}`
+                  : item.href;
+                return (
+                  <Link key={item.id} href={href} className={active ? "active" : ""}>
+                    <Icon size={19} aria-hidden="true" />
+                    <span>{navigationLabel(item.label, locale)}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          )}
+          {desktopAdminItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActiveNavigation(pathname, item.href);
+            return (
+              <nav key={item.id} className="side-nav-links side-nav-admin" aria-label={locale === "ja" ? "管理" : "Administration"}>
+                <Link href={item.href} className={active ? "active" : ""}>
+                  <Icon size={19} aria-hidden="true" />
+                  <span>{navigationLabel(item.label, locale)}</span>
+                </Link>
+              </nav>
+            );
+          })}
+        </>}
+        {navigationReady && authenticated && (
+          <label className="side-nav-locale">
+            <Languages size={18} aria-hidden="true" />
+            <span>{locale === "ja" ? "言語" : "Language"}</span>
+            <select value={locale} onChange={(event) => setLocale(event.target.value as SupportedUiLocale)} aria-label={locale === "ja" ? "言語" : "Language"}>
+              {uiLocaleOptions.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
+            </select>
+          </label>
+        )}
         {authenticated ? (
           <Link
             href={preferredVehicle
@@ -211,6 +254,12 @@ export function AppShell({ children }: { children: ReactNode }) {
             {translate(locale, "signIn")}
           </Link>
         ) : null}
+        {navigationReady && authenticated && (
+          <button type="button" className="side-nav-logout" onClick={() => void handleSignOut()}>
+            <LogOut size={18} aria-hidden="true" />
+            <span>{locale === "ja" ? "ログアウト" : "Log out"}</span>
+          </button>
+        )}
       </aside>
 
       <div className="content-column">
@@ -227,7 +276,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Menu size={22} aria-hidden="true" />
             </button>
           ) : <Link href="/" className="mobile-brand">MECHORI</Link>}
-          <strong className="top-bar-title">{authenticated ? screenTitle(pathname, locale) : ""}</strong>
+          <strong className={`top-bar-title${pathname === "/" ? " is-home" : ""}`}>{authenticated ? screenTitle(pathname, locale) : ""}</strong>
           <div className="top-bar-actions">
             {loggedOut && pathname !== "/auth" ? (
               <Link href="/auth" className="icon-text-button logged-out-header-login" aria-label={translate(locale, "signIn")} title={translate(locale, "signIn")}>
