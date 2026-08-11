@@ -21,6 +21,7 @@ import { pushAnalyticsEvent } from "@/lib/analytics";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { ActivationOnboarding } from "@/components/activation-onboarding";
 import { FirstProfileSetup } from "@/components/first-profile-setup";
+import { useNotifications } from "@/components/notification-provider";
 import { loadAlphaAdminDashboard } from "@/lib/alpha-operations";
 import {
   beginFirstProfileSetup,
@@ -34,6 +35,7 @@ import {
   screenTitle,
   shouldShowRecordFab,
 } from "@/lib/navigation";
+import { notificationBadgeLabel } from "@/lib/notifications";
 
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -54,6 +56,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     acceptContentPolicy,
     signOut,
   } = useApp();
+  const { unreadCount } = useNotifications();
   const publicPath = isPublicPath(pathname);
   const [acceptingPolicy, setAcceptingPolicy] = useState(false);
   const [policyError, setPolicyError] = useState(false);
@@ -214,6 +217,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link key={item.href} href={item.href} className={active ? "active" : ""}>
                 <Icon size={20} aria-hidden="true" />
                 <span>{navigationLabel(item.label, locale)}</span>
+                <NavigationBadge itemId={item.id} unreadCount={unreadCount} locale={locale} />
               </Link>
             );
           })}
@@ -421,6 +425,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link key={item.href} href={item.href} className={active ? "active" : ""} aria-current={active ? "page" : undefined}>
               <Icon size={20} aria-hidden="true" />
               <span>{navigationLabel(item.label, locale)}</span>
+              <NavigationBadge itemId={item.id} unreadCount={unreadCount} locale={locale} />
             </Link>
           );
         })}
@@ -461,6 +466,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <Link key={item.id} href={item.href} className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => setMenuOpen(false)}>
                   <Icon size={19} aria-hidden="true" />
                   <span>{navigationLabel(item.label, locale)}</span>
+                  <NavigationBadge itemId={item.id} unreadCount={unreadCount} locale={locale} />
                 </Link>
                 );
               })}
@@ -489,6 +495,28 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       )}
     </div>
+  );
+}
+
+function NavigationBadge({
+  itemId,
+  unreadCount,
+  locale,
+}: {
+  itemId: string;
+  unreadCount: number | null;
+  locale: SupportedUiLocale;
+}) {
+  if (itemId !== "notifications" || unreadCount === null) return null;
+  const label = notificationBadgeLabel(unreadCount);
+  if (!label) return null;
+  return (
+    <span
+      className="notification-badge"
+      aria-label={locale === "ja" ? `未読${unreadCount}件` : `${unreadCount} unread`}
+    >
+      {label}
+    </span>
   );
 }
 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/app-shell";
+import { NotificationProvider } from "@/components/notification-provider";
 import { AppProvider } from "@/lib/app-context";
 import "./globals.css";
 
@@ -80,7 +81,9 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
           </>
         )}
         <AppProvider>
-          <AppShell>{children}</AppShell>
+          <NotificationProvider>
+            <AppShell>{children}</AppShell>
+          </NotificationProvider>
         </AppProvider>
       </body>
     </html>

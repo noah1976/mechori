@@ -95,7 +95,7 @@ test("active state maps detail routes to their parent navigation item", () => {
 
 test("coming-soon navigation uses existing safe routes", () => {
   const items = navigationItems.filter((item) => item.status === "comingSoon");
-  assert.deepEqual(items.map((item) => item.href).sort(), ["/notifications"]);
+  assert.deepEqual(items.map((item) => item.href).sort(), []);
 });
 
 test("record FAB is hidden from record entry, search, feedback, and admin routes", () => {

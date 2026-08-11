@@ -47,6 +47,7 @@
 - **P-081 初回Activation / Onboarding**: 招待URLや初回訪問でサービス目的と次の行動が分からないP1課題に対し、未ログインHomeの短い価値説明と「MECHORIをはじめる」、認証後の3ステップ案内、実データ連動の「MECHORIをはじめよう」チェックリストを実装した。completion／dismissはprofile ID単位のlocalStorageで保持し、Workspace／social loadingを未完了と誤認しない。実装・自動検証・本番反映後も人間QA前はSHIPPED_NEEDS_QAとして扱う。
 - **P-081B Invite Activation + First Profile Setup**: 招待URLは登録画面へ直行せず、URLフラグメント内の既存tokenを維持した説明Landingを経由する。Landingはサービスの目的と3つの価値を伝え、既存のGoogle認証・invite cookie・return-toへ接続する。新規ユーザーは表示名を必須で保存してから愛車登録へ進み、既存の`MECHORI User`はsession内で再表示しない救済dialogから名前を更新できる。プロフィールRPCとAppContextの更新を再利用し、保存後は同一session内の表示名を即時更新する。DB・RLSは変更していない。人間QA前のためSHIPPED_NEEDS_QAとして扱う。
 - **P-082 管理フィードバックのGPT用Markdown一括出力**: 既存の管理フィードバック全件取得を再利用し、検索語・status・種別・期間で一覧と一致する対象を絞り込み、「GPT用に一括コピー」と「Markdownをダウンロード」を同一generatorへ統一した。出力は古い日時から安定ソートし、GPTにはFeedbackを実装要求ではなくEvidenceとして重複・優先度・採否候補・追加調査を整理させるinstructionを先頭付与する。email等の不要な個人情報は出力せず、status変更・DB・RLS・RPC schemaは行っていない。自動検証後、人間QA前のためSHIPPED_NEEDS_QAとして扱う。
+- **P-073 Web通知センター**: Like、新規Follower、Follow中の人または車両による新しい公開記録をsource eventとするprivate通知table、本人専用RPC、20件単位の一覧、個別／一括既読、PC／SP未読badgeを実装した。通知生成はDB trigger内で行い、browserから任意recipientへINSERTできない。人と車両の両方をFollowする場合も`recipient + record`で1件へdedupeし、非公開・削除・権限外の記録情報は一覧RPCで返さない。additive migrationは本番αへ適用済みで、Web反映後の人間QA前はSHIPPED_NEEDS_QAとして扱う。Push、Email、Realtimeは未実装。
 - **初回車両登録の簡略化、写真なし登録、バイク・過去車、所有開始時期、愛称、メイン写真**: 未登録車種・不明項目を含む段階的登録と編集を実装・テスト済み。人間QAではクルマ、バイク、複数台、過去車、写真なしを確認する。
 - **P-078 プロフィール画像の主要画面表示**: private Storageの認証済みダウンロードから生成したBlob URLで表示する方式は実機確認済み。共通AvatarのHooks lint違反を修正し、今回AUD-004のsession cacheを接続した。表示回帰の人間QA前はSHIPPED_NEEDS_QAとして扱う。
 - **AUD-004 Avatar Session Cache**: private Avatarのsession内cache、同一pathのsingle-flight、変更・削除・logout・ユーザー切替時のinvalidate／clear、Blob URL lifecycleを実装・自動検証した。人間QA前のためSHIPPED_NEEDS_QAとして扱う。
@@ -68,10 +69,9 @@
 - **Professional**: ティザー、サービス概要、工場向けの将来方針はあるが、工場アカウント、症例庫、権限、帳票、課金を含む本体は未実装。
 - **Founding Garage**: βまでに少なくとも1軒の工場と共同開発する初期提携制度、個人アカウント・組織・多対多membership・工場内role・組織帰属投稿の方針は決定済み。実装、事業者確認、契約、資格付与は未着手。
 - **P-070 初回表示速度**: Phase 1として、auth確定後にAppShellとroute shellを表示し、Workspaceは依存UIだけで待機・再試行するよう分離した。共有socialの4読取はHome、フォロー中、共有記録詳細、公開Garageで必要時にsingle-flight取得し、Feedback、Admin、設定、検索初期表示では待たない。AppContext全面分割とWorkspace JSON正規化は未着手で、本番の性能QA前のため全体はPARTIALとして扱う。AUD-004のAvatar cacheは別途実装済みだが、人間QA待ちである。
-- **P-074 ナビゲーション再設計**: 4項目の下部ナビ、ハンバーガーメニュー、記録作成FAB、ログアウト時の3項目ナビとガレージのログイン要求表示を反映。通知・つながり等は準備中画面へ接続し、UI実装は完了したが人間の実機UX確認前のためSHIPPED_NEEDS_QAとして扱う。
+- **P-074 ナビゲーション再設計**: 4項目の下部ナビ、ハンバーガーメニュー、記録作成FAB、ログアウト時の3項目ナビとガレージのログイン要求表示を反映。P-075Aでつながりを実画面化し、P-073も今回のmigration適用後に通知実画面へ切り替わる。ナビゲーション自体は人間の実機UX確認前のためSHIPPED_NEEDS_QAとして扱う。
 - **P-075A つながり**: 自分と他人のフォロー中／フォロワー、双方向フォローから導出する関係状態、公開Garageへの遷移、一覧内フォロー／解除、自分がフォローした車両の一覧を実装した。取得は既存のユーザーフォローとWorkspace内の車両フォローを再利用し、active member・公開中車両・ブロック境界だけを返す追加の読み取りRPCを使う。本番DB適用とα配信は完了したが、人間QA前のためSHIPPED_NEEDS_QAとして扱う。
 - **P-075B／P-075C つながりの公開設定・非公開Garage／フォロー申請**: OPEN。フォロー一覧の公開範囲、非公開Garage、申請・承認・取消・通知、既存フォローの移行は今回実装しない。
-- **P-073 アプリ内通知一覧・未読バッジ**: 未実装。OPENとして管理する。
 - **ネイティブアプリ**: αではWebコア体験を固め、β中盤にオーナー向けNative版へ着手する必須ロードマップ。現時点では未実装。
 - **初期計測の本番運用**: 指標定義とコード準備はあるが、MAU最小計測のDB適用・環境設定・実データ確認は別の運用作業として残る。
 

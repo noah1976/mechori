@@ -82,7 +82,7 @@ const allNavigationItems: readonly NavigationItem[] = [
     auth: "authenticated",
     activeMatch: "notifications",
     order: 30,
-    status: "comingSoon",
+    status: "active",
     group: "primary",
   },
   {
