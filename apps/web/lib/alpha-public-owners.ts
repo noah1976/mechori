@@ -6,6 +6,34 @@ export interface AlphaPublicOwnerSummary {
   publicUsername?: string;
   profileImagePath?: string;
   vehicleCount: number;
+  representativeVehicle?: {
+    targetId: string;
+    slug: string;
+    make: string;
+    model: string;
+    year?: number;
+  };
+  viewerFollowsTarget: boolean;
+  targetFollowsViewer: boolean;
+  relationship?: "mutual" | "following" | "followed_by";
+}
+
+export interface AlphaPublicVehicleSearchResult {
+  targetId: string;
+  slug: string;
+  make: string;
+  model: string;
+  nickname?: string;
+  modelYear?: number;
+  imageDataUrl: string;
+  viewerFollowsVehicle: boolean;
+  owner: {
+    id: string;
+    displayName: string;
+    publicUsername?: string;
+    profileImagePath?: string;
+    viewerFollowsOwner: boolean;
+  };
 }
 
 export interface AlphaPublicVehicle {
@@ -42,6 +70,27 @@ interface AlphaPublicOwnerSearchRow {
   display_name: string;
   public_username: string | null;
   vehicle_count: number | string;
+  representative_vehicle_target_id: string | null;
+  representative_vehicle_slug: string | null;
+  representative_vehicle_make: string | null;
+  representative_vehicle_model: string | null;
+  representative_vehicle_year: number | null;
+  viewer_follows_target: boolean;
+  target_follows_viewer: boolean;
+}
+
+interface AlphaPublicVehicleSearchRow {
+  owner_public_profile_id: string;
+  owner_display_name: string;
+  owner_public_username: string | null;
+  vehicle_target_id: string;
+  vehicle_slug: string;
+  make: string;
+  model: string;
+  nickname: string | null;
+  model_year: number | null;
+  image_data_url: string;
+  viewer_follows_owner: boolean;
 }
 
 export interface AlphaPublicOwnerVehicleRow {
@@ -75,17 +124,31 @@ export async function searchAlphaPublicOwners(
     { p_query: normalizedQuery },
   );
   if (error) throw new Error("alpha_public_owner_search_failed");
-  const owners = ((data ?? []) as AlphaPublicOwnerSearchRow[]).map((row) => ({
-    id: row.public_profile_id,
-    displayName: row.display_name,
-    publicUsername: row.public_username ?? undefined,
-    vehicleCount: Number(row.vehicle_count) || 0,
-  }));
+  const owners = mapAlphaPublicOwnerSearchRows(
+    (data ?? []) as AlphaPublicOwnerSearchRow[],
+  );
   const images = await loadAlphaPublicProfileImages(owners.map((owner) => owner.id));
   return owners.map((owner) => ({
     ...owner,
     profileImagePath: images.get(owner.id),
   }));
+}
+
+export async function searchAlphaPublicVehicles(
+  query: string,
+): Promise<AlphaPublicVehicleSearchResult[]> {
+  const normalizedQuery = query.trim().slice(0, 80);
+  if (!normalizedQuery) return [];
+  const { data, error } = await createSupabaseBrowserClient().rpc(
+    "search_alpha_public_vehicles",
+    { p_query: normalizedQuery },
+  );
+  if (error) throw new Error("alpha_public_vehicle_search_failed");
+  const rows = (data ?? []) as AlphaPublicVehicleSearchRow[];
+  const images = await loadAlphaPublicProfileImages(
+    rows.map((row) => row.owner_public_profile_id),
+  );
+  return mapAlphaPublicVehicleSearchRows(rows, images);
 }
 
 export async function loadAlphaPublicOwner(
@@ -184,6 +247,63 @@ export function groupAlphaPublicOwnerRows(
     owners.set(row.public_profile_id, owner);
   }
   return [...owners.values()];
+}
+
+export function mapAlphaPublicOwnerSearchRows(
+  rows: AlphaPublicOwnerSearchRow[],
+): AlphaPublicOwnerSummary[] {
+  return rows.map((row) => ({
+    id: row.public_profile_id,
+    displayName: row.display_name,
+    publicUsername: row.public_username ?? undefined,
+    vehicleCount: Number(row.vehicle_count) || 0,
+    representativeVehicle:
+      row.representative_vehicle_target_id &&
+      row.representative_vehicle_slug &&
+      row.representative_vehicle_make &&
+      row.representative_vehicle_model
+        ? {
+            targetId: row.representative_vehicle_target_id,
+            slug: row.representative_vehicle_slug,
+            make: row.representative_vehicle_make,
+            model: row.representative_vehicle_model,
+            year: row.representative_vehicle_year ?? undefined,
+          }
+        : undefined,
+    viewerFollowsTarget: row.viewer_follows_target,
+    targetFollowsViewer: row.target_follows_viewer,
+    relationship:
+      row.viewer_follows_target || row.target_follows_viewer
+        ? row.viewer_follows_target && row.target_follows_viewer
+          ? "mutual"
+          : row.viewer_follows_target
+            ? "following"
+            : "followed_by"
+        : undefined,
+  }));
+}
+
+export function mapAlphaPublicVehicleSearchRows(
+  rows: AlphaPublicVehicleSearchRow[],
+  images: Map<string, string> = new Map(),
+): AlphaPublicVehicleSearchResult[] {
+  return rows.map((row) => ({
+    targetId: row.vehicle_target_id,
+    slug: row.vehicle_slug,
+    make: row.make,
+    model: row.model,
+    nickname: row.nickname ?? undefined,
+    modelYear: row.model_year ?? undefined,
+    imageDataUrl: row.image_data_url,
+    viewerFollowsVehicle: false,
+    owner: {
+      id: row.owner_public_profile_id,
+      displayName: row.owner_display_name,
+      publicUsername: row.owner_public_username ?? undefined,
+      profileImagePath: images.get(row.owner_public_profile_id),
+      viewerFollowsOwner: row.viewer_follows_owner,
+    },
+  }));
 }
 
 function isUuid(value: string): boolean {

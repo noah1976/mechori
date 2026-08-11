@@ -322,13 +322,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
           sharing: true,
           mediaSharing: mediaSharingAvailable,
         };
-        setData((current) => ({
-          ...current,
+        const currentFollowData = followDataRef.current;
+        followDataRef.current = {
+          ...currentFollowData,
           follows: [
-            ...current.follows.filter((follow) => follow.targetType !== "profile"),
+            ...currentFollowData.follows.filter((follow) => follow.targetType !== "profile"),
             ...profileFollows,
           ],
-        }));
+        };
+        setData((current) => {
+          const nextData = {
+            ...current,
+            follows: [
+              ...current.follows.filter((follow) => follow.targetType !== "profile"),
+              ...profileFollows,
+            ],
+          };
+          followDataRef.current = nextData;
+          return nextData;
+        });
         setAlphaSharedContent(loadedSharedContent);
         setAlphaJournalReactions(
           new Map(reactions.map((reaction) => [reaction.journalId, reaction])),

@@ -9,7 +9,7 @@ import { buildKnowledgeSynthesis, demoKnowledgeCases, filterKnowledgeCasesByText
 import { translate } from "@mechori/i18n";
 import { FilePlus2, LoaderCircle, Search } from "lucide-react";
 import Link from "next/link";
-import { Suspense, useEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 
 type SearchCriteria = {
@@ -38,6 +38,7 @@ function SearchContent() {
     revision: 0,
   }));
   const [hasSubmitted, setHasSubmitted] = useState(() => Boolean(params.get("q")?.trim()));
+  const [discoveryResultCount, setDiscoveryResultCount] = useState(0);
   const [isPending, startTransition] = useTransition();
   const ja = locale === "ja";
   const initialQueryTracked = useRef(false);
@@ -72,7 +73,10 @@ function SearchContent() {
     () => buildKnowledgeSynthesis(knowledgeMatches),
     [knowledgeMatches],
   );
-  const hasResults = results.length > 0 || knowledgeMatches.length > 0;
+  const hasResults = results.length > 0 || knowledgeMatches.length > 0 || discoveryResultCount > 0;
+  const handleDiscoveryResultCount = useCallback((count: number) => {
+    setDiscoveryResultCount(count);
+  }, []);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -83,16 +87,16 @@ function SearchContent() {
       partNumber: partNumber.trim(),
       resolution,
       hazard,
-      revision: 0,
+      revision: submittedCriteria.revision + 1,
     };
     startTransition(() => {
+      setDiscoveryResultCount(0);
       setSubmittedCriteria(nextCriteria);
       setHasSubmitted(true);
     });
   }
 
   return <div className="page-stack"><DemoNotice /><header className="page-header"><div><span className="eyebrow">KNOWLEDGE SEARCH</span><h1>{translate(locale, "search")}</h1><p>{ja ? "同型車の公開事例から、報告されている原因候補、確認箇所、対応例を出典つきで整理します。" : "MECHORI reads matching posts and records together, then organizes reported checks and responses with source links."}</p></div></header>
-    <OwnerSearch />
     <form className="search-panel" onSubmit={submit} aria-busy={isPending}>
       <label className="search-main"><Search size={20} /><input type="search" aria-label={ja ? "検索キーワード" : "Search keyword"} value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder={ja ? "キーワード" : "Keyword"} /></label>
       <div className="filter-grid">
@@ -107,6 +111,7 @@ function SearchContent() {
         {isPending ? (ja ? "検索中…" : "Searching…") : (ja ? "この条件で探す" : "Search with these conditions")}
       </button>
     </form>
+    {hasSubmitted && <OwnerSearch query={submittedCriteria.keyword} submitted searchVersion={submittedCriteria.revision} onResultCountChange={handleDiscoveryResultCount} />}
     {hasSubmitted && searchError ? (
       <section className="empty-state search-result-state" role="alert">
         <Search size={28} />

@@ -9,6 +9,7 @@ export interface PublicVehicleShare {
   slug: string;
   make: string;
   model: string;
+  nickname?: string;
   modelYear?: number;
   ownershipStartedYear?: number;
   ownershipStartedMonth?: number;
@@ -32,6 +33,7 @@ export async function publishVehicleShare(vehicle: Vehicle): Promise<PublicVehic
       vehicle_id: vehicle.id,
       make: vehicle.make,
       model: vehicle.model,
+      nickname: vehicle.nickname?.trim() || null,
       model_year: vehicle.year ?? null,
       ownership_started_year: vehicle.ownershipStartedYear ?? null,
       ownership_started_month: vehicle.ownershipStartedMonth ?? null,
@@ -40,7 +42,7 @@ export async function publishVehicleShare(vehicle: Vehicle): Promise<PublicVehic
       is_active: true,
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id,vehicle_id" })
-    .select("slug,make,model,model_year,ownership_started_year,ownership_started_month,owner_comment,image_data_url,published_at")
+    .select("slug,make,model,nickname,model_year,ownership_started_year,ownership_started_month,owner_comment,image_data_url,published_at")
     .single();
 
   if (error || !data) throw publicVehicleShareServiceError(error, "publish");
@@ -52,7 +54,7 @@ export async function loadPublicVehicleShare(slug: string): Promise<PublicVehicl
   const supabase = createSupabaseBrowserClient();
   const { data, error } = await supabase
     .from("alpha_public_vehicle_shares")
-    .select("slug,make,model,model_year,ownership_started_year,ownership_started_month,owner_comment,image_data_url,published_at")
+    .select("slug,make,model,nickname,model_year,ownership_started_year,ownership_started_month,owner_comment,image_data_url,published_at")
     .eq("slug", slug)
     .maybeSingle();
   if (error) throw publicVehicleShareServiceError(error, "load_public");
@@ -110,6 +112,7 @@ function mapShare(row: Record<string, unknown>): PublicVehicleShare {
     slug: String(row.slug),
     make: String(row.make),
     model: String(row.model),
+    nickname: typeof row.nickname === "string" ? row.nickname : undefined,
     modelYear: typeof row.model_year === "number" ? row.model_year : undefined,
     ownershipStartedYear: typeof row.ownership_started_year === "number" ? row.ownership_started_year : undefined,
     ownershipStartedMonth: typeof row.ownership_started_month === "number" ? row.ownership_started_month : undefined,
