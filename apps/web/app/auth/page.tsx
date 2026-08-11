@@ -31,13 +31,19 @@ function AuthContent() {
     const cleanUrl = new URL(window.location.href);
     const fragmentInvite = new URLSearchParams(cleanUrl.hash.slice(1)).get("invite");
     if (fragmentInvite) {
+      if (params.get("inviteLanding") !== "1") {
+        const inviteLandingUrl = new URL("/join", window.location.origin);
+        inviteLandingUrl.hash = new URLSearchParams({ invite: fragmentInvite }).toString();
+        window.location.replace(`${inviteLandingUrl.pathname}${inviteLandingUrl.hash}`);
+        return;
+      }
       pushAnalyticsEvent("invite_opened");
       cleanUrl.hash = "";
-      cleanUrl.searchParams.set("mode", "signup");
+      cleanUrl.searchParams.delete("inviteLanding");
       window.history.replaceState(null, "", `${cleanUrl.pathname}${cleanUrl.search}`);
       queueMicrotask(() => {
         setInviteCode(fragmentInvite);
-        setMode("signup");
+        setMode(params.get("mode") === "signin" ? "signin" : "signup");
       });
       return;
     }
@@ -73,7 +79,7 @@ function AuthContent() {
     complete("google");
   }
 
-  if (signedIn) {
+  if (signedIn && !inviteCode) {
     return (
       <div className="auth-page auth-complete">
         <ShieldCheck size={34} aria-hidden="true" />
@@ -142,7 +148,7 @@ function AuthContent() {
         <form className="auth-provider-list" action="/auth/start" method="post" onSubmit={submit}>
           <input type="hidden" name="provider" value="google" />
           <input type="hidden" name="mode" value={mode} />
-          <input type="hidden" name="invite" value={mode === "signup" ? inviteCode : ""} />
+          <input type="hidden" name="invite" value={inviteCode} />
           <input type="hidden" name="returnTo" value={returnTo} />
           {initialProviders.map((provider) => (
             <button type="submit" key={provider.id}>

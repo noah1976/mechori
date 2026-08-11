@@ -20,7 +20,12 @@ import { useApp } from "@/lib/app-context";
 import { pushAnalyticsEvent } from "@/lib/analytics";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { ActivationOnboarding } from "@/components/activation-onboarding";
+import { FirstProfileSetup } from "@/components/first-profile-setup";
 import { loadAlphaAdminDashboard } from "@/lib/alpha-operations";
+import {
+  beginFirstProfileSetup,
+  completeActivationOnboarding,
+} from "@/lib/activation-state";
 import {
   authDisplayState,
   getNavigationItems,
@@ -40,6 +45,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     setLocale,
     hydrated,
     workspaceLoadState,
+    authSession,
     signedIn,
     isRemoteAlpha,
     persistenceError,
@@ -54,6 +60,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [adminVisible, setAdminVisible] = useState(false);
   const menuCloseRef = useRef<HTMLButtonElement>(null);
+  const authResultHandledRef = useRef(false);
   const authState = authDisplayState(hydrated, signedIn);
   const authenticated = authState === "authenticated";
   const loggedOut = authState === "signed-out";
@@ -120,18 +127,27 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [hydrated, pathname, publicPath, router, signedIn]);
 
   useEffect(() => {
+    if (authResultHandledRef.current || !hydrated) return;
     const url = new URL(window.location.href);
     const authEvent = url.searchParams.get("authEvent");
-    if (authEvent === "sign_up" || authEvent === "login") {
-      pushAnalyticsEvent(authEvent);
-      if (url.searchParams.get("inviteCompleted") === "1") {
-        pushAnalyticsEvent("invite_completed");
-      }
-      url.searchParams.delete("authEvent");
-      url.searchParams.delete("inviteCompleted");
-      window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    if (authEvent !== "sign_up" && authEvent !== "login") {
+      authResultHandledRef.current = true;
+      return;
     }
-  }, []);
+    if (authSession.status !== "signed_in") return;
+
+    const inviteCompleted = url.searchParams.get("inviteCompleted") === "1";
+    pushAnalyticsEvent(authEvent);
+    if (inviteCompleted) pushAnalyticsEvent("invite_completed");
+    if (authEvent === "sign_up") {
+      beginFirstProfileSetup(authSession.profileId, inviteCompleted ? "invite" : "signup");
+      if (inviteCompleted) completeActivationOnboarding(authSession.profileId);
+    }
+    url.searchParams.delete("authEvent");
+    url.searchParams.delete("inviteCompleted");
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    authResultHandledRef.current = true;
+  }, [authSession, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -371,6 +387,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
         <main className={showRecordFab ? "has-record-fab" : undefined}>
           {hydrated && (signedIn || publicPath) ? <>
+            {authenticated && pathname !== "/auth" && <FirstProfileSetup />}
             {authenticated && pathname !== "/auth" && <ActivationOnboarding />}
             {children}
           </> : (
@@ -481,6 +498,7 @@ function isPublicPath(pathname: string): boolean {
     pathname === "/garage" ||
     pathname === "/search" ||
     pathname === "/auth" ||
+    pathname === "/join" ||
     pathname === "/auth/signed-out" ||
     pathname === "/privacy" ||
     pathname === "/ai-policy" ||

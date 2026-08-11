@@ -16,10 +16,24 @@ export async function hashInvitationToken(value: string): Promise<string> {
 }
 
 export function buildInvitationUrl(origin: string, rawToken: string): string {
-  const url = new URL("/auth", origin);
-  url.searchParams.set("mode", "signup");
+  const url = new URL("/join", origin);
   url.hash = new URLSearchParams({ invite: rawToken }).toString();
   return url.toString();
+}
+
+export function buildInvitationAuthHref(
+  rawToken: string,
+  mode: "signin" | "signup",
+): string {
+  const url = new URL("/auth", "https://mechori.invalid");
+  url.searchParams.set("mode", mode);
+  url.searchParams.set("inviteLanding", "1");
+  url.hash = new URLSearchParams({ invite: rawToken }).toString();
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
+export function isPlausibleInvitationToken(value: string): boolean {
+  return value.length >= 32 && value.length <= 512;
 }
 
 export function invitationExpiresAt(now = Date.now()): string {

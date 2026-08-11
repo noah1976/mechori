@@ -20,6 +20,11 @@ export function normalizePublicUsername(value: string): string {
   return value.trim().replace(/^@+/, "").toLowerCase();
 }
 
+export function initialPublicUsername(profileId: string): string {
+  const identifier = profileId.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return `member_${identifier.padEnd(23, "0").slice(0, 23)}`;
+}
+
 export function validateProfileIdentity(
   input: ProfileIdentityInput,
 ): ProfileIdentityValidation {

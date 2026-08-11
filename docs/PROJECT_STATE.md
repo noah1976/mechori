@@ -45,6 +45,7 @@
 ### 車両・基本UX
 
 - **P-081 初回Activation / Onboarding**: 招待URLや初回訪問でサービス目的と次の行動が分からないP1課題に対し、未ログインHomeの短い価値説明と「MECHORIをはじめる」、認証後の3ステップ案内、実データ連動の「MECHORIをはじめよう」チェックリストを実装した。completion／dismissはprofile ID単位のlocalStorageで保持し、Workspace／social loadingを未完了と誤認しない。実装・自動検証・本番反映後も人間QA前はSHIPPED_NEEDS_QAとして扱う。
+- **P-081B Invite Activation + First Profile Setup**: 招待URLは登録画面へ直行せず、URLフラグメント内の既存tokenを維持した説明Landingを経由する。Landingはサービスの目的と3つの価値を伝え、既存のGoogle認証・invite cookie・return-toへ接続する。新規ユーザーは表示名を必須で保存してから愛車登録へ進み、既存の`MECHORI User`はsession内で再表示しない救済dialogから名前を更新できる。プロフィールRPCとAppContextの更新を再利用し、保存後は同一session内の表示名を即時更新する。DB・RLSは変更していない。人間QA前のためSHIPPED_NEEDS_QAとして扱う。
 - **P-082 管理フィードバックのGPT用Markdown一括出力**: 既存の管理フィードバック全件取得を再利用し、検索語・status・種別・期間で一覧と一致する対象を絞り込み、「GPT用に一括コピー」と「Markdownをダウンロード」を同一generatorへ統一した。出力は古い日時から安定ソートし、GPTにはFeedbackを実装要求ではなくEvidenceとして重複・優先度・採否候補・追加調査を整理させるinstructionを先頭付与する。email等の不要な個人情報は出力せず、status変更・DB・RLS・RPC schemaは行っていない。自動検証後、人間QA前のためSHIPPED_NEEDS_QAとして扱う。
 - **初回車両登録の簡略化、写真なし登録、バイク・過去車、所有開始時期、愛称、メイン写真**: 未登録車種・不明項目を含む段階的登録と編集を実装・テスト済み。人間QAではクルマ、バイク、複数台、過去車、写真なしを確認する。
 - **P-078 プロフィール画像の主要画面表示**: private Storageの認証済みダウンロードから生成したBlob URLで表示する方式は実機確認済み。共通AvatarのHooks lint違反を修正し、今回AUD-004のsession cacheを接続した。表示回帰の人間QA前はSHIPPED_NEEDS_QAとして扱う。
@@ -92,7 +93,7 @@
 
 ## 6. 次の優先順位
 
-1. P-081の本番実機QA（未ログインの5秒理解、招待・ログイン後の3ステップ、既存ユーザー、チェックリスト進捗）。
+1. P-081／P-081Bの本番実機QA（未ログインの5秒理解、招待Landing、Google認証後の表示名設定、既存`MECHORI User`救済、チェックリスト進捗）。
 2. P-079の本番実機QA（検索フォーム末尾ボタン、FAB非表示、Enter、0件・エラー表示）。
 3. P-074の本番実機UX確認（4項目ナビ、メニュー、FAB、safe area）。
 4. P-077の本番実機QA（各投稿一覧からの初回タップ、直接URL、再遷移）。

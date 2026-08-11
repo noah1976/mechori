@@ -10,7 +10,7 @@ import {
 import { useApp } from "@/lib/app-context";
 import { CheckCircle2, ChevronRight, Circle, Search, UsersRound, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 const itemCopy: Array<{
   id: ActivationChecklistItemId;
@@ -23,17 +23,21 @@ const itemCopy: Array<{
 ];
 
 export function ActivationChecklist() {
+  const { authSession } = useApp();
+  const profileId = authSession.status === "signed_in" ? authSession.profileId : "";
+
+  if (!profileId) return null;
+  return <ActivationChecklistForProfile key={profileId} profileId={profileId} />;
+}
+
+function ActivationChecklistForProfile({ profileId }: { profileId: string }) {
   const {
-    authSession,
     data,
     isRemoteAlpha,
     sharedJournalLoadState,
-    signedIn,
     workspaceLoadState,
   } = useApp();
-  const [ready, setReady] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
-  const profileId = authSession.status === "signed_in" ? authSession.profileId : "";
+  const [dismissed, setDismissed] = useState(() => hasDismissedActivationChecklist(profileId));
   const ownVehicles = useMemo(
     () => data.vehicles.filter((vehicle) => vehicle.ownerProfileId === data.currentProfileId),
     [data.currentProfileId, data.vehicles],
@@ -49,17 +53,7 @@ export function ActivationChecklist() {
     followCount: data.follows.filter((follow) => follow.targetType === "profile" || follow.targetType === "vehicle").length,
   });
 
-  useEffect(() => {
-    if (!profileId) {
-      setReady(false);
-      setDismissed(false);
-      return;
-    }
-    setDismissed(hasDismissedActivationChecklist(profileId));
-    setReady(true);
-  }, [profileId]);
-
-  if (!ready || dismissed || !profileId || workspaceLoadState !== "ready") return null;
+  if (dismissed || workspaceLoadState !== "ready") return null;
 
   function dismiss() {
     dismissActivationChecklist(profileId);

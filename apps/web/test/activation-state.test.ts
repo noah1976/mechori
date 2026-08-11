@@ -3,10 +3,17 @@ import test from "node:test";
 import {
   activationChecklistHref,
   activationOnboardingSteps,
+  beginFirstProfileSetup,
   completeActivationOnboarding,
+  completeFirstProfileSetup,
+  deferDefaultNameRescue,
   dismissActivationChecklist,
+  firstProfileSetupIntent,
+  firstProfileSetupIntentFromAuthResult,
+  hasDeferredDefaultNameRescue,
   hasCompletedActivationOnboarding,
   hasDismissedActivationChecklist,
+  needsProfileDisplayNameSetup,
   resolveActivationProgress,
   type ActivationStorage,
 } from "../lib/activation-state.ts";
@@ -55,6 +62,29 @@ test("unavailable browser storage never blocks onboarding or checklist use", () 
   assert.equal(completeActivationOnboarding("owner-a", unavailable), false);
   assert.equal(hasDismissedActivationChecklist("owner-a", unavailable), false);
   assert.equal(dismissActivationChecklist("owner-a", unavailable), false);
+});
+
+test("first profile setup intent and default-name rescue stay scoped to one session user", () => {
+  const storage = new MemoryStorage();
+  assert.equal(firstProfileSetupIntent("owner-a", storage), undefined);
+  assert.equal(beginFirstProfileSetup("owner-a", "invite", storage), true);
+  assert.equal(firstProfileSetupIntent("owner-a", storage), "invite");
+  assert.equal(firstProfileSetupIntent("owner-b", storage), undefined);
+  assert.equal(completeFirstProfileSetup("owner-a", storage), true);
+  assert.equal(firstProfileSetupIntent("owner-a", storage), undefined);
+  assert.equal(hasDeferredDefaultNameRescue("owner-a", storage), false);
+  assert.equal(deferDefaultNameRescue("owner-a", storage), true);
+  assert.equal(hasDeferredDefaultNameRescue("owner-a", storage), true);
+  assert.equal(hasDeferredDefaultNameRescue("owner-b", storage), false);
+});
+
+test("only known system defaults or blank values need a display name", () => {
+  assert.equal(needsProfileDisplayNameSetup("MECHORI User"), true);
+  assert.equal(needsProfileDisplayNameSetup("  "), true);
+  assert.equal(needsProfileDisplayNameSetup("Tomoya"), false);
+  assert.equal(firstProfileSetupIntentFromAuthResult("sign_up", true), "invite");
+  assert.equal(firstProfileSetupIntentFromAuthResult("sign_up", false), "signup");
+  assert.equal(firstProfileSetupIntentFromAuthResult("login", true), undefined);
 });
 
 test("workspace and social loading never become incomplete checklist items", () => {

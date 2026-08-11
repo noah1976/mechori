@@ -529,6 +529,14 @@
 - 決定: 管理画面の既存Feedback一覧をstatus・種別・期間・検索語で絞り込み、対象全件を安定した時系列で共通Markdown generatorへ渡す。「GPT用に一括コピー」と「Markdownをダウンロード」は同じ内容を使い、先頭にFeedbackは実装要求ではないこととレビュー観点を付ける。Product Ownerが採否を決め、必要なものだけCodex実装タスク化する。
 - 影響: exportはstatusを変更せず、email等の不要な個人情報を出力しない。CSV、OpenAI API、automatic backlog、DB／RLS／RPC schema変更は行わない。人間QAでは件数、フィルタ一致、コピー失敗時のダウンロード、長文・日本語を確認する。
 
+### 決定: 招待Activationは説明Landingと表示名設定を先に行う
+
+- 日付: 2026-08-11
+- 状態: 決定
+- 背景: 招待URLが登録へ直行すると、参加者はMECHORIの目的や登録価値を理解できず、既定の`MECHORI User`表示名のまま参加するとつながりやGarageで誰か分からなくなるため。
+- 決定: 招待URLは既存のfragment tokenを保ったままInvite Landingを経由し、価値説明後に既存のGoogle認証へ進める。新規ユーザーは愛車登録前に表示名を必須で設定し、Avatar等の詳細項目は要求しない。既存の既定表示名ユーザーにはsession内で一度だけ救済dialogを出し、「あとで」は次回loginで再提案する。
+- 影響: 招待token、Auth callback、プロフィールRPC、AppContext更新を再利用し、DB schema、RLS、招待データ設計は変更しない。招待者の表示は安全な既存公開データが得られるまで「MECHORIに招待されています」とする。
+
 ## 未確定
 
 - 認証方式

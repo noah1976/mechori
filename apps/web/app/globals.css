@@ -894,6 +894,34 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .activation-onboarding .text-link:last-child { color: #c6d0ca; }
 .activation-onboarding-wait { min-height: 44px; display: inline-flex; align-items: center; color: #c6d0ca; font-size: 14px; }
 .activation-onboarding-existing { grid-column: 2; display: inline-flex; align-items: center; gap: 7px; margin: -3px 0 0; color: #c6d0ca; font-size: 13px; }
+.profile-setup-layer { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(17, 23, 20, 0.56); }
+.profile-setup-dialog { width: min(100%, 480px); display: grid; gap: 17px; padding: 30px; color: var(--ink); background: var(--surface); border-top: 4px solid var(--brand); box-shadow: 0 18px 48px rgba(11, 17, 14, 0.28); }
+.profile-setup-dialog > svg { color: var(--brand); }
+.profile-setup-dialog h2 { margin: 5px 0 7px; font-size: 28px; line-height: 1.2; }
+.profile-setup-dialog p { margin: 0; color: var(--muted); line-height: 1.6; }
+.profile-setup-dialog form { display: grid; gap: 13px; }
+.profile-setup-dialog label { display: grid; gap: 7px; color: var(--muted); font-size: 12px; font-weight: 750; }
+.profile-setup-dialog input { width: 100%; min-width: 0; min-height: 48px; padding: 0 13px; color: var(--ink); background: #fff; border: 1px solid var(--line-strong); border-radius: 5px; font: inherit; font-size: 16px; }
+.profile-setup-dialog input:focus { outline: 0; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(45, 97, 119, 0.12); }
+.profile-setup-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.profile-setup-actions > span { flex: 1; }
+.profile-setup-actions .text-link { min-height: 44px; }
+.invite-landing { width: min(100%, 960px); display: grid; grid-template-columns: minmax(0, 1.18fr) minmax(280px, 0.82fr); gap: 0; margin: 16px auto 32px; background: var(--surface); border: 1px solid var(--line); }
+.invite-landing-copy { display: grid; align-content: center; gap: 17px; min-height: 570px; padding: 52px; color: #f6f7f6; background: #252927; }
+.invite-landing-copy .eyebrow { color: #e8ca70; }
+.invite-landing-copy h1 { max-width: 610px; margin: 0; font-size: clamp(36px, 5vw, 58px); line-height: 1.08; text-wrap: balance; }
+.invite-landing-copy > p { max-width: 570px; margin: 0; color: #d5dfd9; line-height: 1.75; }
+.invite-landing-actions { display: grid; justify-items: start; gap: 14px; margin-top: 10px; }
+.invite-landing-copy .primary-action { color: #202321; background: var(--accent); }
+.invite-landing-login { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 0; color: #f6f7f6; background: transparent; border: 0; border-bottom: 1px solid rgba(246, 247, 246, 0.65); font: inherit; font-size: 13px; font-weight: 750; cursor: pointer; }
+.invite-landing-error { display: inline-flex; align-items: flex-start; gap: 7px; max-width: 520px; color: #f8d7d3 !important; font-size: 13px; }
+.invite-landing-values { display: grid; align-content: center; background: #eef2ef; }
+.invite-landing-values article { display: grid; gap: 8px; padding: 28px; border-bottom: 1px solid var(--line); }
+.invite-landing-values article:last-child { border-bottom: 0; }
+.invite-landing-values svg { color: var(--brand); }
+.invite-landing-values h2 { margin: 0; font-size: 18px; line-height: 1.3; }
+.invite-landing-values p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.invite-landing-home { grid-column: 1 / -1; min-height: 48px; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); border-top: 1px solid var(--line); font-size: 13px; font-weight: 750; }
 .activation-checklist { display: grid; gap: 17px; padding: 25px 0; border-block: 1px solid var(--line); }
 .activation-checklist > header { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
 .activation-checklist h2 { margin: 5px 0 0; font-size: 24px; line-height: 1.25; }
@@ -1649,6 +1677,14 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .activation-onboarding-actions, .activation-onboarding-existing { grid-column: auto; }
   .activation-onboarding-actions { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; }
   .activation-onboarding-actions > .primary-action { justify-content: center; }
+  .profile-setup-layer { align-items: end; padding: 14px; }
+  .profile-setup-dialog { width: 100%; padding: 24px 20px calc(24px + env(safe-area-inset-bottom)); }
+  .profile-setup-dialog h2 { font-size: 25px; }
+  .profile-setup-actions .primary-action { justify-content: center; }
+  .invite-landing { grid-template-columns: 1fr; margin: 0 -1px 20px; border-inline: 0; }
+  .invite-landing-copy { min-height: 0; padding: 42px 20px 36px; }
+  .invite-landing-copy h1 { font-size: 37px; }
+  .invite-landing-values article { padding: 22px 20px; }
   .activation-checklist { gap: 15px; padding: 20px 0; }
   .activation-checklist h2 { font-size: 21px; }
   .activation-checklist-items { grid-template-columns: 1fr; }
