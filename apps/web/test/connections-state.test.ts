@@ -44,6 +44,15 @@ test("person follow results update only successful actions and rederive mutual s
   assert.equal(updated.relationship, "mutual");
 });
 
+test("confirmed person unfollow rederives a mutual relationship without a stale following state", () => {
+  const people = [{ id: "owner-a", viewerFollowsTarget: true, targetFollowsViewer: true, relationship: "mutual" as const }];
+
+  const updated = applyConnectionFollowResult(people, "owner-a", { ok: true, isFollowing: false });
+
+  assert.equal(updated[0]?.viewerFollowsTarget, false);
+  assert.equal(updated[0]?.relationship, "followed_by");
+});
+
 test("vehicle rows leave failed actions intact and remove only confirmed unfollows", () => {
   const vehicles = [{ targetId: "vehicle-a" }, { targetId: "vehicle-b" }];
   assert.strictEqual(removeVehicleAfterUnfollow(vehicles, "vehicle-a", { ok: false }), vehicles);

@@ -52,7 +52,7 @@
 - **P-078 プロフィール画像の主要画面表示**: private Storageの認証済みダウンロードから生成したBlob URLで表示する方式は実機確認済み。共通AvatarのHooks lint違反を修正し、今回AUD-004のsession cacheを接続した。表示回帰の人間QA前はSHIPPED_NEEDS_QAとして扱う。
 - **AUD-004 Avatar Session Cache**: private Avatarのsession内cache、同一pathのsingle-flight、変更・削除・logout・ユーザー切替時のinvalidate／clear、Blob URL lifecycleを実装・自動検証した。人間QA前のためSHIPPED_NEEDS_QAとして扱う。
 - **P-079 検索実行導線の明確化**: 検索画面ではグローバルFABを非表示にし、条件フォーム末尾へ「この条件で探す」を配置して、クリック・Enter・キーボード検索を同じsubmit経路へ統一した。検索結果0件の記録導線と、再試行可能なエラー表示を分離している。実装・テスト・本番反映後も人間QA前のためSHIPPED_NEEDS_QAとして扱う。
-- **P-080（AUD-002）フォロー操作の結果契約**: フォロー処理を成功・失敗の型付きPromise Resultとして返し、同一対象の処理中重複を抑止する。認証・権限・通信・未知の失敗を安全な分類へ変換し、ユーザー／車両の対象キーを分離した。P-075のつながり管理へ向けた内部基盤であり、DB・RLS・RPCは変更していない。既存のフォロー導線で人間QAを行う前のためSHIPPED_NEEDS_QAとして扱う。
+- **P-080（AUD-002）フォロー操作の結果契約**: フォロー処理を成功・失敗の型付きPromise Resultとして返し、同一対象の処理中重複を抑止する。認証・権限・通信・未知の失敗を安全な分類へ変換し、ユーザー／車両の対象キーを分離した。Follow解除時に`set_alpha_user_follow`のPL/pgSQL変数と列名が衝突してDELETE条件が曖昧だったため、対象user IDを明示変数へ分離して通常ユーザー・platform super adminとも自分の関係だけを解除できるよう修正した。通知triggerはINSERT時だけでUnfollow通知は生成しない。RLSは維持し、additive RPC migrationの本番適用と人間QA前はSHIPPED_NEEDS_QAとして扱う。
 - **AUD-001／AUD-003 ナビゲーション基盤**: route、ラベル、アイコン、サーフェス、認証・管理者条件、現在地判定、準備中状態を宣言的な定義へ集約し、モバイル、PC、ドロワーから共通利用する。認証状態・権限・routeを入力した純粋関数の振る舞いテストへ改善した。外部UI、route、DB、RLS、認証方式は変更していない。P-075前の基盤整備であり、人間QA前はSHIPPED_NEEDS_QAとして扱う。
 - **P-074 PCナビ修正・フィードバックUI**: PCは中央ナビ定義から左サイドバーへ主要導線・補助導線・管理者導線を生成し、hamburger、drawer、overlay、mobile bottom navigation、global FABを表示しない構成へ整理した。モバイルの既存導線は維持し、フィードバック表記と種別選択ボタンも統一した。外部UIの本番実機確認前のためSHIPPED_NEEDS_QAとして扱う。
 - **ログアウト確認・完了画面**: 保護画面からのログアウト確認と公開ホームへの完了遷移を実装。人間QAでは保存中・未保存状態を含めて確認する。

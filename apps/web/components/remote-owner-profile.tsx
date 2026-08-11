@@ -46,17 +46,22 @@ export function RemoteOwnerProfile({
     toggleBlockProfile,
     toggleFollow,
     toggleMuteProfile,
+    isFollowPending,
   } = useApp();
   const [owner, setOwner] = useState<AlphaPublicOwner | null>(null);
   const [state, setState] = useState<LoadState>("loading");
   const [resolvedProfileId, setResolvedProfileId] = useState<string | null>(null);
   const [resolvedKey, setResolvedKey] = useState<string | null>(null);
+  const [followActionError, setFollowActionError] = useState<string | null>(null);
   const ja = locale === "ja";
   const keyIsUuid = /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(publicProfileKey);
   const resolutionReady = keyIsUuid || resolvedKey === publicProfileKey;
   const activeProfileId = resolutionReady ? (keyIsUuid ? publicProfileKey : resolvedProfileId) : null;
   const blocked = activeProfileId ? isProfileBlocked(data, activeProfileId) : false;
   const profileFollowed = activeProfileId ? isFollowing(data, "profile", activeProfileId) : false;
+  const profileFollowPending = activeProfileId
+    ? isFollowPending("profile", activeProfileId)
+    : false;
 
   useEffect(() => {
     if (signedIn && isRemoteAlpha && workspaceLoadState === "ready") {
@@ -154,6 +159,19 @@ export function RemoteOwnerProfile({
     isDemo: false,
   };
 
+  async function changeProfileFollow() {
+    if (!activeProfileId) return;
+    setFollowActionError(null);
+    const result = await toggleFollow("profile", activeProfileId);
+    if (!result.ok) {
+      setFollowActionError(
+        ja
+          ? "フォローを更新できませんでした。時間をおいてもう一度お試しください。"
+          : "The follow could not be updated. Please try again shortly.",
+      );
+    }
+  }
+
   return (
     <div className="page-stack profile-page">
       <Link href="/people" className="back-link">
@@ -183,11 +201,14 @@ export function RemoteOwnerProfile({
               : "follow-button"
           }
           aria-pressed={profileFollowed}
-          onClick={() => {
-            void toggleFollow("profile", owner.id);
-          }}
+          disabled={profileFollowPending}
+          onClick={() => void changeProfileFollow()}
         >
-          <UserRoundPlus size={16} aria-hidden="true" />
+          {profileFollowPending ? (
+            <LoaderCircle className="loading-spinner" size={16} aria-hidden="true" />
+          ) : (
+            <UserRoundPlus size={16} aria-hidden="true" />
+          )}
           {profileFollowed
             ? ja
               ? "この人をフォロー中"
@@ -197,6 +218,8 @@ export function RemoteOwnerProfile({
               : "Follow this person"}
         </button>
       </header>
+
+      {followActionError && <p className="form-error" role="alert">{followActionError}</p>}
 
       <ConnectionsProfileLinks profileId={owner.id} locale={locale} />
 

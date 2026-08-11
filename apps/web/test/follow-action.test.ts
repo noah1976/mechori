@@ -12,13 +12,14 @@ interface TestData {
 }
 
 function createTestController(options: {
+  initialFollowed?: string[];
   syncRemote?: (
     targetType: "profile" | "vehicle",
     targetId: string,
     following: boolean,
   ) => Promise<void>;
 } = {}) {
-  let data: TestData = { followed: new Set() };
+  let data: TestData = { followed: new Set(options.initialFollowed) };
   const failures: FollowActionError[] = [];
   const pending = new Set<string>();
   const controller = createFollowActionController<TestData>({
@@ -71,6 +72,40 @@ test("returns a safe failure and leaves state retryable", async () => {
   const retried = await controller.toggleFollow("vehicle", "vehicle-1");
   assert.deepEqual(retried, { ok: true, isFollowing: true });
   assert.equal(getData().followed.has("vehicle:vehicle-1"), true);
+});
+
+test("normal and administrator sessions use the same confirmed unfollow contract", async () => {
+  for (const role of ["member", "platform_super_admin"] as const) {
+    const remoteCalls: Array<{ targetType: string; targetId: string; following: boolean }> = [];
+    const { controller, getData } = createTestController({
+      initialFollowed: ["profile:owner-1"],
+      syncRemote: async (targetType, targetId, following) => {
+        remoteCalls.push({ targetType, targetId, following });
+      },
+    });
+
+    const result = await controller.toggleFollow("profile", "owner-1");
+
+    assert.deepEqual(result, { ok: true, isFollowing: false }, `${role} can unfollow`);
+    assert.deepEqual(remoteCalls, [
+      { targetType: "profile", targetId: "owner-1", following: false },
+    ]);
+    assert.equal(getData().followed.has("profile:owner-1"), false);
+  }
+});
+
+test("a failed unfollow keeps the existing relationship for retry", async () => {
+  const { controller, getData } = createTestController({
+    initialFollowed: ["profile:owner-1"],
+    syncRemote: async () => {
+      throw new AlphaUserFollowError("permission_denied");
+    },
+  });
+
+  const result = await controller.toggleFollow("profile", "owner-1");
+
+  assert.deepEqual(result, { ok: false, error: "permission_denied" });
+  assert.equal(getData().followed.has("profile:owner-1"), true);
 });
 
 test("deduplicates an in-flight action for the same target", async () => {
