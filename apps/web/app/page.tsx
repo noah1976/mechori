@@ -1,6 +1,7 @@
 "use client";
 
 import { DemoNotice } from "@/components/demo-notice";
+import { ActivationChecklist } from "@/components/activation-checklist";
 import { JournalCard } from "@/components/journal-card";
 import { JournalMedia } from "@/components/journal-media";
 import { RecordCard } from "@/components/record-card";
@@ -99,6 +100,9 @@ export default function HomePage() {
   const [query, setQuery] = useState("");
   const router = useRouter();
   const ja = locale === "ja";
+  const getStartedHref = isRemoteAlpha
+    ? "/auth?mode=signup"
+    : "/auth?mode=signup&invite=MECHORI-DEMO";
   useEffect(() => {
     if (signedIn && isRemoteAlpha && workspaceLoadState === "ready") {
       void ensureSocialData().catch(() => undefined);
@@ -144,6 +148,7 @@ export default function HomePage() {
           <Link href="/garage/new" className="primary-action"><ArrowRight size={18} />{ja ? "愛車ページをつくる" : "Create my vehicle page"}</Link>
           <small>{ja ? "クルマもバイクも、候補にない車種はその場で自由入力できます。" : "Cars and motorcycles can be entered freely, including unlisted and rare models."}</small>
         </section>
+        <ActivationChecklist />
       </div>
     );
   }
@@ -174,17 +179,17 @@ export default function HomePage() {
           <div className="signed-out-hero-copy">
             <span className="eyebrow">MECHORI / MAINTENANCE KNOWLEDGE</span>
             <h1 id="signed-out-hero-heading">
-              {ja ? "愛車の履歴を、次の整備に使える知識へ。" : "Vehicle history that helps with what comes next."}
+              {ja ? "愛車との時間を、記録して、つないで、残していく。" : "Record, connect, and keep the time you share with your vehicle."}
             </h1>
             <p>
               {ja
-                ? "ドライブの一枚も、故障の症状も、交換した部品も。一台の履歴として残し、困ったときは同型車の実体験を探せます。あなたの結果も、次のオーナーに役立つ記録になります。"
-                : "Keep drives, symptoms, repairs, and parts in one vehicle history. Find relevant owner experience when you need it, then make your outcome useful to whoever comes next."}
+                ? "クルマやバイクの整備、故障、部品交換、思い出を愛車の履歴として残し、人やクルマを通じて経験をつないでいくサービスです。"
+                : "MECHORI keeps maintenance, repairs, parts, and memories in your vehicle history, then connects experience through people and vehicles."}
             </p>
             <div className="home-community-actions">
-              <Link href="/auth?mode=signup&invite=MECHORI-DEMO" className="primary-action">
+              <Link href={getStartedHref} className="primary-action">
                 <UserPlus size={18} aria-hidden="true" />
-                {ja ? "招待で参加" : "Join with invite"}
+                {ja ? "MECHORIをはじめる" : "Get started with MECHORI"}
               </Link>
               <Link href="/auth" className="signed-out-hero-login">
                 <LogIn size={18} aria-hidden="true" />
@@ -249,6 +254,8 @@ export default function HomePage() {
         )}
       </section>
       )}
+
+      {signedIn && <ActivationChecklist />}
 
       {!signedIn && (
         <section className="signed-out-discovery" aria-labelledby="signed-out-search-heading">

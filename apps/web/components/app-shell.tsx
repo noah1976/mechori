@@ -19,6 +19,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useApp } from "@/lib/app-context";
 import { pushAnalyticsEvent } from "@/lib/analytics";
 import { ProfileAvatar } from "@/components/profile-avatar";
+import { ActivationOnboarding } from "@/components/activation-onboarding";
 import { loadAlphaAdminDashboard } from "@/lib/alpha-operations";
 import {
   authDisplayState,
@@ -369,7 +370,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           </section>
         )}
         <main className={showRecordFab ? "has-record-fab" : undefined}>
-          {hydrated && (signedIn || publicPath) ? children : (
+          {hydrated && (signedIn || publicPath) ? <>
+            {authenticated && pathname !== "/auth" && <ActivationOnboarding />}
+            {children}
+          </> : (
             <div className="app-loading" role="status" aria-live="polite">
               <LoaderCircle className="spin" size={24} aria-hidden="true" />
               <span>

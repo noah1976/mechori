@@ -44,6 +44,7 @@
 
 ### 車両・基本UX
 
+- **P-081 初回Activation / Onboarding**: 招待URLや初回訪問でサービス目的と次の行動が分からないP1課題に対し、未ログインHomeの短い価値説明と「MECHORIをはじめる」、認証後の3ステップ案内、実データ連動の「MECHORIをはじめよう」チェックリストを実装した。completion／dismissはprofile ID単位のlocalStorageで保持し、Workspace／social loadingを未完了と誤認しない。実装・自動検証・本番反映後も人間QA前はSHIPPED_NEEDS_QAとして扱う。
 - **初回車両登録の簡略化、写真なし登録、バイク・過去車、所有開始時期、愛称、メイン写真**: 未登録車種・不明項目を含む段階的登録と編集を実装・テスト済み。人間QAではクルマ、バイク、複数台、過去車、写真なしを確認する。
 - **P-078 プロフィール画像の主要画面表示**: private Storageの認証済みダウンロードから生成したBlob URLで表示する方式は実機確認済み。共通AvatarのHooks lint違反を修正し、今回AUD-004のsession cacheを接続した。表示回帰の人間QA前はSHIPPED_NEEDS_QAとして扱う。
 - **AUD-004 Avatar Session Cache**: private Avatarのsession内cache、同一pathのsingle-flight、変更・削除・logout・ユーザー切替時のinvalidate／clear、Blob URL lifecycleを実装・自動検証した。人間QA前のためSHIPPED_NEEDS_QAとして扱う。
@@ -90,11 +91,11 @@
 
 ## 6. 次の優先順位
 
-1. P-079の本番実機QA（検索フォーム末尾ボタン、FAB非表示、Enter、0件・エラー表示）。
-2. P-074の本番実機UX確認（4項目ナビ、メニュー、FAB、safe area）。
-3. P-077の本番実機QA（各投稿一覧からの初回タップ、直接URL、再遷移）。
-4. P-071の下書き保存・復元の実機QA、続いてP-072の投稿完了画面QA。
-5. P-073通知センターの最小仕様とデータ設計。
+1. P-081の本番実機QA（未ログインの5秒理解、招待・ログイン後の3ステップ、既存ユーザー、チェックリスト進捗）。
+2. P-079の本番実機QA（検索フォーム末尾ボタン、FAB非表示、Enter、0件・エラー表示）。
+3. P-074の本番実機UX確認（4項目ナビ、メニュー、FAB、safe area）。
+4. P-077の本番実機QA（各投稿一覧からの初回タップ、直接URL、再遷移）。
+5. P-071の下書き保存・復元の実機QA、続いてP-072の投稿完了画面QA。
 
 ## 7. 最近の主要コミット
 

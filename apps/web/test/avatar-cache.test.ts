@@ -42,7 +42,7 @@ test("reuses a cached avatar and shares concurrent downloads", async () => {
 
 test("keeps different paths independent", async () => {
   let calls = 0;
-  URL.createObjectURL = (blob) => `blob:${blob.size}-${++calls}`;
+  URL.createObjectURL = () => `blob:avatar-${++calls}`;
   URL.revokeObjectURL = () => undefined;
   const download = () => Promise.resolve(new Blob(["avatar"]));
   const first = await getAvatarObjectUrl("user-a/avatar.webp", download);
