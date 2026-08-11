@@ -84,6 +84,7 @@ import { getMechoriRuntime } from "@/lib/runtime-config";
 import { clearAllLocalDrafts } from "@/lib/local-draft-store";
 import { pushAnalyticsEvent } from "@/lib/analytics";
 import { alphaJournalSyncError } from "@/lib/journal-save-error";
+import { clearAvatarCache } from "@/lib/avatar-cache";
 import {
   createKeyedSingleFlight,
   shouldLoadSocialData,
@@ -225,12 +226,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
     sharing: !isRemoteAlpha,
     mediaSharing: !isRemoteAlpha,
   });
+  const avatarAuthProfileRef = useRef<string | null>(null);
   const [contentPolicyAccepted, setContentPolicyAccepted] = useState(!isRemoteAlpha);
 
   useEffect(() => {
     followDataRef.current = data;
     followAuthRef.current = authSession;
   }, [authSession, data]);
+
+  useEffect(() => {
+    const profileId = isSignedIn(authSession) ? authSession.profileId : null;
+    if (
+      avatarAuthProfileRef.current !== null &&
+      avatarAuthProfileRef.current !== profileId
+    ) {
+      clearAvatarCache();
+    }
+    avatarAuthProfileRef.current = profileId;
+  }, [authSession]);
 
   const resetAlphaSocialData = useCallback(() => {
     socialLoadCoordinatorRef.current.reset();
@@ -490,6 +503,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       if (isRemoteAlpha) {
         await signOutFromAlpha();
+        clearAvatarCache();
         workspaceRequestRef.current += 1;
         setData(cloneDemoData());
         setWorkspaceLoadState("ready");

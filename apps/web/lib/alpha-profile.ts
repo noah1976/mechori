@@ -1,5 +1,6 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { preparePrivateAlphaImage } from "@/lib/image-preparation";
+import { invalidateAvatarCache } from "@/lib/avatar-cache";
 
 export const alphaProfileImageBucket = "alpha-profile-images";
 const maxProfileImageBytes = 220 * 1024;
@@ -129,6 +130,8 @@ export async function replaceMyAlphaProfileImage(
     await removeAlphaProfileImageQuietly(path);
     throw new Error("alpha_profile_image_update_failed");
   }
+  if (previousPath) invalidateAvatarCache(previousPath);
+  invalidateAvatarCache(path);
   if (previousPath && previousPath !== path) {
     await removeAlphaProfileImageQuietly(previousPath);
   }
@@ -141,6 +144,7 @@ export async function removeMyAlphaProfileImage(previousPath?: string): Promise<
     { p_profile_image_path: null },
   );
   if (error) throw new Error("alpha_profile_image_update_failed");
+  if (previousPath) invalidateAvatarCache(previousPath);
   if (previousPath) await removeAlphaProfileImageQuietly(previousPath);
 }
 

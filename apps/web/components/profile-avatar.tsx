@@ -4,8 +4,14 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { alphaProfileImageBucket } from "@/lib/alpha-profile";
+import {
+  getAvatarCacheSnapshot,
+  getAvatarObjectUrl,
+  invalidateAvatarCache,
+  subscribeAvatarCache,
+} from "@/lib/avatar-cache";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 export function ProfileAvatar({
   displayName,
@@ -38,25 +44,32 @@ function ProfileAvatarImage({
   imagePath: string;
   className: string;
 }) {
+  const cacheRevision = useSyncExternalStore(
+    (listener) => subscribeAvatarCache(imagePath, listener),
+    () => getAvatarCacheSnapshot(imagePath),
+    () => 0,
+  );
   const [source, setSource] = useState<string | null>(null);
+  const [sourceRevision, setSourceRevision] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let active = true;
-    let objectUrl: string | null = null;
-
-    void createSupabaseBrowserClient()
-      .storage
-      .from(alphaProfileImageBucket)
-      .download(imagePath)
-      .then((result: { data: Blob | null; error: unknown }) => {
+    void getAvatarObjectUrl(imagePath, async () => {
+      const result = await createSupabaseBrowserClient()
+        .storage
+        .from(alphaProfileImageBucket)
+        .download(imagePath);
+      if (result.error || !result.data) {
+        throw new Error("avatar_download_failed");
+      }
+      return result.data;
+    })
+      .then((objectUrl) => {
         if (!active) return;
-        if (result.error || !result.data) {
-          setFailed(true);
-          return;
-        }
-        objectUrl = URL.createObjectURL(result.data);
         setSource(objectUrl);
+        setSourceRevision(cacheRevision);
+        setFailed(false);
       })
       .catch(() => {
         if (active) setFailed(true);
@@ -64,20 +77,22 @@ function ProfileAvatarImage({
 
     return () => {
       active = false;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [imagePath]);
+  }, [cacheRevision, imagePath]);
 
   // A native image keeps private Storage blobs out of Next's image proxy.
   return (
     <span className={className} aria-hidden="true">
-      {source && !failed ? (
+      {source && sourceRevision === cacheRevision && !failed ? (
         <img
           src={source}
           alt=""
           loading="lazy"
           decoding="async"
-          onError={() => setFailed(true)}
+          onError={() => {
+            invalidateAvatarCache(imagePath);
+            setFailed(true);
+          }}
         />
       ) : (
         <ProfileAvatarInitial displayName={displayName} />

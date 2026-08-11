@@ -62,6 +62,7 @@
 - `[~]` 非公開車両、ブロック対象、退会済みユーザーが検索・候補から除外される
 - `[~]` 他人のプロフィールで公開車両・公開Journalだけが表示される
 - `[~]` P-078: プロフィール画像表示は実機確認済み。認証済みBlob取得方式を維持したままHooks lint違反を修正し、表示回帰は人間QA待ち
+- `[~]` AUD-004: private Avatarをsession内cache・single-flightで共有し、変更・削除・logout・ユーザー切替時にinvalidate／clearする。人間QAでは複数画面の再利用、変更直後、削除後、logout後を確認する
 - `[~]` P-079: 検索画面ではFABを非表示にし、フォーム末尾の「この条件で探す」、Enter／キーボード検索、0件時の記録導線、エラー時の再試行を実装。人間QA待ち
 - `[~]` P-080（AUD-002）: フォロー操作が型付きResultを返し、同一対象の処理中重複を防止。認証・権限・通信・未知の失敗を安全に分類し、DB・RLS・RPCは変更なし。P-075前の内部基盤として人間QA待ち
 - `[~]` AUD-001／AUD-003: ナビ定義をroute・ラベル・サーフェス・認証／管理者条件・現在地判定へ集約し、認証状態・権限・routeから実際の項目を返す振る舞いテストへ改善。外部UI・route・DB・RLS変更なし。P-075前の基盤整備として人間QA待ち
@@ -89,7 +90,7 @@
 - `[~]` Owner Plus／Founding Testerの利用権を理由付きで付与・確認できる
 - `[~]` GA4／GTM／Clarityの送信範囲とマスキングを確認する
 - `[~]` favicon、Apple Touch Icon、PWA manifestを確認する
-- `[~]` P-070 Phase 1: auth後にshellを先出しし、Workspace依存UIを局所loadingへ分離、shared social取得を必要routeへ遅延化した。Home／フォロー中／投稿詳細／Garage／つながりと、検索・フィードバック・管理画面の初期表示を人間QAする。AppContext全面分割、Avatar cache、Workspace JSON正規化は未着手。
+- `[~]` P-070 Phase 1: auth後にshellを先出しし、Workspace依存UIを局所loadingへ分離、shared social取得を必要routeへ遅延化した。Home／フォロー中／投稿詳細／Garage／つながりと、検索・フィードバック・管理画面の初期表示を人間QAする。AppContext全面分割とWorkspace JSON正規化は未着手。AUD-004 Avatar cacheは実装済み・人間QA待ち。
 
 ## 7. 未実装・延期
 

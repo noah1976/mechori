@@ -11,15 +11,16 @@ const journalCard = readFileSync(new URL("../components/journal-card.tsx", impor
 const journalDetail = readFileSync(new URL("../app/journal/[id]/page.tsx", import.meta.url), "utf8");
 
 test("profile avatars download private image paths and render the resulting blob URL", () => {
-  assert.match(avatar, /\.download\(imagePath\)/);
-  assert.match(avatar, /URL\.createObjectURL\(result\.data\)/);
-  assert.match(avatar, /URL\.revokeObjectURL\(objectUrl\)/);
+  assert.match(avatar, /getAvatarObjectUrl\(imagePath/);
+  assert.match(avatar, /useSyncExternalStore/);
+  assert.match(avatar, /invalidateAvatarCache\(imagePath\)/);
+  assert.doesNotMatch(avatar, /URL\.revokeObjectURL\(objectUrl\)/);
   assert.doesNotMatch(avatar, /setSource\(null\)/);
-  assert.doesNotMatch(avatar, /setFailed\(false\)/);
+  assert.match(avatar, /setFailed\(false\)/);
   assert.doesNotMatch(avatar, /createSignedUrl\(imagePath/);
   assert.match(avatar, /<img/);
   assert.match(avatar, /src=\{source\}/);
-  assert.match(avatar, /onError=\{\(\) => setFailed\(true\)\}/);
+  assert.match(avatar, /onError=\{\(\) => \{/);
   assert.match(avatar, /ProfileAvatarInitial/);
 });
 
