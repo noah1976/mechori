@@ -15,12 +15,32 @@ import {
   type AlphaAdminUser,
   type AlphaFeedbackStatus,
 } from "@/lib/alpha-operations";
+import {
+  buildFeedbackReviewMarkdown,
+  createFeedbackExportFilename,
+  filterAdminFeedback,
+  type FeedbackExportFilter,
+  type FeedbackExportKind,
+} from "@/lib/feedback-export";
 import { useApp } from "@/lib/app-context";
-import { BookOpenText, CarFront, CheckCircle2, Gauge, History, LoaderCircle, MessageSquareText, Search, ShieldCheck, UsersRound } from "lucide-react";
-import { useEffect, useState } from "react";
+import { BookOpenText, CarFront, CheckCircle2, Copy, Download, Gauge, History, LoaderCircle, MessageSquareText, Search, ShieldCheck, UsersRound } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 const feedbackStatuses: AlphaFeedbackStatus[] = ["new", "reviewing", "planned", "resolved", "closed"];
+const feedbackKinds: FeedbackExportKind[] = ["liked", "confusing", "broken", "missing", "other"];
 const staffRoles = ["admin", "moderator", "support"] as const;
+const initialFeedbackFilter: FeedbackExportFilter = { query: "", kind: "all", status: "all", from: "", to: "" };
+
+function feedbackKindLabel(kind: FeedbackExportKind, ja: boolean) {
+  const labels: Record<FeedbackExportKind, [string, string]> = {
+    liked: ["良かった", "Liked"],
+    confusing: ["迷った", "Confusing"],
+    broken: ["動かなかった", "Broken"],
+    missing: ["欲しい", "Missing"],
+    other: ["その他", "Other"],
+  };
+  return labels[kind][ja ? 0 : 1];
+}
 
 function feedbackStatusLabel(status: AlphaFeedbackStatus, ja: boolean) {
   const labels: Record<AlphaFeedbackStatus, [string, string]> = {
@@ -65,19 +85,49 @@ export default function AdminPage() {
   const [state, setState] = useState<"loading" | "ready" | "unavailable" | "error">("loading");
   const [busyKey, setBusyKey] = useState("");
   const [actionMessage, setActionMessage] = useState<"" | "saved" | "failed">("");
-  const [feedbackQuery, setFeedbackQuery] = useState("");
+  const [feedbackFilter, setFeedbackFilter] = useState<FeedbackExportFilter>(initialFeedbackFilter);
+  const [exportMessage, setExportMessage] = useState<"" | "copied" | "copy-failed" | "downloaded">("");
   const [userQuery, setUserQuery] = useState("");
   const [grantReasons, setGrantReasons] = useState<Record<string, string>>({});
   const [grantEnds, setGrantEnds] = useState<Record<string, string>>({});
   const ja = locale === "ja";
-  const normalizedFeedbackQuery = feedbackQuery.trim().toLocaleLowerCase();
-  const visibleFeedback = normalizedFeedbackQuery
-    ? feedback.filter((item) => `${item.displayName} ${item.kind} ${item.content} ${item.pagePath}`.toLocaleLowerCase().includes(normalizedFeedbackQuery))
-    : feedback;
+  const visibleFeedback = useMemo(() => filterAdminFeedback(feedback, feedbackFilter), [feedback, feedbackFilter]);
   const normalizedUserQuery = userQuery.trim().toLocaleLowerCase();
   const visibleUsers = normalizedUserQuery
     ? users.filter((user) => `${user.displayName} ${user.publicUsername ?? ""}`.toLocaleLowerCase().includes(normalizedUserQuery))
     : users;
+
+  function updateFeedbackFilter(patch: Partial<FeedbackExportFilter>) {
+    setFeedbackFilter((current) => ({ ...current, ...patch }));
+    setExportMessage("");
+  }
+
+  function getFeedbackMarkdown() {
+    return buildFeedbackReviewMarkdown(visibleFeedback, feedbackFilter);
+  }
+
+  async function copyFeedbackMarkdown() {
+    if (!visibleFeedback.length) return;
+    try {
+      if (!navigator.clipboard) throw new Error("clipboard_unavailable");
+      await navigator.clipboard.writeText(getFeedbackMarkdown());
+      setExportMessage("copied");
+    } catch {
+      setExportMessage("copy-failed");
+    }
+  }
+
+  function downloadFeedbackMarkdown() {
+    if (!visibleFeedback.length) return;
+    const blob = new Blob([getFeedbackMarkdown()], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = createFeedbackExportFilename();
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+    setExportMessage("downloaded");
+  }
 
   async function refresh() {
     setState("loading");
@@ -162,7 +212,21 @@ export default function AdminPage() {
 
       <section className="admin-section">
         <header><div><span className="eyebrow">FEEDBACK</span><h2>{ja ? "フィードバック" : "Feedback"}</h2></div></header>
-        <label className="admin-filter"><Search size={17} aria-hidden="true" /><input value={feedbackQuery} onChange={(event) => setFeedbackQuery(event.target.value)} placeholder={ja ? "内容・送信者・ページを検索" : "Search feedback"} /></label>
+        <div className="admin-feedback-filters">
+          <label className="admin-filter"><Search size={17} aria-hidden="true" /><span className="sr-only">{ja ? "フィードバックを検索" : "Search feedback"}</span><input value={feedbackFilter.query} onChange={(event) => updateFeedbackFilter({ query: event.target.value })} placeholder={ja ? "内容・送信者・ページを検索" : "Search feedback"} /></label>
+          <label className="field"><span>{ja ? "種別" : "Type"}</span><select value={feedbackFilter.kind} onChange={(event) => updateFeedbackFilter({ kind: event.target.value as FeedbackExportFilter["kind"] })}><option value="all">{ja ? "すべて" : "All"}</option>{feedbackKinds.map((kind) => <option key={kind} value={kind}>{feedbackKindLabel(kind, ja)}</option>)}</select></label>
+          <label className="field"><span>{ja ? "対応状態" : "Status"}</span><select value={feedbackFilter.status} onChange={(event) => updateFeedbackFilter({ status: event.target.value as FeedbackExportFilter["status"] })}><option value="all">{ja ? "すべて" : "All"}</option>{feedbackStatuses.map((status) => <option key={status} value={status}>{feedbackStatusLabel(status, ja)}</option>)}</select></label>
+          <label className="field"><span>{ja ? "開始日" : "From"}</span><input type="date" value={feedbackFilter.from} onChange={(event) => updateFeedbackFilter({ from: event.target.value })} /></label>
+          <label className="field"><span>{ja ? "終了日" : "To"}</span><input type="date" value={feedbackFilter.to} onChange={(event) => updateFeedbackFilter({ to: event.target.value })} /></label>
+        </div>
+        <div className="admin-feedback-export">
+          <span aria-live="polite">{ja ? `対象 ${visibleFeedback.length}件` : `${visibleFeedback.length} matching feedback`}</span>
+          <div className="admin-feedback-export-actions">
+            <button type="button" className="secondary-action" disabled={!visibleFeedback.length} onClick={() => void copyFeedbackMarkdown()}><Copy size={16} aria-hidden="true" />{ja ? "GPT用に一括コピー" : "Copy for GPT"}</button>
+            <button type="button" className="secondary-action" disabled={!visibleFeedback.length} onClick={downloadFeedbackMarkdown}><Download size={16} aria-hidden="true" />{ja ? "Markdownをダウンロード" : "Download Markdown"}</button>
+          </div>
+        </div>
+        {exportMessage && <p className={exportMessage === "copy-failed" ? "form-error" : "form-success"} role={exportMessage === "copy-failed" ? "alert" : "status"}>{exportMessage === "copied" ? (ja ? `${visibleFeedback.length}件のフィードバックをGPT用Markdownとしてコピーしました。` : `Copied ${visibleFeedback.length} feedback items as Markdown for GPT.`) : exportMessage === "copy-failed" ? (ja ? "コピーできませんでした。Markdownをダウンロードしてください。" : "Copy failed. Please download the Markdown instead.") : (ja ? "Markdownをダウンロードしました。" : "Markdown downloaded.")}</p>}
         {visibleFeedback.length ? <div className="admin-feedback-list">{visibleFeedback.map((item) => (
           <article key={item.id}>
             <div><strong>{item.displayName}</strong><small>{item.kind} · {new Date(item.createdAt).toLocaleString(locale)}</small></div>

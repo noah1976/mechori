@@ -1072,6 +1072,12 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .admin-filter:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(45, 97, 119, 0.12); }
 .admin-filter svg { flex: 0 0 auto; color: var(--muted); }
 .admin-filter input { width: 100%; min-width: 0; min-height: 44px; border: 0; outline: 0; font: inherit; }
+.admin-feedback-filters { display: grid; grid-template-columns: minmax(0, 2fr) repeat(4, minmax(110px, 1fr)); align-items: end; gap: 12px; margin-top: 18px; }
+.admin-feedback-filters .admin-filter { width: 100%; max-width: none; margin-top: 0; }
+.admin-feedback-filters .field { min-width: 0; margin: 0; }
+.admin-feedback-export { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 16px; color: var(--muted); font-size: 12px; font-weight: 750; }
+.admin-feedback-export-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.admin-feedback-export-actions .secondary-action { min-height: 42px; }
 .admin-feedback-list, .admin-user-list { display: grid; margin-top: 18px; border-top: 1px solid var(--line); }
 .admin-feedback-list > article { display: grid; gap: 12px; padding: 18px 0; border-bottom: 1px solid var(--line); }
 .admin-feedback-list article > div:first-child, .admin-user-list article > div:first-child { display: grid; gap: 3px; }
@@ -1721,6 +1727,10 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .admin-summary > div:nth-child(even) { border-left: 1px solid var(--line); }
   .admin-summary > div:nth-child(n + 3) { border-top: 1px solid var(--line); }
   .admin-section { padding: 19px 15px; }
+  .admin-feedback-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-feedback-filters .admin-filter { grid-column: 1 / -1; }
+  .admin-feedback-export { align-items: stretch; flex-direction: column; }
+  .admin-feedback-export-actions { justify-content: flex-start; }
   .admin-audit-list article { grid-template-columns: auto minmax(0, 1fr); }
   .admin-audit-list time { grid-column: 2; }
   .ai-policy-grid { grid-template-columns: 1fr; }
