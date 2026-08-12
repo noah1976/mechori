@@ -374,7 +374,7 @@ export function applyRecordDraftToData(
     record,
     data: {
       ...data,
-      schemaVersion: 13,
+      schemaVersion: 14,
       vehicles: data.vehicles.map((item) => (item.id === vehicleId ? nextVehicle : item)),
       records,
     },
@@ -428,6 +428,7 @@ export function migrateAppData(input: unknown): AppData | null {
         vehicle.ownershipEndedMonth ?? matchingDemoVehicle?.ownershipEndedMonth,
       ownerComment:
         typeof vehicle.ownerComment === "string" ? vehicle.ownerComment : undefined,
+      memberDiscoveryEnabled: vehicle.memberDiscoveryEnabled !== false,
       odometerContext:
         vehicle.odometerContext === "at_ownership_end" ||
         vehicle.odometerContext === "during_ownership" ||
@@ -503,7 +504,7 @@ export function migrateAppData(input: unknown): AppData | null {
   });
 
   return {
-    schemaVersion: 13,
+    schemaVersion: 14,
     vehicles,
     records,
     profiles: Array.isArray(source.profiles)

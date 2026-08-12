@@ -147,6 +147,8 @@ export interface Vehicle {
   odometerContext: VehicleOdometerContext;
   imagePath?: string;
   ownerComment?: string;
+  /** Controls discovery by active MECHORI participants only, never external sharing. */
+  memberDiscoveryEnabled: boolean;
   isDemo: boolean;
 }
 
@@ -182,6 +184,7 @@ export interface VehicleDraft {
   odometerUnit: PrototypeOdometerUnit;
   odometerContext: VehicleOdometerContext;
   ownerComment: string;
+  memberDiscoveryEnabled: boolean;
 }
 
 export interface PartReference {
@@ -485,7 +488,7 @@ export interface JournalDraft {
 }
 
 export interface AppData {
-  schemaVersion: 13;
+  schemaVersion: 14;
   vehicles: Vehicle[];
   records: MaintenanceRecord[];
   profiles: SocialProfile[];

@@ -1187,6 +1187,9 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .professional-member-search { margin-top: 18px; }
 .professional-candidate-list > div { display: flex; align-items: center; gap: 8px; min-height: 62px; border-bottom: 1px solid var(--line); }
 .professional-candidate-list > div > span { flex: 1; min-width: 0; }
+.professional-candidate-list > button { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 11px; min-height: 62px; padding: 8px 0; color: var(--ink); background: transparent; border: 0; border-bottom: 1px solid var(--line); text-align: left; font: inherit; cursor: pointer; }
+.professional-candidate-list > button:hover, .professional-candidate-list > button:focus-visible { background: var(--surface-soft); }
+.professional-candidate-list > button > span { min-width: 0; }
 .danger-button { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; color: var(--danger); background: #fff; border: 1px solid var(--danger); border-radius: 5px; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
 .danger-button:disabled { opacity: 0.5; cursor: not-allowed; }
 .modal-backdrop {

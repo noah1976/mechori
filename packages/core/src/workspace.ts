@@ -19,7 +19,7 @@ export function createEmptyAppData(
   };
 
   return {
-    schemaVersion: 13,
+    schemaVersion: 14,
     vehicles: [],
     records: [],
     profiles: [profile],

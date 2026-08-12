@@ -30,6 +30,7 @@
 - `[~]` P-081: Homeの「MECHORIをはじめよう」で愛車、最初の記録、知り合い探しの実データ進捗・各導線・閉じる操作を確認する
 - `[~]` 表示名・`@username`・bioを設定する
 - `[~]` 愛車を登録し、愛称・所有開始時期・メイン写真を設定する
+- `[~]` P-084B: 新規Vehicleは「MECHORI内で見つけられる」が既定ONで、ownerが編集画面からOFF／ONできる。OFF後は検索から消え、外部匿名共有と既存Vehicle Followは変わらないことを確認する
 - `[~]` Garageから「さっと記録」を保存する
 - `[~]` Garageから詳しい記録を、写真なしで保存する
 - `[~]` P-085: 整備記録で「自分で作業／お店・工場／不明・記録しない」を選び、既存Provider検索または店名＋市区町村の最小追加を行う。編集後も当時の名称snapshotが維持されることを確認する
@@ -94,7 +95,7 @@
 - `[~]` アプリ内フィードバックを送信し、失敗時に内容が保持される。メニュー表記は「フィードバック」に統一し、入力・完了・管理画面では記録作成FABを表示しない
 - `[~]` フィードバックを「良かった／迷った／動かなかった／欲しい／その他」の独立ボタンで選び、運営側で未評価・status・種別・期間を整理する。P-082で対象をGPT用Markdownへ一括コピー／ダウンロードできる（Feedbackは実装要求ではなくEvidence。人間QA待ち）
 - `[~]` 管理画面へ管理者だけが入れる
-- `[~]` P-085: platform adminがProvider連携済みOrganizationを作成し、Founding Garage設定、OWNER／STAFF追加・変更・削除を行う。最後のOWNER保護、STAFF read-only、outsider拒否、audit logを確認する
+- `[~]` P-085: platform adminが初期OWNERを選択してProvider連携済みOrganizationを作成し、Founding Garage設定、OWNER／STAFF追加・変更・削除を行う。初期OWNERなしでは作成不可、最後のOWNER保護、STAFF read-only、outsider拒否、audit logを確認する
 - `[~]` P-085: membershipのあるユーザーだけに事業者スペース導線を表示し、OWNERは管理、STAFFは閲覧のみ行えることを確認する
 - `[~]` 非管理者が監査履歴・管理RPCへアクセスできない
 - `[~]` Owner Plus／Founding Testerの利用権を理由付きで付与・確認できる

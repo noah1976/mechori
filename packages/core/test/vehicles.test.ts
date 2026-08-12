@@ -35,6 +35,30 @@ test("accepts an owner-entered make and model without a vehicle master", () => {
   assert.equal(result.vehicle.year, 1985);
   assert.equal(result.data.vehicles[0]?.id, result.vehicle.id);
   assert.equal(result.vehicle.isDemo, false);
+  assert.equal(result.vehicle.memberDiscoveryEnabled, true);
+});
+
+test("keeps member discovery owner-controlled without affecting vehicle records", () => {
+  const data = cloneDemoData();
+  const vehicle = data.vehicles[0]!;
+  const records = structuredClone(data.records);
+
+  const hidden = updateVehicleSpecificationInData(data, vehicle.id, {
+    vehicleCategory: vehicle.vehicleCategory,
+    make: vehicle.make,
+    model: vehicle.model,
+    memberDiscoveryEnabled: false,
+  });
+  assert.equal(hidden.vehicle.memberDiscoveryEnabled, false);
+  assert.deepEqual(hidden.data.records, records);
+
+  const visible = updateVehicleSpecificationInData(hidden.data, vehicle.id, {
+    vehicleCategory: vehicle.vehicleCategory,
+    make: vehicle.make,
+    model: vehicle.model,
+    memberDiscoveryEnabled: true,
+  });
+  assert.equal(visible.vehicle.memberDiscoveryEnabled, true);
 });
 
 test("keeps the prepared main photo and optional owner note on the vehicle", () => {
@@ -290,8 +314,9 @@ test("migrates an existing vehicle to a current car without hiding it", () => {
   delete vehicles[0]?.odometerContext;
 
   const migrated = migrateAppData(legacy);
-  assert.equal(migrated?.schemaVersion, 13);
+  assert.equal(migrated?.schemaVersion, 14);
   assert.equal(migrated?.vehicles[0]?.vehicleCategory, "car");
   assert.equal(migrated?.vehicles[0]?.ownershipType, "owned");
+  assert.equal(migrated?.vehicles[0]?.memberDiscoveryEnabled, true);
   assert.equal(groupVehiclesByOwnership(migrated?.vehicles ?? []).current.length, 1);
 });

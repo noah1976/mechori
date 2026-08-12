@@ -93,6 +93,8 @@ Record入力用Providerは店名と市区町村程度に限定し、電話番号
 
 Private RecordのserviceAttributionをProvider実績、公開Discovery、件数集計へ利用しない。Organization membershipやProvider linkによって、Organization側へUser Recordの閲覧・編集権限を付与しない。
 
+Vehicleの「MECHORI内で見つけられる」は、認証済みactive participant内の検索可否だけを制御するowner設定である。OFFは匿名外部共有、既存Vehicle Follow、Recordの公開範囲を変更しない。Discovery projectionはmake、model、nickname、yearと安全なowner表示情報だけを返し、email、VIN、位置、private workspace、private Recordを返さない。
+
 ## 公開前対応
 
 - α版プライバシーポリシー作成（完了）

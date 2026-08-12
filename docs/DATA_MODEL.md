@@ -603,6 +603,10 @@ serviceAttribution v1
 
 DB側は`service_providers`（実在する店舗・支店）、`professional_organizations`（MECHORI上の管理主体）、`service_provider_organization_links`、`professional_organization_memberships`を分離する。Founding GarageはOrganizationの属性であり、membership roleは`owner | staff`。User Recordのownership、公開範囲、確認状態はこの関連によって変えない。将来Record正規化時に`record_service_attributions`へ移せる境界とする。
 
+Vehicleのprivate workspaceには`memberDiscoveryEnabled: boolean`を保持する。これはactive MECHORI participant内の検索projection `alpha_member_vehicle_discoveries.is_active`のsourceであり、新規Vehicleは`true`、旧Vehicleは読取時も`true`として互換化する。外部匿名共有`alpha_public_vehicle_shares`とは別contractで、ownerがOFFにしても外部share、既存Vehicle Follow、Record associationを変更しない。
+
+`professional_organizations`は作成時に少なくとも一つの`owner` membershipを同一transactionで持つ。platform super adminはmembershipを持たずに管理できるが、OrganizationのOWNERには数えない。
+
 - `MaintenanceRecord`を`MaintenanceEvent`と複数の`MaintenanceAction`へ分ける。
 - 症状を必須文字列にせず、複数のObservationとして扱う。
 - 部品をEvent直下ではなくActionへ関連付ける。

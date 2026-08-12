@@ -39,7 +39,7 @@
 
 - **公開プロフィール、username、bio**: 表示名、`@username`、bio、公開車両、公開Journalを表示・編集する実装と識別テストがある。人間QAでは自分・他人・未設定username・非公開項目を確認する。
 - **ユーザーフォロー、車両フォロー、招待者との相互フォロー**: ユーザー単位と車両単位を分離し、招待時のユーザー相互フォロー、解除の独立性、既存フィード反映を実装・テスト済み。人間QAでは複数台所有、乗り換え、同一投稿の重複表示がないことを確認する。
-- **P-084B Discovery Search zero-result regression（AUD-005）**: 人間QAで`FIAT Barchetta`と`HONDA スーパーカブ110/JA59`が0件となった。本番読み取り調査で、両方ともactive α participantのprivate workspaceには存在する一方、匿名外部共有用`alpha_public_vehicle_shares` snapshotが無く、P-084の検索条件から脱落していたことを確認した。`alpha_member_vehicle_discoveries`を外部shareと完全に分離したα限定read modelとして追加し、既存active α participantのVehicleを最小フィールド（make、model、nickname、year）だけでbackfillする。認証済みactive α participantだけが検索・Garage表示・Vehicle Followに利用でき、private workspace、email、VIN、位置、記録、外部匿名公開状態は返さない／変えない。今後追加するVehicleは初期非公開とし、正式版ではVehicleごとの「MECHORI内で見つけられる」設定へ移行する。`FIAT`、`Barchetta`、`カブ`は保存済み文字列で検索対象とするが、日本語別名が未保存の`バルケッタ`は今回のsubstring検索では対象外として別課題に残す。人間QA前はSHIPPED_NEEDS_QAとして扱う。
+- **P-084B Discovery Search zero-result regression（AUD-005）**: 人間QAで`FIAT Barchetta`と`HONDA スーパーカブ110/JA59`が0件となった。本番読み取り調査で、両方ともactive α participantのprivate workspaceには存在する一方、匿名外部共有用`alpha_public_vehicle_shares` snapshotが無く、P-084の検索条件から脱落していたことを確認した。`alpha_member_vehicle_discoveries`を外部shareと完全に分離したα限定read modelとして追加し、既存active α participantのVehicleを最小フィールド（make、model、nickname、year）だけでbackfillする。P-084 follow-upで新規Vehicleはownerの`memberDiscoveryEnabled`を既定ONで保存し、作成・編集画面の「MECHORI内で見つけられる」からowner本人だけがON/OFFできるようにした。OFFは検索対象だけを外し、既存Vehicle Follow、Connections、公開記録通知、外部匿名共有を変更しない。認証済みactive α participantだけが検索・Garage表示・Vehicle Followに利用でき、private workspace、email、VIN、位置、記録、外部匿名公開状態は返さない／変えない。`FIAT`、`Barchetta`、`カブ`は保存済み文字列で検索対象とするが、日本語別名が未保存の`バルケッタ`は今回のsubstring検索では対象外として別課題に残す。人間QA前はSHIPPED_NEEDS_QAとして扱う。
 - **投稿・車両・プロフィールのリンク分離**: 投稿カードと詳細の各操作を実装・テスト済み。人間QAでは投稿者、車両、本文、いいねの各タップ先を確認する。
 
 ### 車両・基本UX
@@ -61,7 +61,7 @@
 ### 運営基盤
 
 - **管理画面、管理者ロール、監査ログ、Owner Plus利用権、Founding Tester付与**: UI、RPC、監査履歴、利用権の実装と関連マイグレーションを確認済み。人間QAではowner/adminと非管理者の境界、理由入力、別利用者の拒否を確認する。
-- **P-085 Professional / Service Attribution β基盤**: 実在拠点を表す`service_provider`とMECHORI上の管理主体`professional_organization`を分離し、多対多membership（OWNER／STAFF）、OrganizationへのFounding Garage資格、Provider連携、platform adminによるmembership不要の管理をadditive schemaとRPCで実装した。整備記録にはversionedな`serviceAttribution`（DIY／お店・工場／不明）と当時のProvider名・市区町村snapshotを保存し、旧Recordは読取時に不明として互換化する。ユーザー追加Providerは未確認候補であり、User Recordのownershipや確認状態はOrganizationへ移らない。Claim、重複merge、Provider確認、工場作成記録、実績Discoveryは未実装。人間QA前はSHIPPED_NEEDS_QAとして扱う。
+- **P-085 Professional / Service Attribution β基盤**: 実在拠点を表す`service_provider`とMECHORI上の管理主体`professional_organization`を分離し、多対多membership（OWNER／STAFF）、OrganizationへのFounding Garage資格、Provider連携、platform adminによるmembership不要の管理をadditive schemaとRPCで実装した。Organization作成は初期OWNERを必須とし、Organization rowとactive α participantのOWNER membershipを同一trusted transactionで作成するため、OWNER 0人のOrganizationを残さない。整備記録にはversionedな`serviceAttribution`（DIY／お店・工場／不明）と当時のProvider名・市区町村snapshotを保存し、旧Recordは読取時に不明として互換化する。ユーザー追加Providerは未確認候補であり、User Recordのownershipや確認状態はOrganizationへ移らない。Claim、重複merge、Provider確認、工場作成記録、実績Discoveryは未実装。人間QA前はSHIPPED_NEEDS_QAとして扱う。
 - **GA4／GTM／Clarity接続準備**: コードと運用文書上の接続準備はある。人間QAでは本番計測の送信範囲、マスキング、イベント発火を管理画面と実機で確認する。
 
 ## 4. PARTIAL／OPEN
@@ -121,7 +121,7 @@
 - 下書きはブラウザ・ユーザー・投稿入口単位で保存され、写真バイナリは保存しない。写真が復元できない場合は再選択が必要になる。
 - αの共有は一般Web公開ではない。記録本文、写真、車両プロフィールごとの公開範囲を混同しない。
 - 車両カタログ協力、計測DB、管理者権限境界など、コードとDBの適用状態が分かれる項目は、適用履歴と人間QAを別に記録する。
-- Founding Garageの資格、工場内role、platform super adminは設計上分離しているが、コード・DB・運用フローは未適用である。
+- Founding Garageの資格、工場内role、platform super adminはP-085の最小基盤として実装済みで、人間QA待ちである。事業者確認、契約、entitlement詳細、Professional業務機能は未適用である。
 - 基本体験は無料を原則とし、AI/OCRの通常利用、利用枠、推定原価、失敗時の非消費、super adminによる追加・免除をβで計測する。実際の上限利用者が現れるまで本格決済は急がない。
-- P-074のPCナビは、常設左サイドバーと既存ハンバーガーの二重化解消が必要であり、実装前の採用判断として管理する。
+- P-074のPCナビ二重化は解消済みで、人間UX QA待ちである。画面全体のVisual Direction再設計は別途扱う。
 - 現行の状態棚卸しではテスト・build・デプロイを再実行していないため、この更新自体は新しい動作保証を追加しない。

@@ -320,7 +320,7 @@ test("migrates legacy local data into actions and an odometer episode", () => {
   delete journals[0]?.contentBlocks;
 
   const migrated = migrateAppData(legacy);
-  assert.equal(migrated?.schemaVersion, 13);
+  assert.equal(migrated?.schemaVersion, 14);
   assert.deepEqual(migrated?.records[0]?.serviceAttribution, {
     version: 1,
     performedByType: "unknown",

@@ -19,7 +19,7 @@ import { useMemo, useState, type ChangeEvent, type FormEvent, type ReactNode } f
 
 export default function VehicleSpecificationPage() {
   const { vehicleId } = useParams<{ vehicleId: string }>();
-  const { data, locale, updateVehicleSpecification } = useApp();
+  const { data, locale, isRemoteAlpha, updateVehicleSpecification } = useApp();
   const router = useRouter();
   const vehicle = data.vehicles.find((item) => item.id === decodeURIComponent(vehicleId));
   const ownedVehicle = vehicle?.ownerProfileId === data.currentProfileId ? vehicle : undefined;
@@ -41,6 +41,7 @@ export default function VehicleSpecificationPage() {
   const [nickname, setNickname] = useState(ownedVehicle?.nickname ?? "");
   const [imagePath, setImagePath] = useState(ownedVehicle?.imagePath ?? "");
   const [ownerComment, setOwnerComment] = useState(ownedVehicle?.ownerComment ?? "");
+  const [memberDiscoveryEnabled, setMemberDiscoveryEnabled] = useState(ownedVehicle?.memberDiscoveryEnabled ?? true);
   const [ownershipStartedYear, setOwnershipStartedYear] = useState(ownedVehicle?.ownershipStartedYear?.toString() ?? "");
   const [ownershipStartedMonth, setOwnershipStartedMonth] = useState(ownedVehicle?.ownershipStartedMonth?.toString() ?? "");
   const [ownershipStartedDay, setOwnershipStartedDay] = useState(ownedVehicle?.ownershipStartedDay?.toString() ?? "");
@@ -126,6 +127,7 @@ export default function VehicleSpecificationPage() {
         nickname,
         imagePath,
         ownerComment,
+        memberDiscoveryEnabled,
         ownershipStartedYear: parsedOwnershipStartedYear,
         ownershipStartedMonth: parsedOwnershipStartedMonth,
         ownershipStartedDay: parsedOwnershipStartedDay,
@@ -173,6 +175,13 @@ export default function VehicleSpecificationPage() {
           </div>
           <Field label={translate(locale, "nicknameOptional")}><input maxLength={30} value={nickname} onChange={(event) => setNickname(event.target.value)} /></Field>
           <Field label={locale === "ja" ? "愛車についてのひとこと（任意）" : "A note about this vehicle (optional)"}><textarea maxLength={500} value={ownerComment} onChange={(event) => setOwnerComment(event.target.value)} /></Field>
+          {isRemoteAlpha && <label className="checkbox-row">
+            <input type="checkbox" checked={memberDiscoveryEnabled} onChange={(event) => setMemberDiscoveryEnabled(event.target.checked)} />
+            <span>
+              <strong>{locale === "ja" ? "MECHORI内で見つけられる" : "Discoverable in MECHORI"}</strong>
+              <small>{locale === "ja" ? "ONにすると、MECHORI参加者が検索からこのクルマを見つけられます。Web全体への公開設定とは別です。" : "Lets MECHORI participants find this vehicle in search. This is separate from sharing it on the web."}</small>
+            </span>
+          </label>}
           <Field label={locale === "ja" ? "所有開始時期の詳しさ" : "Ownership start precision"}>
             <select value={ownershipStartedPrecision} onChange={(event) => {
               const precision = event.target.value as typeof ownershipStartedPrecision;

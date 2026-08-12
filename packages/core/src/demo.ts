@@ -1,7 +1,7 @@
 import type { AppData } from "./types.ts";
 
 export const demoData: AppData = {
-  schemaVersion: 13,
+  schemaVersion: 14,
   vehicles: [
     {
       id: "vehicle-demo-barchetta",
@@ -38,6 +38,7 @@ export const demoData: AppData = {
       },
       odometerContext: "current",
       imagePath: "/demo-roadster.png",
+      memberDiscoveryEnabled: true,
       isDemo: true,
     },
   ],

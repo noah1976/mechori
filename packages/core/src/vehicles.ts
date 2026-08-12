@@ -55,6 +55,7 @@ export function createEmptyVehicleDraft(): VehicleDraft {
     odometerUnit: "km",
     odometerContext: "current",
     ownerComment: "",
+    memberDiscoveryEnabled: true,
   };
 }
 
@@ -266,6 +267,7 @@ export function addVehicleToData(
     odometerContext: draft.odometerContext,
     imagePath: draft.imagePath || undefined,
     ownerComment: draft.ownerComment.trim() || undefined,
+    memberDiscoveryEnabled: draft.memberDiscoveryEnabled,
     isDemo: false,
   };
 
@@ -294,6 +296,7 @@ export interface VehicleSpecificationUpdate {
   nickname?: string;
   imagePath?: string;
   ownerComment?: string;
+  memberDiscoveryEnabled?: boolean;
   ownershipStartedYear?: number;
   ownershipStartedMonth?: number;
   ownershipStartedDay?: number;
@@ -363,6 +366,7 @@ export function updateVehicleSpecificationInData(
     nickname: update.nickname === undefined ? vehicle.nickname : update.nickname.trim() || undefined,
     imagePath: update.imagePath === undefined ? vehicle.imagePath : update.imagePath || undefined,
     ownerComment: update.ownerComment === undefined ? vehicle.ownerComment : update.ownerComment.trim() || undefined,
+    memberDiscoveryEnabled: update.memberDiscoveryEnabled ?? vehicle.memberDiscoveryEnabled,
     ownershipStartedYear: update.ownershipStartedPrecision === undefined ? vehicle.ownershipStartedYear : update.ownershipStartedYear,
     ownershipStartedMonth: update.ownershipStartedPrecision === undefined ? vehicle.ownershipStartedMonth : update.ownershipStartedMonth,
     ownershipStartedDay: update.ownershipStartedPrecision === undefined ? vehicle.ownershipStartedDay : update.ownershipStartedDay,
@@ -429,7 +433,7 @@ export function updateVehicleOwnershipInData(
     vehicle: nextVehicle,
     data: {
       ...data,
-      schemaVersion: 13,
+      schemaVersion: 14,
       vehicles: data.vehicles.map((item) => item.id === vehicleId ? nextVehicle : item),
     },
   };

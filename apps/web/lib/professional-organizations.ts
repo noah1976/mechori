@@ -73,13 +73,13 @@ export async function loadProfessionalMembers(organizationId: string): Promise<P
 }
 
 export async function searchProfessionalMemberCandidates(
-  organizationId: string,
+  organizationId: string | undefined,
   query: string,
 ): Promise<ProfessionalMemberCandidate[]> {
   if (!query.trim()) return [];
   const { data, error } = await createSupabaseBrowserClient().rpc(
     "search_professional_member_candidates",
-    { p_organization_id: organizationId, p_query: query.trim(), p_limit: 20 },
+    { p_organization_id: organizationId ?? null, p_query: query.trim(), p_limit: 20 },
   );
   if (error) throw new Error("professional_member_search_failed");
   return ((data ?? []) as MemberRow[]).map(memberFromRow);
@@ -90,7 +90,7 @@ export async function createProfessionalOrganization(input: {
   slug: string;
   foundingGarage: boolean;
   providerId?: string;
-  ownerUserId?: string;
+  ownerUserId: string;
 }): Promise<string> {
   const { data, error } = await createSupabaseBrowserClient().rpc(
     "admin_create_professional_organization",
@@ -99,7 +99,7 @@ export async function createProfessionalOrganization(input: {
       p_slug: input.slug,
       p_founding_garage: input.foundingGarage,
       p_provider_id: input.providerId ?? null,
-      p_owner_user_id: input.ownerUserId ?? null,
+      p_owner_user_id: input.ownerUserId,
     },
   );
   if (error || typeof data !== "string") throw new Error("professional_organization_create_failed");

@@ -185,6 +185,13 @@ function NewVehicleContent() {
           <Field label={translate(locale, "nicknameOptional")}>
             <input value={draft.nickname} onChange={(event) => setField("nickname", event.target.value)} placeholder={locale === "ja" ? "普段呼んでいる名前があれば" : "How you usually refer to it"} />
           </Field>
+          {isRemoteAlpha && <label className="checkbox-row">
+            <input type="checkbox" checked={draft.memberDiscoveryEnabled} onChange={(event) => setField("memberDiscoveryEnabled", event.target.checked)} />
+            <span>
+              <strong>{locale === "ja" ? "MECHORI内で見つけられる" : "Discoverable in MECHORI"}</strong>
+              <small>{locale === "ja" ? "ONにすると、MECHORI参加者が検索からこのクルマを見つけられます。Web全体への公開設定とは別です。" : "Lets MECHORI participants find this vehicle in search. This is separate from sharing it on the web."}</small>
+            </span>
+          </label>}
           {draft.make.trim() && <div className="vehicle-identity-match" aria-live="polite">
             {identity.brandId && identity.canonicalMake !== draft.make.trim() && (
               <p>{translate(locale, "canonicalBrandNotice", {
