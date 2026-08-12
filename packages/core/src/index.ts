@@ -16,6 +16,7 @@ export * from "./moderation.ts";
 export * from "./odometer.ts";
 export * from "./owner-history.ts";
 export * from "./records.ts";
+export * from "./service-attribution.ts";
 export * from "./social.ts";
 export * from "./translations.ts";
 export * from "./types.ts";

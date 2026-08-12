@@ -72,6 +72,15 @@ export type RecordEvidenceBasis =
   | "unknown";
 export type OccurrencePrecision = "day" | "month" | "year" | "unknown";
 export type MaintenanceOccurrencePrecision = OccurrencePrecision;
+export type ServicePerformerType = "self" | "service_provider" | "unknown";
+
+export interface MaintenanceServiceAttributionV1 {
+  version: 1;
+  performedByType: ServicePerformerType;
+  serviceProviderId?: string;
+  providerDisplayNameSnapshot?: string;
+  providerLocalitySnapshot?: string;
+}
 
 export interface PrototypeOdometerEpisode {
   id: string;
@@ -224,6 +233,7 @@ export interface MaintenanceRecord {
   matchScope: string;
   result: string;
   actions: MaintenanceRecordAction[];
+  serviceAttribution: MaintenanceServiceAttributionV1;
   createdAt: string;
   updatedAt: string;
   isDemo: boolean;
@@ -264,6 +274,7 @@ export interface RecordDraft {
   hazardLevel: HazardLevel;
   evidenceBasis: RecordEvidenceBasis;
   additionalActions: RecordActionDraft[];
+  serviceAttribution: MaintenanceServiceAttributionV1;
   requestSharing: boolean;
 }
 
@@ -374,6 +385,8 @@ export interface GarageJournalPost {
   media: JournalMediaAttachment[];
   contentBlocks: JournalContentBlock[];
   knowledgeExtractionConsent: boolean;
+  /** Stored only in the owner's workspace; it is not part of the shared Journal projection. */
+  serviceAttribution?: MaintenanceServiceAttributionV1;
   appreciationCount: number;
   occurredOn?: string;
   occurredYear?: number;
@@ -468,10 +481,11 @@ export interface JournalDraft {
   contentBlocks: JournalContentBlock[];
   visibility: JournalVisibility;
   knowledgeExtractionConsent: boolean;
+  serviceAttribution?: MaintenanceServiceAttributionV1;
 }
 
 export interface AppData {
-  schemaVersion: 12;
+  schemaVersion: 13;
   vehicles: Vehicle[];
   records: MaintenanceRecord[];
   profiles: SocialProfile[];

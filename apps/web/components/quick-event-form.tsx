@@ -9,13 +9,17 @@ import {
 } from "@/lib/image-preparation";
 import {
   displayVehicleModel,
+  journalSupportsServiceAttribution,
   journalToDraft,
+  normalizeServiceAttribution,
+  unknownServiceAttribution,
   validateJournalDraft,
   type GarageJournalPost,
   type JournalEventType,
   type JournalDraft,
   type JournalMediaAttachment,
   type JournalVisibility,
+  type MaintenanceServiceAttributionV1,
   type Vehicle,
 } from "@mechori/core";
 import { translate, type TranslationKey } from "@mechori/i18n";
@@ -33,6 +37,7 @@ import {
   quickEventLocalDraftKey,
   saveLocalDraft,
 } from "@/lib/local-draft-store";
+import { ServiceAttributionField } from "@/components/service-attribution-field";
 
 const eventTypes: Array<{ value: JournalEventType; label: TranslationKey }> = [
   { value: "delivery", label: "eventDelivery" },
@@ -73,6 +78,9 @@ export function QuickEventForm({
   } = useApp();
   const editing = Boolean(journal);
   const [eventType, setEventType] = useState<JournalEventType>(journal?.eventType ?? "photo");
+  const [serviceAttribution, setServiceAttribution] = useState<MaintenanceServiceAttributionV1>(
+    () => normalizeServiceAttribution(journal?.serviceAttribution),
+  );
   const [occurrence, setOccurrence] = useState<OccurrenceDraft>(() => {
     if (journal) {
       const stored = journalToDraft(journal);
@@ -134,13 +142,14 @@ export function QuickEventForm({
           note,
           visibility,
           hasPhoto: Boolean(image) || omittedMediaCount > 0,
+          ...(journalSupportsServiceAttribution(eventType) ? { serviceAttribution } : {}),
         })
           ? "saved"
           : "error",
       );
     }, 600);
     return () => window.clearTimeout(timer);
-  }, [draftReady, eventType, image, journal, localDraftKey, note, occurrence, omittedMediaCount, visibility]);
+  }, [draftReady, eventType, image, journal, localDraftKey, note, occurrence, omittedMediaCount, serviceAttribution, visibility]);
 
   function restoreDraft() {
     const stored = pendingDraft;
@@ -155,6 +164,7 @@ export function QuickEventForm({
     });
     setNote(stored.value.note);
     setVisibility(stored.value.visibility as JournalVisibility);
+    setServiceAttribution(normalizeServiceAttribution(stored.value.serviceAttribution));
     setOmittedMediaCount(stored.value.hasPhoto ? 1 : 0);
     setPendingDraft(null);
     setDraftStatus("restored");
@@ -167,6 +177,7 @@ export function QuickEventForm({
     setOccurrence({ occurredOn: localDateInputValue(), occurredPrecision: "day" });
     setNote("");
     setVisibility("public");
+    setServiceAttribution(unknownServiceAttribution());
     setOmittedMediaCount(0);
     setDraftStatus("idle");
   }
@@ -265,10 +276,19 @@ export function QuickEventForm({
         ],
         visibility,
         knowledgeExtractionConsent: journal?.knowledgeExtractionConsent ?? false,
+        ...(journalSupportsServiceAttribution(eventType) ? { serviceAttribution } : {}),
       };
       const validation = validateJournalDraft(draft);
       if (validation.errors.occurredOn) {
         setError("momentDateMissing");
+        return;
+      }
+      if (validation.errors.serviceAttribution) {
+        setPublicationError(
+          locale === "ja"
+            ? "お店・工場を選択するか、追加してください。"
+            : "Select or add a service provider.",
+        );
         return;
       }
       if (!validation.valid) {
@@ -357,6 +377,14 @@ export function QuickEventForm({
             : translate(locale, "momentPrivateFirst")}
         </p>
         <fieldset className="event-type-picker"><legend>{translate(locale, "momentKindQuestion")}</legend>{eventTypes.map((item) => <button type="button" key={item.value} className={eventType === item.value ? "is-selected" : ""} aria-pressed={eventType === item.value} onClick={() => setEventType(item.value)}>{translate(locale, item.label)}</button>)}</fieldset>
+        {journalSupportsServiceAttribution(eventType) && (
+          <ServiceAttributionField
+            value={serviceAttribution}
+            onChange={setServiceAttribution}
+            locale={locale}
+            compact
+          />
+        )}
         <OccurrenceDateFields
           value={occurrence}
           locale={locale}

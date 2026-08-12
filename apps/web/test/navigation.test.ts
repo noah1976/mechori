@@ -43,6 +43,14 @@ test("admin navigation keeps user destinations and adds admin only to the drawer
   assert.equal(hrefs("drawer", "authenticated", true).includes("/admin"), true);
 });
 
+test("professional navigation is limited to members and platform admins", () => {
+  assert.equal(getNavigationItems("desktopSide", "authenticated", false, false).some((item) => item.id === "professional"), false);
+  assert.equal(getNavigationItems("desktopSide", "authenticated", false, true).some((item) => item.id === "professional"), true);
+  assert.equal(getNavigationItems("drawer", "authenticated", true, false).some((item) => item.id === "professional"), true);
+  assert.equal(getNavigationItems("mobileBottom", "authenticated", false, true).some((item) => item.id === "professional"), false);
+  assert.equal(isActiveNavigation("/professional/organizations/demo", "/professional/organizations"), true);
+});
+
 test("desktop navigation exposes the full sidebar set from the shared definition", () => {
   assert.deepEqual(getNavigationItems("desktopSide", "authenticated").map((item) => item.id), [
     "home",
@@ -109,6 +117,7 @@ test("record FAB is hidden from record entry, search, feedback, and admin routes
   assert.equal(shouldShowRecordFab("/feedback"), false);
   assert.equal(shouldShowRecordFab("/admin"), false);
   assert.equal(shouldShowRecordFab("/admin/feedback/1"), false);
+  assert.equal(shouldShowRecordFab("/professional/organizations/demo"), false);
 });
 
 test("logged-out navigation keeps the explicit three-column layout", () => {

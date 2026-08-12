@@ -12,6 +12,7 @@ import type {
   RecordDraft,
   ResolutionStatus,
 } from "./types.ts";
+import { normalizeServiceAttribution } from "./service-attribution.ts";
 
 export interface LocalDraftEnvelope<T> {
   version: 1;
@@ -45,6 +46,7 @@ export function parseRecordLocalDraft(raw: string | null): LocalDraftEnvelope<Re
         typeof parsed.value.servicePeriodNote === "string"
           ? parsed.value.servicePeriodNote
           : "",
+      serviceAttribution: normalizeServiceAttribution(parsed.value.serviceAttribution),
     },
   };
 }

@@ -35,6 +35,7 @@ import {
   screenTitle,
   shouldShowRecordFab,
 } from "@/lib/navigation";
+import { loadMyProfessionalAccess } from "@/lib/professional-organizations";
 import { notificationBadgeLabel } from "@/lib/notifications";
 
 
@@ -61,13 +62,22 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [acceptingPolicy, setAcceptingPolicy] = useState(false);
   const [policyError, setPolicyError] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [adminVisible, setAdminVisible] = useState(false);
+  const [navigationAccess, setNavigationAccess] = useState({
+    profileId: "",
+    admin: false,
+    professional: false,
+  });
   const menuCloseRef = useRef<HTMLButtonElement>(null);
   const authResultHandledRef = useRef(false);
   const authState = authDisplayState(hydrated, signedIn);
   const authenticated = authState === "authenticated";
   const loggedOut = authState === "signed-out";
   const navigationReady = authState !== "loading";
+  const accessMatchesCurrentProfile =
+    authenticated && navigationAccess.profileId === data.currentProfileId;
+  const adminVisible = accessMatchesCurrentProfile && navigationAccess.admin;
+  const professionalVisible =
+    accessMatchesCurrentProfile && navigationAccess.professional;
   const workspaceReady = workspaceLoadState === "ready";
   const showRecordFab = authenticated && workspaceReady && shouldShowRecordFab(pathname) && !menuOpen;
   const currentProfile = workspaceReady
@@ -78,14 +88,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         data.vehicles.filter((vehicle) => vehicle.ownerProfileId === data.currentProfileId),
       )
     : undefined;
-  const desktopNavItems = getNavigationItems("desktopSide", authState, adminVisible);
+  const desktopNavItems = getNavigationItems("desktopSide", authState, adminVisible, professionalVisible);
   const desktopPrimaryItems = desktopNavItems.filter((item) => item.group === "primary");
   const desktopSecondaryItems = desktopNavItems.filter((item) => item.group === "secondary");
   const desktopAdminItems = desktopNavItems.filter((item) => item.group === "admin");
   const mobileNavItems = getNavigationItems("mobileBottom", authState);
-  const drawerPrimaryItems = getNavigationItems("drawer", authState, adminVisible).filter((item) => item.group === "primary");
-  const drawerSecondaryItems = getNavigationItems("drawer", authState, adminVisible).filter((item) => item.group === "secondary");
-  const drawerAdminItems = getNavigationItems("drawer", authState, adminVisible).filter((item) => item.group === "admin");
+  const drawerPrimaryItems = getNavigationItems("drawer", authState, adminVisible, professionalVisible).filter((item) => item.group === "primary");
+  const drawerSecondaryItems = getNavigationItems("drawer", authState, adminVisible, professionalVisible).filter((item) => item.group === "secondary");
+  const drawerAdminItems = getNavigationItems("drawer", authState, adminVisible, professionalVisible).filter((item) => item.group === "admin");
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -105,17 +115,23 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!authenticated || !isRemoteAlpha) return;
     let active = true;
-    void loadAlphaAdminDashboard()
-      .then((dashboard) => {
-        if (active) setAdminVisible(dashboard?.isAdmin === true);
-      })
-      .catch(() => {
-        if (active) setAdminVisible(false);
+    const profileId = data.currentProfileId;
+    void Promise.all([
+      loadAlphaAdminDashboard().catch(() => null),
+      loadMyProfessionalAccess().catch(() => false),
+    ]).then(([dashboard, professionalAccess]) => {
+      if (!active) return;
+      const admin = dashboard?.isAdmin === true;
+      setNavigationAccess({
+        profileId,
+        admin,
+        professional: professionalAccess || admin,
       });
+    });
     return () => {
       active = false;
     };
-  }, [authenticated, isRemoteAlpha]);
+  }, [authenticated, data.currentProfileId, isRemoteAlpha]);
 
   async function handleSignOut() {
     setMenuOpen(false);

@@ -1,7 +1,7 @@
 import type { AppData } from "./types.ts";
 
 export const demoData: AppData = {
-  schemaVersion: 12,
+  schemaVersion: 13,
   vehicles: [
     {
       id: "vehicle-demo-barchetta",
@@ -95,6 +95,7 @@ export const demoData: AppData = {
           hazardLevel: "LOW",
         },
       ],
+      serviceAttribution: { version: 1, performedByType: "unknown" },
       createdAt: "2026-04-12T09:00:00.000Z",
       updatedAt: "2026-04-12T09:00:00.000Z",
       isDemo: true,
@@ -140,6 +141,7 @@ export const demoData: AppData = {
           hazardLevel: "CAUTION",
         },
       ],
+      serviceAttribution: { version: 1, performedByType: "unknown" },
       createdAt: "2026-05-28T09:00:00.000Z",
       updatedAt: "2026-05-28T09:00:00.000Z",
       isDemo: true,
@@ -185,6 +187,7 @@ export const demoData: AppData = {
           hazardLevel: "CRITICAL",
         },
       ],
+      serviceAttribution: { version: 1, performedByType: "unknown" },
       createdAt: "2026-06-19T09:00:00.000Z",
       updatedAt: "2026-06-19T09:00:00.000Z",
       isDemo: true,

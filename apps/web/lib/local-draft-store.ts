@@ -1,9 +1,11 @@
 import {
   parseJournalLocalDraft,
   parseRecordLocalDraft,
+  normalizeServiceAttribution,
   serializeLocalDraft,
   type LocalDraftEnvelope,
   type RecordDraft,
+  type MaintenanceServiceAttributionV1,
   type RestorableJournalDraft,
 } from "@mechori/core";
 
@@ -22,6 +24,7 @@ export interface QuickEventLocalDraft {
   note: string;
   visibility: string;
   hasPhoto: boolean;
+  serviceAttribution?: MaintenanceServiceAttributionV1;
 }
 
 export function recordLocalDraftKey(recordId?: string): string {
@@ -136,6 +139,7 @@ function parseQuickEventDraft(raw: string | null): LocalDraftEnvelope<QuickEvent
         note: value.note,
         visibility: value.visibility,
         hasPhoto: value.hasPhoto,
+        serviceAttribution: normalizeServiceAttribution(value.serviceAttribution),
       },
     };
   } catch {

@@ -17,6 +17,10 @@ import {
   canonicalizeLegacyModelTargetId,
   normalizeVehicle,
 } from "./vehicle-catalog.ts";
+import {
+  isValidServiceAttribution,
+  normalizeServiceAttribution,
+} from "./service-attribution.ts";
 
 export interface ValidationResult {
   valid: boolean;
@@ -49,6 +53,9 @@ export function validateRecordDraft(draft: RecordDraft): ValidationResult {
     )
   ) {
     errors.additionalActions = "invalid";
+  }
+  if (!isValidServiceAttribution(draft.serviceAttribution)) {
+    errors.serviceAttribution = "invalid";
   }
 
   return { valid: Object.keys(errors).length === 0, errors };
@@ -230,6 +237,7 @@ export function createRecordFromDraft(
     matchScope: "登録車両の記録",
     result: primaryAction.result,
     actions,
+    serviceAttribution: normalizeServiceAttribution(draft.serviceAttribution),
     createdAt: now,
     updatedAt: now,
     isDemo: false,
@@ -366,7 +374,7 @@ export function applyRecordDraftToData(
     record,
     data: {
       ...data,
-      schemaVersion: 12,
+      schemaVersion: 13,
       vehicles: data.vehicles.map((item) => (item.id === vehicleId ? nextVehicle : item)),
       records,
     },
@@ -490,11 +498,12 @@ export function migrateAppData(input: unknown): AppData | null {
         record.evidenceBasis === "recalled_later"
           ? record.evidenceBasis
           : "unknown",
+      serviceAttribution: normalizeServiceAttribution(record.serviceAttribution),
     } as MaintenanceRecord;
   });
 
   return {
-    schemaVersion: 12,
+    schemaVersion: 13,
     vehicles,
     records,
     profiles: Array.isArray(source.profiles)

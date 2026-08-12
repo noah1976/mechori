@@ -4,6 +4,7 @@ import {
   createEmptyActionDraft,
   getPreferredVehicle,
   maintenanceRecordDateKey,
+  unknownServiceAttribution,
   validateRecordDraft,
   type MaintenanceOccurrencePrecision,
   type MaintenanceRecord,
@@ -33,6 +34,7 @@ import {
   saveLocalDraft,
 } from "@/lib/local-draft-store";
 import { OccurrenceDateFields } from "@/components/occurrence-date-fields";
+import { ServiceAttributionField } from "@/components/service-attribution-field";
 
 const meterChangeReasons: PrototypeOdometerEpisodeReason[] = [
   "replacement",
@@ -93,6 +95,7 @@ function draftFromRecord(record: MaintenanceRecord | undefined, vehicle: Vehicle
         resolutionStatus: action.resolutionStatus,
         hazardLevel: action.hazardLevel,
       })) ?? [],
+    serviceAttribution: record?.serviceAttribution ?? unknownServiceAttribution(),
     requestSharing: record?.visibility === "pending_review",
   };
 }
@@ -305,14 +308,24 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
       </section>
 
       <section className="form-section">
-        <div className="section-heading compact"><div><span className="eyebrow">02</span><h2>{translate(locale, "serviceReasonHeading")}</h2></div></div>
+        <div className="section-heading compact"><div><span className="eyebrow">02</span><h2>{locale === "ja" ? "作業した人・場所" : "Who performed the work"}</h2></div></div>
+        <ServiceAttributionField
+          value={draft.serviceAttribution}
+          onChange={(value) => setField("serviceAttribution", value)}
+          locale={locale}
+          error={errorText("serviceAttribution")}
+        />
+      </section>
+
+      <section className="form-section">
+        <div className="section-heading compact"><div><span className="eyebrow">03</span><h2>{translate(locale, "serviceReasonHeading")}</h2></div></div>
         <Field label={translate(locale, "serviceReasonOptional")}>
           <textarea rows={3} value={draft.symptoms} onChange={(event) => setField("symptoms", event.target.value)} />
         </Field>
       </section>
 
       <section className="form-section">
-        <div className="section-heading compact"><div><span className="eyebrow">03</span><h2>{translate(locale, "actionNumber", { number: 1 })}</h2></div></div>
+        <div className="section-heading compact"><div><span className="eyebrow">04</span><h2>{translate(locale, "actionNumber", { number: 1 })}</h2></div></div>
         <ActionFields
           locale={locale}
           summary={draft.summary}
@@ -336,7 +349,7 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
       {draft.additionalActions.map((action, index) => (
         <section className="form-section action-section" key={action.clientId}>
           <div className="section-heading compact">
-            <div><span className="eyebrow">{String(index + 4).padStart(2, "0")}</span><h2>{translate(locale, "actionNumber", { number: index + 2 })}</h2></div>
+            <div><span className="eyebrow">{String(index + 5).padStart(2, "0")}</span><h2>{translate(locale, "actionNumber", { number: index + 2 })}</h2></div>
             <button
               type="button"
               className="icon-action danger-icon"

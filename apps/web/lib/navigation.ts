@@ -1,6 +1,7 @@
 import type { SupportedUiLocale } from "@mechori/core";
 import {
   Bell,
+  Building2,
   CarFront,
   CircleHelp,
   FileText,
@@ -15,7 +16,7 @@ import {
 } from "lucide-react";
 
 export type NavigationSurface = "mobileBottom" | "desktopSide" | "drawer";
-export type NavigationAuth = "public" | "signed-out" | "authenticated" | "admin";
+export type NavigationAuth = "public" | "signed-out" | "authenticated" | "professional" | "admin";
 export type NavigationStatus = "active" | "comingSoon";
 export type AuthDisplayState = "loading" | "authenticated" | "signed-out";
 export type NavigationLabelKey =
@@ -32,6 +33,7 @@ export type NavigationLabelKey =
   | "settings"
   | "terms"
   | "privacy"
+  | "professional"
   | "admin";
 export type NavigationGroup = "primary" | "secondary" | "admin";
 
@@ -49,6 +51,18 @@ export interface NavigationItem {
 }
 
 const allNavigationItems: readonly NavigationItem[] = [
+  {
+    id: "professional",
+    href: "/professional/organizations",
+    label: "professional",
+    icon: Building2,
+    surfaces: ["desktopSide", "drawer"],
+    auth: "professional",
+    activeMatch: "professional",
+    order: 55,
+    status: "active",
+    group: "secondary",
+  },
   {
     id: "home",
     href: "/",
@@ -237,6 +251,7 @@ const labelMap: Record<NavigationLabelKey, { ja: string; en: string }> = {
   settings: { ja: "設定", en: "Settings" },
   terms: { ja: "利用規約", en: "Terms" },
   privacy: { ja: "プライバシーポリシー", en: "Privacy policy" },
+  professional: { ja: "事業者スペース", en: "Professional workspace" },
   admin: { ja: "管理画面", en: "Admin" },
 };
 
@@ -249,22 +264,26 @@ export function canShowNavigationItem(
   item: NavigationItem,
   authState: AuthDisplayState,
   isAdmin = false,
+  hasProfessionalAccess = false,
 ): boolean {
   if (authState === "loading") return false;
   if (item.auth === "public") return true;
   if (item.auth === "signed-out") return authState === "signed-out";
   if (authState !== "authenticated") return false;
-  return item.auth !== "admin" || isAdmin;
+  if (item.auth === "admin") return isAdmin;
+  if (item.auth === "professional") return hasProfessionalAccess || isAdmin;
+  return true;
 }
 
 export function getNavigationItems(
   surface: NavigationSurface,
   authState: AuthDisplayState,
   isAdmin = false,
+  hasProfessionalAccess = false,
 ): NavigationItem[] {
   return allNavigationItems
     .filter((item) => item.surfaces.includes(surface))
-    .filter((item) => canShowNavigationItem(item, authState, isAdmin))
+    .filter((item) => canShowNavigationItem(item, authState, isAdmin, hasProfessionalAccess))
     .sort((left, right) => left.order - right.order);
 }
 
@@ -286,6 +305,8 @@ export function isNavigationItemActive(pathname: string, item: NavigationItem): 
       return pathname === "/auth" || pathname.startsWith("/auth/");
     case "connections":
       return pathname === "/connections" || pathname.startsWith("/connections/");
+    case "professional":
+      return pathname.startsWith("/professional/organizations");
     case "profile-edit":
       return pathname === "/settings/profile" || pathname.startsWith("/settings/profile/");
     case "settings":
@@ -314,6 +335,7 @@ export function screenTitle(pathname: string, locale: SupportedUiLocale) {
   if (pathname.startsWith("/notifications")) return "通知";
   if (pathname.startsWith("/garage") || pathname.startsWith("/profile") || pathname.startsWith("/v/")) return "ガレージ";
   if (pathname.startsWith("/journal") || pathname.startsWith("/records")) return "記録";
+  if (pathname.startsWith("/professional/organizations")) return "事業者スペース";
   if (pathname.startsWith("/settings")) return "設定";
   return "MECHORI";
 }
@@ -329,6 +351,7 @@ export function shouldShowRecordFab(pathname: string) {
     pathname === "/feedback" ||
     pathname.startsWith("/feedback/") ||
     pathname === "/admin" ||
-    pathname.startsWith("/admin/")
+    pathname.startsWith("/admin/") ||
+    pathname.startsWith("/professional/organizations")
   );
 }

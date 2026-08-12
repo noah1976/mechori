@@ -103,6 +103,28 @@ test("preserves a lightweight vehicle event category", () => {
   assert.equal(result.journal.visibility, "private");
 });
 
+test("stores service attribution only for maintenance-like quick records", () => {
+  const attribution = {
+    version: 1 as const,
+    performedByType: "service_provider" as const,
+    serviceProviderId: "provider-demo",
+    providerDisplayNameSnapshot: "DEMO Workshop",
+  };
+  const maintenance = addJournalToData(
+    cloneDemoData(),
+    validDraft({ eventType: "repair", serviceAttribution: attribution }),
+    "ja",
+  ).journal;
+  const drive = addJournalToData(
+    cloneDemoData(),
+    validDraft({ eventType: "drive", serviceAttribution: attribution }),
+    "ja",
+  ).journal;
+
+  assert.deepEqual(maintenance.serviceAttribution, attribution);
+  assert.equal(drive.serviceAttribution, undefined);
+});
+
 test("rejects an invalid occurrence date while accepting legacy drafts without one", () => {
   assert.equal(validateJournalDraft(validDraft({ occurredOn: "2024-02-30" })).errors.occurredOn, "invalid");
   assert.equal(validateJournalDraft(validDraft({ occurredOn: "" })).errors.occurredOn, "required");

@@ -71,6 +71,7 @@ test("round-trips a tester vehicle and maintenance record through workspace JSON
       hazardLevel: "LOW",
       evidenceBasis: "invoice_or_receipt",
       additionalActions: [],
+      serviceAttribution: { version: 1, performedByType: "unknown" },
       requestSharing: false,
     },
     undefined,

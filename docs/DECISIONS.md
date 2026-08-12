@@ -545,6 +545,14 @@
 - 決定: `alpha_member_vehicle_discoveries`を、認証済みactive α participantだけが読める最小Vehicle Discovery read modelとして外部shareと分離する。α運用上の例外として、migration時点の既存active participant Vehicleはmake、model、nickname、yearだけを初期公開する。外部匿名公開、写真、記録、VIN、位置、email、private workspaceは含めない。今後追加するVehicleは初期非公開とする。
 - 影響: P-084検索、Garage表示、Vehicle Followは不透明なα Discovery IDを使い、外部share slugを流用しない。正式版ではVehicleごとに「MECHORI内で見つけられる」公開設定を明示的に管理する。日本語alias未保存の車名（例: `バルケッタ`）は今回のsubstring検索では補完せず、車両名alias／多言語検索の別課題として扱う。
 
+### 決定: Service ProviderとProfessional Organizationを分離し、整備記録へhistorical attributionを持たせる
+
+- 日付: 2026-08-12
+- 状態: 決定
+- 背景: 実在工場、MECHORI上の管理主体、ユーザーが入力した工場名、Founding Garage、将来のclaimを同一entityへ押し込むと、権限・履歴・信頼境界が衝突する。
+- 決定: 店舗・支店を`ServiceProvider`、権限・契約・entitlement主体を`ProfessionalOrganization`として分離する。整備記録はDIY／Provider／不明を明示し、Provider選択時はIDと当時の名称・市区町村snapshotを保存する。Founding GarageはOrganizationへ付与し、membershipはβ最小のOWNER／STAFFとする。platform adminはmembershipなしで管理できる。
+- 影響: ユーザー追加Providerは未確認候補で、User Record ownershipと確認状態は移らない。Claim、duplicate merge、provider-confirmed record、Professional-created record、Provider Discoveryは後続判断とする。既存Recordは読取時に不明として互換化する。
+
 ## 未確定
 
 - 認証方式

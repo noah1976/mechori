@@ -12,6 +12,7 @@ import {
   maintenanceRecordDateLabel,
   preferSharedJournalMediaForDisplay,
   resolveJournalDisplayContent,
+  type MaintenanceServiceAttributionV1,
 } from "@mechori/core";
 import {
   ArrowLeft,
@@ -333,6 +334,13 @@ export default function JournalDetailPage() {
         )}
 
         <JournalContent journal={visibleJournal} locale={locale} contentBlocks={displayContentBlocks} vehicleHref={vehicleHref} />
+        {ownJournal && journal.serviceAttribution && (
+          <div className="journal-service-attribution">
+            <Wrench size={17} aria-hidden="true" />
+            <span>{ja ? "作業した人・場所" : "Work performed by"}</span>
+            <strong>{serviceAttributionLabel(journal.serviceAttribution, ja)}</strong>
+          </div>
+        )}
       </article>
 
       {record && (
@@ -400,6 +408,19 @@ export default function JournalDetailPage() {
       </section>
     </div>
   );
+}
+
+function serviceAttributionLabel(
+  attribution: MaintenanceServiceAttributionV1,
+  ja: boolean,
+): string {
+  if (attribution.performedByType === "self") return ja ? "自分で作業" : "DIY";
+  if (attribution.performedByType === "service_provider") {
+    return [attribution.providerDisplayNameSnapshot, attribution.providerLocalitySnapshot]
+      .filter(Boolean)
+      .join(" · ");
+  }
+  return ja ? "不明・記録なし" : "Unknown";
 }
 
 function visibilityLabel(value: string, ja: boolean): string {

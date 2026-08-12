@@ -290,7 +290,7 @@ test("migrates an existing vehicle to a current car without hiding it", () => {
   delete vehicles[0]?.odometerContext;
 
   const migrated = migrateAppData(legacy);
-  assert.equal(migrated?.schemaVersion, 12);
+  assert.equal(migrated?.schemaVersion, 13);
   assert.equal(migrated?.vehicles[0]?.vehicleCategory, "car");
   assert.equal(migrated?.vehicles[0]?.ownershipType, "owned");
   assert.equal(groupVehiclesByOwnership(migrated?.vehicles ?? []).current.length, 1);

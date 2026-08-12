@@ -23,7 +23,8 @@ import {
   type FeedbackExportKind,
 } from "@/lib/feedback-export";
 import { useApp } from "@/lib/app-context";
-import { BookOpenText, CarFront, CheckCircle2, Copy, Download, Gauge, History, LoaderCircle, MessageSquareText, Search, ShieldCheck, UsersRound } from "lucide-react";
+import { BookOpenText, Building2, CarFront, CheckCircle2, Copy, Download, Gauge, History, LoaderCircle, MessageSquareText, Search, ShieldCheck, UsersRound } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 const feedbackStatuses: AlphaFeedbackStatus[] = ["new", "reviewing", "planned", "resolved", "closed"];
@@ -190,7 +191,7 @@ export default function AdminPage() {
     <div className="page-stack admin-page">
       <header className="page-header">
         <div><span className="eyebrow">ALPHA OPERATIONS</span><h1>{ja ? "MECHORI運営" : "MECHORI operations"}</h1><p>{ja ? "α版の反応、参加者、無償権限をここで確認します。" : "Review alpha feedback, participants, and complimentary access."}</p></div>
-        <Gauge size={30} aria-hidden="true" />
+        <div className="page-header-actions"><Link href="/admin/professional" className="secondary-action"><Building2 size={18} />{ja ? "事業者管理" : "Professional organizations"}</Link><Gauge size={30} aria-hidden="true" /></div>
       </header>
 
       {actionMessage && (

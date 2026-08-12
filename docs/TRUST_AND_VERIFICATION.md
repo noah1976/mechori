@@ -131,6 +131,12 @@ AIは承認されたKnowledgeCaseと確認ラベルを取得し、根拠に含�
 - 訂正前の内容を通常検索へ出し続けず、訂正履歴との関連を保持する。
 - 悪意、誤解、資料不足を同じ制裁で扱わない。
 
+## 整備実施者・Service Providerの表示
+
+ユーザーが「このお店・工場で作業した」と記録することは、ユーザーによるattributionであり、MECHORIまたはProviderによる存在・品質・施工内容の確認ではない。ユーザー追加Providerは未確認候補として扱い、Professional Organizationとの連携やFounding Garage資格だけで過去のUser Recordをprovider-confirmedへ昇格しない。
+
+記録当時のProvider名はhistorical snapshotとして保持する。Provider確認済み実績を将来導入する場合は、User Recordとは別の確認主体・確認日時・根拠を持たせる。
+
 ## NEEDS_OWNER
 
 - 信頼ラベルの公開名称

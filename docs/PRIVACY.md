@@ -87,6 +87,12 @@
 
 画面の実装を後段にしても、これらの処理をユーザー単位で実行できるデータ境界は初期設計から設けます。匿名化による保持の可否や法的保全の具体的要件は、公開前に対象地域の法令と専門家の確認を受けます。
 
+## Service Provider / Professional Organization
+
+Record入力用Providerは店名と市区町村程度に限定し、電話番号、詳細住所、メール、顧客情報を標準取得しない。Organization member一覧が返すのは表示名、`@username`、Avatar、roleまでとし、email、auth metadata、private Vehicle／Recordを含めない。
+
+Private RecordのserviceAttributionをProvider実績、公開Discovery、件数集計へ利用しない。Organization membershipやProvider linkによって、Organization側へUser Recordの閲覧・編集権限を付与しない。
+
 ## 公開前対応
 
 - α版プライバシーポリシー作成（完了）

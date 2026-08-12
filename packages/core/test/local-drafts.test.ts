@@ -31,6 +31,7 @@ const recordDraft: RecordDraft = {
   hazardLevel: "LOW",
   evidenceBasis: "contemporaneous",
   additionalActions: [{ ...createEmptyActionDraft(), clientId: "action-demo" }],
+  serviceAttribution: { version: 1, performedByType: "unknown" },
   requestSharing: false,
 };
 
@@ -73,6 +74,18 @@ test("restores a legacy exact-date record draft with explicit precision", () => 
 
   assert.equal(parsed?.value.serviceDatePrecision, "day");
   assert.equal(parsed?.value.servicePeriodNote, "");
+});
+
+test("restores a legacy record draft without service attribution as unknown", () => {
+  const legacy = structuredClone(recordDraft) as Partial<RecordDraft>;
+  delete legacy.serviceAttribution;
+
+  const parsed = parseRecordLocalDraft(serializeLocalDraft(legacy));
+
+  assert.deepEqual(parsed?.value.serviceAttribution, {
+    version: 1,
+    performedByType: "unknown",
+  });
 });
 
 test("keeps an approximate month in a local journal draft", () => {

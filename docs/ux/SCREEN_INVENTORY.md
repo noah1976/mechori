@@ -25,6 +25,8 @@
 | 設定・プロフィール編集 | `/settings/profile`、`/settings/privacy` | 表示名、username、bio、公開設定 | 自分の見せ方とデータを管理 | 保存 | ログアウト、プライバシー | 設定が日常導線に出過ぎないようにする | 設定、見せる相手 | 重複・保存失敗 | Garage | MOVE | 必要 |
 | フィードバック | `/feedback` | αの意見を送る | 迷い・不具合を安全に伝える | 種別を選び送信 | 戻る、入力保持 | 罫線表では選択状態が伝わりにくい。記録作成FABを表示しない | フィードバック、良かった、迷った、動かなかった、欲しい、その他 | 送信失敗・再試行 | 設定／ホーム | SIMPLIFY | 必要 |
 | 管理画面 | `/admin` | 監査、利用権、運用 | 一般IAから隔離した運用面 | 管理操作 | 監査閲覧 | 一般利用者への露出禁止 | 管理、監査 | 権限なし・取得失敗 | 設定 | KEEP | 必要 |
+| 事業者スペース | `/professional/organizations` | 所属Organizationの確認 | OWNERは事業者・member管理、STAFFは閲覧 | Organizationを開く | member確認 | 個人Garageとの用語衝突 | 事業者、お店・工場、OWNER、STAFF | membershipなし・権限なし・取得失敗 | ホーム | KEEP | 必要 |
+| 事業者管理 | `/admin/professional` | Organization、Provider、Founding Garage運用 | platform admin専用の最小運用面 | Organization作成・編集 | Provider連携、member管理 | 一般ユーザーへ露出禁止 | 事業者、Founding Garage | 権限なし・取得失敗 | 管理画面 | KEEP | 必要 |
 | ログアウト完了 | `/auth/signed-out` など認証完了ルート | ログアウト後の案内 | 安心して終え、必要なら再ログインできる | ホームへ | ログイン | 操作中データとの関係を要確認 | ログアウトしました | セッション切れ | 公開ホーム | SIMPLIFY | 必要 |
 
 ## CURRENTで確認できる構造上の論点

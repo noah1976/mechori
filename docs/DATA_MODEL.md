@@ -587,6 +587,22 @@ AIの自由回答を正本データとして保存しません。必要な処理
 
 ## 現行プロトタイプとの差分
 
+### β移行用の整備実施者・事業者基盤
+
+現行workspace JSONの`MaintenanceRecord`は、正規化移行までversionedな`serviceAttribution`を保持する。
+
+```text
+serviceAttribution v1
+  performedByType: self | service_provider | unknown
+  serviceProviderId?: UUID
+  providerDisplayNameSnapshot?: string
+  providerLocalitySnapshot?: string
+```
+
+`service_provider`では現在のProvider IDと、記録当時の名称・市区町村snapshotを併記する。Providerの改名・移転・inactive化で過去表示を上書きしない。属性がない既存Recordは読取時に`unknown`へ正規化し、workspace全件rewriteは行わない。
+
+DB側は`service_providers`（実在する店舗・支店）、`professional_organizations`（MECHORI上の管理主体）、`service_provider_organization_links`、`professional_organization_memberships`を分離する。Founding GarageはOrganizationの属性であり、membership roleは`owner | staff`。User Recordのownership、公開範囲、確認状態はこの関連によって変えない。将来Record正規化時に`record_service_attributions`へ移せる境界とする。
+
 - `MaintenanceRecord`を`MaintenanceEvent`と複数の`MaintenanceAction`へ分ける。
 - 症状を必須文字列にせず、複数のObservationとして扱う。
 - 部品をEvent直下ではなくActionへ関連付ける。
@@ -602,7 +618,7 @@ AIの自由回答を正本データとして保存しません。必要な処理
 - FIAT Barchettaの仕様分類粒度と、その信頼できる情報源
 - 初期ベータで登録できる車両数
 - 費用を項目別に持つか、イベント合計だけにするか
-- 整備工場名を保存・公開できる条件
+- Provider実績を一般公開・集計できる条件（private Recordは対象外）
 - 共有ナレッジの匿名化後保持とアカウント削除時の扱い
 - 初期管理者の権限分離と監査閲覧範囲
 - 一時原本の保持時間と例外保存条件

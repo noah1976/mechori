@@ -1,8 +1,8 @@
 # MECHORI Project State
 
-- 更新日時: 2026-08-07
+- 更新日時: 2026-08-12
 - 対象ブランチ: `codex/remote-alpha-foundation`
-- HEADコミット: `c8600fc refactor: centralize navigation definitions`
+- HEAD基準: 本書を含む現在ブランチの`git log -1`を正とする
 - 本番URL: `https://mechori-alpha.netlify.app`
 - 状態文書のルール: 実装、テスト、本番反映、人間QAを別々に判定する。コード、テスト、Git履歴、既存の運用記録を照合し、根拠のない項目は完了にしない。本書を現在の実装状態の正本とする。
 
@@ -61,13 +61,14 @@
 ### 運営基盤
 
 - **管理画面、管理者ロール、監査ログ、Owner Plus利用権、Founding Tester付与**: UI、RPC、監査履歴、利用権の実装と関連マイグレーションを確認済み。人間QAではowner/adminと非管理者の境界、理由入力、別利用者の拒否を確認する。
+- **P-085 Professional / Service Attribution β基盤**: 実在拠点を表す`service_provider`とMECHORI上の管理主体`professional_organization`を分離し、多対多membership（OWNER／STAFF）、OrganizationへのFounding Garage資格、Provider連携、platform adminによるmembership不要の管理をadditive schemaとRPCで実装した。整備記録にはversionedな`serviceAttribution`（DIY／お店・工場／不明）と当時のProvider名・市区町村snapshotを保存し、旧Recordは読取時に不明として互換化する。ユーザー追加Providerは未確認候補であり、User Recordのownershipや確認状態はOrganizationへ移らない。Claim、重複merge、Provider確認、工場作成記録、実績Discoveryは未実装。人間QA前はSHIPPED_NEEDS_QAとして扱う。
 - **GA4／GTM／Clarity接続準備**: コードと運用文書上の接続準備はある。人間QAでは本番計測の送信範囲、マスキング、イベント発火を管理画面と実機で確認する。
 
 ## 4. PARTIAL／OPEN
 
 - **AI翻訳**: 原文言語と翻訳導線はあるが、実運用の自動翻訳、品質確認、費用・送信範囲の確定は未完了。
-- **Professional**: ティザー、サービス概要、工場向けの将来方針はあるが、工場アカウント、症例庫、権限、帳票、課金を含む本体は未実装。
-- **Founding Garage**: βまでに少なくとも1軒の工場と共同開発する初期提携制度、個人アカウント・組織・多対多membership・工場内role・組織帰属投稿の方針は決定済み。実装、事業者確認、契約、資格付与は未着手。
+- **Professional**: P-085でOrganization、Provider、OWNER／STAFF、管理UIの最小基盤を実装した。症例庫、工場作成記録、顧客案件、帳票、契約、課金は未実装。
+- **Founding Garage**: P-085でOrganizationへの資格付与とProvider／複数Member連携を可能にした。実在工場の事業者確認、契約、entitlement詳細、共同開発運用は未着手。
 - **P-070 初回表示速度**: Phase 1として、auth確定後にAppShellとroute shellを表示し、Workspaceは依存UIだけで待機・再試行するよう分離した。共有socialの4読取はHome、フォロー中、共有記録詳細、公開Garageで必要時にsingle-flight取得し、Feedback、Admin、設定、検索初期表示では待たない。AppContext全面分割とWorkspace JSON正規化は未着手で、本番の性能QA前のため全体はPARTIALとして扱う。AUD-004のAvatar cacheは別途実装済みだが、人間QA待ちである。
 - **P-074 ナビゲーション再設計**: 4項目の下部ナビ、ハンバーガーメニュー、記録作成FAB、ログアウト時の3項目ナビとガレージのログイン要求表示を反映。P-075Aでつながりを実画面化し、P-073も今回のmigration適用後に通知実画面へ切り替わる。ナビゲーション自体は人間の実機UX確認前のためSHIPPED_NEEDS_QAとして扱う。
 - **P-075A つながり**: 自分と他人のフォロー中／フォロワー、双方向フォローから導出する関係状態、公開Garageへの遷移、一覧内フォロー／解除、自分がフォローした車両の一覧を実装した。取得は既存のユーザーフォローとWorkspace内の車両フォローを再利用し、active member・公開中車両・ブロック境界だけを返す追加の読み取りRPCを使う。本番DB適用とα配信は完了したが、人間QA前のためSHIPPED_NEEDS_QAとして扱う。

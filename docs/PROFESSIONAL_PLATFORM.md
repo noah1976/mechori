@@ -45,6 +45,14 @@ Founding Garage資格は個人ではなく工場組織へ付与します。初�
 
 Founding Garage資格と工場内role、資格・所属確認、Professional契約を混同しません。具体的な契約条件、原価負担、終了条件は、βでの実証と法務確認後に定めます。
 
+## β最小基盤（P-085）
+
+実在する店舗・支店を表す`ServiceProvider`と、MECHORI上で権限・契約・entitlementを持つ`ProfessionalOrganization`は別entityとする。Organizationは複数Provider拠点へ拡張でき、初期βではprimary Providerを1件連携する。Founding Garage資格はProviderや個人ではなくOrganizationへ付与する。
+
+個人ユーザーとのmembershipは多対多で、最小roleは`OWNER`と`STAFF`とする。OWNERはOrganization情報とmemberを管理し、STAFFは当面read-onlyとする。既存platform adminはOrganization membershipなしで全Organizationを管理でき、その操作を既存audit logへ記録する。以前の代表管理者／管理者の細分化は、契約・所有権移管を実装する段階まで延期する。
+
+ユーザーの整備記録にProviderを紐づけても、記録ownershipはユーザーに残る。Organizationが後日Providerをclaimしても、過去のユーザー記録を編集・公式確認済みに自動昇格しない。Claim、duplicate merge、Professional-created record、provider-confirmed record、Provider Discoveryは後続段階とする。
+
 ## 作業仮説: 整備士のGitHub
 
 Professional側の中核コンセプトを、作業仮説として「整備士のGitHub」と表現します。完成した修理記事を一方向に公開する場所ではなく、個々の事例、未解決事項、確認、訂正、結果追記が履歴として残り、知識と貢献者の実績が一緒に育つ基盤を意味します。

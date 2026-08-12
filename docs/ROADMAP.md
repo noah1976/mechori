@@ -43,7 +43,8 @@ Phase 3へ進む前に、`docs/ALPHA_PLAYBOOK.md`に従って特に親しい友�
 - 利用規約、プライバシーポリシー、投稿ガイドラインを準備する。
 - RLS、バックアップ、ログ、復元テストを確認する。
 - 公開前レビューを行う。
-- βまでに少なくとも1軒のFounding Garage候補へ参加条件を提示し、個人アカウント・工場組織・membership・工場内roleの運用を共同設計する。
+- P-085のService Provider／Professional Organization／OWNER・STAFF／Founding Garage基盤を使い、βまでに少なくとも1軒のFounding Garage候補へ参加条件を提示して実運用を共同確認する。
+- 整備記録ではDIY／お店・工場／不明と当時のProvider snapshotを残す。Claim、重複統合、Provider確認済み実績、公開Discoveryはβ後の検証結果で段階導入する。
 - β中盤から、オーナー向けネイティブアプリの開発に着手する。WebとNativeをαから二重開発せず、Webで固めたコアユースケースを再利用する。
 
 ## Phase 4: 車種コミュニティ検証 100人

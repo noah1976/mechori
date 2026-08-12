@@ -43,6 +43,12 @@ function journal(): GarageJournalPost {
       { id: "block-2", type: "text", style: "paragraph", text: "雪の塊に当たった。" },
     ],
     knowledgeExtractionConsent: true,
+    serviceAttribution: {
+      version: 1,
+      performedByType: "service_provider",
+      serviceProviderId: "private-provider-id",
+      providerDisplayNameSnapshot: "Private Workshop Snapshot",
+    },
     appreciationCount: 4,
     occurredOn: "2026-01-10",
     occurredPrecision: "day",
@@ -60,6 +66,7 @@ test("shared journal projection omits private identifiers and linked maintenance
   assert.equal("linkedRecordId" in payload, false);
   assert.equal("displayFields" in payload, false);
   assert.equal("knowledgeExtractionConsent" in payload, false);
+  assert.equal("serviceAttribution" in payload, false);
   assert.deepEqual(payload.media, []);
   assert.deepEqual(
     payload.contentBlocks.map((block) => block.type),

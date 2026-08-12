@@ -32,6 +32,7 @@ function validDraft(overrides: Partial<RecordDraft> = {}): RecordDraft {
     hazardLevel: "LOW",
     evidenceBasis: "contemporaneous",
     additionalActions: [],
+    serviceAttribution: { version: 1, performedByType: "unknown" },
     requestSharing: false,
     ...overrides,
   };
@@ -76,6 +77,72 @@ test("saves routine maintenance without inventing symptoms", () => {
 
   assert.equal(applied.record.symptoms, "");
   assert.equal(reloadedRecord?.symptoms, "");
+});
+
+test("stores DIY, provider, and unknown service attribution as explicit domain states", () => {
+  const diy = applyRecordDraftToData(cloneDemoData(), validDraft({
+    serviceAttribution: { version: 1, performedByType: "self" },
+  }));
+  const provider = applyRecordDraftToData(cloneDemoData(), validDraft({
+    serviceAttribution: {
+      version: 1,
+      performedByType: "service_provider",
+      serviceProviderId: "provider-demo",
+      providerDisplayNameSnapshot: "DEMO Motors",
+      providerLocalitySnapshot: "Sapporo",
+    },
+  }));
+
+  assert.equal(diy.record.serviceAttribution.performedByType, "self");
+  assert.deepEqual(provider.record.serviceAttribution, {
+    version: 1,
+    performedByType: "service_provider",
+    serviceProviderId: "provider-demo",
+    providerDisplayNameSnapshot: "DEMO Motors",
+    providerLocalitySnapshot: "Sapporo",
+  });
+  assert.equal(validDraft().serviceAttribution.performedByType, "unknown");
+});
+
+test("keeps the provider snapshot when editing a maintenance record", () => {
+  const attribution = {
+    version: 1 as const,
+    performedByType: "service_provider" as const,
+    serviceProviderId: "provider-demo",
+    providerDisplayNameSnapshot: "Old Workshop Name",
+    providerLocalitySnapshot: "Otaru",
+  };
+  const created = applyRecordDraftToData(cloneDemoData(), validDraft({ serviceAttribution: attribution }));
+  const edited = applyRecordDraftToData(
+    created.data,
+    validDraft({ summary: "DEMO: edited", serviceAttribution: created.record.serviceAttribution }),
+    created.record.id,
+  );
+
+  assert.deepEqual(edited.record.serviceAttribution, attribution);
+});
+
+test("rejects a provider attribution without a selected provider and snapshot", () => {
+  const result = validateRecordDraft(validDraft({
+    serviceAttribution: { version: 1, performedByType: "service_provider" },
+  }));
+  assert.equal(result.valid, false);
+  assert.equal(result.errors.serviceAttribution, "invalid");
+});
+
+test("treats an unsupported service attribution version as unknown", () => {
+  const current = cloneDemoData();
+  const migrated = migrateAppData({
+    ...current,
+    records: current.records.map((record, index) => index === 0
+      ? { ...record, serviceAttribution: { version: 2, performedByType: "self" } }
+      : record),
+  });
+
+  assert.deepEqual(migrated?.records[0]?.serviceAttribution, {
+    version: 1,
+    performedByType: "unknown",
+  });
 });
 
 test("allows a maintenance record when the historical odometer is unknown", () => {
@@ -253,7 +320,11 @@ test("migrates legacy local data into actions and an odometer episode", () => {
   delete journals[0]?.contentBlocks;
 
   const migrated = migrateAppData(legacy);
-  assert.equal(migrated?.schemaVersion, 12);
+  assert.equal(migrated?.schemaVersion, 13);
+  assert.deepEqual(migrated?.records[0]?.serviceAttribution, {
+    version: 1,
+    performedByType: "unknown",
+  });
   assert.deepEqual(migrated?.contentReports, []);
   assert.equal(
     migrated?.profiles.find((profile) => profile.id === "profile-demo-luca")?.visibility,

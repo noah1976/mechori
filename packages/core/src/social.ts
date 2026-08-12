@@ -13,11 +13,16 @@ import type {
 } from "./types.ts";
 import { canonicalModelTargetId, resolveVehicleIdentity } from "./vehicle-catalog.ts";
 import { inferJournalSourceLanguage } from "./translations.ts";
+import {
+  isValidServiceAttribution,
+  journalSupportsServiceAttribution,
+  normalizeServiceAttribution,
+} from "./service-attribution.ts";
 
 export interface JournalValidationResult {
   valid: boolean;
   errors: Partial<Record<
-    "title" | "bodyOriginal" | "media" | "occurredOn",
+    "title" | "bodyOriginal" | "media" | "occurredOn" | "serviceAttribution",
     "required" | "invalid" | "description_required"
   >>;
 }
@@ -61,6 +66,13 @@ export function validateJournalDraft(draft: JournalDraft): JournalValidationResu
     )
   ) {
     errors.media = "description_required";
+  }
+  if (
+    journalSupportsServiceAttribution(draft.eventType) &&
+    draft.serviceAttribution !== undefined &&
+    !isValidServiceAttribution(draft.serviceAttribution)
+  ) {
+    errors.serviceAttribution = "invalid";
   }
   return { valid: Object.keys(errors).length === 0, errors };
 }
@@ -129,6 +141,9 @@ export function createJournalPost(
     media: journalMediaWithDerivedPrivacy(draft, previousJournal),
     contentBlocks: draft.contentBlocks.map((block) => ({ ...block })),
     knowledgeExtractionConsent: draft.knowledgeExtractionConsent,
+    ...(journalSupportsServiceAttribution(draft.eventType)
+      ? { serviceAttribution: normalizeServiceAttribution(draft.serviceAttribution) }
+      : {}),
     appreciationCount: 0,
     ...occurrenceFieldsFromDraft(draft),
     createdAt: now,
@@ -282,6 +297,9 @@ export function journalToDraft(journal: GarageJournalPost): JournalDraft {
     contentBlocks: journal.contentBlocks.map((block) => ({ ...block })),
     visibility: journal.visibility,
     knowledgeExtractionConsent: journal.knowledgeExtractionConsent,
+    ...(journalSupportsServiceAttribution(journal.eventType)
+      ? { serviceAttribution: normalizeServiceAttribution(journal.serviceAttribution) }
+      : {}),
   };
 }
 
