@@ -173,8 +173,8 @@ export function OwnerSearch({
           </h2>
           <p>
             {ja
-              ? "表示名、@ユーザー名、メーカー、車名、呼び名から公開中の人とクルマを探せます。"
-              : "Find public owners and vehicles by name, @username, make, model, or nickname."}
+              ? "表示名、@ユーザー名、メーカー、車名、呼び名からα参加者の人とクルマを探せます。"
+              : "Find alpha members and vehicles by name, @username, make, model, or nickname."}
           </p>
         </div>
       </div>
@@ -251,13 +251,18 @@ export function OwnerSearch({
             {vehicles.map((vehicle) => {
               const followed = vehicle.viewerFollowsVehicle || isFollowing(data, "vehicle", vehicle.targetId);
               const pending = isFollowPending("vehicle", vehicle.targetId);
+              const vehicleHref = `/profile/${encodeURIComponent(vehicle.owner.id)}`;
               return (
                 <article key={vehicle.targetId} className="discovery-vehicle-row">
-                  <Link href={`/v/${encodeURIComponent(vehicle.slug)}`} className="discovery-vehicle-image" aria-label={formatVehicleLabel(vehicle, ja)}>
-                    <Image src={vehicle.imageDataUrl} alt="" fill sizes="(max-width: 760px) 76px, 96px" unoptimized />
+                  <Link href={vehicleHref} className="discovery-vehicle-image" aria-label={formatVehicleLabel(vehicle, ja)}>
+                    {vehicle.imageDataUrl ? (
+                      <Image src={vehicle.imageDataUrl} alt="" fill sizes="(max-width: 760px) 76px, 96px" unoptimized />
+                    ) : (
+                      <CarFront size={25} aria-hidden="true" />
+                    )}
                   </Link>
                   <div className="discovery-vehicle-copy">
-                    <Link href={`/v/${encodeURIComponent(vehicle.slug)}`}>
+                    <Link href={vehicleHref}>
                       <strong>{vehicle.nickname || formatVehicleLabel(vehicle, ja)}</strong>
                       {vehicle.nickname && <small>{formatVehicleLabel(vehicle, ja)}</small>}
                     </Link>

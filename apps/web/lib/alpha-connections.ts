@@ -42,7 +42,7 @@ export interface AlphaFollowedVehicle {
   make: string;
   model: string;
   year?: number;
-  imageDataUrl: string;
+  imageDataUrl?: string;
   owner: {
     id: string;
     displayName: string;
@@ -73,7 +73,7 @@ interface AlphaFollowedVehicleRow {
   make: string;
   model: string;
   model_year: number | null;
-  image_data_url: string;
+  image_data_url: string | null;
   owner_public_profile_id: string;
   owner_display_name: string;
   owner_public_username: string | null;
@@ -158,7 +158,7 @@ export async function loadMyAlphaFollowedVehicles(): Promise<AlphaFollowedVehicl
     make: row.make,
     model: row.model,
     year: row.model_year ?? undefined,
-    imageDataUrl: row.image_data_url,
+    imageDataUrl: row.image_data_url ?? undefined,
     owner: {
       id: row.owner_public_profile_id,
       displayName: row.owner_display_name,

@@ -25,7 +25,7 @@ export interface AlphaPublicVehicleSearchResult {
   model: string;
   nickname?: string;
   modelYear?: number;
-  imageDataUrl: string;
+  imageDataUrl?: string;
   viewerFollowsVehicle: boolean;
   owner: {
     id: string;
@@ -45,7 +45,7 @@ export interface AlphaPublicVehicle {
   ownershipStartedYear?: number;
   ownershipStartedMonth?: number;
   ownerComment?: string;
-  imageDataUrl: string;
+  imageDataUrl?: string;
   publishedAt: string;
 }
 
@@ -89,7 +89,7 @@ interface AlphaPublicVehicleSearchRow {
   model: string;
   nickname: string | null;
   model_year: number | null;
-  image_data_url: string;
+  image_data_url: string | null;
   viewer_follows_owner: boolean;
 }
 
@@ -105,7 +105,7 @@ export interface AlphaPublicOwnerVehicleRow {
   ownership_started_year: number | null;
   ownership_started_month: number | null;
   owner_comment: string | null;
-  image_data_url: string;
+  image_data_url: string | null;
   published_at: string;
 }
 
@@ -120,7 +120,7 @@ export async function searchAlphaPublicOwners(
   const normalizedQuery = query.trim().slice(0, 80);
   if (!normalizedQuery) return [];
   const { data, error } = await createSupabaseBrowserClient().rpc(
-    "search_alpha_public_owners",
+    "search_alpha_member_owners",
     { p_query: normalizedQuery },
   );
   if (error) throw new Error("alpha_public_owner_search_failed");
@@ -134,13 +134,28 @@ export async function searchAlphaPublicOwners(
   }));
 }
 
+export async function resolveAlphaMemberProfileByUsername(
+  username: string,
+): Promise<string | null> {
+  const normalizedUsername = username.trim().replace(/^@+/, "").slice(0, 80);
+  if (!normalizedUsername) return null;
+  const { data, error } = await createSupabaseBrowserClient()
+    .rpc("resolve_alpha_member_profile", {
+      p_public_username: normalizedUsername,
+    })
+    .maybeSingle();
+  if (error) throw new Error("alpha_member_profile_resolution_failed");
+  const row = data as { public_profile_id?: string } | null;
+  return row?.public_profile_id ?? null;
+}
+
 export async function searchAlphaPublicVehicles(
   query: string,
 ): Promise<AlphaPublicVehicleSearchResult[]> {
   const normalizedQuery = query.trim().slice(0, 80);
   if (!normalizedQuery) return [];
   const { data, error } = await createSupabaseBrowserClient().rpc(
-    "search_alpha_public_vehicles",
+    "search_alpha_member_vehicles",
     { p_query: normalizedQuery },
   );
   if (error) throw new Error("alpha_public_vehicle_search_failed");
@@ -160,7 +175,7 @@ export async function loadAlphaPublicOwner(
     supabase.rpc("get_alpha_public_profile", {
       p_public_profile_id: publicProfileId,
     }).maybeSingle(),
-    supabase.rpc("get_alpha_public_owner", {
+    supabase.rpc("get_alpha_member_owner", {
       p_public_profile_id: publicProfileId,
     }),
     loadAlphaPublicProfileImages([publicProfileId]),
@@ -241,7 +256,7 @@ export function groupAlphaPublicOwnerRows(
       ownershipStartedYear: row.ownership_started_year ?? undefined,
       ownershipStartedMonth: row.ownership_started_month ?? undefined,
       ownerComment: row.owner_comment ?? undefined,
-      imageDataUrl: row.image_data_url,
+      imageDataUrl: row.image_data_url ?? undefined,
       publishedAt: row.published_at,
     });
     owners.set(row.public_profile_id, owner);
@@ -294,7 +309,7 @@ export function mapAlphaPublicVehicleSearchRows(
     model: row.model,
     nickname: row.nickname ?? undefined,
     modelYear: row.model_year ?? undefined,
-    imageDataUrl: row.image_data_url,
+    imageDataUrl: row.image_data_url ?? undefined,
     viewerFollowsVehicle: false,
     owner: {
       id: row.owner_public_profile_id,

@@ -13,11 +13,11 @@ test("normalizes a bounded public discovery query", () => {
   assert.equal(normalizeDiscoveryQuery(" "), "");
 });
 
-test("matches only public vehicles by make, model, nickname, year, or owner", () => {
+test("matches active alpha discovery vehicles by stored make, model, nickname, year, or owner", () => {
   const barchetta = {
     make: "FIAT",
     model: "Barchetta",
-    nickname: "バルケッタ",
+    nickname: undefined,
     modelYear: 1997,
     ownerDisplayName: "Noah",
     ownerPublicUsername: "noah-garage",
@@ -25,7 +25,7 @@ test("matches only public vehicles by make, model, nickname, year, or owner", ()
   };
   const cub = {
     make: "Honda",
-    model: "スーパーカブ 110",
+    model: "スーパーカブ110/JA59",
     nickname: undefined,
     modelYear: 2024,
     ownerDisplayName: "Mika",
@@ -34,7 +34,8 @@ test("matches only public vehicles by make, model, nickname, year, or owner", ()
   };
 
   assert.equal(matchesPublicVehicleDiscovery(barchetta, "fiat"), true);
-  assert.equal(matchesPublicVehicleDiscovery(barchetta, "バルケッタ"), true);
+  assert.equal(matchesPublicVehicleDiscovery(barchetta, "barchetta"), true);
+  assert.equal(matchesPublicVehicleDiscovery(barchetta, "バルケッタ"), false);
   assert.equal(matchesPublicVehicleDiscovery(barchetta, "1997"), true);
   assert.equal(matchesPublicVehicleDiscovery(barchetta, "noah"), true);
   assert.equal(matchesPublicVehicleDiscovery(cub, "カブ"), true);

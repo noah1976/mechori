@@ -6,7 +6,7 @@ import { ProfileAvatar } from "@/components/profile-avatar";
 import { useApp } from "@/lib/app-context";
 import {
   loadAlphaPublicOwner,
-  searchAlphaPublicOwners,
+  resolveAlphaMemberProfileByUsername,
   type AlphaPublicOwner,
 } from "@/lib/alpha-public-owners";
 import {
@@ -17,7 +17,6 @@ import {
 } from "@mechori/core";
 import {
   ArrowLeft,
-  ArrowRight,
   BookOpenText,
   CarFront,
   LoaderCircle,
@@ -72,12 +71,11 @@ export function RemoteOwnerProfile({
   useEffect(() => {
     let active = true;
     if (keyIsUuid) return () => { active = false; };
-    void searchAlphaPublicOwners(publicProfileKey)
-      .then((matches) => {
+    void resolveAlphaMemberProfileByUsername(publicProfileKey)
+      .then((profileId) => {
         if (!active) return;
-        const match = matches.find((item) => item.publicUsername?.toLowerCase() === publicProfileKey.toLowerCase());
-        if (match) {
-          setResolvedProfileId(match.id);
+        if (profileId) {
+          setResolvedProfileId(profileId);
           setResolvedKey(publicProfileKey);
         }
         else setState("unavailable");
@@ -226,9 +224,9 @@ export function RemoteOwnerProfile({
       <section className="remote-owner-vehicles" aria-labelledby="remote-owner-vehicles-heading">
         <div className="section-heading">
           <div>
-            <span className="eyebrow">SHARED VEHICLES</span>
+            <span className="eyebrow">ALPHA VEHICLES</span>
             <h2 id="remote-owner-vehicles-heading">
-              {ja ? "公開中の愛車" : "Shared vehicles"}
+              {ja ? "α参加者に公開中の愛車" : "Vehicles shared with alpha members"}
             </h2>
           </div>
         </div>
@@ -238,15 +236,19 @@ export function RemoteOwnerProfile({
             const followed = isFollowing(data, "vehicle", vehicle.targetId);
             return (
               <article key={vehicle.targetId} className="remote-owner-vehicle">
-                <Link href={`/v/${vehicle.slug}`} className="remote-owner-vehicle-photo">
-                  <Image
-                    src={vehicle.imageDataUrl}
-                    alt={`${vehicle.make} ${vehicle.model}`}
-                    fill
-                    sizes="(max-width: 760px) 100vw, 280px"
-                    unoptimized
-                  />
-                </Link>
+                <div className="remote-owner-vehicle-photo" aria-hidden="true">
+                  {vehicle.imageDataUrl ? (
+                    <Image
+                      src={vehicle.imageDataUrl}
+                      alt=""
+                      fill
+                      sizes="(max-width: 760px) 100vw, 280px"
+                      unoptimized
+                    />
+                  ) : (
+                    <CarFront size={34} />
+                  )}
+                </div>
                 <div className="remote-owner-vehicle-copy">
                   <span className="eyebrow">
                     {vehicle.modelYear ?? (ja ? "年式未登録" : "YEAR UNKNOWN")}
@@ -267,10 +269,6 @@ export function RemoteOwnerProfile({
                         ? ja ? "フォロー中" : "Following"
                         : ja ? "このクルマをフォロー" : "Follow this vehicle"}
                     </button>
-                    <Link href={`/v/${vehicle.slug}`} className="text-link">
-                      {ja ? "愛車ページを見る" : "View vehicle"}
-                      <ArrowRight size={15} aria-hidden="true" />
-                    </Link>
                   </div>
                 </div>
               </article>
@@ -280,7 +278,7 @@ export function RemoteOwnerProfile({
         ) : (
           <div className="empty-state">
             <CarFront size={26} aria-hidden="true" />
-            <h3>{ja ? "公開中の愛車はまだありません" : "No shared vehicles yet"}</h3>
+            <h3>{ja ? "α参加者に公開中の愛車はまだありません" : "No vehicles are shared with alpha members yet"}</h3>
           </div>
         )}
       </section>

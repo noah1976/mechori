@@ -267,13 +267,20 @@ export function ConnectionsView({
             <div className="connections-list connections-vehicle-list">
               {vehicles.map((vehicle) => {
                 const pending = isFollowPending("vehicle", vehicle.targetId);
+                const vehicleHref = vehicle.imageDataUrl
+                  ? `/v/${encodeURIComponent(vehicle.slug)}`
+                  : connectionProfileHref(vehicle.owner.id);
                 return (
                   <article key={vehicle.targetId} className="connection-vehicle-row">
-                    <Link href={`/v/${encodeURIComponent(vehicle.slug)}`} className="connection-vehicle-image" aria-label={`${vehicle.make} ${vehicle.model}`}>
-                      <Image src={vehicle.imageDataUrl} alt="" fill sizes="(max-width: 760px) 96px, 120px" unoptimized />
+                    <Link href={vehicleHref} className="connection-vehicle-image" aria-label={`${vehicle.make} ${vehicle.model}`}>
+                      {vehicle.imageDataUrl ? (
+                        <Image src={vehicle.imageDataUrl} alt="" fill sizes="(max-width: 760px) 96px, 120px" unoptimized />
+                      ) : (
+                        <CarFront size={26} aria-hidden="true" />
+                      )}
                     </Link>
                     <div className="connection-vehicle-copy">
-                      <Link href={`/v/${encodeURIComponent(vehicle.slug)}`}><strong>{vehicle.year ? `${vehicle.year} ` : ""}{vehicle.make} {vehicle.model}</strong></Link>
+                      <Link href={vehicleHref}><strong>{vehicle.year ? `${vehicle.year} ` : ""}{vehicle.make} {vehicle.model}</strong></Link>
                       <Link href={connectionProfileHref(vehicle.owner.id)} className="connection-owner-link">
                         <ProfileAvatar displayName={vehicle.owner.displayName} imagePath={vehicle.owner.profileImagePath} className="connection-owner-avatar" />
                         <span>{vehicle.owner.displayName}{vehicle.owner.publicUsername ? ` @${vehicle.owner.publicUsername}` : ""}</span>

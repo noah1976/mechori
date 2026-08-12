@@ -39,7 +39,7 @@
 
 - **公開プロフィール、username、bio**: 表示名、`@username`、bio、公開車両、公開Journalを表示・編集する実装と識別テストがある。人間QAでは自分・他人・未設定username・非公開項目を確認する。
 - **ユーザーフォロー、車両フォロー、招待者との相互フォロー**: ユーザー単位と車両単位を分離し、招待時のユーザー相互フォロー、解除の独立性、既存フィード反映を実装・テスト済み。人間QAでは複数台所有、乗り換え、同一投稿の重複表示がないことを確認する。
-- **P-084 Owner / Vehicle Discovery Search（AUD-005）**: 従来の検索は自分の記録・DEMO Knowledgeと、別導線の表示名／`@username`検索に留まり、公開Vehicleを横断して探せなかった。`/search`の明示submit時に、公開中のα参加者だけを対象として人（表示名・`@username`）とクルマ（メーカー・車名・愛称・年式・owner名）を各20件まで検索する。結果からプロフィール／Vehicleページへ移動し、人のFollowとクルマのFollowを別々に操作できる。private Vehicle、email・auth metadata、ブロック関係は返さない。高度な表記揺れ検索は未実装で、人間QA前はSHIPPED_NEEDS_QAとして扱う。
+- **P-084B Discovery Search zero-result regression（AUD-005）**: 人間QAで`FIAT Barchetta`と`HONDA スーパーカブ110/JA59`が0件となった。本番読み取り調査で、両方ともactive α participantのprivate workspaceには存在する一方、匿名外部共有用`alpha_public_vehicle_shares` snapshotが無く、P-084の検索条件から脱落していたことを確認した。`alpha_member_vehicle_discoveries`を外部shareと完全に分離したα限定read modelとして追加し、既存active α participantのVehicleを最小フィールド（make、model、nickname、year）だけでbackfillする。認証済みactive α participantだけが検索・Garage表示・Vehicle Followに利用でき、private workspace、email、VIN、位置、記録、外部匿名公開状態は返さない／変えない。今後追加するVehicleは初期非公開とし、正式版ではVehicleごとの「MECHORI内で見つけられる」設定へ移行する。`FIAT`、`Barchetta`、`カブ`は保存済み文字列で検索対象とするが、日本語別名が未保存の`バルケッタ`は今回のsubstring検索では対象外として別課題に残す。人間QA前はSHIPPED_NEEDS_QAとして扱う。
 - **投稿・車両・プロフィールのリンク分離**: 投稿カードと詳細の各操作を実装・テスト済み。人間QAでは投稿者、車両、本文、いいねの各タップ先を確認する。
 
 ### 車両・基本UX
@@ -95,7 +95,7 @@
 
 1. P-081／P-081Bの本番実機QA（未ログインの5秒理解、招待Landing、Google認証後の表示名設定、既存`MECHORI User`救済、チェックリスト進捗）。
 2. P-079の本番実機QA（検索フォーム末尾ボタン、FAB非表示、Enter、0件・エラー表示）。
-3. P-084の本番実機QA（「バルケッタ」「カブ」等で公開Vehicleを検索し、検索結果からVehicle Follow／解除、Connections反映、owner Followとの独立を確認）。
+3. P-084Bの本番実機QA（`FIAT`／`Barchetta`／`カブ`でα限定Vehicleを検索し、検索結果からVehicle Follow／解除、Connections反映、owner Followとの独立、外部共有状態が変わらないことを確認）。`バルケッタ`の日本語aliasは別課題。
 4. P-074の本番実機UX確認（4項目ナビ、メニュー、FAB、safe area）。
 5. P-077の本番実機QA（各投稿一覧からの初回タップ、直接URL、再遷移）。
 

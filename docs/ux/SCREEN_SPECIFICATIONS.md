@@ -153,7 +153,7 @@ P-073の通知は、Like、新しいFollower、Follow対象からの新しい公
 
 ## 9. 探す／検索結果（P-079 / P-084）
 
-- **画面の目的**: 条件を入力して、公開事例や自分の記録を探す。キーワードを送信した場合は、公開中の人とクルマも発見できる。
+- **画面の目的**: 条件を入力して、公開事例や自分の記録を探す。キーワードを送信した場合は、α参加者内で見つけられる人とクルマも発見できる。外部匿名共有とは別のα限定Vehicle情報だけを使う。
 - **対象ユーザー／来る理由**: 症状、部品、結果、危険度などから過去の経験を確認したい利用者。
 - **最もしてほしい操作／主ボタン**: フォーム末尾の「この条件で探す」。
 - **副操作**: 記録・プロフィール・Vehicle結果を開く、人のFollow／解除、クルマのFollow／解除、0件時に「この内容を記録する」、エラー時に「もう一度試す」。
@@ -165,7 +165,7 @@ P-073の通知は、Like、新しいFollower、Follow対象からの新しい公
 - **スマートフォン／アクセシビリティ**: 入力欄から自然にフォーカスが移り、Enter・キーボード検索・明示ボタンで同じsubmitを実行する。
 - **戻る操作**: 下部ナビの「探す」またはブラウザ戻るで直前の画面へ戻る。
 - **関連する計測イベント**: `search_started`、`search_completed`、`search_empty`、`search_failed`、`search_record_started`。
-- **CURRENTで再利用できるもの**: `/search`、既存の検索条件、公開プロフィール／Vehicleの安全なRPC、ProfileAvatar、P-080 Follow result contract、KnowledgeSynthesisPanel、RecordCard、`/journal/new`。
+- **CURRENTで再利用できるもの**: `/search`、既存の検索条件、α限定Vehicle Discovery RPC、公開プロフィール、ProfileAvatar、P-080 Follow result contract、KnowledgeSynthesisPanel、RecordCard、`/journal/new`。
 - **NEEDS_DECISION**: 条件をURLへ保存する範囲。今回の実装では既存の`q`入力を維持し、追加の複雑なパラメータは増やさない。
 
 ## 10. フィードバック

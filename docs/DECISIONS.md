@@ -537,6 +537,14 @@
 - 決定: 招待URLは既存のfragment tokenを保ったままInvite Landingを経由し、価値説明後に既存のGoogle認証へ進める。新規ユーザーは愛車登録前に表示名を必須で設定し、Avatar等の詳細項目は要求しない。既存の既定表示名ユーザーにはsession内で一度だけ救済dialogを出し、「あとで」は次回loginで再提案する。
 - 影響: 招待token、Auth callback、プロフィールRPC、AppContext更新を再利用し、DB schema、RLS、招待データ設計は変更しない。招待者の表示は安全な既存公開データが得られるまで「MECHORIに招待されています」とする。
 
+### 決定: αのVehicle Discoveryは外部共有から分離する
+
+- 日付: 2026-08-12
+- 状態: 決定
+- 背景: P-084の本番QAで、active α participantの既存Vehicleがprivate workspaceには存在しても、匿名外部共有用`alpha_public_vehicle_shares` snapshot未作成のため検索結果から脱落した。外部共有snapshotを自動backfillすると、本人の明示操作なしに匿名公開してしまう。
+- 決定: `alpha_member_vehicle_discoveries`を、認証済みactive α participantだけが読める最小Vehicle Discovery read modelとして外部shareと分離する。α運用上の例外として、migration時点の既存active participant Vehicleはmake、model、nickname、yearだけを初期公開する。外部匿名公開、写真、記録、VIN、位置、email、private workspaceは含めない。今後追加するVehicleは初期非公開とする。
+- 影響: P-084検索、Garage表示、Vehicle Followは不透明なα Discovery IDを使い、外部share slugを流用しない。正式版ではVehicleごとに「MECHORI内で見つけられる」公開設定を明示的に管理する。日本語alias未保存の車名（例: `バルケッタ`）は今回のsubstring検索では補完せず、車両名alias／多言語検索の別課題として扱う。
+
 ## 未確定
 
 - 認証方式
