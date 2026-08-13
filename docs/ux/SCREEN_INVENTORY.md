@@ -29,9 +29,9 @@
 | 事業者管理 | `/admin/professional` | Organization、Provider、Founding Garage運用 | platform admin専用の最小運用面 | Organization作成・編集 | Provider連携、member管理 | 一般ユーザーへ露出禁止 | 事業者、Founding Garage | 権限なし・取得失敗 | 管理画面 | KEEP | 必要 |
 | ログアウト完了 | `/auth/signed-out` など認証完了ルート | ログアウト後の案内 | 安心して終え、必要なら再ログインできる | ホームへ | ログイン | 操作中データとの関係を要確認 | ログアウトしました | セッション切れ | 公開ホーム | SIMPLIFY | 必要 |
 
-## Garage Visual Pilot
+## Garage Visual Pilot v2
 
-`/garage`はDesign Direction v1のPilotとして、Vehicle photo / fallback identity、owner、ownership、ひとつの記録CTA、整備と日常の統合timelineを優先する。人間QAではiPhoneとPCで、最初のviewportのVehicle identity、写真なし・長い車名・複数台選択、記録なし、整備／DIY／お店・工場／思い出のtimeline、既存の作成・編集・共有導線、PC sidebarとSP navigationを確認する。Home、Feed、公開Garageなどへこの見せ方を展開するかはPilotの確認後に決める。
+`/garage`はDesign Direction v1のPilotとして、Vehicle photo / fallback identity、owner、ownership、ひとつの記録CTA、整備と日常の統合timelineを優先する。v2はDesktopで大判写真とidentity sheetを非対称に組み、Mobileではphoto → identity → actionへ自然に崩す。timelineはcardの反復ではなく、整備と日常を異なるmarkerで示すchronological spineとする。人間QAではiPhoneとPCで、最初のviewportのVehicle identity、写真なし・長い車名・複数台選択、記録なし、整備／DIY／お店・工場／思い出のtimeline、既存の作成・編集・共有導線、PC sidebarとSP navigationを確認する。Home、Feed、公開Garageなどへこの見せ方を展開するかはPilotの確認後に決める。Human QA pending。
 
 ## CURRENTで確認できる構造上の論点
 
