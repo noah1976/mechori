@@ -174,8 +174,10 @@ function GarageContent() {
             <span>{isPreviousVehicle ? (ja ? "これまでの愛車" : "Previously owned") : (ja ? "いまの愛車" : "Current vehicle")}</span>
             {vehicle.isDemo && <span className="demo-label">DEMO</span>}
           </div>
-          <h1>{vehicle.nickname || vehicleLabel}</h1>
-          {vehicle.nickname && <p className="garage-v2-model-line">{vehicle.year ? `${vehicle.year} ` : ""}{vehicleLabel}</p>}
+          <p className="garage-v2-make">{vehicle.make}</p>
+          <h1>{vehicleModel}</h1>
+          {vehicle.grade && <p className="garage-v2-grade">{vehicle.grade}</p>}
+          {vehicle.nickname && <p className="garage-v2-nickname">{vehicle.nickname}</p>}
           <div className="garage-v2-owner-line">
             <ProfileAvatar displayName={owner?.displayName ?? "MECHORI"} imagePath={owner?.profileImagePath} />
             <span>{ja ? `${owner?.displayName ?? "オーナー"}の愛車` : `${owner?.displayName ?? "Owner"}'s vehicle`}</span>

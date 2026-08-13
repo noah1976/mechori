@@ -106,8 +106,10 @@ test("coming-soon navigation uses existing safe routes", () => {
   assert.deepEqual(items.map((item) => item.href).sort(), []);
 });
 
-test("record FAB is hidden from record entry, search, feedback, and admin routes", () => {
+test("record FAB is hidden from the Garage hero and focused record-entry routes", () => {
   assert.equal(shouldShowRecordFab("/"), true);
+  assert.equal(shouldShowRecordFab("/garage"), false);
+  assert.equal(shouldShowRecordFab("/garage/vehicle-1"), true);
   assert.equal(shouldShowRecordFab("/journal/new"), false);
   assert.equal(shouldShowRecordFab("/journal/abc/edit"), false);
   assert.equal(shouldShowRecordFab("/garage/vehicle-1/event/new"), false);

@@ -342,6 +342,7 @@ export function screenTitle(pathname: string, locale: SupportedUiLocale) {
 
 export function shouldShowRecordFab(pathname: string) {
   return !(
+    pathname === "/garage" ||
     pathname === "/search" ||
     pathname.startsWith("/search/") ||
     pathname === "/journal/new" ||

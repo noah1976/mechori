@@ -73,6 +73,7 @@ Garageは車両台帳ではなく、Vehicle、Owner、Historyを見返す場所�
 - 車齢・所有期間・走行距離はdashboard metricではなくVehicle identityの一部として扱う。
 - 写真がないVehicleも、車名・年式・所有時間を用いた静かなfallbackで未完成に見せない。Timelineは重いcardの繰り返しではなく、日付とmarkerを持つ一本の履歴として扱う。
 - このPilotの人間QA後にのみ、HomeやFeedなどへのDesign Language展開を判断する。DB、RLS、RPC、workspace data contractはこのVisual Pilotの対象外とする。Human QA pending。
+- v2 Human QAの初回フィードバックでは、make／model／任意gradeを意味単位で階層化し、Garageのrecord FABをHero CTAと重複させず、Hero周辺の白いsurfaceをcontent canvasへなじませる。再確認はHuman QAで行う。
 
 ## 未確定
 
