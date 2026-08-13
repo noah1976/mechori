@@ -29,6 +29,10 @@
 | 事業者管理 | `/admin/professional` | Organization、Provider、Founding Garage運用 | platform admin専用の最小運用面 | Organization作成・編集 | Provider連携、member管理 | 一般ユーザーへ露出禁止 | 事業者、Founding Garage | 権限なし・取得失敗 | 管理画面 | KEEP | 必要 |
 | ログアウト完了 | `/auth/signed-out` など認証完了ルート | ログアウト後の案内 | 安心して終え、必要なら再ログインできる | ホームへ | ログイン | 操作中データとの関係を要確認 | ログアウトしました | セッション切れ | 公開ホーム | SIMPLIFY | 必要 |
 
+## Garage Visual Pilot
+
+`/garage`はDesign Direction v1のPilotとして、Vehicle photo / fallback identity、owner、ownership、ひとつの記録CTA、整備と日常の統合timelineを優先する。人間QAではiPhoneとPCで、最初のviewportのVehicle identity、写真なし・長い車名・複数台選択、記録なし、整備／DIY／お店・工場／思い出のtimeline、既存の作成・編集・共有導線、PC sidebarとSP navigationを確認する。Home、Feed、公開Garageなどへこの見せ方を展開するかはPilotの確認後に決める。
+
 ## CURRENTで確認できる構造上の論点
 
 P-074試験実装では、SPの共通ナビゲーションを「ホーム／探す／通知／ガレージ」の4項目へ整理し、「記録する」は右下FABへ移した。PCでは左サイドバーへ全メニューを統合し、ハンバーガー、drawer、overlay、FABは表示しない。P-073で通知は未読badge、一覧、既読管理を持つ実画面へ更新する。その他の未実装項目は404を返さない準備中画面として扱う。人間によるスマートフォン、PC、safe area、現在地表示の確認が必要である。

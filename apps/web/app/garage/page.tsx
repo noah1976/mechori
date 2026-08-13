@@ -1,15 +1,14 @@
 "use client";
 
 import { DemoNotice } from "@/components/demo-notice";
-import { JournalCard } from "@/components/journal-card";
+import { JournalMedia } from "@/components/journal-media";
 import { ProfileAvatar } from "@/components/profile-avatar";
-import { RecordCard } from "@/components/record-card";
 import { useApp } from "@/lib/app-context";
+import { garageServiceAttributionLabel } from "@/lib/garage-pilot";
 import {
   formatOwnershipDuration,
   formatOwnershipPeriod,
   displayVehicleModel,
-  displayVehicleSpecification,
   getOwnJournals,
   groupVehiclesByOwnership,
   journalOccurrenceDate,
@@ -19,10 +18,12 @@ import {
   resolveJournalDisplayContent,
   summarizeVehicleRelationship,
   type JournalEventType,
+  type JournalMediaAttachment,
+  type MaintenanceServiceAttributionV1,
   type Vehicle,
 } from "@mechori/core";
 import { translate } from "@mechori/i18n";
-import { ArrowLeftRight, Bike, BookOpenText, CalendarDays, Camera, CarFront, CheckCircle2, Gauge, History, Pencil, Plus, RotateCcw, Share2, Wrench } from "lucide-react";
+import { ArrowLeftRight, Bike, Camera, CarFront, CheckCircle2, History, Pencil, Plus, RotateCcw, Share2, Wrench } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -40,7 +41,6 @@ function GarageContent() {
     isRemoteAlpha,
     workspaceLoadState,
     retryWorkspace,
-    sharedJournals,
     resetDemo,
     recordEngagement,
   } = useApp();
@@ -108,33 +108,22 @@ function GarageContent() {
   }
   if (!vehicle) {
     return (
-      <div className="page-stack">
+      <div className="page-stack garage-pilot">
         <DemoNotice />
-        <header className="page-header">
-          <div>
-            <span className="eyebrow">MY GARAGE</span>
-            <h1>{ja ? "最初の愛車を登録しましょう" : "Add your first vehicle"}</h1>
-            <p>{ja ? "メーカーと車種が一覧になくても、その場で自由に登録できます。" : "You can enter any make and model, even when it is not listed."}</p>
-          </div>
-        </header>
-        <div className="empty-state">
-          <CarFront size={38} aria-hidden="true" />
-          <h2>{ja ? "Garageはまだ空です" : "Your Garage is empty"}</h2>
-          <p>{ja ? "年式や型式が分からなくても、メーカーと車種だけで始められます。" : "Make and model are enough to begin; year and specifications can be added later."}</p>
-          <Link href="/garage/new" className="primary-action"><Plus size={18} />{ja ? "愛車を登録" : "Add vehicle"}</Link>
-          <Link href="/garage/new?ownership=previously_owned" className="secondary-action"><History size={18} />{ja ? "以前乗っていた車両を追加" : "Add a previous vehicle"}</Link>
-        </div>
+        <section className="garage-pilot-first-vehicle">
+          <div className="garage-pilot-first-vehicle-mark"><CarFront size={42} aria-hidden="true" /><span>{ja ? "MY GARAGE" : "MY GARAGE"}</span></div>
+          <div><h1>{ja ? "最初の愛車を迎え入れよう" : "Welcome your first vehicle"}</h1><p>{ja ? "メーカーと車種だけでも大丈夫です。整備も、ドライブも、何気ない一枚も、ここからこのクルマの時間になります。" : "Make and model are enough. Maintenance, drives, and ordinary photos can all become this vehicle's history."}</p><Link href="/garage/new" className="primary-action"><Plus size={18} />{ja ? "愛車を登録" : "Add vehicle"}</Link><Link href="/garage/new?ownership=previously_owned" className="text-link">{ja ? "以前の愛車を残す" : "Remember a previous vehicle"}</Link></div>
+        </section>
       </div>
     );
   }
   const relationship = summarizeVehicleRelationship(vehicle);
   const ownershipDuration = formatOwnershipDuration(locale, relationship);
   const vehicleModel = displayVehicleModel(vehicle, locale);
-  const vehicleSpecification = displayVehicleSpecification(vehicle, locale);
   const vehicleLabel = `${vehicle.make} ${vehicleModel}`;
   const isPreviousVehicle = vehicle.ownershipType === "previously_owned";
   const ownershipPeriod = formatOwnershipPeriod(vehicle, locale);
-  const timeline = [
+  const timeline: GarageTimelineItem[] = [
     ...journals.map((journal) => {
       const display = resolveJournalDisplayContent(data, journal, locale);
       return ({
@@ -147,6 +136,7 @@ function GarageContent() {
       eventType: journal.eventType,
       href: `/journal/${journal.id}`,
       media: journal.media[0],
+      serviceAttribution: journal.serviceAttribution,
       });
     }),
     ...records.map((record) => ({
@@ -157,11 +147,12 @@ function GarageContent() {
       title: record.summary,
       body: record.result || record.workPerformed,
       href: `/records/${record.id}`,
+      serviceAttribution: record.serviceAttribution,
     })),
   ].sort((left, right) => right.date.localeCompare(left.date));
 
   return (
-    <div className="page-stack">
+    <div className="page-stack garage-pilot">
       <DemoNotice />
       {momentAdded && (
         <div className="lovable-success" role="status">
@@ -170,148 +161,145 @@ function GarageContent() {
           <button type="button" onClick={() => setMomentAdded(false)}>{ja ? "閉じる" : "Dismiss"}</button>
         </div>
       )}
-      <header className="page-header">
-        <div className="garage-header-owner">
-          <ProfileAvatar displayName={owner?.displayName ?? "MECHORI"} imagePath={owner?.profileImagePath} />
-          <div><span className="eyebrow">{isPreviousVehicle ? "GARAGE HISTORY" : "MY GARAGE"}</span><h1>{vehicle.year ? `${vehicle.year}${ja ? "年式の" : " "}` : ""}{vehicleLabel}</h1><p>{isPreviousVehicle ? ownershipPeriod : (ja ? `${owner?.displayName ?? "オーナー"}と、この一台の時間。` : `The time shared by ${owner?.displayName ?? "its owner"} and this vehicle.`)}</p></div>
-        </div>
-        <div className="page-header-actions">
-          <Link href="/garage/new" className="secondary-action"><Plus size={17} />{ja ? "愛車を追加" : "Add vehicle"}</Link>
-          <Link href="/garage/new?ownership=previously_owned" className="secondary-action"><History size={17} />{ja ? "以前の愛車" : "Previous vehicle"}</Link>
-          <Link href={`/garage/${encodeURIComponent(vehicle.id)}/share`} className="secondary-action"><Share2 size={17} />{ja ? "見せる・共有" : "Show & share"}</Link>
-          <Link href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`} className="primary-action"><Camera size={17} />{ja ? "さっと記録" : "Quick record"}</Link>
-          {!isRemoteAlpha && <button className="secondary-action" type="button" onClick={() => { void resetDemo().catch(() => undefined); }}><RotateCcw size={17} />{translate(locale, "resetDemo")}</button>}
-        </div>
-      </header>
-
-      <section className="garage-collections" aria-label={ja ? "愛車の一覧" : "Vehicle collection"}>
-        <div className="garage-collection-current">
-          <div className="garage-collection-heading"><div><span className="eyebrow">CURRENT</span><h2>{ja ? "現在のガレージ" : "Current Garage"}</h2></div><Link href="/garage/new" className="text-link"><Plus size={16} />{ja ? "追加" : "Add"}</Link></div>
-          {groupedVehicles.current.length ? (
-            <div className="garage-vehicle-switcher">
-              {groupedVehicles.current.map((item) => <VehicleSwitchButton key={item.id} item={item} selected={item.id === vehicle.id} locale={locale} onSelect={() => setSelectedVehicleId(item.id)} />)}
-            </div>
-          ) : <p className="garage-collection-empty">{ja ? "現在所有中の車両はまだ登録されていません。" : "No currently owned vehicle is registered."}</p>}
-        </div>
-        <div className="garage-collection-history">
-          <div className="garage-collection-heading"><div><span className="eyebrow">HISTORY</span><h2>{ja ? "これまでの愛車" : "Previous Vehicles"}</h2></div><Link href="/garage/new?ownership=previously_owned" className="text-link"><Plus size={16} />{ja ? "追加" : "Add"}</Link></div>
-          {previousVehicles.length ? (
-            <div className="previous-vehicle-list">
-              {previousVehicles.map((item) => (
-                <button key={item.id} type="button" className={item.id === vehicle.id ? "is-selected" : ""} aria-pressed={item.id === vehicle.id} onClick={() => setSelectedVehicleId(item.id)}>
-                  {item.vehicleCategory === "motorcycle" || item.vehicleCategory === "moped" ? <Bike size={18} aria-hidden="true" /> : <CarFront size={18} aria-hidden="true" />}
-                  <span><strong>{item.year ? `${item.year} ` : ""}{item.make} {displayVehicleModel(item, locale)}</strong><small>{formatOwnershipPeriod(item, locale)}</small></span>
-                </button>
-              ))}
-            </div>
-          ) : <p className="garage-collection-empty">{ja ? "以前乗っていたクルマやバイクを、写真なしでも残せます。" : "Cars and motorcycles from your past can be added without photos."}</p>}
-        </div>
-      </section>
-      {groupedVehicles.other.length > 0 && (
-        <section className="garage-unclassified">
-          <div><span className="eyebrow">UNSET</span><h2>{ja ? "所有状態を確認する車両" : "Vehicles needing ownership status"}</h2></div>
-          <div className="garage-vehicle-switcher">{groupedVehicles.other.map((item) => <VehicleSwitchButton key={item.id} item={item} selected={item.id === vehicle.id} locale={locale} onSelect={() => setSelectedVehicleId(item.id)} />)}</div>
-        </section>
-      )}
-
-      <section className={`garage-feature${isPreviousVehicle && !vehicle.imagePath ? " is-past-without-photo" : ""}`}>
-        <div className="garage-photo">
+      <section className="garage-pilot-hero" aria-label={ja ? "愛車の概要" : "Vehicle overview"}>
+        <div className="garage-pilot-hero-media">
           {vehicle.imagePath ? (
-            <Image src={vehicle.imagePath} alt={vehicle.isDemo ? (ja ? "DEMO用の汎用ロードスター" : "Generic demo roadster") : vehicleLabel} fill sizes="(max-width: 900px) 100vw, 55vw" unoptimized={vehicle.imagePath.startsWith("data:")} priority />
+            <Image src={vehicle.imagePath} alt={vehicle.isDemo ? (ja ? "DEMO用の汎用ロードスター" : "Generic demo roadster") : vehicleLabel} fill sizes="(max-width: 760px) 100vw, 58vw" unoptimized={vehicle.imagePath.startsWith("data:")} priority />
           ) : (
-            <div className="garage-photo-placeholder">
-              {vehicle.vehicleCategory === "motorcycle" || vehicle.vehicleCategory === "moped" ? <Bike size={36} aria-hidden="true" /> : <CarFront size={36} aria-hidden="true" />}
-              <span>{vehicle.year ? `${vehicle.year} ` : ""}{vehicleLabel}</span>
-              {isPreviousVehicle && <small>{ownershipPeriod}</small>}
-            </div>
+            <VehicleFallback vehicle={vehicle} locale={locale} ownershipPeriod={ownershipPeriod} />
           )}
         </div>
-        <div className="vehicle-specs">
-          <div className="vehicle-identity-labels">
-            {vehicle.isDemo && <span className="demo-label">DEMO VEHICLE</span>}
-            {relationship.ownershipMilestoneYears && (
-              <span className="relationship-badge">
-                {ja
-                  ? `${relationship.ownershipMilestoneYears}年オーナー`
-                  : `${relationship.ownershipMilestoneYears}-year owner`}
-              </span>
-            )}
+        <div className="garage-pilot-hero-copy">
+          <div className="garage-pilot-status-line">
+            <span>{isPreviousVehicle ? (ja ? "これまでの愛車" : "Previously owned") : (ja ? "いまの愛車" : "Current vehicle")}</span>
+            {vehicle.isDemo && <span className="demo-label">DEMO</span>}
           </div>
-          <p className="vehicle-ownership-state">{isPreviousVehicle ? (ja ? "これまでの愛車" : "Previously owned") : (ja ? "現在所有中" : "Currently owned")} · {ownershipPeriod}</p>
-          {vehicle.ownerComment && <blockquote className="vehicle-owner-comment">{vehicle.ownerComment}</blockquote>}
-          <dl>
-            <div><dt>{ja ? "年式" : "Year"}</dt><dd>{vehicle.year ?? (ja ? "未登録" : "Not set")}</dd></div>
-            <div><dt>{translate(locale, "vehicleAge")}</dt><dd>{relationship.vehicleAgeYears === undefined ? (ja ? "未算出" : "Not calculated") : `${relationship.vehicleAgeYears}${ja ? "年" : " years"}`}</dd></div>
-            <div><dt>{translate(locale, "ownershipHistory")}</dt><dd>{ownershipDuration ?? (ja ? "未登録" : "Not set")}</dd></div>
-            {vehicle.grade && <div><dt>{ja ? "グレード" : "Grade"}</dt><dd>{vehicle.grade}</dd></div>}
-            {vehicle.modelCode && <div><dt>{ja ? "型式" : "Model code"}</dt><dd>{vehicle.modelCode}</dd></div>}
-            {vehicleSpecification.generation && <div><dt>{ja ? "世代・仕様系統" : "Generation / specification"}</dt><dd>{[vehicleSpecification.generation, vehicleSpecification.variant, vehicleSpecification.configuration].filter(Boolean).join(" / ")}</dd></div>}
-            {vehicle.specificationNote && <div><dt>{ja ? "仕様補足" : "Specification note"}</dt><dd>{vehicle.specificationNote}</dd></div>}
-            {vehicle.primaryUse && <div><dt>{ja ? "主な用途" : "Main use"}</dt><dd>{vehicle.primaryUse}</dd></div>}
-            {vehicle.dispositionReason && <div><dt>{ja ? "手放した理由" : "Reason ownership ended"}</dt><dd>{vehicle.dispositionReason}</dd></div>}
-            {vehicle.engine && <div><dt>{ja ? "エンジン" : "Engine"}</dt><dd>{vehicle.engine}</dd></div>}
-            {vehicle.engineCode && <div><dt>{ja ? "エンジン型式" : "Engine code"}</dt><dd>{vehicle.engineCode}</dd></div>}
-            {vehicle.displacementCc && <div><dt>{ja ? "排気量" : "Displacement"}</dt><dd>{vehicle.displacementCc.toLocaleString()} cc</dd></div>}
-            {vehicle.drivetrain && vehicle.drivetrain !== "unknown" && <div><dt>{ja ? "駆動方式" : "Drivetrain"}</dt><dd>{vehicle.drivetrain === "four_wheel_drive" ? "4WD" : vehicle.drivetrain.toUpperCase()}</dd></div>}
-            {vehicle.steering && <div><dt>{ja ? "ハンドル" : "Steering"}</dt><dd>{vehicle.steering}</dd></div>}
-            {vehicle.transmission && <div><dt>{ja ? "トランスミッション" : "Transmission"}</dt><dd>{vehicle.transmission}</dd></div>}
-          </dl>
-          {vehicle.currentOdometerReading.displayedValue > 0 && <div className="odometer"><Gauge size={22} /><span><small>{isPreviousVehicle ? (ja ? "手放した時点などの記録値" : "Recorded value around ownership end") : (ja ? "現在の走行距離" : "Current odometer")}</small><strong>{vehicle.currentOdometerReading.displayedValue.toLocaleString()} {vehicle.currentOdometerReading.unit}</strong></span></div>}
-          <p className="privacy-caption">{ja ? "車齢と所有年月は登録された年・月からの概算です。" : "Vehicle age and ownership duration are approximate, based on the year and month provided."}</p>
-          <Link href={`/garage/${encodeURIComponent(vehicle.id)}/specification`} className="secondary-action ownership-change-link"><Pencil size={17} />{translate(locale, "editVehicleSpecification")}</Link>
-          <Link href={`/garage/${encodeURIComponent(vehicle.id)}/ownership`} className="secondary-action ownership-change-link"><ArrowLeftRight size={17} />{isPreviousVehicle ? (ja ? "現在のガレージへ戻す" : "Move to Current Garage") : (ja ? "所有を終了" : "End ownership")}</Link>
+          <h1>{vehicle.nickname || vehicleLabel}</h1>
+          {vehicle.nickname && <p className="garage-pilot-model">{vehicle.year ? `${vehicle.year} ` : ""}{vehicleLabel}</p>}
+          <div className="garage-pilot-owner">
+            <ProfileAvatar displayName={owner?.displayName ?? "MECHORI"} imagePath={owner?.profileImagePath} />
+            <span>{ja ? `${owner?.displayName ?? "オーナー"}の愛車` : `${owner?.displayName ?? "Owner"}'s vehicle`}</span>
+          </div>
+          <div className="garage-pilot-ownership" aria-label={ja ? "車両と所有の情報" : "Vehicle and ownership information"}>
+            {relationship.vehicleAgeYears !== undefined && <span>{ja ? `${relationship.vehicleAgeYears}年を走ってきた` : `${relationship.vehicleAgeYears} years on the road`}</span>}
+            {ownershipDuration && <span>{ownershipDuration}</span>}
+            {vehicle.currentOdometerReading.displayedValue > 0 && <span>{vehicle.currentOdometerReading.displayedValue.toLocaleString()} {vehicle.currentOdometerReading.unit}</span>}
+          </div>
+          {vehicle.ownerComment && <blockquote className="garage-pilot-owner-comment">{vehicle.ownerComment}</blockquote>}
+          <div className="garage-pilot-primary-action">
+            <Link href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`} className="primary-action"><Camera size={18} />{ja ? "このクルマの記録を残す" : "Add a record for this vehicle"}</Link>
+            <Link href={`/records/new?vehicle=${encodeURIComponent(vehicle.id)}`} className="text-link">{ja ? "整備を詳しく記録" : "Add detailed maintenance"}</Link>
+          </div>
+          <div className="garage-pilot-secondary-actions">
+            <Link href={`/garage/${encodeURIComponent(vehicle.id)}/specification`}><Pencil size={16} />{translate(locale, "editVehicleSpecification")}</Link>
+            <Link href={`/garage/${encodeURIComponent(vehicle.id)}/ownership`}><ArrowLeftRight size={16} />{isPreviousVehicle ? (ja ? "現在の愛車へ戻す" : "Move to current vehicles") : (ja ? "所有を終了" : "End ownership")}</Link>
+            <Link href={`/garage/${encodeURIComponent(vehicle.id)}/share`}><Share2 size={16} />{ja ? "見せる・共有" : "Show & share"}</Link>
+          </div>
         </div>
       </section>
 
-      <section className="garage-stats">
-        <div><CalendarDays size={21} /><strong>{timeline.length}</strong><span>{ja ? "記録の合計" : "All records"}</span></div>
-        <div><Camera size={21} /><strong>{journals.length}</strong><span>{ja ? "写真・文章" : "Photos & stories"}</span></div>
-        <div><Wrench size={21} /><strong>{records.length}</strong><span>{ja ? "整備記録" : "Maintenance"}</span></div>
+      <section className="garage-pilot-vehicle-rail" aria-label={ja ? "愛車を選ぶ" : "Choose a vehicle"}>
+        <div className="garage-pilot-rail-heading"><h2>{ja ? "愛車を選ぶ" : "Your vehicles"}</h2><Link href="/garage/new" className="text-link"><Plus size={16} />{ja ? "愛車を追加" : "Add vehicle"}</Link></div>
+        <div className="garage-vehicle-switcher">
+          {groupedVehicles.current.map((item) => <VehicleSwitchButton key={item.id} item={item} selected={item.id === vehicle.id} locale={locale} onSelect={() => setSelectedVehicleId(item.id)} />)}
+          {previousVehicles.map((item) => <VehicleSwitchButton key={item.id} item={item} selected={item.id === vehicle.id} locale={locale} onSelect={() => setSelectedVehicleId(item.id)} />)}
+          {groupedVehicles.other.map((item) => <VehicleSwitchButton key={item.id} item={item} selected={item.id === vehicle.id} locale={locale} onSelect={() => setSelectedVehicleId(item.id)} />)}
+          <Link href="/garage/new?ownership=previously_owned" className="garage-pilot-add-previous"><History size={17} />{ja ? "以前の愛車を追加" : "Add a previous vehicle"}</Link>
+        </div>
+        {!isRemoteAlpha && <button className="garage-pilot-reset" type="button" onClick={() => { void resetDemo().catch(() => undefined); }}><RotateCcw size={15} />{translate(locale, "resetDemo")}</button>}
       </section>
 
-      <section className="vehicle-timeline-section">
-        <div className="section-heading"><div><span className="eyebrow">VEHICLE TIMELINE</span><h2>{ja ? "このクルマの時間" : "This vehicle's timeline"}</h2></div><Link href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`} className="secondary-action"><Plus size={17} />{ja ? "さっと記録" : "Quick record"}</Link></div>
+      <section className="garage-pilot-timeline-section">
+        <div className="garage-pilot-section-heading">
+          <div><h2>{ja ? "このクルマの時間" : "This vehicle's history"}</h2><p>{timeline.length ? (ja ? `整備も思い出も、${timeline.length}件の出来事として残っています。` : `${timeline.length} moments, from maintenance to memories.`) : (ja ? "最初の出来事から、このクルマの時間が始まります。" : "This vehicle's story can start with one moment.")}</p></div>
+        </div>
         {timeline.length ? (
-          <div className="vehicle-timeline">
-            {timeline.slice(0, 8).map((item) => {
-              const title = item.kind === "journal" && item.body ? item.body : item.title;
-              const description = item.kind === "record" ? item.body : undefined;
-              return (
-                <Link href={item.href} className="vehicle-timeline-item" key={`${item.kind}-${item.id}`}>
-                  <span className={`timeline-mark is-${item.kind}`}>{item.kind === "record" ? <Wrench size={16} /> : <Camera size={16} />}</span>
-                  <time>{item.dateLabel}</time>
-                  <div><small>{item.kind === "record" ? (ja ? "整備" : "Maintenance") : eventTypeLabel(item.eventType, ja)}</small><strong>{title}</strong>{description && <p>{description}</p>}</div>
-                </Link>
-              );
-            })}
+          <div className="garage-pilot-timeline">
+            {timeline.slice(0, 12).map((item, index) => <GarageTimelineItem item={item} locale={locale} featured={index === 0} key={`${item.kind}-${item.id}`} />)}
+            {timeline.length > 12 && <p className="garage-pilot-timeline-note">{ja ? `最近の12件を表示しています。` : "Showing the most recent 12 moments."}</p>}
           </div>
         ) : (
-          <div className="empty-state timeline-empty"><Camera size={30} /><h3>{isPreviousVehicle ? (ja ? "覚えている出来事から残せます" : "Add what you remember") : (ja ? "最初の一枚から始めましょう" : "Start with the first photo")}</h3><p>{isPreviousVehicle ? (ja ? "故障、修理、ドライブ、手放した日のことなど、分かる範囲で大丈夫です。" : "Maintenance, repairs, drives, and memories can be added with partial details.") : (ja ? "整備がなくても、今日の一枚やドライブの一言を残せます。" : "No maintenance required. A photo or one line from a drive is enough.")}</p><Link href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`} className="primary-action">{ja ? "さっと記録" : "Quick record"}</Link></div>
-        )}
-      </section>
-
-      <section>
-        <div className="section-heading"><div><span className="eyebrow">HISTORY</span><h2>{translate(locale, "recentRecords")}</h2></div><Link href={`/records/new?vehicle=${encodeURIComponent(vehicle.id)}`} className="secondary-action"><Plus size={17} />{translate(locale, "addRecord")}</Link></div>
-        {records.length ? <div className="record-grid">{records.slice(0, 3).map((record) => <RecordCard key={record.id} record={record} locale={locale} />)}</div> : <div className="empty-state compact-empty"><Wrench size={28} /><p>{ja ? "整備があったときに、詳しい内容をここへ残せます。" : "Detailed maintenance can be added here when it happens."}</p></div>}
-      </section>
-
-      <section>
-        <div className="section-heading">
-          <div><span className="eyebrow">VEHICLE RECORDS</span><h2>{ja ? "このクルマの写真・文章の記録" : "Photos and stories for this vehicle"}</h2></div>
-          <div className="section-heading-actions">
-            <Link href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`} className="secondary-action"><Camera size={17} />{ja ? "さっと記録" : "Quick record"}</Link>
-            <Link href={`/journal/new?vehicle=${encodeURIComponent(vehicle.id)}`} className="secondary-action"><BookOpenText size={17} />{ja ? "詳しく記録" : "Detailed record"}</Link>
+          <div className="garage-pilot-empty-history">
+            <Camera size={24} aria-hidden="true" />
+            <div><h3>{isPreviousVehicle ? (ja ? "覚えている出来事から残せます" : "Add what you remember") : (ja ? "このクルマとの最初の記録を残す" : "Add the first moment with this vehicle")}</h3><p>{isPreviousVehicle ? (ja ? "修理、ドライブ、手放した日のこと。分かる範囲から残せます。" : "A repair, drive, or final day can be remembered here.") : (ja ? "整備だけでなく、今日の一枚や短いドライブのことも、このクルマの履歴になります。" : "Maintenance, a photo, or a short drive all become part of this vehicle's history.")}</p><Link href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`} className="primary-action">{ja ? "このクルマの記録を残す" : "Add a record"}</Link></div>
           </div>
-        </div>
-        {journals.length ? (
-          <div className="journal-grid">
-            {journals.map((journal) => <JournalCard key={journal.id} journal={journal} sharedJournal={sharedJournals.find((item) => item.id === journal.id)} author={data.profiles.find((profile) => profile.id === journal.authorProfileId)} record={data.records.find((record) => record.id === journal.linkedRecordId)} locale={locale} translations={data.contentTranslations} showPrivateMedia />)}
-          </div>
-        ) : (
-          <div className="empty-state"><BookOpenText size={28} /><h3>{ja ? "写真・文章の記録はまだありません" : "No photo or written records yet"}</h3><p>{ja ? "一言なら「さっと記録」、長く書くなら「詳しく記録」から残せます。どちらも同じ時間軸に並びます。" : "Use Quick record for one line or Detailed record for a longer story. Both appear on the same timeline."}</p></div>
         )}
       </section>
     </div>
+  );
+}
+
+type GarageTimelineItem = {
+  id: string;
+  kind: "journal" | "record";
+  date: string;
+  dateLabel: string;
+  title: string;
+  body?: string;
+  eventType?: JournalEventType;
+  href: string;
+  media?: JournalMediaAttachment;
+  serviceAttribution?: MaintenanceServiceAttributionV1;
+};
+
+function VehicleFallback({
+  vehicle,
+  locale,
+  ownershipPeriod,
+}: {
+  vehicle: Vehicle;
+  locale: "ja" | "en";
+  ownershipPeriod: string;
+}) {
+  const ja = locale === "ja";
+  const VehicleIcon = vehicle.vehicleCategory === "motorcycle" || vehicle.vehicleCategory === "moped"
+    ? Bike
+    : CarFront;
+
+  return (
+    <div className="garage-pilot-vehicle-fallback">
+      <VehicleIcon size={44} aria-hidden="true" />
+      <p>{vehicle.year ?? (ja ? "年式未登録" : "Year not set")}</p>
+      <strong>{vehicle.nickname || `${vehicle.make} ${displayVehicleModel(vehicle, locale)}`}</strong>
+      <span>{ownershipPeriod}</span>
+    </div>
+  );
+}
+
+function GarageTimelineItem({
+  item,
+  locale,
+  featured,
+}: {
+  item: GarageTimelineItem;
+  locale: "ja" | "en";
+  featured: boolean;
+}) {
+  const ja = locale === "ja";
+  const isMaintenance = item.kind === "record";
+  const label = isMaintenance ? (ja ? "整備" : "Maintenance") : eventTypeLabel(item.eventType, ja);
+  const attribution = garageServiceAttributionLabel(item.serviceAttribution, locale);
+  const title = item.title || item.body || (ja ? "記録" : "Record");
+  const body = item.body && item.body !== title ? item.body : undefined;
+
+  return (
+    <Link href={item.href} className={`garage-pilot-timeline-item${featured ? " is-featured" : ""}`}>
+      <span className={`garage-pilot-timeline-mark is-${item.kind}`} aria-hidden="true">
+        {isMaintenance ? <Wrench size={16} /> : <Camera size={16} />}
+      </span>
+      <time dateTime={item.date}>{item.dateLabel}</time>
+      <div className="garage-pilot-timeline-copy">
+        <small>{label}</small>
+        <strong>{title}</strong>
+        {body && <p>{body}</p>}
+        {attribution && <span className="garage-pilot-attribution">{attribution}</span>}
+      </div>
+      {item.kind === "journal" && item.media?.kind === "image" && (
+        <div className="garage-pilot-timeline-media">
+          <JournalMedia attachments={[item.media]} locale={locale} compact />
+        </div>
+      )}
+    </Link>
   );
 }
 

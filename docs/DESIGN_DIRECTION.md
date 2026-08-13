@@ -64,6 +64,15 @@ WCAG 2.2 AA を目標にします。
 
 αでは、ニュートラルな車体にサービスブルーとアンバーの信号色を載せる「国籍を問わない上質な整備記録帳とワークショップ」を基準にします。
 
+## Garage Pilot: Quiet Machinery / Living Vehicle History
+
+Garageは車両台帳ではなく、Vehicle、Owner、Historyを見返す場所として扱う。Design Direction v1のPilotでは、Vehicle写真または写真なしでも成立するidentity、愛称・車種・所有時間、ひとつの主操作「このクルマの記録を残す」、整備と日常の出来事を同じ時間軸で読む構成を優先する。
+
+- KPI的な数値帯、連続したsurface/card、uppercase eyebrow、同格CTAを減らし、余白、写真、date、短いcopyで階層を作る。
+- 車齢・所有期間・走行距離はdashboard metricではなくVehicle identityの一部として扱う。
+- 写真がないVehicleも、車名・年式・所有時間を用いた静かなfallbackで未完成に見せない。
+- このPilotの人間QA後にのみ、HomeやFeedなどへのDesign Language展開を判断する。DB、RLS、RPC、workspace data contractはこのVisual Pilotの対象外とする。
+
 ## 未確定
 
 - ロゴ
