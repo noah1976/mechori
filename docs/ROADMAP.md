@@ -46,6 +46,7 @@ Phase 3へ進む前に、`docs/ALPHA_PLAYBOOK.md`に従って特に親しい友�
 - P-085のService Provider／Professional Organization／OWNER・STAFF／Founding Garage基盤を使い、βまでに少なくとも1軒のFounding Garage候補へ参加条件を提示して実運用を共同確認する。
 - 整備記録ではDIY／お店・工場／不明と当時のProvider snapshotを残す。Claim、重複統合、Provider確認済み実績、公開Discoveryはβ後の検証結果で段階導入する。
 - β中盤から、オーナー向けネイティブアプリの開発に着手する。WebとNativeをαから二重開発せず、Webで固めたコアユースケースを再利用する。
+- β拡大前に、`docs/GLOBAL_COMPLIANCE.md`のResearch Frameworkを使い、対象地域・機能・一次資料・Product Decision・専門家確認の要否を追跡する。これは具体的な法的結論を含むものではない。
 
 ## Phase 4: 車種コミュニティ検証 100人
 
@@ -79,6 +80,7 @@ Phase 3へ進む前に、`docs/ALPHA_PLAYBOOK.md`に従って特に親しい友�
 - ネイティブ版では、写真・動画・音声をその場で非公開下書きへ追加し、作業前・確認中・交換後・結果を一つの記録へまとめる撮影セッションを検討する。
 - Professionalでは、許諾ナレッジ利用台帳、知識クレジット、工場間相談、帳票出力・送信を検証順に追加する。
 - 国別帳票は、共通取引データと地域パックを分離し、現地専門家と工場の確認を得られた地域から追加する。
+- より広い国際公開の前にGlobal Compliance Reviewを完了し、地域別のPrivacy、Safety、UGC、未成年者、位置情報、AI、Professional、Consumer Protection等の判断を記録する。
 - 複数車種でナレッジ密度と獲得経路を再現する。
 - 登録1,000人時点で、広告、一般公開地域、採用、外部資金を比較する。
 - EU圏を含む次地域は、需要、ナレッジ密度、翻訳確認者、法務・運営体制を確認し、UI言語を段階追加する。

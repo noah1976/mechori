@@ -114,3 +114,7 @@ Vehicleの「MECHORI内で見つけられる」は、認証済みactive particip
 - 非公開の車両写真を保存する場合の原本保持可否
 - 一般公開時の運営者法定表示
 - EU・英国・スイス向け同意管理の方式
+
+## Global Compliance Review
+
+地域別の法令・規制要求とMECHORIのPrivacy設計、実装、検証の対応付けは`docs/GLOBAL_COMPLIANCE.md`で管理する。具体的な地域要件は一次資料による調査と必要な専門家確認の後に決定し、この文書の既存方針を置き換えない。

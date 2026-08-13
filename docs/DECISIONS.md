@@ -563,3 +563,10 @@
 - Owner Plusの登録台数と各プランの価格・利用枠
 - 貢献バッジの名称、基準、表示範囲
 - Professionalの工場間相談料金、知識還元方式、最初の帳票、最初の対象地域
+
+### 決定: Global Compliance Reviewを将来公開の必須追跡基盤とする
+
+- 日付: 2026-08-13
+- 状態: 運用方針
+- 決定: 地域別の法令・規制要求を、一次資料、Product Impact、既存設計、必要変更、実装参照、検証、専門家確認へ追跡する`docs/GLOBAL_COMPLIANCE.md`を正本の索引レイヤーとして追加する。Japan、EU / EEA、United Kingdom、United States、Australia、Canadaを初期対象とし、具体的な法的結論は調査後に決定する。より広い国際公開、Native Drive Log、広告、Professional課金の前にReview Gateを通す。
+- 影響: 現行のPrivacy、Trust、Safety、AI、Moderation、Professional、Data Model文書は各領域の正本として維持する。今回、Web検索、法律調査、法的助言、年齢制限、DB、コード、実装を変更しない。αは停止扱いにしない。

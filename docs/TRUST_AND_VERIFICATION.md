@@ -144,3 +144,7 @@ AIは承認されたKnowledgeCaseと確認ラベルを取得し、根拠に含�
 - 危険領域でAI要約へ採用する最低条件
 - バッジ取消と異議申立ての運用
 - Professional本人・所属確認の方法
+
+## Global Compliance Review
+
+地域別のTrust、UGC、AI、Professional、権利侵害対応の調査項目は`docs/GLOBAL_COMPLIANCE.md`へ接続する。ここで定めるEvidence provenance、User assertionとProvider-confirmed informationの分離は、法的適合性を断定するものではなく、将来の一次資料調査と専門家レビューの基礎とする。

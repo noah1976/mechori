@@ -125,3 +125,7 @@
 - 基本体験は無料を原則とし、AI/OCRの通常利用、利用枠、推定原価、失敗時の非消費、super adminによる追加・免除をβで計測する。実際の上限利用者が現れるまで本格決済は急がない。
 - P-074のPCナビ二重化は解消済みで、人間UX QA待ちである。画面全体のVisual Direction再設計は別途扱う。
 - 現行の状態棚卸しではテスト・build・デプロイを再実行していないため、この更新自体は新しい動作保証を追加しない。
+
+## 9. Global Compliance Review
+
+`docs/GLOBAL_COMPLIANCE.md`に、Japan、EU / EEA、United Kingdom、United States、Australia、Canadaを初期対象とするGlobal Legal / Safety Compliance Reviewの追跡基盤を追加した。これは法令調査や法的結論ではなく、一次資料から地域別要求をProduct Requirement、設計、実装、検証、専門家レビューへ接続するための文書フレームワークである。より広い国際公開、Native Drive Log、広告、Professional課金の前にReview Gateを通す将来必須項目として扱う。具体的な年齢制限、地域別要件、法的適用可否は未確定であり、現在のαを停止扱いにしない。
