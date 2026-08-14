@@ -45,6 +45,13 @@ function EvidenceList({
 function matchLabel(level: VehicleMatchLevel, ja: boolean) {
   const labels: Record<VehicleMatchLevel, [string, string]> = {
     exact_specification: ["同一仕様", "Exact specification"],
+    reported_configuration_match: ["申告仕様が一致", "Reported configuration match"],
+    reported_configuration_conflict: ["機械仕様に相違あり", "Mechanical specification differs"],
+    same_variant_other_configuration: ["同派生系統・別仕様", "Same variant, different configuration"],
+    same_variant_unspecified_configuration: ["同派生系統・詳細未確認", "Same variant, configuration unconfirmed"],
+    same_generation_other_variant: ["同世代・別仕様", "Same generation, different variant"],
+    same_family_other_generation: ["同車系統・別世代", "Same family, different generation"],
+    same_family_unspecified: ["同車系統・仕様未確認", "Same family, specification unconfirmed"],
     same_model_other_year: ["同車種・別年式", "Same model, other year"],
     shared_engine_or_component: ["共通エンジン・部品", "Shared engine or component"],
     general_symptom: ["一般的な類似症状", "General similar symptom"],
@@ -66,8 +73,8 @@ export function KnowledgeSynthesisPanel({
       <section className="synthesis-empty" aria-live="polite">
         <SearchCheck size={24} />
         <div>
-          <strong>{ja ? "公開ナレッジに一致する根拠がありません" : "No matching public evidence"}</strong>
-          <p>{ja ? "検索範囲を広げても、見つからないことを隠しません。" : "MECHORI does not hide an evidence gap with a generated answer."}</p>
+          <strong>{ja ? "条件に合う公開事例は見つかりませんでした" : "No matching public evidence"}</strong>
+          <p>{ja ? "事例がない場合、MECHORIは推測で原因候補を補いません。" : "MECHORI does not hide an evidence gap with a generated answer."}</p>
         </div>
       </section>
     );
@@ -96,8 +103,8 @@ export function KnowledgeSynthesisPanel({
       <header className="synthesis-header">
         <div>
           <span className="eyebrow">AI SUMMARY DEMO</span>
-          <h2 id="synthesis-heading">{ja ? "みんなの記録から考えられること" : "What the shared records suggest"}</h2>
-          <p>{ja ? `${synthesis.includedCaseIds.length}件のDEMO投稿・事例だけを根拠に整理しています。` : `Summarized only from ${synthesis.includedCaseIds.length} DEMO post(s) and case(s).`}</p>
+          <h2 id="synthesis-heading">{ja ? "公開事例から分かること" : "What the shared records suggest"}</h2>
+          <p>{ja ? `${synthesis.includedCaseIds.length}件のDEMO事例に書かれた内容だけを整理しています。` : `Summarized only from ${synthesis.includedCaseIds.length} DEMO post(s) and case(s).`}</p>
         </div>
         <HazardBadge level={synthesis.hazardPolicy.effectiveLevel} />
       </header>
@@ -115,7 +122,7 @@ export function KnowledgeSynthesisPanel({
       ) : null}
 
       <div className="synthesis-columns synthesis-columns-four">
-        <article><span>01</span><div><h3>{ja ? "確認された箇所" : "Reported checks"}</h3><EvidenceList items={synthesis.reportedChecks} emptyLabel={ja ? "該当する報告なし" : "No reported check"} locale={locale} /></div></article>
+        <article><span>01</span><div><h3>{ja ? "確認箇所の報告" : "Reported checks"}</h3><EvidenceList items={synthesis.reportedChecks} emptyLabel={ja ? "確認箇所の報告なし" : "No reported check"} locale={locale} /></div></article>
         <article><span>02</span><div><h3>{ja ? "原因候補" : "Possible causes"}</h3><EvidenceList items={synthesis.reportedCauseCandidates} emptyLabel={ja ? "原因候補の報告なし" : "No possible cause reported"} locale={locale} /></div></article>
         <article><span>03</span><div><h3>{ja ? "対応・交換部品" : "Responses and parts"}</h3><EvidenceList items={[...synthesis.reportedActions, ...synthesis.reportedParts]} emptyLabel={ja ? "対応報告なし" : "No reported response"} locale={locale} /></div></article>
         <article><span>04</span><div><h3>{ja ? "結果の内訳" : "Outcome range"}</h3><dl><div><dt>{ja ? "改善" : "Improved"}</dt><dd>{synthesis.outcomes.improved}</dd></div><div><dt>{ja ? "未解決" : "Unresolved"}</dt><dd>{synthesis.outcomes.unresolved}</dd></div><div><dt>{ja ? "変化なし・悪化" : "No change / worsened"}</dt><dd>{synthesis.outcomes.no_change + synthesis.outcomes.worsened}</dd></div></dl></div></article>

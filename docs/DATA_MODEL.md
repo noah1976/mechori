@@ -4,12 +4,13 @@
 
 MECHORIの初期MVPで必要な概念、関係、状態を、特定DBやProviderに固定せず定義します。物理テーブル、インデックス、Supabase RLSは外部接続前に別途設計します。
 
-現行プロトタイプの型は操作確認用です。localStorageの試作スキーマv8では、整備記録に加えてプロフィール公開範囲、オーナーと愛車の関係、順序付きブロックを持つGarage Journal、メディア参照、フォロー関係、プロフィールの表示安全関係、通報と最小モデレーション履歴を保持します。メディア本体はIndexedDBへ分離します。この文書を初期MVPの概念モデルの正とし、実物の整備記録で検証してから物理モデルへ進みます。
+現行プロトタイプの型は操作確認用です。試作スキーマv9では、整備記録に加えてプロフィール公開範囲、現在・過去を含むオーナーと車両の関係、車両種別、順序付きブロックを持つGarage Journal、記録の由来、メディア参照、フォロー関係、プロフィールの表示安全関係、通報と最小モデレーション履歴を保持します。通常のJournalメディア本体はIndexedDBへ分離します。3〜5人の遠隔αに限り、初回愛車写真と簡易出来事写真はブラウザで再生成した小容量WebPを非公開Workspaceへ暫定保存し、β前に非公開Storageへ移行します。この文書を初期MVPの概念モデルの正とし、実物の整備記録で検証してから物理モデルへ進みます。
 
 ## モデルの中心
 
 ```text
 User
+  ├─ InvitationRedemption
   └─ Vehicle
        ├─ OdometerEpisode（メーター個体・連続期間）
        │    └─ OdometerReading（その時点の表示値）
@@ -55,6 +56,22 @@ GarageJournalPost
 
 ## 主要概念
 
+### TestInvitation / InvitationRedemption
+
+遠隔α・招待制βの参加者を限定するための招待と、その使用記録です。認証に成功しただけでは非公開領域へ入れず、有効な招待から参加権限を得る必要があります。
+
+- `TestInvitation.id`: 推測困難な内部ID
+- `phase`: α、β
+- `tokenHash`: 十分にランダムな生トークンからサーバー側で作るハッシュ。生トークンは保存しない
+- `createdByUserId` / `createdAt` / `expiresAt`
+- `maxRedemptions`: αの標準は1
+- `revokedAt`: 個別失効
+- `InvitationRedemption.invitationId` / `userId` / `redeemedAt`
+
+同じ利用者による再ログインは新しい使用回数として数えません。使用済み、期限切れ、失効を区別し、招待状態をOAuth Providerのプロフィール属性へ埋め込みません。
+
+`created_by_user_id`は運営発行と参加者紹介の両方で発行者を保持します。参加済みユーザーが作る招待は7日間・1アカウント限りで、未使用3件・直近30日10件を上限とします。生トークンは保存せずSHA-256ハッシュだけを`test_invitations.token_hash`へ保存し、共有用QRもブラウザ内で生成します。
+
 ### UserProfile
 
 認証基盤のアカウントと分離したアプリケーション上の利用者です。
@@ -92,13 +109,21 @@ GarageJournalPost
 - `id` / `authorUserId`
 - `vehicleId`: 任意。車両個体を公開しない投稿も許容する
 - `title` / `bodyOriginal` / `sourceLanguage`
+- `occurredOn`: 日まで分かる場合の実際の日付
+- `occurredYear` / `occurredMonth`: 年月または年だけ分かる場合の値
+- `occurredPrecision`: `day`、`month`、`year`、`unknown`
+- `occurredPeriodNote`: 「車検の少し前」「購入して半年後」等、本人が覚えている時期の補足
 - `contentBlocks`: 段落、見出し、引用、メディア参照を順番に保持する本文正本
 - `visibility`: 非公開、フォロワー、公開。初期値は非公開
 - `knowledgeExtractionConsent`: ナレッジ候補抽出を許可するか
 - `createdAt` / `updatedAt` / `publishedAt`
 - `moderationState` / `deletionState`
 
-本文はAI生成を前提にせず、本人の原文とブロック順序を保持します。`bodyOriginal`は検索・移行互換用にテキストブロックから導出し、表示順の正本にはしません。翻訳やAI抽出結果は別データとし、原文を上書きしません。
+本文はAI生成を前提にせず、本人の原文とブロック順序を保持します。`bodyOriginal`は検索・移行互換用にテキストブロックから導出し、表示順の正本にはしません。翻訳やAI抽出結果は別データとし、原文を上書きしません。出来事の時期は、正確な日、年月ごろ、年ごろ、時期不明を区別します。`2021年6月ごろ`を`2021-06-01`として事実保存せず、並び替え用の値と利用者へ示す精度を分離します。既存データの未設定は許容し、表示時のみ`createdAt`へフォールバックします。
+
+ユーザー向けの`さっと記録`と`詳しく記録`は同じ`GarageJournalPost`へ保存します。`eventType`を持つ記録は軽量編集画面、順序付き本文を中心に作成した記録は詳細編集画面を使います。どちらも本人だけが更新でき、更新時は`id`、`authorUserId`、`createdAt`、既存の反応・モデレーション状態を保持して`updatedAt`を更新します。対象車両も本人所有であることを保存処理で確認します。
+
+P0の参加者向け共有では、非公開Workspaceの`GarageJournalPost`を正本のまま公開しません。本人が`公開`を選んだ場合だけ、車両表示名、本文、出来事の時期等を、参加中のαテスターだけが読める失効可能な最小共有データへ複製します。内部の車両ID、関連整備記録、公開許可していない表示項目、ナレッジ抽出同意は含めません。添付写真は投稿の公開範囲とは別に本人が共有を確認した再生成画像だけを非公開Storageへ保存し、共有データにはその参照と安全な表示メタデータだけを含めます。動画と非公開指定の画像は含めません。一般公開用画像は引き続き不可逆なマスキング等の公開条件を満たすまで公開せず、α参加者限定共有と一般公開を区別します。
 
 ### ContentTranslation
 
@@ -191,16 +216,33 @@ Journalへの通報と、その後の操作を本文から分離します。
 ユーザーが管理する車両個体です。公開車両マスタとは分離します。
 
 - `id` / `ownerUserId`
+- `vehicleCategory`: 自動車、オートバイ、原付、その他。クルマとバイクで別モデルを作らない
 - `makeName` / `modelName`: ユーザー入力を正本として必須。マスタ候補の有無を問わない
+- `makeInput` / `modelInput`: ユーザー入力原文。正規化後も保持する
+- `brandId`: 既知メーカーの世界共通ID。表示は原則アルファベット表記
+- `modelFamilyId`: 市場別名称をまたぐ車系統。検索・車種フォローの基本単位
+- `generationId`: 年式・型式等で確認できた世代。不明を許容
+- `variantId`: 同一世代内の機関・駆動系等を区別する仕様系統。不明を許容し、個別グレード名とは分ける
+- `configurationId`: 派生系統内の排気量・弁機構・年次改良等を区別する具体仕様。不明を許容
+- `engineCode`, `displacementCc`, `aspiration`, `drivetrain`, `transmissionCode`: カタログ未登録でも保持する申告機械仕様
+- `specificationNote`: Phase、限定仕様、市場仕様等の自由記述。確認済みIDとは分ける
+- `marketNameId` / `marketRegion`: ヴィッツ／YARIS等の市場別販売名と対象地域
+- `VehicleModelRelation`: 市場名差、OEM姉妹車、ブランド移管、正規継承、着想・派生を、関係元・関係先・関係種別で保持するカタログ上の辺
+- `identityMatchStatus`: `matched_alias`、`brand_only`、`unmatched`。写真候補は確認前にここへ昇格しない
+- `specificationMatchStatus`: `confirmed_model_code`、`conflicting_inputs`、`grade_candidate`、`generation_candidate`、`unmatched`
 - `modelYear`: 不明を許容
+- `grade` / `modelCode` / `nickname`: 任意。初回登録の完了条件にしない
 - `engineDescriptor`
 - `transmissionDescriptor`
 - `steeringPosition`
 - `marketRegion`
 - `variantDescriptor`
-- `relationshipType`: 現在所有、過去所有、家族所有、共同管理
+- `relationshipType`: 現在所有、過去所有、未設定、家族所有、共同管理
 - `ownershipStartedYear` / `ownershipStartedMonth`: 日は保持せず、不明を許容
 - `ownershipEndedYear` / `ownershipEndedMonth`: 過去所有時のみ。不明を許容
+- `ownershipPeriodNote`: 年代や「春ごろ」等の曖昧な時期を本人の表現のまま保持。日付へ推測変換しない
+- `primaryUse` / `dispositionReason`: 任意の用途、手放した理由
+- `odometerContext`: 現在値、所有終了時、所有中の途中、不明を区別する
 - `specificationState`: 確認済み、ユーザー入力、不明
 - `visibility`: 初期値は非公開
 - `createdAt` / `updatedAt`
@@ -209,9 +251,25 @@ Journalへの通報と、その後の操作を本文から分離します。
 
 - VIN・車台番号全文、ナンバープレート、正確な保管場所、常時位置情報
 
-将来、車種マスタを追加する場合は、ユーザー車両の入力原文を失わずに参照IDを追加します。未確認仕様をマスタ値で自動補完しません。
+車種カタログは、ユーザー車両の入力原文を失わずに参照IDを追加します。未確認仕様をマスタ値で自動補完しません。メーカー表記、翻字、同一市場名、市場別名称、車系統、世代、派生系統、具体仕様、個別グレード、個体の機械仕様を同じ文字列置換で処理しません。メーカーをまたぐ車両は単純な別名配列へ潰さず、`VehicleModelRelation`の種別に応じて検索範囲と確度を変えます。
 
 愛車登録は`makeName`と`modelName`だけで完了でき、車種マスタ参照、型式、正確な年式、エンジン等を完了条件にしません。自由入力車種も登録直後から整備記録、Journal、プロフィール、検索範囲に使用できます。正規化候補の確認状態は検索品質の属性であり、ユーザー車両の有効・無効を表しません。
+
+### VehicleCatalog
+
+共有カタログは、利用者ごとの非公開`Vehicle`とは別に保持します。
+
+- `VehicleCatalogEntity`: メーカー企業、ブランド、販売チャネル、モデル系統、市場別販売名、世代、派生系統、具体仕様を別ノードとして保持
+- `VehicleCatalogName`: 各ノードの正規表記、地域・言語別表記、歴史的名称、略称、既知の誤記等を保持。`exact`と`candidate_only`を区別
+- `VehicleCatalogRelation`: 企業所有、製造、販売チャネル、ブランド移管、市場名差、OEM姉妹車等を別名とは分けて保持
+- `VehicleCatalogSuggestion`: 利用者が愛車の入力原文、任意の正規表記候補、グレード、型式、根拠を提案する非公開キュー
+- `VehicleCatalogReviewEvent`: 運営による追加情報依頼、見送り、既存名への採用、新規項目公開の最小監査記録
+
+提案は自動公開せず、採用時にも元の`Vehicle.makeInput`と`Vehicle.modelInput`を書き換えません。詳細な資料画像、VIN、登録番号、氏名、住所等はP0のカタログ提案へ保存しません。新規車名の採用ではモデル系統とブランド上の市場別販売名を分け、既存モデル系統へ別ブランド・別市場の販売名を接続できる構造とします。
+
+現在所有車を手放した場合もVehicleを削除・複製せず、`relationshipType`を過去所有へ変更します。車両IDを維持するため、写真、MaintenanceEvent、GarageJournalPost、フォロー参照はそのまま残ります。誤操作や再取得時は現在所有へ戻せます。既存v8以前の車両は、明示的な過去所有情報がない限り自動車・現在所有として読み替えます。
+
+過去車のMaintenanceEventには`evidenceBasis`を持たせ、作業当時の記録、明細・領収書、写真・整備記録簿、後日の記憶、不明を区別します。これは投稿者確認や公開状態と別軸であり、検索・集計・AI整理で同じ確度として数えないための入力です。
 
 公開プロフィールでは`オーナー表示名 / 車両`を一つの発信単位として扱います。所有期間は本人が公開を選んだ場合だけ表示し、信頼度や整備能力の評価へ利用しません。車齢は初度登録日がない限りモデル年からの概算であることを明示します。
 
@@ -271,6 +329,36 @@ Journalへの通報と、その後の操作を本文から分離します。
 - `occurredContext`: 必要最小限の自由記述。正確な位置情報を含めない
 
 症状がない定期整備では、Observationを必須にしません。
+
+### DiagnosticStep
+
+Professionalの症例で、判断経路を後からたどるための時系列要素です。自動診断の答えや推奨手順ではなく、実際に報告された観察・確認・判断・結果を保持します。
+
+- `id` / `maintenanceEventId`
+- `sequence`
+- `stepType`: 顧客申告、観察、原因候補、測定、確認、候補除外、作業、直後結果、追跡結果
+- `originalText` / `sourceLanguage`
+- `assertionState`: 事実、本人の推測、他者の推測、AI候補、判別不能
+- `performedByContributionId`: 誰がどの役割で関与したか
+- `occurredAt` / `recordedAt`
+- `evidenceSourceId`
+- `verificationStatus`
+
+後から記録した場合も、作業日時と入力日時を混同しません。候補除外は「除外したと報告された」事実であり、MECHORIが原因を否定した表示にしません。
+
+### MeasurementObservation
+
+作業前後や異なる条件で報告された測定値です。
+
+- `id` / `diagnosticStepId`
+- `measurementCode`
+- `displayedValue` / `unit`
+- `measurementCondition`
+- `instrumentOrMethod`
+- `referenceRangeSourceId`: 正規資料等がある場合のみ
+- `verificationStatus`
+
+単位換算値と原記録を分け、出典のない正常範囲をAIが補完しません。
 
 ### MaintenanceAction
 
@@ -390,6 +478,7 @@ OCR・AI・手動インポートで作られた、まだ事実ではない整備
 - `id`
 - `knowledgeSubmissionId`: 内部関連。公開APIへ不用意に出さない
 - `vehicleApplicability`: メーカー、車種、年式範囲、エンジン、仕様と確認状態
+- `diagnosticTimeline`: 許諾された判断経路。非公開メモや顧客情報を含めない
 - `observations`
 - `causeCandidates`
 - `checksReported`
@@ -403,6 +492,21 @@ OCR・AI・手動インポートで作られた、まだ事実ではない整備
 - `publishedAt` / `lastReviewedAt` / `updatedAt`
 
 KnowledgeCaseは「正しい修理方法」を表すものではなく、確認範囲を示した参考事例です。
+
+### KnowledgeReview
+
+ProfessionalがKnowledgeCaseの項目へ行う確認・訂正提案です。
+
+- `id` / `knowledgeCaseId` / `targetFieldOrClaimId`
+- `reviewerContributionIdentityId`
+- `reviewType`: 支持、適用範囲訂正、反例追加、部品訂正、安全注意、情報不足、その他
+- `commentOriginal` / `sourceLanguage`
+- `evidenceSourceIds`
+- `conflictOfInterestDisclosure`
+- `status`: 提出、確認中、採用、一部採用、見送り、取下げ
+- `createdAt` / `resolvedAt`
+
+レビュー数を技術力や正確性の単純スコアにせず、誰がどの根拠で何を確認したかを表示します。
 
 ### RevisionEvent / AuditEvent
 
@@ -429,9 +533,11 @@ KnowledgeCaseは「正しい修理方法」を表すものではなく、確認�
 症状検索で採用した公開KnowledgeCaseと、集計結果を結び付ける一時的な出力契約です。
 
 - 使用した公開事例ID
-- 車両一致範囲
+- 車両仕様ごとの一致・相違・不明項目
 - 根拠付きの原因候補、確認箇所、対応
 - 改善、変化なし、悪化、未解決、不明の件数
+- 再発、適合失敗、候補除外等の反対結果
+- 作業前後の測定値と測定条件
 - 独立出典数
 - 危険ポリシー
 - 情報不足状態
@@ -481,6 +587,26 @@ AIの自由回答を正本データとして保存しません。必要な処理
 
 ## 現行プロトタイプとの差分
 
+### β移行用の整備実施者・事業者基盤
+
+現行workspace JSONの`MaintenanceRecord`は、正規化移行までversionedな`serviceAttribution`を保持する。
+
+```text
+serviceAttribution v1
+  performedByType: self | service_provider | unknown
+  serviceProviderId?: UUID
+  providerDisplayNameSnapshot?: string
+  providerLocalitySnapshot?: string
+```
+
+`service_provider`では現在のProvider IDと、記録当時の名称・市区町村snapshotを併記する。Providerの改名・移転・inactive化で過去表示を上書きしない。属性がない既存Recordは読取時に`unknown`へ正規化し、workspace全件rewriteは行わない。
+
+DB側は`service_providers`（実在する店舗・支店）、`professional_organizations`（MECHORI上の管理主体）、`service_provider_organization_links`、`professional_organization_memberships`を分離する。Founding GarageはOrganizationの属性であり、membership roleは`owner | staff`。User Recordのownership、公開範囲、確認状態はこの関連によって変えない。将来Record正規化時に`record_service_attributions`へ移せる境界とする。
+
+Vehicleのprivate workspaceには`memberDiscoveryEnabled: boolean`を保持する。これはactive MECHORI participant内の検索projection `alpha_member_vehicle_discoveries.is_active`のsourceであり、新規Vehicleは`true`、旧Vehicleは読取時も`true`として互換化する。外部匿名共有`alpha_public_vehicle_shares`とは別contractで、ownerがOFFにしても外部share、既存Vehicle Follow、Record associationを変更しない。
+
+`professional_organizations`は作成時に少なくとも一つの`owner` membershipを同一transactionで持つ。platform super adminはmembershipを持たずに管理できるが、OrganizationのOWNERには数えない。
+
 - `MaintenanceRecord`を`MaintenanceEvent`と複数の`MaintenanceAction`へ分ける。
 - 症状を必須文字列にせず、複数のObservationとして扱う。
 - 部品をEvent直下ではなくActionへ関連付ける。
@@ -496,7 +622,7 @@ AIの自由回答を正本データとして保存しません。必要な処理
 - FIAT Barchettaの仕様分類粒度と、その信頼できる情報源
 - 初期ベータで登録できる車両数
 - 費用を項目別に持つか、イベント合計だけにするか
-- 整備工場名を保存・公開できる条件
+- Provider実績を一般公開・集計できる条件（private Recordは対象外）
 - 共有ナレッジの匿名化後保持とアカウント削除時の扱い
 - 初期管理者の権限分離と監査閲覧範囲
 - 一時原本の保持時間と例外保存条件

@@ -1,5 +1,16 @@
 # PRIVACY
 
+## α版で公開している方針
+
+- 公開ページ: `/privacy`
+- 制定・最終更新: 2026年7月27日
+- 対象: 招待制の少人数α版
+- 問い合わせ窓口: `info@mechori.com`
+
+公開ページは、Google OAuth、Supabase、Netlify、Google Tag Manager、Google Analytics 4、Microsoft Clarityを含む現在の実装と運用を説明します。α版の入力内容をOpenAIその他の外部AIへ送信していない現状、第三者AI学習へ提供しない方針、セルフサービス削除が未実装であることも明記します。
+
+これは最終的な法務確認済み文書ではありません。一般公開、課金、Professional向け帳票、外部AI、EU・英国・スイス向け提供のいずれかを開始する前に、対象地域に詳しい専門家へスポット確認を依頼し、運営者の法定表示、保持期間、利用者権利、委託先、同意管理を更新します。専門家との継続契約や知人紹介をα開始の前提にはしません。
+
 ## 基本方針
 
 各国の個人情報保護法制への対応負担を最小化するため、Privacy by Design とデータ最小化を基本原則にします。サービス提供に不可欠でない個人情報は取得・保存しません。
@@ -38,6 +49,9 @@
 - 原本・一時ファイルに削除期限と削除状態を設定できるようにする。
 - 保存対象は、ユーザーが確認した構造化データを基本にする。
 - 外部サービスへ送った処理について、送信先、処理目的、対象データ、処理日時、削除状態を必要最小限の情報で追跡できるようにする。
+- 外部アクセス解析はGoogle Tag Manager経由のGA4とMicrosoft Clarityに限定し、利用者IDや投稿・整備内容をカスタム属性として送らない。
+- Clarity対象画面はアプリ全体を明示マスクし、入力欄だけでなく、保存後に表示される整備本文、Journal本文、プロフィール、車両情報、画像も画面記録へ送らない。
+- GTMのコンテナ変更はコード変更なしで外部送信範囲を変えられるため、タグ追加・変数追加・公開を外部サービス変更として記録し、事前確認する。
 
 ## 車両写真とナンバープレート
 
@@ -73,9 +87,19 @@
 
 画面の実装を後段にしても、これらの処理をユーザー単位で実行できるデータ境界は初期設計から設けます。匿名化による保持の可否や法的保全の具体的要件は、公開前に対象地域の法令と専門家の確認を受けます。
 
+## Service Provider / Professional Organization
+
+Record入力用Providerは店名と市区町村程度に限定し、電話番号、詳細住所、メール、顧客情報を標準取得しない。Organization member一覧が返すのは表示名、`@username`、Avatar、roleまでとし、email、auth metadata、private Vehicle／Recordを含めない。
+
+Private RecordのserviceAttributionをProvider実績、公開Discovery、件数集計へ利用しない。Organization membershipやProvider linkによって、Organization側へUser Recordの閲覧・編集権限を付与しない。
+
+Vehicleの「MECHORI内で見つけられる」は、認証済みactive participant内の検索可否だけを制御するowner設定である。OFFは匿名外部共有、既存Vehicle Follow、Recordの公開範囲を変更しない。Discovery projectionはmake、model、nickname、yearと安全なowner表示情報だけを返し、email、VIN、位置、private workspace、private Recordを返さない。
+
 ## 公開前対応
 
-- プライバシーポリシー作成
+- α版プライバシーポリシー作成（完了）
+- 一般公開前のプライバシーポリシー法務確認
+- 運営者の氏名・住所その他の法定表示の確認
 - 個人情報を含む投稿・画像への警告
 - AI・OCR処理時のデータ送信範囲確認
 - 保存期間と削除方針
@@ -83,9 +107,14 @@
 
 ## 未確定
 
-- 認証方式
 - ログ保存期間
 - 地域別対応の初期対象
 - アップロードファイルの一時保存期間
 - ナンバープレート検出の対応地域・書式・端末要件
 - 非公開の車両写真を保存する場合の原本保持可否
+- 一般公開時の運営者法定表示
+- EU・英国・スイス向け同意管理の方式
+
+## Global Compliance Review
+
+地域別の法令・規制要求とMECHORIのPrivacy設計、実装、検証の対応付けは`docs/GLOBAL_COMPLIANCE.md`で管理する。具体的な地域要件は一次資料による調査と必要な専門家確認の後に決定し、この文書の既存方針を置き換えない。

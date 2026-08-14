@@ -12,6 +12,8 @@ import {
 
 const recordDraft: RecordDraft = {
   serviceDate: "2026-07-16",
+  serviceDatePrecision: "day",
+  servicePeriodNote: "",
   odometerKm: "86420",
   odometerUnit: "km",
   odometerEpisodeId: "episode-demo",
@@ -27,12 +29,16 @@ const recordDraft: RecordDraft = {
   cost: "",
   resolutionStatus: "unresolved",
   hazardLevel: "LOW",
+  evidenceBasis: "contemporaneous",
   additionalActions: [{ ...createEmptyActionDraft(), clientId: "action-demo" }],
+  serviceAttribution: { version: 1, performedByType: "unknown" },
   requestSharing: false,
 };
 
 const journalDraft: JournalDraft = {
   title: "DEMO story draft",
+  occurredOn: "2020-10-04",
+  occurredPrecision: "day",
   bodyOriginal: "",
   vehicleId: "vehicle-demo-current",
   linkedRecordId: "",
@@ -57,6 +63,46 @@ test("round-trips valid record and journal drafts", () => {
     savedAt,
     value: { draft: journalDraft, omittedMediaCount: 0 },
   });
+});
+
+test("restores a legacy exact-date record draft with explicit precision", () => {
+  const legacy = structuredClone(recordDraft) as Partial<RecordDraft>;
+  delete legacy.serviceDatePrecision;
+  delete legacy.servicePeriodNote;
+
+  const parsed = parseRecordLocalDraft(serializeLocalDraft(legacy));
+
+  assert.equal(parsed?.value.serviceDatePrecision, "day");
+  assert.equal(parsed?.value.servicePeriodNote, "");
+});
+
+test("restores a legacy record draft without service attribution as unknown", () => {
+  const legacy = structuredClone(recordDraft) as Partial<RecordDraft>;
+  delete legacy.serviceAttribution;
+
+  const parsed = parseRecordLocalDraft(serializeLocalDraft(legacy));
+
+  assert.deepEqual(parsed?.value.serviceAttribution, {
+    version: 1,
+    performedByType: "unknown",
+  });
+});
+
+test("keeps an approximate month in a local journal draft", () => {
+  const { occurredOn: _exactDate, ...journalWithoutExactDate } = journalDraft;
+  const approximate = {
+    ...journalWithoutExactDate,
+    occurredYear: 2004,
+    occurredMonth: 9,
+    occurredPrecision: "month" as const,
+    occurredPeriodNote: "秋ごろ",
+  };
+  const parsed = parseJournalLocalDraft(serializeLocalDraft({
+    draft: approximate,
+    omittedMediaCount: 0,
+  }));
+
+  assert.deepEqual(parsed?.value.draft, approximate);
 });
 
 test("rejects corrupt or incompatible local drafts", () => {
@@ -101,5 +147,5 @@ test("keeps journal text but omits local media from a restorable draft", () => {
   assert.equal(result.omittedMediaCount, 1);
   assert.equal(result.draft.media.length, 0);
   assert.deepEqual(result.draft.contentBlocks, journalDraft.contentBlocks);
-  assert.equal(result.draft.visibility, "private");
+  assert.equal(result.draft.visibility, "public");
 });

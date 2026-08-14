@@ -1,0 +1,45 @@
+import type { FollowRelation } from "@mechori/core";
+import {
+  AlphaUserFollowError,
+  classifyFollowActionError,
+} from "@/lib/follow-action";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+
+interface AlphaUserFollowRow {
+  target_public_profile_id: string;
+  followed_at: string;
+}
+
+export async function loadMyAlphaUserFollows(
+  followerProfileId: string,
+): Promise<FollowRelation[]> {
+  const { data, error } = await createSupabaseBrowserClient().rpc(
+    "list_my_alpha_user_follows",
+  );
+  if (error) throw new Error("alpha_user_follows_load_failed");
+  return ((data ?? []) as AlphaUserFollowRow[]).map((row) => ({
+    id: `alpha-profile-follow-${row.target_public_profile_id}`,
+    followerProfileId,
+    targetType: "profile",
+    targetId: row.target_public_profile_id,
+    createdAt: row.followed_at,
+  }));
+}
+
+export async function setAlphaUserFollow(
+  publicProfileId: string,
+  follow: boolean,
+): Promise<void> {
+  const { data, error } = await createSupabaseBrowserClient().rpc(
+    "set_alpha_user_follow",
+    {
+      p_target_public_profile_id: publicProfileId,
+      p_follow: follow,
+    },
+  );
+  if (error) {
+    const status = classifyFollowActionError(error);
+    throw new AlphaUserFollowError(status === "not_authenticated" ? "unknown" : status);
+  }
+  if (data !== follow) throw new AlphaUserFollowError("unknown");
+}

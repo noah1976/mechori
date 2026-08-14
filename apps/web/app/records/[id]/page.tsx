@@ -1,9 +1,14 @@
 "use client";
 
-import { recordTitle } from "@/components/record-card";
+import {
+  recordOdometerLabel,
+  recordReasonLabel,
+  recordTitle,
+} from "@/components/record-card";
 import { HazardBadge, ResolutionBadge, VerificationBadge, VisibilityBadge } from "@/components/status-badges";
 import { useApp } from "@/lib/app-context";
-import { AlertTriangle, ArrowLeft, FilePenLine, Gauge, ShieldCheck } from "lucide-react";
+import { maintenanceRecordDateKey, maintenanceRecordDateLabel, type MaintenanceRecord } from "@mechori/core";
+import { AlertTriangle, ArrowLeft, Building2, FilePenLine, Gauge, ShieldCheck, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -14,13 +19,14 @@ export default function RecordDetailPage() {
   const vehicle = data.vehicles.find((item) => item.id === record?.vehicleId);
   const ja = locale === "ja";
   if (!record) return <div className="empty-state"><h1>{ja ? "記録が見つかりません" : "Record not found"}</h1><Link href="/records" className="secondary-action">{ja ? "履歴へ戻る" : "Back to history"}</Link></div>;
-  const odometerEpisode = vehicle?.odometerEpisodes.find(
-    (episode) => episode.id === record.odometerReading.episodeId,
-  );
+  const odometerReading = record.odometerReading;
+  const odometerEpisode = odometerReading ? vehicle?.odometerEpisodes.find(
+    (episode) => episode.id === odometerReading.episodeId,
+  ) : undefined;
   const meterChangeLabel =
     odometerEpisode &&
     odometerEpisode.reason !== "initial" &&
-    odometerEpisode.startedAt === record.serviceDate
+    odometerEpisode.startedAt === maintenanceRecordDateKey(record)
       ? episodeReasonLabel(odometerEpisode.reason, ja)
       : undefined;
 
@@ -28,19 +34,24 @@ export default function RecordDetailPage() {
     <div className="page-stack narrow-page">
       <Link href="/records" className="back-link"><ArrowLeft size={17} />{ja ? "整備履歴" : "Maintenance history"}</Link>
       <header className="detail-header">
-        <div className="record-card-topline"><span>{record.serviceDate}</span>{record.isDemo && <span className="demo-label">DEMO</span>}</div>
+        <div className="record-card-topline"><span>{maintenanceRecordDateLabel(record, locale)}</span>{record.isDemo && <span className="demo-label">DEMO</span>}</div>
         <h1>{recordTitle(record, locale)}</h1>
-        <div className="detail-summary"><span><Gauge size={16} />{record.odometerReading.displayedValue.toLocaleString()} {record.odometerReading.unit}</span><span>{record.matchScope}</span>{meterChangeLabel && <span>{meterChangeLabel}</span>}</div>
+        <div className="detail-summary"><span><Gauge size={16} />{recordOdometerLabel(record, locale)}</span><span>{record.matchScope}</span>{meterChangeLabel && <span>{meterChangeLabel}</span>}</div>
         <div className="badge-row"><ResolutionBadge value={record.resolutionStatus} locale={locale} /><VisibilityBadge value={record.visibility} locale={locale} /><HazardBadge level={record.hazardLevel} /><VerificationBadge value={record.verificationStatus} locale={locale} /></div>
         <Link href={`/records/${record.id}/edit`} className="secondary-action"><FilePenLine size={17} />{ja ? "編集" : "Edit"}</Link>
       </header>
 
       {record.hazardLevel === "CRITICAL" && <div className="critical-warning" role="alert"><AlertTriangle size={22} /><div><strong>{ja ? "安全に関わる可能性がある参考情報です" : "This reference may involve safety-critical systems"}</strong><p>{ja ? "実車の診断結果ではありません。作業を進めず、メーカー資料と専門整備工場へ確認してください。" : "This is not a diagnosis. Do not proceed based on this record alone; consult manufacturer material and a qualified workshop."}</p></div></div>}
 
-      {record.odometerReading.sequenceAssessment === "needs_context" && <div className="context-notice"><Gauge size={20} /><div><strong>{ja ? "表示値が前回より小さい記録です" : "This reading is lower than the previous one"}</strong><p>{ja ? "メーター交換・修理・入力時期などの背景確認が必要な状態です。虚偽や誤りとは判定していません。" : "Meter replacement, repair, or record timing may explain it. This is not classified as false or incorrect."}</p></div></div>}
+      {odometerReading?.sequenceAssessment === "needs_context" && <div className="context-notice"><Gauge size={20} /><div><strong>{ja ? "表示値が前回より小さい記録です" : "This reading is lower than the previous one"}</strong><p>{ja ? "メーター交換・修理・入力時期などの背景確認が必要な状態です。虚偽や誤りとは判定していません。" : "Meter replacement, repair, or record timing may explain it. This is not classified as false or incorrect."}</p></div></div>}
+
+      <section className="detail-band service-attribution-detail">
+        <div><span className="eyebrow">SERVICE ATTRIBUTION</span><h2>{ja ? "作業した人・場所" : "Who performed the work"}</h2><p>{serviceAttributionLabel(record, ja)}</p>{record.serviceAttribution.performedByType === "service_provider" && <small>{ja ? "オーナーが記録した情報です。工場による確認済み実績ではありません。" : "Owner-recorded information; this is not provider-confirmed work."}</small>}</div>
+        {record.serviceAttribution.performedByType === "self" ? <UserRound size={30} /> : <Building2 size={30} />}
+      </section>
 
       <section className="knowledge-flow">
-        <DetailBlock number="01" title={ja ? "入庫のきっかけ・症状" : "Reason for visit and symptoms"} value={record.symptoms} />
+        <DetailBlock number="01" title={ja ? "入庫のきっかけ・症状" : "Reason for visit and symptoms"} value={recordReasonLabel(record, locale)} />
       </section>
 
       <section className="action-list" aria-labelledby="actions-heading">
@@ -58,7 +69,7 @@ export default function RecordDetailPage() {
       </section>
 
       <section className="detail-band">
-        <div><span className="eyebrow">SOURCE</span><h2>{ja ? "出典と確認状態" : "Source and verification"}</h2><p>{record.sourceType === "demo" ? (ja ? "操作確認用に作成されたDEMOデータ" : "DEMO data created for interaction testing") : (ja ? "オーナー自身の記録" : "Owner-provided record")}</p></div>
+        <div><span className="eyebrow">SOURCE</span><h2>{ja ? "出典と確認状態" : "Source and verification"}</h2><p>{record.sourceType === "demo" ? (ja ? "操作確認用に作成されたDEMOデータ" : "DEMO data created for interaction testing") : `${ja ? "オーナー自身の記録" : "Owner-provided record"} · ${evidenceBasisLabel(record.evidenceBasis, ja)}`}</p></div>
         <ShieldCheck size={30} />
       </section>
 
@@ -81,4 +92,27 @@ function episodeReasonLabel(reason: string, ja: boolean) {
     unknown: ["メーター変更", "Odometer changed"],
   };
   return (labels[reason] ?? ["メーター変更", "Odometer changed"])[ja ? 0 : 1];
+}
+
+function evidenceBasisLabel(value: string, ja: boolean): string {
+  const labels: Record<string, [string, string]> = {
+    contemporaneous: ["作業当時に記録", "recorded at the time"],
+    invoice_or_receipt: ["明細・領収書に基づく", "based on an invoice or receipt"],
+    photo_or_service_book: ["写真・整備記録簿に基づく", "based on photos or a service book"],
+    recalled_later: ["記憶をもとに後から登録", "recalled and added later"],
+    unknown: ["情報源不明", "source unknown"],
+  };
+  const label = labels[value] ?? labels.unknown!;
+  return ja ? label[0] : label[1];
+}
+
+function serviceAttributionLabel(record: MaintenanceRecord, ja: boolean): string {
+  const attribution = record.serviceAttribution;
+  if (attribution.performedByType === "self") return ja ? "自分で作業" : "DIY";
+  if (attribution.performedByType === "service_provider") {
+    return [attribution.providerDisplayNameSnapshot, attribution.providerLocalitySnapshot]
+      .filter(Boolean)
+      .join(" · ");
+  }
+  return ja ? "不明・記録なし" : "Unknown or not recorded";
 }

@@ -16,12 +16,16 @@ export function summarizeVehicleRelationship(
   const vehicleAgeYears = vehicle.year === undefined
     ? undefined
     : Math.max(0, asOf.getUTCFullYear() - vehicle.year);
-  const ownership = calculateElapsedMonths(
-    vehicle.ownershipStartedYear,
-    vehicle.ownershipStartedMonth,
-    vehicle.ownershipEndedYear ?? asOf.getUTCFullYear(),
-    vehicle.ownershipEndedMonth ?? asOf.getUTCMonth() + 1,
-  );
+  const hasOpenEndedOwnership = vehicle.ownershipType === "owned";
+  const canCalculateOwnership = hasOpenEndedOwnership || vehicle.ownershipEndedYear !== undefined;
+  const ownership = canCalculateOwnership
+    ? calculateElapsedMonths(
+        vehicle.ownershipStartedYear,
+        vehicle.ownershipStartedMonth,
+        vehicle.ownershipEndedYear ?? asOf.getUTCFullYear(),
+        vehicle.ownershipEndedMonth ?? (hasOpenEndedOwnership ? asOf.getUTCMonth() + 1 : 1),
+      )
+    : undefined;
 
   const ownershipYears = ownership === undefined ? undefined : Math.floor(ownership / 12);
   return {
@@ -36,6 +40,33 @@ export function summarizeVehicleRelationship(
       ? undefined
       : [30, 25, 20, 15, 10, 5, 1].find((years) => ownershipYears >= years),
   };
+}
+
+export function formatOwnershipPeriod(vehicle: Vehicle, locale: Locale): string {
+  if (vehicle.ownershipPeriodNote?.trim()) return vehicle.ownershipPeriodNote.trim();
+  const start = formatPartialDate(
+    vehicle.ownershipStartedYear,
+    vehicle.ownershipStartedMonth,
+    vehicle.ownershipStartedDay,
+    locale,
+  );
+  const end = formatPartialDate(
+    vehicle.ownershipEndedYear,
+    vehicle.ownershipEndedMonth,
+    undefined,
+    locale,
+  );
+  if (vehicle.ownershipType === "owned") {
+    if (!start) return locale === "ja" ? "所有開始時期は未登録" : "Ownership start not set";
+    return locale === "ja" ? `${start}から所有中` : `Owned since ${start}`;
+  }
+  if (vehicle.ownershipType === "previously_owned") {
+    if (start && end) return locale === "ja" ? `${start}〜${end}に所有` : `Owned ${start}–${end}`;
+    if (start) return locale === "ja" ? `${start}ごろから所有` : `Owned from around ${start}`;
+    if (end) return locale === "ja" ? `${end}ごろまで所有` : `Owned until around ${end}`;
+    return locale === "ja" ? "所有時期不明" : "Ownership period unknown";
+  }
+  return locale === "ja" ? "所有状態未設定" : "Ownership status not set";
 }
 
 export function formatOwnershipDuration(
@@ -71,4 +102,20 @@ function calculateElapsedMonths(
     0,
     (endYear - startYear) * 12 + normalizedEndMonth - normalizedStartMonth,
   );
+}
+
+function formatPartialDate(
+  year: number | undefined,
+  month: number | undefined,
+  day: number | undefined,
+  locale: Locale,
+): string | undefined {
+  if (year === undefined) return undefined;
+  if (locale === "ja") {
+    if (month && day) return `${year}年${month}月${day}日`;
+    return month ? `${year}年${month}月` : `${year}年`;
+  }
+  if (!month) return String(year);
+  return new Intl.DateTimeFormat("en-US", { year: "numeric", month: "short", day: day ? "numeric" : undefined, timeZone: "UTC" })
+    .format(new Date(Date.UTC(year, month - 1, day ?? 1)));
 }

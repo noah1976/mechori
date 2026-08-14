@@ -1,21 +1,38 @@
-import type { GarageJournalPost, Locale } from "@mechori/core";
+import type { GarageJournalPost, JournalContentBlock, Locale } from "@mechori/core";
 import { JournalMedia } from "@/components/journal-media";
 
 export function JournalContent({
   journal,
   locale,
+  contentBlocks = journal.contentBlocks,
+  vehicleHref,
 }: {
   journal: GarageJournalPost;
   locale: Locale;
+  contentBlocks?: JournalContentBlock[];
+  vehicleHref?: string;
 }) {
+  const firstMediaBlockId = contentBlocks.find(
+    (block) =>
+      block.type === "media" &&
+      journal.media.some((attachment) => attachment.id === block.mediaId),
+  )?.id;
   return (
     <div className="journal-content">
-      {journal.contentBlocks.map((block) => {
+      {contentBlocks.map((block) => {
         if (block.type === "media") {
           const attachment = journal.media.find((item) => item.id === block.mediaId);
-          return attachment ? (
-            <JournalMedia attachments={[attachment]} locale={locale} key={block.id} />
-          ) : null;
+          if (!attachment) return null;
+          return (
+            <JournalMedia
+              attachments={[attachment]}
+              body
+              locale={locale}
+              priority={block.id === firstMediaBlockId}
+              vehicleHref={vehicleHref}
+              key={block.id}
+            />
+          );
         }
         if (block.style === "heading") return <h2 key={block.id}>{block.text}</h2>;
         if (block.style === "quote") return <blockquote key={block.id}>{block.text}</blockquote>;

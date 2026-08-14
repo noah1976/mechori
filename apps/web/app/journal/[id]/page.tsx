@@ -6,6 +6,13 @@ import {
   classifyJournalForKnowledge,
   isProfileBlocked,
   isProfileMuted,
+  journalContentBlocksForViewer,
+  journalMediaForViewer,
+  journalOccurrenceLabel,
+  maintenanceRecordDateLabel,
+  preferSharedJournalMediaForDisplay,
+  resolveJournalDisplayContent,
+  type MaintenanceServiceAttributionV1,
 } from "@mechori/core";
 import {
   ArrowLeft,
@@ -15,40 +22,110 @@ import {
   Heart,
   Link2,
   Lock,
+  Pencil,
   ShieldCheck,
   Sparkles,
   Users,
   Wrench,
+  Languages,
 } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { JournalContent } from "@/components/journal-content";
+import { ProfileAvatar } from "@/components/profile-avatar";
 import { ProfileSafetyMenu } from "@/components/profile-safety-menu";
+import { recordOdometerLabel } from "@/components/record-card";
+import { publicProfileHref } from "@/lib/public-profile-url";
+import { journalDetailAvailability } from "@/lib/journal-detail-route";
 
 export default function JournalDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data, locale, signedIn, toggleMuteProfile, toggleBlockProfile } = useApp();
+  const searchParams = useSearchParams();
+  const {
+    data,
+    locale,
+    signedIn,
+    hydrated,
+    isRemoteAlpha,
+    workspaceLoadState,
+    ensureSocialData,
+    sharedJournalLoadState,
+    sharedJournals,
+    sharedProfiles,
+    toggleMuteProfile,
+    toggleBlockProfile,
+    journalReaction,
+    toggleJournalLike,
+    refreshSharedJournals,
+  } = useApp();
+  const [showOriginal, setShowOriginal] = useState(false);
+  const [reacting, setReacting] = useState(false);
+  const [reactionError, setReactionError] = useState(false);
   const ja = locale === "ja";
-  const journal = data.journals.find((item) => item.id === id);
+  useEffect(() => {
+    if (signedIn && isRemoteAlpha && workspaceLoadState === "ready") {
+      void ensureSocialData().catch(() => undefined);
+    }
+  }, [ensureSocialData, isRemoteAlpha, signedIn, workspaceLoadState]);
+  const localJournal = data.journals.find((item) => item.id === id);
+  const sharedJournal = sharedJournals.find((item) => item.id === id);
+  const journal = localJournal
+    ? preferSharedJournalMediaForDisplay(localJournal, sharedJournal)
+    : sharedJournal;
+  const isSharedPost = !localJournal && Boolean(sharedJournal);
+  const availability = journalDetailAvailability({
+    hydrated,
+    isRemoteAlpha,
+    signedIn,
+    workspaceLoadState,
+    localJournal,
+    sharedJournal,
+    sharedLoadState: sharedJournalLoadState,
+  });
   const blocked = signedIn && journal ? isProfileBlocked(data, journal.authorProfileId) : false;
   const canView = journal && (
-    signedIn
+    isSharedPost
+      ? signedIn
+      : signedIn
       ? canCurrentProfileViewJournal(data, journal)
       : journal.visibility === "public" && journal.moderationState === "visible"
   );
+  if (availability === "loading") {
+    return (
+      <div className="empty-state" role="status" aria-live="polite">
+        <h1>{ja ? "記録を開いています" : "Opening record"}</h1>
+        <p>{ja ? "公開中の記録を確認しています。" : "Checking the shared record."}</p>
+      </div>
+    );
+  }
+
+  if (availability === "retryable_error") {
+    return (
+      <div className="empty-state">
+        <h1>{ja ? "記録を読み込めませんでした" : "The record could not be loaded"}</h1>
+        <p>{ja ? "一時的に公開中の記録を確認できませんでした。もう一度お試しください。" : "The shared record could not be checked just now. Please try again."}</p>
+        <button type="button" className="primary-action" onClick={() => void refreshSharedJournals()}>
+          {ja ? "再読み込み" : "Try again"}
+        </button>
+        <Link href="/feed" className="secondary-action">{ja ? "フィードへ戻る" : "Back to feed"}</Link>
+      </div>
+    );
+  }
+
   if (!journal || !canView) {
     return (
       <div className="empty-state">
-        <h1>{ja ? "このJournalは表示できません" : "This journal is unavailable"}</h1>
+        <h1>{ja ? "この記録は表示できません" : "This record is unavailable"}</h1>
         <p>
           {!journal
-            ? ja ? "Journalが見つからないか、削除されています。" : "The journal could not be found or has been removed."
+            ? ja ? "記録が見つからないか、削除されています。" : "The record could not be found or has been removed."
             : blocked
             ? ja ? "ブロック中のプロフィールによる投稿です。" : "This post is from a blocked profile."
             : !signedIn
-              ? ja ? "公開されていないJournalを見るにはログインが必要です。" : "Sign in to view a journal that is not public."
+              ? ja ? "公開されていない記録を見るにはログインが必要です。" : "Sign in to view a record that is not public."
             : journal.moderationState === "temporarily_hidden"
-              ? ja ? "このJournalは運営確認により一時非公開です。" : "This journal is temporarily hidden for moderation review."
+              ? ja ? "この記録は運営確認により一時非公開です。" : "This record is temporarily hidden for moderation review."
             : ja ? "公開範囲または投稿状態を確認してください。" : "Check its audience or publication state."}
         </p>
         {blocked && journal && (
@@ -74,9 +151,34 @@ export default function JournalDetailPage() {
 
   const author = data.profiles.find(
     (profile) => profile.id === journal.authorProfileId,
-  );
+  ) ?? sharedProfiles.find((profile) => profile.id === journal.authorProfileId);
+  const authorHref = author ? publicProfileHref(author) : undefined;
+  const vehicleHref = journal.vehicleId
+    ? `/garage/${encodeURIComponent(journal.vehicleId)}`
+    : journal.vehicleTargetId
+      ? `/v/${encodeURIComponent(journal.vehicleTargetId)}`
+      : undefined;
   const record = data.records.find((item) => item.id === journal.linkedRecordId);
   const knowledgeClass = classifyJournalForKnowledge(journal);
+  const ownJournal = signedIn && journal.authorProfileId === data.currentProfileId;
+  const automaticDisplay = resolveJournalDisplayContent(data, journal, locale);
+  const display = resolveJournalDisplayContent(data, journal, locale, showOriginal);
+  const visibleMedia = journalMediaForViewer(journal, ownJournal);
+  const visibleMediaIds = new Set(visibleMedia.map((attachment) => attachment.id));
+  const visibleContentBlocks = journalContentBlocksForViewer(journal, ownJournal);
+  const visibleBlockIds = new Set(visibleContentBlocks.map((block) => block.id));
+  const displayContentBlocks = display.contentBlocks.filter(
+    (block) =>
+      block.type === "text"
+        ? visibleBlockIds.has(block.id)
+        : visibleMediaIds.has(block.mediaId),
+  );
+  const visibleJournal = { ...journal, media: visibleMedia };
+  const reaction = journalReaction(journal.id);
+  const appreciationCount = isRemoteAlpha
+    ? reaction.appreciationCount
+    : journal.appreciationCount;
+  const canReact = signedIn && !ownJournal && isRemoteAlpha;
 
   return (
     <div className="page-stack journal-detail-page">
@@ -85,14 +187,24 @@ export default function JournalDetailPage() {
         {signedIn ? (ja ? "フォロー中へ戻る" : "Back to following") : (ja ? "ホームへ戻る" : "Back to home")}
       </Link>
 
+      {searchParams.get("updated") === "1" && ownJournal && (
+        <div className="lovable-success" role="status">
+          <ShieldCheck size={22} aria-hidden="true" />
+          <div>
+            <strong>{ja ? "記録を更新しました。" : "Record updated."}</strong>
+            <span>{ja ? "日付や内容の変更を反映しました。" : "Your date and content changes are now saved."}</span>
+          </div>
+        </div>
+      )}
+
       {journal.authorProfileId === data.currentProfileId && journal.moderationState !== "visible" && (
         <div className="moderation-author-notice" role="status">
           <ShieldCheck size={20} aria-hidden="true" />
           <div>
             <strong>
               {journal.moderationState === "temporarily_hidden"
-                ? ja ? "このJournalは一時非公開です" : "This journal is temporarily hidden"
-                : ja ? "このJournalは運営確認中です" : "This journal is under moderation review"}
+                ? ja ? "この記録は一時非公開です" : "This record is temporarily hidden"
+                : ja ? "この記録は運営確認中です" : "This record is under moderation review"}
             </strong>
             <p>
               {ja
@@ -106,18 +218,42 @@ export default function JournalDetailPage() {
       <article className="journal-detail">
         <header>
           <div className="journal-author-line">
-            <span className="journal-avatar" aria-hidden="true">
-              {(author?.displayName ?? "M").slice(0, 1).toLocaleUpperCase()}
-            </span>
+            {authorHref ? (
+              <Link href={authorHref} className="journal-author-link" aria-label={ja ? `${author?.displayName}のガレージ` : `${author?.displayName}'s garage`}>
+                <ProfileAvatar
+                  displayName={author?.displayName ?? "M"}
+                  imagePath={author?.profileImagePath}
+                  className="journal-avatar"
+                />
+              </Link>
+            ) : (
+              <ProfileAvatar
+                displayName={author?.displayName ?? "M"}
+                imagePath={author?.profileImagePath}
+                className="journal-avatar"
+              />
+            )}
             <div>
               <strong>
-                {author && <Link href={`/profile/${author.id}`}>{author.displayName}</Link>}
+                {author && (authorHref ? <Link href={authorHref}>{author.displayName}</Link> : author.displayName)}
               </strong>
-              <small>{journal.vehicleLabel}</small>
+              <small>{vehicleHref ? <Link href={vehicleHref} className="journal-vehicle-link">{journal.vehicleLabel}</Link> : journal.vehicleLabel}</small>
             </div>
             <div className="journal-author-actions">
               {journal.isDemo && <span className="demo-label">DEMO</span>}
-              {signedIn && journal.authorProfileId !== data.currentProfileId && author && (
+              {ownJournal && (
+                <>
+                  <Link href={`/journal/${journal.id}/translate`} className="secondary-action">
+                    <Languages size={16} aria-hidden="true" />
+                    {ja ? "翻訳" : "Translation"}
+                  </Link>
+                  <Link href={`/journal/${journal.id}/edit`} className="secondary-action">
+                    <Pencil size={16} aria-hidden="true" />
+                    {ja ? "編集" : "Edit"}
+                  </Link>
+                </>
+              )}
+              {signedIn && !isSharedPost && journal.authorProfileId !== data.currentProfileId && author && (
                 <ProfileSafetyMenu
                   profileName={author.displayName}
                   muted={isProfileMuted(data, author.id)}
@@ -130,13 +266,11 @@ export default function JournalDetailPage() {
               )}
             </div>
           </div>
-          <h1>{journal.title}</h1>
+          <h1>{display.title}</h1>
           <div className="journal-detail-meta">
             <span>
               <CalendarDays size={16} aria-hidden="true" />
-              {new Intl.DateTimeFormat(ja ? "ja-JP" : "en-US", {
-                dateStyle: "medium",
-              }).format(new Date(journal.createdAt))}
+              {journalOccurrenceLabel(journal, locale)}
             </span>
             <span>
               {journal.visibility === "private" ? (
@@ -146,16 +280,67 @@ export default function JournalDetailPage() {
               ) : (
                 <BookOpen size={16} aria-hidden="true" />
               )}
-              {visibilityLabel(journal.visibility, ja)}
+              {journal.visibility === "public" && isRemoteAlpha
+                ? ja ? "α参加者に公開" : "Shared with alpha participants"
+                : visibilityLabel(journal.visibility, ja)}
             </span>
-            <span>
-              <Heart size={16} aria-hidden="true" />
-              {journal.appreciationCount}
-            </span>
+            {ownJournal && isRemoteAlpha ? (
+              <span className="journal-like-status">
+                <Heart size={16} aria-hidden="true" />
+                {appreciationCount}
+              </span>
+            ) : (
+              <button
+                type="button"
+                className={reaction.likedByMe ? "journal-like is-liked" : "journal-like"}
+                aria-pressed={reaction.likedByMe}
+                aria-label={ja ? "この記録にいいね" : "Like this record"}
+                disabled={!canReact || reacting}
+                onClick={async () => {
+                  if (!canReact || reacting) return;
+                  setReacting(true);
+                  setReactionError(false);
+                  try {
+                    await toggleJournalLike(journal.id);
+                  } catch {
+                    setReactionError(true);
+                  } finally {
+                    setReacting(false);
+                  }
+                }}
+              >
+                <Heart size={16} aria-hidden="true" />
+                {appreciationCount}
+              </button>
+            )}
           </div>
+          {reactionError && <p className="form-error" role="alert">{ja ? "いいねを保存できませんでした。もう一度お試しください。" : "The like could not be saved. Please try again."}</p>}
         </header>
 
-        <JournalContent journal={journal} locale={locale} />
+        {automaticDisplay.translated && (
+          <div className="translation-status">
+            <Languages size={17} aria-hidden="true" />
+            <span>{ja ? `${languageDisplayName(display.sourceLanguage, true)}の原文から翻訳して表示中` : `Translated from ${languageDisplayName(display.sourceLanguage, false)}`}</span>
+            <button type="button" onClick={() => setShowOriginal((current) => !current)}>
+              {showOriginal ? (ja ? "翻訳を表示" : "Show translation") : (ja ? "原文を表示" : "Show original")}
+            </button>
+          </div>
+        )}
+        {!automaticDisplay.translated && display.sourceLanguage !== locale && (
+          <div className="translation-status is-original">
+            <Languages size={17} aria-hidden="true" />
+            <span>{ja ? "この投稿には日本語訳がないため、原文を表示しています。" : "No English translation is available yet. Showing the original."}</span>
+          </div>
+        )}
+
+        <JournalContent journal={visibleJournal} locale={locale} contentBlocks={displayContentBlocks} vehicleHref={vehicleHref} />
+        {ownJournal && journal.serviceAttribution && (
+          <div className="journal-service-attribution">
+            <Wrench size={17} aria-hidden="true" />
+            <span>{ja ? "作業した人・場所" : "Work performed by"}</span>
+            <strong>{serviceAttributionLabel(journal.serviceAttribution, ja)}</strong>
+          </div>
+        )}
       </article>
 
       {record && (
@@ -172,16 +357,14 @@ export default function JournalDetailPage() {
               <div>
                 <CalendarDays size={18} aria-hidden="true" />
                 <span>{ja ? "整備日" : "Service date"}</span>
-                <strong>{record.serviceDate}</strong>
+                <strong>{maintenanceRecordDateLabel(record, locale)}</strong>
               </div>
             )}
             {journal.displayFields.includes("odometer") && (
               <div>
                 <Gauge size={18} aria-hidden="true" />
                 <span>{ja ? "走行距離" : "Odometer"}</span>
-                <strong>
-                  {record.odometerReading.displayedValue.toLocaleString()} {record.odometerReading.unit}
-                </strong>
+                <strong>{recordOdometerLabel(record, locale)}</strong>
               </div>
             )}
             {journal.displayFields.includes("actions") && (
@@ -218,8 +401,8 @@ export default function JournalDetailPage() {
           </strong>
           <p>
             {ja
-              ? "Journalの人気やAI抽出だけで、確認済みナレッジや原因候補へ昇格することはありません。"
-              : "Popularity or AI extraction alone can never promote a journal to verified knowledge or a confirmed cause."}
+              ? "記録の人気やAI抽出だけで、確認済みナレッジや原因候補へ昇格することはありません。"
+              : "Popularity or AI extraction alone can never promote a record to verified knowledge or a confirmed cause."}
           </p>
         </div>
       </section>
@@ -227,8 +410,28 @@ export default function JournalDetailPage() {
   );
 }
 
+function serviceAttributionLabel(
+  attribution: MaintenanceServiceAttributionV1,
+  ja: boolean,
+): string {
+  if (attribution.performedByType === "self") return ja ? "自分で作業" : "DIY";
+  if (attribution.performedByType === "service_provider") {
+    return [attribution.providerDisplayNameSnapshot, attribution.providerLocalitySnapshot]
+      .filter(Boolean)
+      .join(" · ");
+  }
+  return ja ? "不明・記録なし" : "Unknown";
+}
+
 function visibilityLabel(value: string, ja: boolean): string {
   if (value === "private") return ja ? "非公開" : "Private";
   if (value === "followers") return ja ? "フォロワー限定" : "Followers only";
   return ja ? "公開" : "Public";
+}
+
+function languageDisplayName(language: string, ja: boolean): string {
+  const base = language.split("-")[0];
+  if (base === "ja") return ja ? "日本語" : "Japanese";
+  if (base === "en") return ja ? "英語" : "English";
+  return language;
 }

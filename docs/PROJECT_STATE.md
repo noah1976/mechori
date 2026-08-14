@@ -1,139 +1,132 @@
-# PROJECT_STATE
+# MECHORI Project State
 
-## 現在地
+- 更新日時: 2026-08-12
+- 対象ブランチ: `codex/remote-alpha-foundation`
+- HEAD基準: 本書を含む現在ブランチの`git log -1`を正とする
+- 本番URL: `https://mechori-alpha.netlify.app`
+- 状態文書のルール: 実装、テスト、本番反映、人間QAを別々に判定する。コード、テスト、Git履歴、既存の運用記録を照合し、根拠のない項目は完了にしない。本書を現在の実装状態の正本とする。
 
-2026-07-17時点で、MECHORIは初期設計からローカルプロトタイプ検証へ進みました。
+## 1. 現在テスターが利用できる主要フロー
 
-`codex/local-prototype` ブランチに、Next.js、TypeScript、npm workspaces、localStorage DataProviderを使ったモバイルファーストのWebプロトタイプを実装しました。Web MVPはSupabase、Netlify、OpenAI APIを採用前提としましたが、実サービス、OCR、決済、広告、本番環境にはまだ接続していません。
+招待URLからGoogleログインし、クルマまたはバイクを登録する。車種マスタにない車両、写真のない車両、過去に所有していた車両も登録を開始できる。Garageから、さっと記録、Journal形式の詳しい記録、整備記録を選び、写真・本文・時期・公開範囲を入力して保存できる。
 
-## 実装済み
+保存後は車両の時間軸、Garage、フィードで履歴を振り返り、投稿へのいいね、投稿者プロフィール、車両プロフィール、人・クルマ検索、ユーザー／車両フォローを試せる。プロフィール設定、ログアウト、フィードバック、管理者向け運用画面も実装されている。下書きはブラウザ内に保存され、保存成功後に完了画面からGarage、投稿詳細、次の記録、ホームへ進める。
 
-- 正式名称をMECHORI（メカリィ）、公式ドメインを`mechori.com`として文書・画面・コード識別子へ反映
-- 旧`mechory`のlocalStorageデータを新`mechori`キーへ自動移行し、既存Journalメディアの保存領域を維持
-- `docs/BUSINESS_GROWTH.md`に、初期100人の獲得仮説、M0〜M4、初回価値・再利用・検索・課金の合格条件を定義
-- `docs/MEASUREMENT_PLAN.md`に、指標の算出式、最小イベント、M0手動計測、M1週次レビューを定義
-- MAU、Value MAU、Value MAU Rate、3か月連続Value Returnを定義し、DAUと連続ログインを成長目標から除外
-- 外部送信なしで匿名端末ID、イベント名、日時、アプリ版だけを保持するローカル月次計測を追加
-- `docs/BETA_PLAYBOOK.md`に、最初の10〜20人の構成、募集文、初回操作、7日・30日確認、安全対応を定義
-- `docs/PROFESSIONAL_DISCOVERY.md`に、3〜5拠点への実案件インタビュー、価格検証、採用・見送り基準を定義
-- Owner Plus、Professional、広告を登録者数だけで開始しない収益化ゲートを定義
-- SupabaseをDB・認証・Storage、NetlifyをWeb配信、OpenAI APIをAI補助の採用前提とし、外部接続・課金・本番利用とは別ゲートに分離
-- OpenAIのモデル単価をコードへ固定せず、入力・キャッシュ入力・最大出力から原価を見積もり、キャッシュ、月次全体、利用者別日次原価、利用者別日次回数で呼出可否を決める共通ロジックと単体テストを追加
-- `docs/INFRASTRUCTURE_COST.md`に、Supabase・Netlifyの無料枠、AI呼出順序、非AI縮退、現行単価による規模別概算を記録
-- MECHORIの利益を将来の室蘭事業へ再投資する構想を、初期プロダクト・法人税務判断から分離して記録
-- α版を単一車種ではなく友人・知人の10車種以上、20〜30台で検証し、FIAT Barchettaは所有者自身の密度アンカーとする成長方針へ更新
-- 車種マスタに存在しないメーカー・車種も自由入力で即時登録でき、年式・仕様を不明のまま開始できる愛車登録を追加
-- My Garageで複数の所有車両を切り替え、選択車両へ整備記録を追加できる導線を追加
-- ホームへ、今月の整備記録、Journal、未解決事項、フォロー更新をまとめた月次愛車表示を追加
-- 公開上の基本単位を`オーナー / 愛車`とし、プロフィール全体、個別車両、車種を独立してフォローする設計を明確化
-- localStorage試作スキーマv8へ、所有関係、プロフィールのミュート・ブロック、プロフィール公開範囲、通報・最小モデレーション履歴を追加し、旧データを自動移行
-- My Garageへ年式基準の概算車齢、所有歴、所有年数の節目を追加し、信頼度・整備能力から分離
-- `docs/PREVENTIVE_INSIGHTS.md`に、実例分布と自車履歴から点検候補を示す将来契約を定義。交換時期・故障を断定せず、メーター交換を考慮
-- 所有関係計算、表示安全関係、認証状態、端末内下書き、通報・公開範囲、旧DEMOデータ移行、任意車種登録、月次継続集計を含む72件の単体テストを追加
+## 2. SHIPPED_VERIFIED
 
-- `docs/USER_STORIES.md` に初期MVPのユーザーストーリーを定義
-- ホーム、My Garage、整備履歴、記録詳細、追加・編集、検索、インポート予告
-- 日本語・英語の基本UI切り替え
-- 非公開、運営確認待ち、公開の状態表現
-- `LOW`、`CAUTION`、`CRITICAL` の安全表示
-- 出典、確認状態、解決状態、車両一致範囲の表示
-- localStorageへの追加・編集内容の保存とDEMOリセット
-- `packages/core`、`packages/shared`、`packages/i18n` への共通関心事の分離
-- 初期UIは日本語・英語のまま、対応UI言語を追加可能な一覧へ変更し、二択トグルを言語セレクトへ置換
-- 投稿・整備記録の原文言語をUI言語型から分離し、EU言語等をBCP 47タグで保持できる共通型、正規化、フォールバック、翻訳派生データ契約を追加
-- `docs/MULTILINGUAL.md`に、原文保護、翻訳版管理、多言語検索、EU展開ゲートを定義
-- lint、型チェック、単体テスト、production buildの成功
-- 390 x 844と1440 x 900での表示確認
-- 非公開記録の追加、再読み込み後の保持、検索、日英切り替えのブラウザ操作確認
-- ブラウザコンソールの警告・エラーがないことの確認
-- `docs/SCREENS.md` に検索・取込中心の主要画面とフローを定義
-- `docs/DATA_MODEL.md` に整備イベント、複数作業、取込下書き、共有ナレッジの概念モデルを定義
-- `docs/IMPORT_PIPELINE.md` に原本取得から確認・非公開保存・原本削除までの工程を定義
-- `docs/PLAN_ENTITLEMENTS.md` にFree、Owner Plus、Professionalの初期権限仮説を定義
-- `docs/CONTRIBUTION_INCENTIVES.md` に個人便益、履歴評価、バッジ、SNS共有の原則を定義
-- `docs/TRUST_AND_VERIFICATION.md` に虚偽対策、証拠、訂正、反証、AIの根拠制限を定義
-- メーター交換等を扱う`OdometerEpisode`、表示値、推定累積距離を分離し、逆行を虚偽扱いしない型とテストを追加
-- プラン名に画面を密結合させない`EntitlementSet`と権限テストを追加
-- 危険タグの最低危険度、複数タグ時の厳格化、CRITICAL公開条件を共通ロジック化
-- 公開事例だけを根拠とし、重複資料と反対結果を扱うKnowledgeSynthesis契約を追加
-- ナンバープレート等の検出・目視確認・不可逆マスクが完了しない画像を拒否する公開ゲートを追加
-- `docs/GLOSSARY_JA_EN.md`で日英の安全・確認・メーター・公開用語を統一
-- `docs/EXTERNAL_SERVICE_CHECKLIST.md`で外部サービス導入時のデータ、費用、停止・移行確認を定義
-- ナレッジ検索画面に、DEMO事例から原因候補、独立報告数、確認箇所、結果、安全警告を集計する表示を追加
-- 新しい検索表示を390 x 844と1440 x 900で確認し、横方向のはみ出しと現在の画面エラーがないことを確認
-- 1回の入庫・整備イベントに複数作業を追加し、各作業の結果と危険度を分けて保存・表示できるlocalStorage DataProvider v2を追加
-- 旧localStorageデータを、共通型のメーター期間と複数作業へ起動時に自動移行する互換処理を追加
-- メーター交換・修理・リセット等を新しい期間として回数制限なく追加でき、同一期間内の表示値逆行は拒否せず背景確認状態にする入力・表示を追加
-- Garageは現在の走行距離だけを簡潔に表示し、メーター期間の詳細は通常画面へ出さない
-- 整備記録入力は通常の走行距離欄を基本とし、「この整備でメーターを交換・修理した」を選んだ場合だけ変更理由と交換後表示値を記録する
-- `/privacy-review`に疑似ナンバー候補を使う公開前チェックDEMOを追加し、不可逆マスクと画像全体の目視確認が揃うまで公開不可と表示
-- `/garage/history`に、履歴整理状況、整備イベント・作業・部品・未解決件数、履歴の節目を表示
-- History Levelと節目を、整備能力、信頼度、検索順位、Professional認証から分離する共通ロジックとテストを追加
-- 走行距離、費用、正確な日付、症状を含めない共有文プレビューとコピー失敗時の明示表示を追加
-- 所有者データを外部送信せず端末へ保存するバージョン付きJSON出力を追加
-- `/import/review-demo`に、OCR・AI候補の修正、確認、除外、確認進捗、非公開下書き前ゲートを追加
-- `/garage/service-brief`に、工場へ画面提示・印刷・PDF保存できる車両仕様、未解決事項、整備履歴を追加
-- 35件の単体テスト、lint、型チェック、production buildを通過
-- 新規3画面を390 x 844と1440 x 900で確認し、横方向のはみ出しがないことを確認
-- `docs/SOCIAL_LAYER.md`に、整備記録、本人の自由記述によるGarage Journal、公開ナレッジの三層を定義
-- AIはJournal本文を生成せず、本人確認用の候補抽出と、確認済みナレッジから分離した検索補助に限定する方針を定義
-- プロフィール、個別車両、車種のフォローと時系列フィードを、人気指標・信頼度・検索順位から分離して設計
-- localStorage DataProvider v3へ、プロフィール、Garage Journal、フォロー関係を追加し、旧データを起動時に移行
-- `/feed`、`/journal/new`、`/journal/[id]`を追加し、本人の自由本文、整備記録の任意リンク、項目単位表示、非公開初期値、公開範囲を操作可能にした
-- ホームを、ナレッジ検索、整備記録、Journal、インポート、フォロー更新が一画面で分かる運用画面へ再構成
-- My Garageへ自分のJournalを追加し、プロフィール、他者車両、車種のフォロー候補を区別して表示
-- Journalの人気指標が確認済みナレッジへ昇格しないこと、非公開Journalが検索対象にならないことを共通ロジックとテストで固定
-- 44件の単体テスト、lint、型チェック、production buildを通過
-- Journal作成、本人本文の保持、整備記録リンク、フォロー状態、再読み込み後の永続化、日英UIをブラウザ操作で確認
-- 390 x 844でホーム、フィード、My Garageの横方向のはみ出しがないことを確認
-- Journalへ写真・画像・動画を最大6件添付し、説明、プレビュー、削除、詳細・カード表示を操作できる
-- 構造化データはlocalStorage試作スキーマv8、メディア本体はIndexedDBへ分離し、旧Journal・旧車両・旧ソーシャルデータを自動移行する
-- ユーザー実ファイルを外部送信せず、自動マスキング・メタデータ除去・動画確認が未実装の間は非公開投稿だけ許可する
-- Journal本文を段落・見出し・引用・画像・動画の順序付きブロックとして保持する
-- Journal編集で任意位置へのメディア挿入、ブロックの上下移動・削除、整備記録だけを残す別導線を追加
-- プロフィール単位のミュート・ブロック、ブロック確認、表示管理からの解除を追加
-- ミュートはフォローを維持し、ブロックはプロフィール・個別車両フォローを解除して投稿・候補・直接Journal閲覧を抑止する。車種フォローは維持
-- Journalの直接URL閲覧にも、非公開、フォロワー限定、ブロックの共通判定を適用
-- ホームを、故障や路上停止も含む所有体験を読んで書く入口と、整備記録だけの入力、症状検索が同居する構成へ変更
-- ナレッジ検索を、DEMOの根拠付き文章要約、確認箇所、原因候補、対応、交換部品、結果、出典投稿リンクを主表示する構成へ変更
-- Provider非依存の認証セッション型を維持しつつ、初期画面をGoogleログインとSNS共有の招待URLへ絞った端末内認証モックを追加
-- 通知はアプリ内を第一段階、PWA/Web Pushを後段、メールを重要連絡・復旧中心とし、日常通知と招待をメールへ依存させない方針を定義
-- 未ログイン時はホーム、ナレッジ検索、公開Journalだけを表示し、個人整備履歴、Garage、フィード、入力画面、非公開Journalを遮断
-- 保護画面への直接アクセスをログイン画面へ送り、ログイン後に元の画面へ戻す。ログアウト後は公開ホームへ戻す
-- 認証モックはメールアドレスを保存せず、外部Provider、メール送信、Supabase、サーバーセッション、RLSへ接続しない
-- 認証状態が未保存・不正な場合は未ログインを既定とし、ログイン後の戻り先は同一アプリ内の非認証画面だけに制限
-- ローカル認証状態の変更をブラウザタブ間で同期し、別タブでのログアウトや保存値削除も保護画面へ反映
-- 整備記録とJournalの入力途中状態を正式データと分離したバージョン付き端末内下書きへ自動保存し、再読み込み後の復元と明示破棄を追加
-- 空フォームは保持せず、本保存成功時とDEMOリセット時に下書きを削除。Journalの写真・動画本体は下書きへ複製せず、再選択が必要な件数を表示
-- DataProviderへの保存成功後に画面状態を確定し、容量・ブラウザ設定等で失敗した場合は下書きを維持して全体バナーとフォーム内エラーを表示
-- 入力エラー時に先頭の問題項目へフォーカスを移し、保存中状態と非表示ファイル入力のキーボード・読み上げ境界を改善
-- Journal理由別通報、同一利用者の対応中重複抑止、受付確認を端末内で実装
-- `/moderation`へ確認開始、修正依頼、一時非公開、問題なし終了、復元、最小操作履歴を追加。一時非公開を直接URLとナレッジ候補にも適用
-- `/settings/privacy`と`/profile/[id]`へ、自分だけ・直接フォロワー・公開と、役割・自己紹介・愛車・所有期間・公開Journal件数の項目別設定を追加
-- `/privacy-review`を、複数疑似候補、誤検出確認、見落とし候補の手動追加、公開用派生画像、最終目視確認へ拡張
+以下は、実装・テスト・本番反映に加えて、今回報告された人間による本番実機QAまで確認済みです。
 
-## 直近の目的
+- **P-051 いいね追加・解除**: 一覧・詳細で追加、再読込後の維持、解除を確認済み。
+- **P-061 投稿者から公開ガレージへの遷移**: 投稿者アイコン・表示名から正しい公開プロフィール／Garageへ遷移することを確認済み。
+- **P-064 投稿のお題・書き方ヒント**: 固定お題の表示、選択後の既存投稿画面、ヒント表示を確認済み。
+- **P-066 写真付き詳しい記録の編集保存**: 写真付き既存記録の編集保存を確認済み。
+- **P-069 既存共有写真の保存後表示**: 保存済み共有写真が本番で表示されることを確認済み。過去のStorage 403を踏まえた再読込・再試行経路も含め、今回のQA結果を反映した。
 
-1. 所有者自身の実整備記録を10件以上登録し、工場提示、検索、履歴整理の再利用価値を確認する。
-2. 所有者の実整備記録PDFをローカルで確認し、国・言語・発行元・年代による帳票差、修正量、個人情報範囲を検証する。
-3. 招待制ベータへ進む前に、Supabase AuthのGoogle OAuth設定、アカウント復旧、招待失効、管理者運用、外部募集文面を承認する。
-4. Professional候補へ連絡する前に、対象工場と価格候補を承認する。
+## 3. SHIPPED_NEEDS_QA
 
-## ブロッカー
+実装、関連テスト、現行α配信への反映までは確認できるが、人間による本番実機確認が残る項目です。
 
-- ローカル認証モックはGoogle中心へ更新済み。本番のGoogle OAuth接続、Provider喪失時の復旧、招待失効、将来のApple・X・メール追加条件は未確定。
-- FIAT Barchettaの仕様分類粒度が未確定。
-- 初期管理者運用が未確定。
-- ロゴ、カラー、タイポグラフィはプロトタイプ用の暫定値で、所有者確認が必要。
-- 初期マイルストーンの数値は仮説で、実ベータ前後に固定する必要がある。
-- `mechori.com`は取得済みだが、DNS、ホスティング、本番公開には未接続。
-- 正式公開前の類似商標確認は未完了。
-- Providerの採用方針は確認済み。アカウント接続、送信データ、RLS、費用上限、秘密情報、本番利用はチェックリストと個別承認までBLOCKED。
+### 投稿・記録
 
-## 作業上の注意
+- **P-077 投稿詳細の断続的404**: 投稿一覧の詳細リンクを同じエンコード済みURLへ統一し、Next.jsの推測的な事前遷移を使わないようにした。共有記録のバックグラウンド取得中と取得失敗を、記録不存在と分離して待機・再読み込みできる。実装・回帰テスト・本番反映済みで、人間QAではホーム、フォロー中、Garage、愛車ページからの初回タップと直接URLを確認する。
+- **写真公開範囲の統一**: 写真単独の公開切り替えUIを撤去し、記録本文の公開範囲から写真の共有可否を導出する実装・テストがある。人間QAでは非公開、α参加者向け、公開停止後の写真アクセスを確認する。
+- **P-071 下書き**: 既存フォームの入力をユーザー・入口・編集状態ごとにlocalStorageへdebounce保存し、復元・破棄・期限切れ・破損JSONをテスト済み。人間QAでは再読込、別ユーザー、写真再選択案内を確認する。
+- **P-072 完了導線**: 保存成功後だけ完了画面を表示し、車両名・愛称・タイトル、Garage、投稿詳細、次の記録、ホームへの導線を実装・テスト済み。人間QAでは二重送信と保存失敗時の遷移を確認する。
+- **P-076 記録本文内の写真表示改善**: スマートフォンの写真全幅表示は実機確認済み。今回、全幅を維持したまま写真直下のキャプションへ左右16px、上下間隔、補助テキスト相当の文字サイズと折り返しを追加した。PCの写真幅とキャプション位置は人間QA待ちのため、SHIPPED_NEEDS_QAを維持する。
+- **通常投稿・さっと記録・詳しい記録**: 各保存経路と、車両時間軸・フィードへの反映を実装。人間QAでは同じ車両で3経路を順に試し、保存後に履歴が育つことを確認する。
 
-- DEMOデータを実在する整備情報として扱わない。
-- localStorageを本番データストアとみなさない。
-- 新規記録は非公開を初期値とし、共有操作は運営確認待ちへ送る。
-- 不明点を勝手に補完せず、所有者判断が必要な事項を記録する。
-- 所有者の承認なしに外部接続、有料契約、本番設定、秘密情報登録を進めない。
+### プロフィール・交流
+
+- **公開プロフィール、username、bio**: 表示名、`@username`、bio、公開車両、公開Journalを表示・編集する実装と識別テストがある。人間QAでは自分・他人・未設定username・非公開項目を確認する。
+- **ユーザーフォロー、車両フォロー、招待者との相互フォロー**: ユーザー単位と車両単位を分離し、招待時のユーザー相互フォロー、解除の独立性、既存フィード反映を実装・テスト済み。人間QAでは複数台所有、乗り換え、同一投稿の重複表示がないことを確認する。
+- **P-084B Discovery Search zero-result regression（AUD-005）**: 人間QAで`FIAT Barchetta`と`HONDA スーパーカブ110/JA59`が0件となった。本番読み取り調査で、両方ともactive α participantのprivate workspaceには存在する一方、匿名外部共有用`alpha_public_vehicle_shares` snapshotが無く、P-084の検索条件から脱落していたことを確認した。`alpha_member_vehicle_discoveries`を外部shareと完全に分離したα限定read modelとして追加し、既存active α participantのVehicleを最小フィールド（make、model、nickname、year）だけでbackfillする。P-084 follow-upで新規Vehicleはownerの`memberDiscoveryEnabled`を既定ONで保存し、作成・編集画面の「MECHORI内で見つけられる」からowner本人だけがON/OFFできるようにした。OFFは検索対象だけを外し、既存Vehicle Follow、Connections、公開記録通知、外部匿名共有を変更しない。認証済みactive α participantだけが検索・Garage表示・Vehicle Followに利用でき、private workspace、email、VIN、位置、記録、外部匿名公開状態は返さない／変えない。`FIAT`、`Barchetta`、`カブ`は保存済み文字列で検索対象とするが、日本語別名が未保存の`バルケッタ`は今回のsubstring検索では対象外として別課題に残す。人間QA前はSHIPPED_NEEDS_QAとして扱う。
+- **投稿・車両・プロフィールのリンク分離**: 投稿カードと詳細の各操作を実装・テスト済み。人間QAでは投稿者、車両、本文、いいねの各タップ先を確認する。
+
+### 車両・基本UX
+
+- **P-081 初回Activation / Onboarding**: 招待URLや初回訪問でサービス目的と次の行動が分からないP1課題に対し、未ログインHomeの短い価値説明と「MECHORIをはじめる」、認証後の3ステップ案内、実データ連動の「MECHORIをはじめよう」チェックリストを実装した。completion／dismissはprofile ID単位のlocalStorageで保持し、Workspace／social loadingを未完了と誤認しない。実装・自動検証・本番反映後も人間QA前はSHIPPED_NEEDS_QAとして扱う。
+- **P-081B Invite Activation + First Profile Setup**: 招待URLは登録画面へ直行せず、URLフラグメント内の既存tokenを維持した説明Landingを経由する。Landingはサービスの目的と3つの価値を伝え、既存のGoogle認証・invite cookie・return-toへ接続する。新規ユーザーは表示名を必須で保存してから愛車登録へ進み、既存の`MECHORI User`はsession内で再表示しない救済dialogから名前を更新できる。プロフィールRPCとAppContextの更新を再利用し、保存後は同一session内の表示名を即時更新する。DB・RLSは変更していない。人間QA前のためSHIPPED_NEEDS_QAとして扱う。
+- **P-082 管理フィードバックのGPT用Markdown一括出力**: 既存の管理フィードバック全件取得を再利用し、検索語・status・種別・期間で一覧と一致する対象を絞り込み、「GPT用に一括コピー」と「Markdownをダウンロード」を同一generatorへ統一した。出力は古い日時から安定ソートし、GPTにはFeedbackを実装要求ではなくEvidenceとして重複・優先度・採否候補・追加調査を整理させるinstructionを先頭付与する。email等の不要な個人情報は出力せず、status変更・DB・RLS・RPC schemaは行っていない。自動検証後、人間QA前のためSHIPPED_NEEDS_QAとして扱う。
+- **P-073 Web通知センター**: Like、新規Follower、Follow中の人または車両による新しい公開記録をsource eventとするprivate通知table、本人専用RPC、20件単位の一覧、個別／一括既読、PC／SP未読badgeを実装した。通知生成はDB trigger内で行い、browserから任意recipientへINSERTできない。人と車両の両方をFollowする場合も`recipient + record`で1件へdedupeし、非公開・削除・権限外の記録情報は一覧RPCで返さない。additive migrationは本番αへ適用済みで、Web反映後の人間QA前はSHIPPED_NEEDS_QAとして扱う。Push、Email、Realtimeは未実装。
+- **初回車両登録の簡略化、写真なし登録、バイク・過去車、所有開始時期、愛称、メイン写真**: 未登録車種・不明項目を含む段階的登録と編集を実装・テスト済み。人間QAではクルマ、バイク、複数台、過去車、写真なしを確認する。
+- **Garage Visual Pilot v2（Design Direction v1）**: `/garage`を「登録車両を管理する画面」からVehicle、Owner、Historyを見返すLiving Vehicle Historyへ再構成した。v2では大判のVehicle photo、写真と重なるidentity sheet、所有時間をidentityとして読む構成、単一の記録CTA、整備／思い出を同じchronological spineで読むtimelineへ置き換えた。初回Human QAを受け、make／model／任意gradeの階層表示、Garage上のFAB非表示、Hero surfaceのcard感削減を追加した。写真なしでも年式・make・model・所有時間から静かに成立し、card・border・eyebrow・同格CTAをさらに削減している。Taste SkillのDesign Guidanceを適用した。Vehicle、Record、Follow、Notification、visibility、workspaceのdata contractは変更していない。自動検証後もiPhone／PCの人間QA前はSHIPPED_NEEDS_QAとし、他画面への展開はPilot QA後に判断する。
+- **P-078 プロフィール画像の主要画面表示**: private Storageの認証済みダウンロードから生成したBlob URLで表示する方式は実機確認済み。共通AvatarのHooks lint違反を修正し、今回AUD-004のsession cacheを接続した。表示回帰の人間QA前はSHIPPED_NEEDS_QAとして扱う。
+- **AUD-004 Avatar Session Cache**: private Avatarのsession内cache、同一pathのsingle-flight、変更・削除・logout・ユーザー切替時のinvalidate／clear、Blob URL lifecycleを実装・自動検証した。人間QA前のためSHIPPED_NEEDS_QAとして扱う。
+- **P-079 検索実行導線の明確化**: 検索画面ではグローバルFABを非表示にし、条件フォーム末尾へ「この条件で探す」を配置して、クリック・Enter・キーボード検索を同じsubmit経路へ統一した。検索結果0件の記録導線と、再試行可能なエラー表示を分離している。実装・テスト・本番反映後も人間QA前のためSHIPPED_NEEDS_QAとして扱う。
+- **P-080（AUD-002）フォロー操作の結果契約**: フォロー処理を成功・失敗の型付きPromise Resultとして返し、同一対象の処理中重複を抑止する。認証・権限・通信・未知の失敗を安全な分類へ変換し、ユーザー／車両の対象キーを分離した。Follow解除時に`set_alpha_user_follow`のPL/pgSQL変数と列名が衝突してDELETE条件が曖昧だったため、対象user IDを明示変数へ分離して通常ユーザー・platform super adminとも自分の関係だけを解除できるよう修正した。通知triggerはINSERT時だけでUnfollow通知は生成しない。RLSは維持し、additive RPC migrationの本番適用と人間QA前はSHIPPED_NEEDS_QAとして扱う。
+- **AUD-001／AUD-003 ナビゲーション基盤**: route、ラベル、アイコン、サーフェス、認証・管理者条件、現在地判定、準備中状態を宣言的な定義へ集約し、モバイル、PC、ドロワーから共通利用する。認証状態・権限・routeを入力した純粋関数の振る舞いテストへ改善した。外部UI、route、DB、RLS、認証方式は変更していない。P-075前の基盤整備であり、人間QA前はSHIPPED_NEEDS_QAとして扱う。
+- **P-074 PCナビ修正・フィードバックUI**: PCは中央ナビ定義から左サイドバーへ主要導線・補助導線・管理者導線を生成し、hamburger、drawer、overlay、mobile bottom navigation、global FABを表示しない構成へ整理した。モバイルの既存導線は維持し、フィードバック表記と種別選択ボタンも統一した。外部UIの本番実機確認前のためSHIPPED_NEEDS_QAとして扱う。
+- **ログアウト確認・完了画面**: 保護画面からのログアウト確認と公開ホームへの完了遷移を実装。人間QAでは保存中・未保存状態を含めて確認する。
+- **写真アスペクト比、iPhone写真入力、フィードバック、favicon／Apple Touch Icon／PWA**: 実装と関連コード・テストを確認済み。人間QAではiPhone撮影写真、縦横比、アイコン表示、フィードバック失敗時の再試行を確認する。
+
+### 運営基盤
+
+- **管理画面、管理者ロール、監査ログ、Owner Plus利用権、Founding Tester付与**: UI、RPC、監査履歴、利用権の実装と関連マイグレーションを確認済み。人間QAではowner/adminと非管理者の境界、理由入力、別利用者の拒否を確認する。
+- **P-085 Professional / Service Attribution β基盤**: 実在拠点を表す`service_provider`とMECHORI上の管理主体`professional_organization`を分離し、多対多membership（OWNER／STAFF）、OrganizationへのFounding Garage資格、Provider連携、platform adminによるmembership不要の管理をadditive schemaとRPCで実装した。Organization作成は初期OWNERを必須とし、Organization rowとactive α participantのOWNER membershipを同一trusted transactionで作成するため、OWNER 0人のOrganizationを残さない。整備記録にはversionedな`serviceAttribution`（DIY／お店・工場／不明）と当時のProvider名・市区町村snapshotを保存し、旧Recordは読取時に不明として互換化する。ユーザー追加Providerは未確認候補であり、User Recordのownershipや確認状態はOrganizationへ移らない。Claim、重複merge、Provider確認、工場作成記録、実績Discoveryは未実装。人間QA前はSHIPPED_NEEDS_QAとして扱う。
+- **GA4／GTM／Clarity接続準備**: コードと運用文書上の接続準備はある。人間QAでは本番計測の送信範囲、マスキング、イベント発火を管理画面と実機で確認する。
+
+## 4. PARTIAL／OPEN
+
+- **AI翻訳**: 原文言語と翻訳導線はあるが、実運用の自動翻訳、品質確認、費用・送信範囲の確定は未完了。
+- **Professional**: P-085でOrganization、Provider、OWNER／STAFF、管理UIの最小基盤を実装した。症例庫、工場作成記録、顧客案件、帳票、契約、課金は未実装。
+- **Founding Garage**: P-085でOrganizationへの資格付与とProvider／複数Member連携を可能にした。実在工場の事業者確認、契約、entitlement詳細、共同開発運用は未着手。
+- **P-070 初回表示速度**: Phase 1として、auth確定後にAppShellとroute shellを表示し、Workspaceは依存UIだけで待機・再試行するよう分離した。共有socialの4読取はHome、フォロー中、共有記録詳細、公開Garageで必要時にsingle-flight取得し、Feedback、Admin、設定、検索初期表示では待たない。AppContext全面分割とWorkspace JSON正規化は未着手で、本番の性能QA前のため全体はPARTIALとして扱う。AUD-004のAvatar cacheは別途実装済みだが、人間QA待ちである。
+- **P-074 ナビゲーション再設計**: 4項目の下部ナビ、ハンバーガーメニュー、記録作成FAB、ログアウト時の3項目ナビとガレージのログイン要求表示を反映。P-075Aでつながりを実画面化し、P-073も今回のmigration適用後に通知実画面へ切り替わる。ナビゲーション自体は人間の実機UX確認前のためSHIPPED_NEEDS_QAとして扱う。
+- **P-075A つながり**: 自分と他人のフォロー中／フォロワー、双方向フォローから導出する関係状態、公開Garageへの遷移、一覧内フォロー／解除、自分がフォローした車両の一覧を実装した。取得は既存のユーザーフォローとWorkspace内の車両フォローを再利用し、active member・公開中車両・ブロック境界だけを返す追加の読み取りRPCを使う。本番DB適用とα配信は完了したが、人間QA前のためSHIPPED_NEEDS_QAとして扱う。
+- **P-075B／P-075C つながりの公開設定・非公開Garage／フォロー申請**: OPEN。フォロー一覧の公開範囲、非公開Garage、申請・承認・取消・通知、既存フォローの移行は今回実装しない。
+- **ネイティブアプリ**: αではWebコア体験を固め、β中盤にオーナー向けNative版へ着手する必須ロードマップ。現時点では未実装。
+- **初期計測の本番運用**: 指標定義とコード準備はあるが、MAU最小計測のDB適用・環境設定・実データ確認は別の運用作業として残る。
+
+## 5. DEFERRED／WITHDRAWN
+
+### DEFERRED
+
+- Web Push、プッシュ通知、アプリアイコンの未読件数。オーナー向けネイティブアプリ自体はβ中盤着手の必須ロードマップとして、別途実装計画を進める。
+- AIナレッジ、根拠付き集合知要約、AIによる本格的な故障整理。
+- Professionalの完全実装、工場間相談、帳票DX、課金。
+- 決済、広告、有料プランの本番導入。
+- `mechori.com`へのDNS・ホスティング切り替え。現行αの確認先はNetlify URLを維持する。
+
+### WITHDRAWN
+
+- 写真単独の「写真も公開／写真は自分だけ」切り替え。写真の公開範囲は記録本文に従う。
+- 公開ユーザー名を内部リレーションや外部キーとして使う設計。内部は不変IDを使う。
+- αでのWeb全体への無条件公開。現行の共有範囲はMECHORI利用者・α参加者向けの明示的な範囲に限定する。
+
+## 6. 次の優先順位
+
+1. P-081／P-081Bの本番実機QA（未ログインの5秒理解、招待Landing、Google認証後の表示名設定、既存`MECHORI User`救済、チェックリスト進捗）。
+2. P-079の本番実機QA（検索フォーム末尾ボタン、FAB非表示、Enter、0件・エラー表示）。
+3. P-084Bの本番実機QA（`FIAT`／`Barchetta`／`カブ`でα限定Vehicleを検索し、検索結果からVehicle Follow／解除、Connections反映、owner Followとの独立、外部共有状態が変わらないことを確認）。`バルケッタ`の日本語aliasは別課題。
+4. P-074の本番実機UX確認（4項目ナビ、メニュー、FAB、safe area）。
+5. P-077の本番実機QA（各投稿一覧からの初回タップ、直接URL、再遷移）。
+
+## 7. 最近の主要コミット
+
+- `43b926c` `feat: preserve post drafts and improve completion flow`: P-071下書き保存・復元、P-072完了画面と次導線。
+- （今回）P-074 ナビゲーション再設計の試験実装: 4項目ナビ、メニュー、記録作成FAB、準備中画面。
+- `fcb366b` `perf: reduce initial page loading work`: ログイン後初回Hydrationの取得整理。
+- `a85fd52` `feat: improve post discovery and author navigation`: P-061投稿者導線、P-064投稿のお題、発見導線。
+- `2366f68` `fix: stabilize post likes`: P-051いいねの楽観更新、ロールバック、二重送信抑止。
+- `3d9be76` `fix: isolate storage profile access policy`: 共有Storageのアクセス境界整理。
+- `26a5b3a` `fix: align shared photo access with member visibility`: 共有写真の参加者可視性整理。
+- `ab7f9d6` `fix: save edited detailed records with photos`: P-066編集保存と安全なエラー表示。
+- `6f3d656` `fix: align journal photos with record visibility`: 本文と写真の公開範囲統一。
+- `2488bb2` `feat: add alpha profile images and faster hydration`: プロフィール画像と初期取得改善。
+- `7c2955f` `feat: expose alpha admin audit history`: 監査履歴UIと運用基盤。
+
+## 8. 既知の懸案事項
+
+- 本文保存成功と写真表示成功は別経路である。P-069は今回の本番実機QAで保存済み写真の表示を確認済みだが、Storage変更時は同じ取得経路を回帰確認する。
+- P-070 Phase 1はコード・テスト完了後に本番QAが必要である。初回auth後のshell表示、Home／フォロー中の共有記録読込、Garage／つながりの局所loading、Feedback／Admin／検索初期表示がshared social読取を待たないことを確認する。AppContext全面分割とWorkspace JSON正規化は未着手である。AUD-004のAvatar cacheは実装済みだが、人間QA待ちである。
+- 下書きはブラウザ・ユーザー・投稿入口単位で保存され、写真バイナリは保存しない。写真が復元できない場合は再選択が必要になる。
+- αの共有は一般Web公開ではない。記録本文、写真、車両プロフィールごとの公開範囲を混同しない。
+- 車両カタログ協力、計測DB、管理者権限境界など、コードとDBの適用状態が分かれる項目は、適用履歴と人間QAを別に記録する。
+- Founding Garageの資格、工場内role、platform super adminはP-085の最小基盤として実装済みで、人間QA待ちである。事業者確認、契約、entitlement詳細、Professional業務機能は未適用である。
+- 基本体験は無料を原則とし、AI/OCRの通常利用、利用枠、推定原価、失敗時の非消費、super adminによる追加・免除をβで計測する。実際の上限利用者が現れるまで本格決済は急がない。
+- P-074のPCナビ二重化は解消済みで、人間UX QA待ちである。画面全体のVisual Direction再設計は別途扱う。
+- 現行の状態棚卸しではテスト・build・デプロイを再実行していないため、この更新自体は新しい動作保証を追加しない。
+
+## 9. Global Compliance Review
+
+`docs/GLOBAL_COMPLIANCE.md`に、Japan、EU / EEA、United Kingdom、United States、Australia、Canadaを初期対象とするGlobal Legal / Safety Compliance Reviewの追跡基盤を追加した。これは法令調査や法的結論ではなく、一次資料から地域別要求をProduct Requirement、設計、実装、検証、専門家レビューへ接続するための文書フレームワークである。より広い国際公開、Native Drive Log、広告、Professional課金の前にReview Gateを通す将来必須項目として扱う。具体的な年齢制限、地域別要件、法的適用可否は未確定であり、現在のαを停止扱いにしない。

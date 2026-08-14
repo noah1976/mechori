@@ -2,13 +2,19 @@
 
 import {
   createEmptyActionDraft,
+  getPreferredVehicle,
+  maintenanceRecordDateKey,
+  unknownServiceAttribution,
   validateRecordDraft,
+  type MaintenanceOccurrencePrecision,
   type MaintenanceRecord,
   type PrototypeOdometerEpisodeReason,
   type RecordActionDraft,
   type RecordDraft,
+  type SupportedUiLocale,
   type Vehicle,
 } from "@mechori/core";
+import { translate, type TranslationKey } from "@mechori/i18n";
 import {
   AlertTriangle,
   Check,
@@ -18,6 +24,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useApp } from "@/lib/app-context";
 import {
@@ -26,6 +33,8 @@ import {
   recordLocalDraftKey,
   saveLocalDraft,
 } from "@/lib/local-draft-store";
+import { OccurrenceDateFields } from "@/components/occurrence-date-fields";
+import { ServiceAttributionField } from "@/components/service-attribution-field";
 
 const meterChangeReasons: PrototypeOdometerEpisodeReason[] = [
   "replacement",
@@ -37,18 +46,26 @@ const meterChangeReasons: PrototypeOdometerEpisodeReason[] = [
 
 function draftFromRecord(record: MaintenanceRecord | undefined, vehicle: Vehicle): RecordDraft {
   const primaryAction = record?.actions[0];
-  const recordedEpisode = record
-    ? vehicle.odometerEpisodes.find((episode) => episode.id === record.odometerReading.episodeId)
+  const recordedReading = record?.odometerReading;
+  const recordedEpisode = recordedReading
+    ? vehicle.odometerEpisodes.find((episode) => episode.id === recordedReading.episodeId)
     : undefined;
   const recordedMeterChange =
     recordedEpisode &&
     recordedEpisode.reason !== "initial" &&
-    recordedEpisode.startedAt === record?.serviceDate;
+    record &&
+    recordedEpisode.startedAt === maintenanceRecordDateKey(record);
   return {
     serviceDate: record?.serviceDate ?? new Date().toISOString().slice(0, 10),
-    odometerKm: (record?.odometerReading.displayedValue ?? vehicle.currentOdometerReading.displayedValue).toString(),
-    odometerUnit: record?.odometerReading.unit ?? vehicle.currentOdometerReading.unit,
-    odometerEpisodeId: record?.odometerReading.episodeId ?? vehicle.currentOdometerReading.episodeId,
+    serviceDatePrecision: record?.serviceDatePrecision ?? "day",
+    servicePeriodNote: record?.servicePeriodNote ?? "",
+    odometerKm: record
+      ? recordedReading?.displayedValue.toString() ?? ""
+      : vehicle.ownershipType === "previously_owned" || vehicle.currentOdometerReading.displayedValue === 0
+        ? ""
+        : vehicle.currentOdometerReading.displayedValue.toString(),
+    odometerUnit: recordedReading?.unit ?? vehicle.currentOdometerReading.unit,
+    odometerEpisodeId: recordedReading?.episodeId ?? vehicle.currentOdometerReading.episodeId,
     odometerChangeReason: recordedMeterChange ? recordedEpisode.reason : "same_episode",
     summary: record?.summary ?? "",
     symptoms: record?.symptoms ?? "",
@@ -61,6 +78,9 @@ function draftFromRecord(record: MaintenanceRecord | undefined, vehicle: Vehicle
     cost: record?.cost?.toString() ?? "",
     resolutionStatus: primaryAction?.resolutionStatus ?? record?.resolutionStatus ?? "unresolved",
     hazardLevel: primaryAction?.hazardLevel ?? record?.hazardLevel ?? "LOW",
+    evidenceBasis:
+      record?.evidenceBasis ??
+      (vehicle.ownershipType === "previously_owned" ? "recalled_later" : "contemporaneous"),
     additionalActions:
       record?.actions.slice(1).map((action) => ({
         clientId: action.id,
@@ -75,21 +95,30 @@ function draftFromRecord(record: MaintenanceRecord | undefined, vehicle: Vehicle
         resolutionStatus: action.resolutionStatus,
         hazardLevel: action.hazardLevel,
       })) ?? [],
+    serviceAttribution: record?.serviceAttribution ?? unknownServiceAttribution(),
     requestSharing: record?.visibility === "pending_review",
   };
 }
 
 export function RecordForm({ record, vehicleId }: { record?: MaintenanceRecord; vehicleId?: string }) {
-  const { data } = useApp();
-  const vehicle = data.vehicles.find((item) => item.id === (record?.vehicleId ?? vehicleId)) ?? data.vehicles[0];
-  if (!vehicle) return null;
+  const { data, locale } = useApp();
+  const vehicle = data.vehicles.find((item) => item.id === (record?.vehicleId ?? vehicleId)) ?? getPreferredVehicle(data.vehicles);
+  if (!vehicle) {
+    return (
+      <div className="empty-state">
+        <h2>{translate(locale, "noVehicleForRecord")}</h2>
+        <p>{translate(locale, "addVehicleForRecordsIntro")}</p>
+        <Link href="/garage/new" className="primary-action">{translate(locale, "addVehicle")}</Link>
+      </div>
+    );
+  }
 
   return <RecordFormWithVehicle key={`${record?.id ?? "new"}-${vehicle.id}`} record={record} vehicle={vehicle} />;
 }
 
 function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord; vehicle: Vehicle }) {
   const router = useRouter();
-  const { addRecord, updateRecord, locale } = useApp();
+  const { addRecord, updateRecord, locale, isRemoteAlpha } = useApp();
   const draftKey = recordLocalDraftKey(record?.id);
   const initialDraft = useMemo(() => draftFromRecord(record, vehicle), [record, vehicle]);
   const [draft, setDraft] = useState<RecordDraft>(initialDraft);
@@ -100,7 +129,6 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
   const [saveError, setSaveError] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const validation = useMemo(() => validateRecordDraft(draft), [draft]);
-  const ja = locale === "ja";
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -204,9 +232,7 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
 
   const errorText = (key: keyof RecordDraft) =>
     submitted && validation.errors[key]
-      ? ja
-        ? "入力内容を確認してください"
-        : "Check this field"
+      ? translate(locale, "checkField")
       : undefined;
   const recordsExistingMeterChange = Boolean(
     record && draft.odometerChangeReason !== "same_episode",
@@ -215,24 +241,28 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
 
   return (
     <form ref={formRef} className="record-form" onSubmit={onSubmit} noValidate aria-busy={saving}>
-      <LocalDraftStatus status={draftStatus} ja={ja} onDiscard={discardDraft} />
+      <LocalDraftStatus status={draftStatus} locale={locale} onDiscard={discardDraft} />
       <section className="form-section">
         <div className="section-heading compact">
-          <div><span className="eyebrow">01</span><h2>{ja ? "基本情報" : "Basics"}</h2></div>
-          <span className="required-note">{ja ? "* 必須" : "* Required"}</span>
+          <div><span className="eyebrow">01</span><h2>{translate(locale, "basics")}</h2></div>
+          <span className="required-note">{translate(locale, "required")}</span>
         </div>
-        <div className="form-grid three-columns">
-          <Field label={ja ? "整備日 *" : "Service date *"} error={errorText("serviceDate")}>
-            <input type="date" value={draft.serviceDate} onChange={(event) => setField("serviceDate", event.target.value)} />
-          </Field>
-          <Field label={hasMeterChange ? (ja ? "交換・修理後の走行距離 *" : "Odometer after change *") : (ja ? "走行距離 *" : "Odometer *")} error={errorText("odometerKm")}>
+        <OccurrenceDateFields
+          value={recordOccurrenceValue(draft)}
+          locale={locale}
+          legend={translate(locale, "serviceOccurrence")}
+          error={errorText("serviceDate")}
+          onChange={(patch) => setDraft((current) => applyOccurrencePatch(current, patch))}
+        />
+        <div className="form-grid two-columns">
+          <Field label={translate(locale, hasMeterChange ? "odometerAfterChangeRequired" : "odometerOptional")} error={errorText("odometerKm")}>
             <input type="number" min="0" inputMode="numeric" value={draft.odometerKm} onChange={(event) => setField("odometerKm", event.target.value)} />
           </Field>
-          <Field label={ja ? "表示単位" : "Display unit"}>
+          <Field label={translate(locale, "displayUnit")}>
             <select value={draft.odometerUnit} onChange={(event) => setField("odometerUnit", event.target.value as RecordDraft["odometerUnit"])}>
               <option value="km">km</option>
               <option value="mi">mi</option>
-              <option value="unknown">{ja ? "不明" : "Unknown"}</option>
+              <option value="unknown">{translate(locale, "unknown")}</option>
             </select>
           </Field>
         </div>
@@ -244,38 +274,60 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
               disabled={recordsExistingMeterChange}
               onChange={(event) => onMeterChangeToggle(event.target.checked)}
             />
-            <span>{ja ? "この整備でメーターを交換・修理した" : "The odometer was replaced or repaired during this service"}</span>
+            <span>{translate(locale, "meterChanged")}</span>
           </label>
-          {recordsExistingMeterChange && <small>{ja ? "保存済みのメーター交換記録です。" : "This meter-change record is already saved."}</small>}
+          {recordsExistingMeterChange && <small>{translate(locale, "savedMeterChange")}</small>}
           {hasMeterChange && <div className="meter-change-fields">
-            <Field label={ja ? "記録する内容" : "What changed"}>
+            <Field label={translate(locale, "whatChanged")}>
               <select
                 value={draft.odometerChangeReason}
                 disabled={recordsExistingMeterChange}
                 onChange={(event) => setField("odometerChangeReason", event.target.value as PrototypeOdometerEpisodeReason)}
               >
-                {meterChangeReasons.map((reason) => <option key={reason} value={reason}>{episodeReasonLabel(reason, ja)}</option>)}
+                {meterChangeReasons.map((reason) => <option key={reason} value={reason}>{episodeReasonLabel(reason, locale)}</option>)}
               </select>
             </Field>
-            <p>{ja ? "上の走行距離には、交換・修理後のメーター表示値を入力します。以前より小さくても異常や虚偽とは判定しません。" : "Enter the displayed value after replacement or repair above. A lower value is not treated as an error or false claim."}</p>
+            <p>{translate(locale, "lowerOdometerNotice")}</p>
           </div>}
         </div>
-        <Field label={ja ? "入庫・整備イベントのタイトル *" : "Visit or maintenance event title *"} error={errorText("summary")}>
-          <input value={draft.summary} onChange={(event) => setField("summary", event.target.value)} placeholder={ja ? "例：車検と定期整備" : "e.g. Inspection and routine service"} />
+        <Field label={translate(locale, "recordTitleRequired")} error={errorText("summary")}>
+          <input value={draft.summary} onChange={(event) => setField("summary", event.target.value)} placeholder={translate(locale, "recordTitleExample")} />
+        </Field>
+        <Field label={translate(locale, "evidenceBasis")}>
+          <select
+            value={draft.evidenceBasis}
+            onChange={(event) => setField("evidenceBasis", event.target.value as RecordDraft["evidenceBasis"])}
+          >
+            <option value="contemporaneous">{translate(locale, "evidenceContemporaneous")}</option>
+            <option value="invoice_or_receipt">{translate(locale, "evidenceInvoice")}</option>
+            <option value="photo_or_service_book">{translate(locale, "evidencePhotoBook")}</option>
+            <option value="recalled_later">{translate(locale, "evidenceRecalled")}</option>
+            <option value="unknown">{translate(locale, "evidenceUnknown")}</option>
+          </select>
         </Field>
       </section>
 
       <section className="form-section">
-        <div className="section-heading compact"><div><span className="eyebrow">02</span><h2>{ja ? "確認した症状" : "Observed symptoms"}</h2></div></div>
-        <Field label={ja ? "この入庫のきっかけ・症状 *" : "Reason for visit or symptoms *"} error={errorText("symptoms")}>
+        <div className="section-heading compact"><div><span className="eyebrow">02</span><h2>{locale === "ja" ? "作業した人・場所" : "Who performed the work"}</h2></div></div>
+        <ServiceAttributionField
+          value={draft.serviceAttribution}
+          onChange={(value) => setField("serviceAttribution", value)}
+          locale={locale}
+          error={errorText("serviceAttribution")}
+        />
+      </section>
+
+      <section className="form-section">
+        <div className="section-heading compact"><div><span className="eyebrow">03</span><h2>{translate(locale, "serviceReasonHeading")}</h2></div></div>
+        <Field label={translate(locale, "serviceReasonOptional")}>
           <textarea rows={3} value={draft.symptoms} onChange={(event) => setField("symptoms", event.target.value)} />
         </Field>
       </section>
 
       <section className="form-section">
-        <div className="section-heading compact"><div><span className="eyebrow">03</span><h2>{ja ? "作業 1" : "Action 1"}</h2></div></div>
+        <div className="section-heading compact"><div><span className="eyebrow">04</span><h2>{translate(locale, "actionNumber", { number: 1 })}</h2></div></div>
         <ActionFields
-          ja={ja}
+          locale={locale}
           summary={draft.summary}
           causeCandidates={draft.causeCandidates}
           checksPerformed={draft.checksPerformed}
@@ -290,24 +342,24 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
           setField={(key, value) => setField(key as keyof RecordDraft, value as never)}
         />
         <div className="form-grid two-columns">
-          <Field label={ja ? "費用（入庫全体）" : "Cost (whole visit)"}><input type="number" min="0" value={draft.cost} onChange={(event) => setField("cost", event.target.value)} /></Field>
+          <Field label={translate(locale, "costWholeVisit")}><input type="number" min="0" value={draft.cost} onChange={(event) => setField("cost", event.target.value)} /></Field>
         </div>
       </section>
 
       {draft.additionalActions.map((action, index) => (
         <section className="form-section action-section" key={action.clientId}>
           <div className="section-heading compact">
-            <div><span className="eyebrow">{String(index + 4).padStart(2, "0")}</span><h2>{ja ? `作業 ${index + 2}` : `Action ${index + 2}`}</h2></div>
+            <div><span className="eyebrow">{String(index + 5).padStart(2, "0")}</span><h2>{translate(locale, "actionNumber", { number: index + 2 })}</h2></div>
             <button
               type="button"
               className="icon-action danger-icon"
-              aria-label={ja ? `作業 ${index + 2} を削除` : `Remove action ${index + 2}`}
-              title={ja ? "作業を削除" : "Remove action"}
+              aria-label={translate(locale, "removeActionAria", { number: index + 2 })}
+              title={translate(locale, "removeAction")}
               onClick={() => setField("additionalActions", draft.additionalActions.filter((_, actionIndex) => actionIndex !== index))}
             ><Trash2 size={18} /></button>
           </div>
           <ActionFields
-            ja={ja}
+            locale={locale}
             {...action}
             showSummary
             setField={(key, value) => setActionField(index, key as keyof RecordActionDraft, value as never)}
@@ -319,17 +371,17 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
         type="button"
         className="secondary-action add-action-button"
         onClick={() => setField("additionalActions", [...draft.additionalActions, createEmptyActionDraft()])}
-      ><Plus size={18} />{ja ? "同じ入庫に作業を追加" : "Add another action to this visit"}</button>
-      {errorText("additionalActions") && <p className="form-error-summary" role="alert">{ja ? "追加した作業のタイトルまたは部品番号を確認してください。" : "Review action titles and part numbers."}</p>}
+      ><Plus size={18} />{translate(locale, "addAnotherAction")}</button>
+      {errorText("additionalActions") && <p className="form-error-summary" role="alert">{translate(locale, "additionalActionError")}</p>}
 
       <section className="sharing-panel">
         <LockKeyhole size={21} aria-hidden="true" />
         <div>
-          <strong>{ja ? "初期値は非公開です" : "Private by default"}</strong>
-          <p>{ja ? "共有を選んでも即時公開されず、匿名化確認と運営確認へ送られます。" : "Sharing sends this record for privacy and operator review; it is never published immediately."}</p>
+          <strong>{translate(locale, "privateByDefault")}</strong>
+          <p>{translate(locale, "shareReviewNotice")}</p>
           <label className="checkbox-row">
             <input type="checkbox" checked={draft.requestSharing} onChange={(event) => setField("requestSharing", event.target.checked)} />
-            <span>{ja ? "共有ナレッジ候補として確認を依頼する" : "Request review as shared knowledge"}</span>
+            <span>{translate(locale, "requestKnowledgeReview")}</span>
           </label>
         </div>
       </section>
@@ -337,28 +389,82 @@ function RecordFormWithVehicle({ record, vehicle }: { record?: MaintenanceRecord
       {[draft.hazardLevel, ...draft.additionalActions.map((action) => action.hazardLevel)].includes("CRITICAL") && (
         <div className="critical-warning" role="alert">
           <AlertTriangle size={22} />
-          <div><strong>{ja ? "安全に関わる可能性があります" : "This may involve safety-critical work"}</strong><p>{ja ? "MECHORIは診断や修理指示を行いません。実車とメーカー資料を確認し、専門整備工場へ相談してください。" : "MECHORI does not diagnose or instruct repairs. Check the vehicle and manufacturer material, and consult a qualified workshop."}</p></div>
+          <div><strong>{translate(locale, "safetyCriticalPossible")}</strong><p>{translate(locale, "safetyCriticalNotice")}</p></div>
         </div>
       )}
 
-      {!validation.valid && submitted && <p className="form-error-summary" role="alert">{ja ? "必須項目または入力値を確認してください。" : "Review required fields and invalid values."}</p>}
-      {saveError && <p className="form-error-summary" role="alert">{ja ? "端末へ保存できませんでした。入力内容は下書きとして残しています。" : "This record could not be saved. Your input remains in the local draft."}</p>}
+      {!validation.valid && submitted && <p className="form-error-summary" role="alert">{translate(locale, "validationReview")}</p>}
+      {saveError && <p className="form-error-summary" role="alert">
+        {isRemoteAlpha
+          ? translate(locale, "remoteRecordSaveError")
+          : translate(locale, "localRecordSaveError")}
+      </p>}
 
       <div className="form-actions">
-        <button type="button" className="secondary-action" onClick={() => router.back()}>{ja ? "戻る" : "Back"}</button>
-        <button type="submit" className="primary-action" disabled={saving}><Save size={18} />{saving ? (ja ? "保存中…" : "Saving…") : record ? (ja ? "変更を保存" : "Save changes") : (ja ? "非公開で保存" : "Save privately")}{draft.requestSharing && <Check size={16} />}</button>
+        <button type="button" className="secondary-action" onClick={() => router.back()}>{translate(locale, "back")}</button>
+        <button type="submit" className="primary-action" disabled={saving}><Save size={18} />{translate(locale, saving ? "saving" : record ? "saveChanges" : "savePrivately")}{draft.requestSharing && <Check size={16} />}</button>
       </div>
     </form>
   );
 }
 
+type RecordOccurrencePatch = {
+  occurredOn?: string;
+  occurredYear?: number;
+  occurredMonth?: number;
+  occurredPrecision?: MaintenanceOccurrencePrecision;
+  occurredPeriodNote?: string;
+};
+
+function recordOccurrenceValue(draft: RecordDraft): RecordOccurrencePatch {
+  const [year, month] = draft.serviceDate.split("-").map(Number);
+  return {
+    occurredOn: draft.serviceDatePrecision === "day" ? draft.serviceDate : undefined,
+    occurredYear:
+      draft.serviceDatePrecision === "month" || draft.serviceDatePrecision === "year"
+        ? year
+        : undefined,
+    occurredMonth: draft.serviceDatePrecision === "month" ? month : undefined,
+    occurredPrecision: draft.serviceDatePrecision,
+    occurredPeriodNote: draft.servicePeriodNote,
+  };
+}
+
+function applyOccurrencePatch(
+  draft: RecordDraft,
+  patch: RecordOccurrencePatch,
+): RecordDraft {
+  const precision = patch.occurredPrecision ?? draft.serviceDatePrecision;
+  const current = recordOccurrenceValue(draft);
+  const year = patch.occurredYear ?? current.occurredYear;
+  const month = patch.occurredMonth ?? current.occurredMonth;
+  let serviceDate = draft.serviceDate;
+
+  if (precision === "day") {
+    serviceDate = patch.occurredOn ?? (draft.serviceDatePrecision === "day" ? draft.serviceDate : "");
+  } else if (precision === "month") {
+    serviceDate = year && month ? `${year}-${String(month).padStart(2, "0")}` : "";
+  } else if (precision === "year") {
+    serviceDate = year ? String(year) : "";
+  } else {
+    serviceDate = "";
+  }
+
+  return {
+    ...draft,
+    serviceDate,
+    serviceDatePrecision: precision,
+    servicePeriodNote: patch.occurredPeriodNote ?? draft.servicePeriodNote,
+  };
+}
+
 function LocalDraftStatus({
   status,
-  ja,
+  locale,
   onDiscard,
 }: {
   status: "idle" | "restored" | "saved" | "error";
-  ja: boolean;
+  locale: SupportedUiLocale;
   onDiscard(): void;
 }) {
   if (status === "idle") return null;
@@ -366,14 +472,14 @@ function LocalDraftStatus({
     <div className={`local-draft-status is-${status}`} role={status === "error" ? "alert" : "status"}>
       <span>
         {status === "restored"
-          ? ja ? "端末内の下書きを復元しました。" : "Restored the draft from this device."
+          ? translate(locale, "draftRestored")
           : status === "saved"
-            ? ja ? "入力内容を端末内へ下書き保存しました。" : "Draft saved on this device."
-            : ja ? "下書きを保存できません。ブラウザの保存設定を確認してください。" : "The draft could not be saved. Check browser storage settings."}
+            ? translate(locale, "draftSaved")
+            : translate(locale, "draftError")}
       </span>
       <button type="button" onClick={onDiscard}>
         <Trash2 size={15} aria-hidden="true" />
-        {ja ? "下書きを破棄" : "Discard draft"}
+        {translate(locale, "discardDraft")}
       </button>
     </div>
   );
@@ -391,7 +497,7 @@ type ActionFieldKey =
   | "hazardLevel";
 
 function ActionFields({
-  ja,
+  locale,
   summary,
   causeCandidates,
   checksPerformed,
@@ -405,7 +511,7 @@ function ActionFields({
   partNumberError,
   setField,
 }: {
-  ja: boolean;
+  locale: SupportedUiLocale;
   summary: string;
   causeCandidates: string;
   checksPerformed: string;
@@ -420,25 +526,25 @@ function ActionFields({
   setField: (key: ActionFieldKey, value: string) => void;
 }) {
   return <>
-    {showSummary && <Field label={ja ? "作業タイトル *" : "Action title *"}><input value={summary} onChange={(event) => setField("summary", event.target.value)} /></Field>}
+    {showSummary && <Field label={translate(locale, "actionTitleRequired")}><input value={summary} onChange={(event) => setField("summary", event.target.value)} /></Field>}
     <div className="form-grid two-columns">
-      <Field label={ja ? "原因候補" : "Possible causes"}><textarea rows={3} value={causeCandidates} onChange={(event) => setField("causeCandidates", event.target.value)} /></Field>
-      <Field label={ja ? "確認した箇所" : "Checks performed"}><textarea rows={3} value={checksPerformed} onChange={(event) => setField("checksPerformed", event.target.value)} /></Field>
+      <Field label={translate(locale, "possibleCauses")}><textarea rows={3} value={causeCandidates} onChange={(event) => setField("causeCandidates", event.target.value)} /></Field>
+      <Field label={translate(locale, "checksPerformed")}><textarea rows={3} value={checksPerformed} onChange={(event) => setField("checksPerformed", event.target.value)} /></Field>
     </div>
-    <Field label={ja ? "実施した作業" : "Work performed"}><textarea rows={3} value={workPerformed} onChange={(event) => setField("workPerformed", event.target.value)} /></Field>
+    <Field label={translate(locale, "workPerformed")}><textarea rows={3} value={workPerformed} onChange={(event) => setField("workPerformed", event.target.value)} /></Field>
     <div className="form-grid three-columns">
-      <Field label={ja ? "部品名" : "Part name"}><input value={partName} onChange={(event) => setField("partName", event.target.value)} /></Field>
-      <Field label={ja ? "メーカー" : "Manufacturer"}><input value={partManufacturer} onChange={(event) => setField("partManufacturer", event.target.value)} /></Field>
-      <Field label={ja ? "部品番号（要確認）" : "Part number (verify)"} error={partNumberError}><input value={partNumber} onChange={(event) => setField("partNumber", event.target.value)} /></Field>
+      <Field label={translate(locale, "partName")}><input value={partName} onChange={(event) => setField("partName", event.target.value)} /></Field>
+      <Field label={translate(locale, "manufacturer")}><input value={partManufacturer} onChange={(event) => setField("partManufacturer", event.target.value)} /></Field>
+      <Field label={translate(locale, "partNumberVerify")} error={partNumberError}><input value={partNumber} onChange={(event) => setField("partNumber", event.target.value)} /></Field>
     </div>
     <div className="form-grid two-columns">
-      <Field label={ja ? "結果" : "Result"}>
+      <Field label={translate(locale, "result")}>
         <select value={resolutionStatus} onChange={(event) => setField("resolutionStatus", event.target.value)}>
-          <option value="unresolved">{ja ? "未解決" : "Unresolved"}</option>
-          <option value="resolved">{ja ? "解決済み" : "Resolved"}</option>
+          <option value="unresolved">{translate(locale, "unresolved")}</option>
+          <option value="resolved">{translate(locale, "resolved")}</option>
         </select>
       </Field>
-      <Field label={ja ? "危険度" : "Hazard level"}>
+      <Field label={translate(locale, "hazardLevel")}>
         <select value={hazardLevel} onChange={(event) => setField("hazardLevel", event.target.value)}>
           <option value="LOW">LOW</option><option value="CAUTION">CAUTION</option><option value="CRITICAL">CRITICAL</option>
         </select>
@@ -447,17 +553,17 @@ function ActionFields({
   </>;
 }
 
-function episodeReasonLabel(reason: PrototypeOdometerEpisodeReason, ja: boolean) {
-  const labels: Record<PrototypeOdometerEpisodeReason, [string, string]> = {
-    initial: ["初期登録", "Initial"],
-    replacement: ["交換", "Replacement"],
-    repair: ["修理", "Repair"],
-    reset: ["リセット", "Reset"],
-    rollover: ["桁あふれ", "Rollover"],
-    unit_change: ["単位変更", "Unit change"],
-    unknown: ["理由不明", "Unknown reason"],
+function episodeReasonLabel(reason: PrototypeOdometerEpisodeReason, locale: SupportedUiLocale) {
+  const labels: Record<PrototypeOdometerEpisodeReason, TranslationKey> = {
+    initial: "episodeInitial",
+    replacement: "episodeReplacement",
+    repair: "episodeRepair",
+    reset: "episodeReset",
+    rollover: "episodeRollover",
+    unit_change: "episodeUnitChange",
+    unknown: "episodeUnknown",
   };
-  return labels[reason][ja ? 0 : 1];
+  return translate(locale, labels[reason]);
 }
 
 function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {

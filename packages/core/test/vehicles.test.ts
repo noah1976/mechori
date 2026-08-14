@@ -5,6 +5,11 @@ import {
   addVehicleToData,
   cloneDemoData,
   createEmptyVehicleDraft,
+  groupVehiclesByOwnership,
+  getPreferredVehicle,
+  migrateAppData,
+  updateVehicleOwnershipInData,
+  updateVehicleSpecificationInData,
   validateVehicleDraft,
 } from "../src/index.ts";
 
@@ -23,11 +28,51 @@ test("accepts an owner-entered make and model without a vehicle master", () => {
     "2026-07-17T00:00:00.000Z",
   );
 
-  assert.equal(result.vehicle.make, "Bertone");
+  assert.equal(result.vehicle.make, "BERTONE");
+  assert.equal(result.vehicle.makeInput, "Bertone");
   assert.equal(result.vehicle.model, "X1/9");
+  assert.equal(result.vehicle.modelFamilyId, "fiat-x1-9");
   assert.equal(result.vehicle.year, 1985);
   assert.equal(result.data.vehicles[0]?.id, result.vehicle.id);
   assert.equal(result.vehicle.isDemo, false);
+  assert.equal(result.vehicle.memberDiscoveryEnabled, true);
+});
+
+test("keeps member discovery owner-controlled without affecting vehicle records", () => {
+  const data = cloneDemoData();
+  const vehicle = data.vehicles[0]!;
+  const records = structuredClone(data.records);
+
+  const hidden = updateVehicleSpecificationInData(data, vehicle.id, {
+    vehicleCategory: vehicle.vehicleCategory,
+    make: vehicle.make,
+    model: vehicle.model,
+    memberDiscoveryEnabled: false,
+  });
+  assert.equal(hidden.vehicle.memberDiscoveryEnabled, false);
+  assert.deepEqual(hidden.data.records, records);
+
+  const visible = updateVehicleSpecificationInData(hidden.data, vehicle.id, {
+    vehicleCategory: vehicle.vehicleCategory,
+    make: vehicle.make,
+    model: vehicle.model,
+    memberDiscoveryEnabled: true,
+  });
+  assert.equal(visible.vehicle.memberDiscoveryEnabled, true);
+});
+
+test("keeps the prepared main photo and optional owner note on the vehicle", () => {
+  const draft = {
+    ...createEmptyVehicleDraft(),
+    imagePath: "data:image/webp;base64,alpha-photo",
+    make: "FIAT",
+    model: "Barchetta",
+    ownerComment: "この先も長く走りたい。",
+  };
+
+  const vehicle = addVehicleToData(cloneDemoData(), draft).vehicle;
+  assert.equal(vehicle.imagePath, draft.imagePath);
+  assert.equal(vehicle.ownerComment, draft.ownerComment);
 });
 
 test("allows registration before the exact model year is known", () => {
@@ -52,4 +97,226 @@ test("requires make and model and rejects implausible years", () => {
   assert.equal(validation.errors.make, "required");
   assert.equal(validation.errors.model, "required");
   assert.equal(validation.errors.year, "invalid");
+});
+
+test("registers a previous car without a photo, model year, or ownership dates", () => {
+  const draft = {
+    ...createEmptyVehicleDraft(),
+    ownershipType: "previously_owned" as const,
+    odometerContext: "at_ownership_end" as const,
+    make: "Alfa Romeo",
+    model: "145",
+  };
+
+  const vehicle = addVehicleToData(cloneDemoData(), draft).vehicle;
+  assert.equal(vehicle.vehicleCategory, "car");
+  assert.equal(vehicle.ownershipType, "previously_owned");
+  assert.equal(vehicle.imagePath, undefined);
+  assert.equal(vehicle.year, undefined);
+  assert.equal(vehicle.ownershipStartedYear, undefined);
+  assert.equal(vehicle.ownershipEndedYear, undefined);
+});
+
+test("registers an owner-entered motorcycle without a vehicle master", () => {
+  const draft = {
+    ...createEmptyVehicleDraft(),
+    vehicleCategory: "motorcycle" as const,
+    ownershipType: "previously_owned" as const,
+    make: "Vespa",
+    model: "150 Sprint",
+  };
+
+  const vehicle = addVehicleToData(cloneDemoData(), draft).vehicle;
+  assert.equal(vehicle.vehicleCategory, "motorcycle");
+  assert.equal(vehicle.make, "VESPA");
+  assert.equal(vehicle.model, "150 Sprint");
+});
+
+test("keeps a current vehicle as the default after a previous vehicle is added", () => {
+  const data = cloneDemoData();
+  const previous = addVehicleToData(data, {
+    ...createEmptyVehicleDraft(),
+    ownershipType: "previously_owned",
+    make: "MG",
+    model: "MGB",
+  }).data;
+
+  assert.equal(getPreferredVehicle(previous.vehicles)?.id, "vehicle-demo-barchetta");
+});
+
+test("moves a vehicle between current and previous groups without losing records or media", () => {
+  const original = cloneDemoData();
+  const vehicleId = original.vehicles[0]!.id;
+  const originalRecords = structuredClone(original.records);
+  const originalImage = original.vehicles[0]!.imagePath;
+
+  const ended = updateVehicleOwnershipInData(original, vehicleId, {
+    ownershipType: "previously_owned",
+    ownershipEndedYear: 2024,
+    ownershipPeriodNote: "2001年ごろから2024年まで所有",
+    dispositionReason: "Owner-entered note",
+  });
+  assert.equal(groupVehiclesByOwnership(ended.data.vehicles).previous[0]?.id, vehicleId);
+  assert.equal(ended.vehicle.imagePath, originalImage);
+  assert.deepEqual(ended.data.records, originalRecords);
+
+  const restored = updateVehicleOwnershipInData(ended.data, vehicleId, {
+    ownershipType: "owned",
+  });
+  assert.equal(groupVehiclesByOwnership(restored.data.vehicles).current[0]?.id, vehicleId);
+  assert.equal(restored.vehicle.ownershipEndedYear, undefined);
+  assert.equal(restored.vehicle.ownershipPeriodNote, undefined);
+  assert.equal(restored.vehicle.dispositionReason, undefined);
+  assert.deepEqual(restored.data.records, originalRecords);
+});
+
+test("does not allow the current profile to change another owner's vehicle", () => {
+  const data = cloneDemoData();
+  data.currentProfileId = "profile-someone-else";
+  assert.throws(
+    () => updateVehicleOwnershipInData(data, data.vehicles[0]!.id, {
+      ownershipType: "previously_owned",
+    }),
+    /vehicle_not_owned_by_current_profile/,
+  );
+});
+
+test("updates a vehicle specification without losing records, image, or ownership history", () => {
+  const data = cloneDemoData();
+  const vehicle = data.vehicles[0]!;
+  const originalRecords = structuredClone(data.records);
+  const updated = updateVehicleSpecificationInData(data, vehicle.id, {
+    vehicleCategory: "car",
+    make: "Nissan",
+    model: "Skyline",
+    year: 1997,
+    grade: "GT-R V-spec",
+    modelCode: "BCNR33",
+    engine: "RB26DETT",
+    transmission: "5MT",
+    steering: "right",
+  });
+
+  assert.equal(updated.vehicle.make, "NISSAN");
+  assert.equal(updated.vehicle.generationId, "nissan-skyline-r33");
+  assert.equal(updated.vehicle.variantId, "nissan-skyline-r33-gtr");
+  assert.equal(updated.vehicle.specificationMatchStatus, "confirmed_model_code");
+  assert.equal(updated.vehicle.imagePath, vehicle.imagePath);
+  assert.equal(updated.vehicle.ownershipType, vehicle.ownershipType);
+  assert.deepEqual(updated.data.records, originalRecords);
+});
+
+test("updates owner-facing vehicle details and an exact ownership start", () => {
+  const data = cloneDemoData();
+  const vehicle = data.vehicles[0]!;
+  const updated = updateVehicleSpecificationInData(data, vehicle.id, {
+    vehicleCategory: vehicle.vehicleCategory,
+    make: vehicle.make,
+    model: vehicle.model,
+    year: vehicle.year,
+    nickname: "赤い相棒",
+    imagePath: "data:image/webp;base64,new-main-photo",
+    ownerComment: "これからも記録を続ける。",
+    ownershipStartedYear: 2014,
+    ownershipStartedMonth: 4,
+    ownershipStartedDay: 12,
+    ownershipStartedPrecision: "day",
+  });
+
+  assert.equal(updated.vehicle.nickname, "赤い相棒");
+  assert.equal(updated.vehicle.imagePath, "data:image/webp;base64,new-main-photo");
+  assert.equal(updated.vehicle.ownerComment, "これからも記録を続ける。");
+  assert.equal(updated.vehicle.ownershipStartedYear, 2014);
+  assert.equal(updated.vehicle.ownershipStartedMonth, 4);
+  assert.equal(updated.vehicle.ownershipStartedDay, 12);
+  assert.equal(updated.vehicle.ownershipStartedPrecision, "day");
+});
+
+test("rejects an ownership start that is not a real calendar date", () => {
+  const draft = {
+    ...createEmptyVehicleDraft(),
+    make: "FIAT",
+    model: "Barchetta",
+    ownershipStartedYear: "2024",
+    ownershipStartedMonth: "2",
+    ownershipStartedDay: "31",
+    ownershipStartedPrecision: "day" as const,
+  };
+  assert.equal(validateVehicleDraft(draft).errors.ownershipStartedDay, "invalid");
+
+  const data = cloneDemoData();
+  const vehicle = data.vehicles[0]!;
+  assert.throws(
+    () => updateVehicleSpecificationInData(data, vehicle.id, {
+      vehicleCategory: vehicle.vehicleCategory,
+      make: vehicle.make,
+      model: vehicle.model,
+      ownershipStartedYear: 2024,
+      ownershipStartedMonth: 2,
+      ownershipStartedDay: 31,
+      ownershipStartedPrecision: "day",
+    }),
+    /invalid_vehicle_specification/,
+  );
+});
+
+test("stores an owner-reported Peugeot 205 configuration as structured mechanical data", () => {
+  const vehicle = addVehicleToData(cloneDemoData(), {
+    ...createEmptyVehicleDraft(),
+    make: "プジョー",
+    model: "205",
+    grade: "GTI 1.9",
+    engine: "1.9L 8V",
+    engineCode: "XU9",
+    displacementCc: "1905",
+    aspiration: "naturally_aspirated",
+    drivetrain: "fwd",
+    transmission: "5MT",
+  }).vehicle;
+
+  assert.equal(vehicle.make, "PEUGEOT");
+  assert.equal(vehicle.variantId, "peugeot-205-gti");
+  assert.equal(vehicle.configurationId, "peugeot-205-gti-1-9");
+  assert.equal(vehicle.displacementCc, 1905);
+  assert.equal(vehicle.engineCode, "XU9");
+  assert.equal(vehicle.drivetrain, "fwd");
+});
+
+test("rejects an implausible displacement without blocking an unknown displacement", () => {
+  const base = {
+    ...createEmptyVehicleDraft(),
+    make: "PEUGEOT",
+    model: "205",
+  };
+  assert.equal(validateVehicleDraft(base).valid, true);
+  assert.equal(validateVehicleDraft({ ...base, displacementCc: "99999" }).errors.displacementCc, "invalid");
+});
+
+test("does not allow the current profile to edit another owner's specification", () => {
+  const data = cloneDemoData();
+  data.currentProfileId = "profile-someone-else";
+  assert.throws(
+    () => updateVehicleSpecificationInData(data, data.vehicles[0]!.id, {
+      vehicleCategory: "car",
+      make: "NISSAN",
+      model: "SKYLINE",
+    }),
+    /vehicle_not_owned_by_current_profile/,
+  );
+});
+
+test("migrates an existing vehicle to a current car without hiding it", () => {
+  const legacy = cloneDemoData() as unknown as Record<string, unknown>;
+  legacy.schemaVersion = 8;
+  const vehicles = legacy.vehicles as Array<Record<string, unknown>>;
+  delete vehicles[0]?.vehicleCategory;
+  delete vehicles[0]?.ownershipType;
+  delete vehicles[0]?.odometerContext;
+
+  const migrated = migrateAppData(legacy);
+  assert.equal(migrated?.schemaVersion, 14);
+  assert.equal(migrated?.vehicles[0]?.vehicleCategory, "car");
+  assert.equal(migrated?.vehicles[0]?.ownershipType, "owned");
+  assert.equal(migrated?.vehicles[0]?.memberDiscoveryEnabled, true);
+  assert.equal(groupVehiclesByOwnership(migrated?.vehicles ?? []).current.length, 1);
 });

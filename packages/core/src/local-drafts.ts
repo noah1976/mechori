@@ -4,12 +4,15 @@ import type {
   JournalDraft,
   JournalTextBlock,
   JournalVisibility,
+  MaintenanceOccurrencePrecision,
   PrototypeOdometerEpisodeReason,
   PrototypeOdometerUnit,
+  RecordEvidenceBasis,
   RecordActionDraft,
   RecordDraft,
   ResolutionStatus,
 } from "./types.ts";
+import { normalizeServiceAttribution } from "./service-attribution.ts";
 
 export interface LocalDraftEnvelope<T> {
   version: 1;
@@ -27,7 +30,25 @@ export function serializeLocalDraft<T>(value: T, savedAt = new Date().toISOStrin
 }
 
 export function parseRecordLocalDraft(raw: string | null): LocalDraftEnvelope<RecordDraft> | null {
-  return parseLocalDraft(raw, isRecordDraft);
+  const parsed = parseLocalDraft(raw, isRecordDraft);
+  if (!parsed) return null;
+  return {
+    ...parsed,
+    value: {
+      ...parsed.value,
+      evidenceBasis: isRecordEvidenceBasis(parsed.value.evidenceBasis)
+        ? parsed.value.evidenceBasis
+        : "unknown",
+      serviceDatePrecision: isMaintenanceOccurrencePrecision(parsed.value.serviceDatePrecision)
+        ? parsed.value.serviceDatePrecision
+        : inferMaintenanceOccurrencePrecision(parsed.value.serviceDate),
+      servicePeriodNote:
+        typeof parsed.value.servicePeriodNote === "string"
+          ? parsed.value.servicePeriodNote
+          : "",
+      serviceAttribution: normalizeServiceAttribution(parsed.value.serviceAttribution),
+    },
+  };
 }
 
 export function parseJournalLocalDraft(
@@ -45,7 +66,7 @@ export function createRestorableJournalDraft(draft: JournalDraft): RestorableJou
       ...draft,
       media: [],
       contentBlocks: textBlocks.map((block) => ({ ...block })),
-      visibility: draft.media.length > 0 ? "private" : draft.visibility,
+      visibility: draft.visibility,
     },
     omittedMediaCount: draft.media.length,
   };
@@ -90,6 +111,29 @@ function isRecordDraft(value: unknown): value is RecordDraft {
   );
 }
 
+function isRecordEvidenceBasis(value: unknown): value is RecordEvidenceBasis {
+  return [
+    "contemporaneous",
+    "invoice_or_receipt",
+    "photo_or_service_book",
+    "recalled_later",
+    "unknown",
+  ].includes(String(value));
+}
+
+function isMaintenanceOccurrencePrecision(
+  value: unknown,
+): value is MaintenanceOccurrencePrecision {
+  return ["day", "month", "year", "unknown"].includes(String(value));
+}
+
+function inferMaintenanceOccurrencePrecision(value: string): MaintenanceOccurrencePrecision {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return "day";
+  if (/^\d{4}-\d{2}$/.test(value)) return "month";
+  if (/^\d{4}$/.test(value)) return "year";
+  return "unknown";
+}
+
 function isRecordActionDraft(value: unknown): value is RecordActionDraft {
   return (
     isObject(value) &&
@@ -102,6 +146,14 @@ function isRecordActionDraft(value: unknown): value is RecordActionDraft {
 function isJournalDraft(value: unknown): value is JournalDraft {
   if (!isObject(value) || !hasStringFields(value, journalDraftStringFields)) return false;
   return (
+    (value.occurredOn === undefined ||
+      (typeof value.occurredOn === "string" && isValidDateOnly(value.occurredOn))) &&
+    (value.occurredPrecision === undefined ||
+      ["day", "month", "year", "unknown"].includes(String(value.occurredPrecision))) &&
+    (value.occurredYear === undefined || typeof value.occurredYear === "number") &&
+    (value.occurredMonth === undefined || typeof value.occurredMonth === "number") &&
+    (value.occurredPeriodNote === undefined || typeof value.occurredPeriodNote === "string") &&
+    (value.sourceLanguage === undefined || typeof value.sourceLanguage === "string") &&
     Array.isArray(value.displayFields) &&
     value.displayFields.every(isJournalDisplayField) &&
     Array.isArray(value.media) &&
@@ -111,6 +163,12 @@ function isJournalDraft(value: unknown): value is JournalDraft {
     isJournalVisibility(value.visibility) &&
     typeof value.knowledgeExtractionConsent === "boolean"
   );
+}
+
+function isValidDateOnly(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const timestamp = Date.parse(`${value}T00:00:00Z`);
+  return Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === value;
 }
 
 function isRestorableJournalDraft(value: unknown): value is RestorableJournalDraft {

@@ -5,6 +5,7 @@ import { useApp } from "@/lib/app-context";
 import {
   buildHistoryShareText,
   createAppDataExport,
+  getPreferredVehicle,
   summarizeVehicleHistory,
   type HistoryLevelCode,
   type HistoryMilestoneCode,
@@ -70,7 +71,7 @@ function HistorySummaryContent() {
   const { data, locale, recordEngagement } = useApp();
   const params = useSearchParams();
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
-  const vehicle = data.vehicles.find((item) => item.id === params.get("vehicle")) ?? data.vehicles[0];
+  const vehicle = data.vehicles.find((item) => item.id === params.get("vehicle")) ?? getPreferredVehicle(data.vehicles);
   const ja = locale === "ja";
   const snapshot = useMemo(
     () => (vehicle ? summarizeVehicleHistory(vehicle, data.records) : null),

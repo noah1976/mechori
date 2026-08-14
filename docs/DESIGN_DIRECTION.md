@@ -4,6 +4,17 @@
 
 MECHORI は、整備記録を確実に残し、必要な事例を素早く探し、愛車の経験を本人の言葉で楽しく残すサービスです。見た目は派手さよりも、信頼性、読みやすさ、入力しやすさ、安全性の伝達を優先しつつ、事務画面だけに見えない親しみを持たせます。
 
+## Global Product / Hokkaido Born
+
+MECHORIは北海道で生まれたサービスですが、日本国内向けWebサービスに見えることを目指しません。最初から世界中のオーナーが自然に利用できるglobal consumer productとして、車両写真と記録を中心に設計します。
+
+- 日本の業務Web・国内ポータルのような過剰な罫線、カード、説明文、CTAの乱立を避ける。
+- 大胆な余白、typography、車両写真、明確なinformation hierarchy、限られたbrand color、短いcopy、控えめで質の高いmotionを重視する。
+- PCをスマートフォンUIの横伸ばしにせず、同時に無味乾燥なSaaSにも寄せない。
+- 北国、garage、road、metal、old machinery、長く大切に使うものの質感を静かに反映する。雪や山などの直接的な装飾へ依存しない。
+
+キーワードは「北海道製。でも最初から世界のサービスに見える。」とする。将来の`MECHORI Design System / Visual Direction v1`で、具体的なロゴ、色、タイポグラフィ、主要画面をまとめて再検討する。
+
 ## 初期体験
 
 - スマートフォン向けWebアプリとして最適化する。
@@ -39,10 +50,34 @@ WCAG 2.2 AA を目標にします。
 - 投稿者の事実、推測、AI整理、メカニック確認済み、公的資料を視覚的にも区別する。
 - 解決済みと未解決を明確にする。
 
+## カラートーン
+
+特定の国、メーカー、年代、車種文化をブランド全体から連想させないことを原則とします。英国車を想起させる深緑、イタリア車を想起させる赤等を、画面全体の支配色にはしません。
+
+- 背景、面、文字、罫線は白、ニュートラルグレー、チャコールを基調にする。
+- 主要操作とリンクには、整備現場や技術資料を想起する落ち着いたサービスブルーを使う。
+- 達成、注目、進行の補助にはアンバーを限定的に使う。
+- 緑は成功・解決、黄は注意、赤は危険・エラー、青は情報という意味を優先する。
+- 車両写真の色が主役になるよう、UIの面を単一のブランド色で染めない。
+- 車種、国籍、所有状態を色だけで分類しない。
+- 将来のダークモードやブランド調整に備え、役割ベースのデザイントークンを使う。
+
+αでは、ニュートラルな車体にサービスブルーとアンバーの信号色を載せる「国籍を問わない上質な整備記録帳とワークショップ」を基準にします。
+
+## Garage Pilot v2: Quiet Machinery / Living Vehicle History
+
+Garageは車両台帳ではなく、Vehicle、Owner、Historyを見返す場所として扱う。v2では大判のVehicle写真と重なるidentity sheetを主構成にし、写真なしの場合も年式・make・model・所有期間による静かなidentityをつくる。愛称・車種・所有時間、ひとつの主操作「このクルマの記録を残す」、整備と日常の出来事を同じ時間軸で読む構成を優先する。
+
+- Taste SkillのDesign Guidanceを適用し、`DESIGN_VARIANCE=7`、`MOTION_INTENSITY=3`、`VISUAL_DENSITY=4`をGarage Pilotの目安とする。外部fontやmotion libraryは追加しない。
+- KPI的な数値帯、連続したsurface/card、uppercase eyebrow、同格CTAを減らし、余白、写真、date、短いcopyで階層を作る。Desktopは非対称のphoto + identity、Mobileはphoto → identity → actionの順に崩す。
+- 車齢・所有期間・走行距離はdashboard metricではなくVehicle identityの一部として扱う。
+- 写真がないVehicleも、車名・年式・所有時間を用いた静かなfallbackで未完成に見せない。Timelineは重いcardの繰り返しではなく、日付とmarkerを持つ一本の履歴として扱う。
+- このPilotの人間QA後にのみ、HomeやFeedなどへのDesign Language展開を判断する。DB、RLS、RPC、workspace data contractはこのVisual Pilotの対象外とする。Human QA pending。
+- v2 Human QAの初回フィードバックでは、make／model／任意gradeを意味単位で階層化し、Garageのrecord FABをHero CTAと重複させず、Hero周辺の白いsurfaceをcontent canvasへなじませる。再確認はHuman QAで行う。
+
 ## 未確定
 
 - ロゴ
-- カラーパレット
 - タイポグラフィ
 - UIコンポーネント方針
 - 初期対応ブラウザ

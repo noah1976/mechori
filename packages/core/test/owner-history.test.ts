@@ -25,6 +25,21 @@ test("summarizes private history without turning it into a trust score", () => {
   );
 });
 
+test("does not invent exact days when history contains only approximate service dates", () => {
+  const data = cloneDemoData();
+  const vehicle = data.vehicles[0]!;
+  const approximateRecords = data.records.map((record, index) => ({
+    ...record,
+    serviceDate: index === 0 ? "2024" : `2025-${String(index).padStart(2, "0")}`,
+    serviceDatePrecision: index === 0 ? "year" as const : "month" as const,
+  }));
+  const summary = summarizeVehicleHistory(vehicle, approximateRecords);
+
+  assert.equal(summary.firstServiceDate, undefined);
+  assert.equal(summary.lastServiceDate, undefined);
+  assert.equal(summary.coveredDays, 0);
+});
+
 test("share text omits odometer, cost, and record details", () => {
   const data = cloneDemoData();
   const vehicle = data.vehicles[0]!;

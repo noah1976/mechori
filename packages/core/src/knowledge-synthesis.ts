@@ -1,11 +1,61 @@
 import { resolveHazardPolicy, type HazardPolicy, type HazardTagCode } from "./hazards.ts";
-import type { HazardLevel, VerificationStatus } from "./types.ts";
+import { compareVehicleApplicability } from "./vehicle-catalog.ts";
+import type { HazardLevel, Vehicle, VerificationStatus } from "./types.ts";
 
 export type VehicleMatchLevel =
   | "exact_specification"
+  | "reported_configuration_match"
+  | "reported_configuration_conflict"
+  | "same_variant_other_configuration"
+  | "same_variant_unspecified_configuration"
+  | "same_generation_other_variant"
+  | "same_family_other_generation"
+  | "same_family_unspecified"
   | "same_model_other_year"
   | "shared_engine_or_component"
   | "general_symptom";
+
+export function evidenceMatchLevelForVehicles(
+  target: Pick<
+    Vehicle,
+    | "modelFamilyId"
+    | "generationId"
+    | "variantId"
+    | "configurationId"
+    | "specificationMatchStatus"
+    | "modelCode"
+    | "engineCode"
+    | "displacementCc"
+    | "aspiration"
+    | "drivetrain"
+    | "transmissionCode"
+  >,
+  source: Pick<
+    Vehicle,
+    | "modelFamilyId"
+    | "generationId"
+    | "variantId"
+    | "configurationId"
+    | "specificationMatchStatus"
+    | "modelCode"
+    | "engineCode"
+    | "displacementCc"
+    | "aspiration"
+    | "drivetrain"
+    | "transmissionCode"
+  >,
+): VehicleMatchLevel | null {
+  const applicability = compareVehicleApplicability(target, source);
+  if (applicability === "exact_configuration") return "exact_specification";
+  if (applicability === "reported_configuration_match") return "reported_configuration_match";
+  if (applicability === "reported_configuration_conflict") return "reported_configuration_conflict";
+  if (applicability === "same_variant_other_configuration") return "same_variant_other_configuration";
+  if (applicability === "same_variant_unspecified_configuration") return "same_variant_unspecified_configuration";
+  if (applicability === "same_generation_other_variant") return "same_generation_other_variant";
+  if (applicability === "same_family_other_generation") return "same_family_other_generation";
+  if (applicability === "same_family_unspecified") return "same_family_unspecified";
+  return null;
+}
 
 export type KnowledgeOutcome =
   | "improved"

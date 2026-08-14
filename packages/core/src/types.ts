@@ -30,8 +30,57 @@ export type PrototypeOdometerSequenceAssessment =
 export type VehicleRelationshipType =
   | "owned"
   | "previously_owned"
+  | "unknown"
   | "family"
   | "shared";
+export type VehicleCategory = "car" | "motorcycle" | "moped" | "other";
+export type VehicleOdometerContext =
+  | "current"
+  | "at_ownership_end"
+  | "during_ownership"
+  | "unknown";
+export type VehicleIdentityMatchStatus =
+  | "matched_alias"
+  | "brand_only"
+  | "unmatched";
+export type VehicleSpecificationMatchStatus =
+  | "confirmed_model_code"
+  | "conflicting_inputs"
+  | "configuration_candidate"
+  | "grade_candidate"
+  | "generation_candidate"
+  | "unmatched";
+export type VehicleAspirationType =
+  | "naturally_aspirated"
+  | "turbocharged"
+  | "supercharged"
+  | "electric"
+  | "other"
+  | "unknown";
+export type VehicleDrivetrainType =
+  | "fwd"
+  | "rwd"
+  | "awd"
+  | "four_wheel_drive"
+  | "other"
+  | "unknown";
+export type RecordEvidenceBasis =
+  | "contemporaneous"
+  | "invoice_or_receipt"
+  | "photo_or_service_book"
+  | "recalled_later"
+  | "unknown";
+export type OccurrencePrecision = "day" | "month" | "year" | "unknown";
+export type MaintenanceOccurrencePrecision = OccurrencePrecision;
+export type ServicePerformerType = "self" | "service_provider" | "unknown";
+
+export interface MaintenanceServiceAttributionV1 {
+  version: 1;
+  performedByType: ServicePerformerType;
+  serviceProviderId?: string;
+  providerDisplayNameSnapshot?: string;
+  providerLocalitySnapshot?: string;
+}
 
 export interface PrototypeOdometerEpisode {
   id: string;
@@ -51,37 +100,91 @@ export interface PrototypeOdometerReading {
 export interface Vehicle {
   id: string;
   ownerProfileId: string;
+  vehicleCategory: VehicleCategory;
   make: string;
   model: string;
+  /** Owner-entered values are retained even when a catalog alias is matched. */
+  makeInput?: string;
+  modelInput?: string;
+  brandId?: string;
+  modelFamilyId?: string;
+  generationId?: string;
+  /** Normalized mechanical/specification branch inside a generation. */
+  variantId?: string;
+  /** A concrete factory configuration inside a variant, such as GTI 1.6. */
+  configurationId?: string;
+  marketNameId?: string;
+  marketRegion?: string;
+  identityMatchStatus: VehicleIdentityMatchStatus;
+  specificationMatchStatus?: VehicleSpecificationMatchStatus;
   year?: number;
+  grade?: string;
+  modelCode?: string;
+  specificationNote?: string;
+  nickname?: string;
   ownershipType: VehicleRelationshipType;
   ownershipStartedYear?: number;
   ownershipStartedMonth?: number;
+  ownershipStartedDay?: number;
+  ownershipStartedPrecision?: OccurrencePrecision;
   ownershipEndedYear?: number;
   ownershipEndedMonth?: number;
+  ownershipPeriodNote?: string;
+  primaryUse?: string;
+  dispositionReason?: string;
   engine: string;
+  engineCode?: string;
+  displacementCc?: number;
+  aspiration?: VehicleAspirationType;
+  drivetrain?: VehicleDrivetrainType;
   steering: string;
   transmission: string;
+  transmissionCode?: string;
   /** @deprecated Use currentOdometerReading. */
   odometerKm: number;
   odometerEpisodes: PrototypeOdometerEpisode[];
   currentOdometerReading: PrototypeOdometerReading;
+  odometerContext: VehicleOdometerContext;
   imagePath?: string;
+  ownerComment?: string;
+  /** Controls discovery by active MECHORI participants only, never external sharing. */
+  memberDiscoveryEnabled: boolean;
   isDemo: boolean;
 }
 
 export interface VehicleDraft {
+  imagePath: string;
+  vehicleCategory: VehicleCategory;
   make: string;
   model: string;
   year: string;
+  grade: string;
+  modelCode: string;
+  specificationNote: string;
+  nickname: string;
   ownershipType: VehicleRelationshipType;
   ownershipStartedYear: string;
   ownershipStartedMonth: string;
+  ownershipStartedDay: string;
+  ownershipStartedPrecision: OccurrencePrecision;
+  ownershipEndedYear: string;
+  ownershipEndedMonth: string;
+  ownershipPeriodNote: string;
+  primaryUse: string;
+  dispositionReason: string;
   engine: string;
+  engineCode: string;
+  displacementCc: string;
+  aspiration: VehicleAspirationType;
+  drivetrain: VehicleDrivetrainType;
   steering: string;
   transmission: string;
+  transmissionCode: string;
   odometer: string;
   odometerUnit: PrototypeOdometerUnit;
+  odometerContext: VehicleOdometerContext;
+  ownerComment: string;
+  memberDiscoveryEnabled: boolean;
 }
 
 export interface PartReference {
@@ -105,10 +208,16 @@ export interface MaintenanceRecordAction {
 export interface MaintenanceRecord {
   id: string;
   vehicleId: string;
+  /**
+   * ISO-like value at the precision the owner remembers:
+   * YYYY-MM-DD, YYYY-MM, YYYY, or an empty string when unknown.
+   */
   serviceDate: string;
+  serviceDatePrecision: MaintenanceOccurrencePrecision;
+  servicePeriodNote?: string;
   /** @deprecated Use odometerReading. */
-  odometerKm: number;
-  odometerReading: PrototypeOdometerReading;
+  odometerKm?: number;
+  odometerReading?: PrototypeOdometerReading;
   summary: string;
   sourceLanguage: LanguageTag;
   demoTranslation?: Partial<Record<Locale, string>>;
@@ -123,9 +232,11 @@ export interface MaintenanceRecord {
   visibility: Visibility;
   verificationStatus: VerificationStatus;
   sourceType: SourceType;
+  evidenceBasis: RecordEvidenceBasis;
   matchScope: string;
   result: string;
   actions: MaintenanceRecordAction[];
+  serviceAttribution: MaintenanceServiceAttributionV1;
   createdAt: string;
   updatedAt: string;
   isDemo: boolean;
@@ -147,6 +258,8 @@ export interface RecordActionDraft {
 
 export interface RecordDraft {
   serviceDate: string;
+  serviceDatePrecision: MaintenanceOccurrencePrecision;
+  servicePeriodNote: string;
   odometerKm: string;
   odometerUnit: PrototypeOdometerUnit;
   odometerEpisodeId: string;
@@ -162,7 +275,9 @@ export interface RecordDraft {
   cost: string;
   resolutionStatus: ResolutionStatus;
   hazardLevel: HazardLevel;
+  evidenceBasis: RecordEvidenceBasis;
   additionalActions: RecordActionDraft[];
+  serviceAttribution: MaintenanceServiceAttributionV1;
   requestSharing: boolean;
 }
 
@@ -177,6 +292,7 @@ export interface RecordFilters {
 }
 
 export type JournalVisibility = "private" | "followers" | "public";
+export type JournalOccurrencePrecision = OccurrencePrecision;
 export type JournalModerationState = "visible" | "under_review" | "temporarily_hidden";
 export type SocialProfileRole = "owner" | "mechanic";
 export type ProfileVisibility = "private" | "followers" | "public";
@@ -190,9 +306,27 @@ export type FollowTargetType = "profile" | "vehicle" | "model";
 export type ProfileSafetyRelationType = "mute" | "block";
 export type JournalDisplayField = "service_date" | "odometer" | "actions";
 export type JournalMediaKind = "image" | "video";
-export type JournalMediaSource = "local_blob" | "demo_asset";
+export type JournalMediaSource =
+  | "local_blob"
+  | "demo_asset"
+  | "alpha_inline"
+  | "alpha_shared";
 export type JournalMediaPrivacyState = "private_only" | "public_ready";
 export type JournalTextBlockStyle = "paragraph" | "heading" | "quote";
+export type JournalEventType =
+  | "delivery"
+  | "photo"
+  | "drive"
+  | "inspection"
+  | "tire"
+  | "oil"
+  | "breakdown"
+  | "repair"
+  | "part"
+  | "custom"
+  | "event"
+  | "memory"
+  | "other";
 
 export interface JournalTextBlock {
   id: string;
@@ -226,6 +360,8 @@ export interface JournalMediaAttachment {
 export interface SocialProfile {
   id: string;
   displayName: string;
+  publicUsername?: string;
+  profileImagePath?: string;
   role: SocialProfileRole;
   bio: string;
   visibility: ProfileVisibility;
@@ -242,6 +378,7 @@ export interface GarageJournalPost {
   vehicleLabel: string;
   modelTargetId: string;
   title: string;
+  eventType?: JournalEventType;
   bodyOriginal: string;
   sourceLanguage: LanguageTag;
   visibility: JournalVisibility;
@@ -251,7 +388,14 @@ export interface GarageJournalPost {
   media: JournalMediaAttachment[];
   contentBlocks: JournalContentBlock[];
   knowledgeExtractionConsent: boolean;
+  /** Stored only in the owner's workspace; it is not part of the shared Journal projection. */
+  serviceAttribution?: MaintenanceServiceAttributionV1;
   appreciationCount: number;
+  occurredOn?: string;
+  occurredYear?: number;
+  occurredMonth?: number;
+  occurredPrecision?: JournalOccurrencePrecision;
+  occurredPeriodNote?: string;
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
@@ -325,6 +469,13 @@ export interface FollowTargetSummary {
 
 export interface JournalDraft {
   title: string;
+  sourceLanguage?: LanguageTag;
+  eventType?: JournalEventType;
+  occurredOn?: string;
+  occurredYear?: number;
+  occurredMonth?: number;
+  occurredPrecision?: JournalOccurrencePrecision;
+  occurredPeriodNote?: string;
   bodyOriginal: string;
   vehicleId: string;
   linkedRecordId: string;
@@ -333,15 +484,17 @@ export interface JournalDraft {
   contentBlocks: JournalContentBlock[];
   visibility: JournalVisibility;
   knowledgeExtractionConsent: boolean;
+  serviceAttribution?: MaintenanceServiceAttributionV1;
 }
 
 export interface AppData {
-  schemaVersion: 8;
+  schemaVersion: 14;
   vehicles: Vehicle[];
   records: MaintenanceRecord[];
   profiles: SocialProfile[];
   currentProfileId: string;
   journals: GarageJournalPost[];
+  contentTranslations: import("./domain-model.ts").ContentTranslation[];
   follows: FollowRelation[];
   profileSafetyRelations: ProfileSafetyRelation[];
   contentReports: ContentReport[];

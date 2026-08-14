@@ -1,8 +1,12 @@
 "use client";
 
 import {
+  getPreferredVehicle,
   createRestorableJournalDraft,
+  journalToDraft,
+  maintenanceRecordDateLabel,
   validateJournalDraft,
+  type GarageJournalPost,
   type JournalContentBlock,
   type JournalDisplayField,
   type JournalDraft,
@@ -17,6 +21,7 @@ import {
   Heading2,
   ImagePlus,
   Link2,
+  LoaderCircle,
   Plus,
   Quote,
   Save,
@@ -36,20 +41,32 @@ import {
   type FormEvent,
 } from "react";
 import { useApp } from "@/lib/app-context";
+import { JournalMedia } from "@/components/journal-media";
+import { JournalCompletion } from "@/components/journal-completion";
+import { OccurrenceDateFields } from "@/components/occurrence-date-fields";
+import { localDateInputValue } from "@/lib/date-input";
+import { findJournalPrompt } from "@/lib/journal-prompts";
+import { journalSaveErrorMessage } from "@/lib/journal-save-error";
+import {
+  imagePreparationMessageKey,
+  preparePrivateAlphaImage,
+  validateSourceImage,
+} from "@/lib/image-preparation";
 import {
   clearLocalDraft,
   journalLocalDraftKey,
   loadJournalLocalDraft,
   saveLocalDraft,
 } from "@/lib/local-draft-store";
+import { translate } from "@mechori/i18n";
 
 const maxMediaCount = 6;
-const maxImageBytes = 10 * 1024 * 1024;
 const maxVideoBytes = 100 * 1024 * 1024;
+const maxPreparedJournalImageBytes = 460 * 1024;
 
 interface PendingMedia {
   attachment: JournalMediaAttachment;
-  file: File;
+  file: Blob;
   previewUrl: string;
 }
 
@@ -72,16 +89,19 @@ function newTextBlock(style: JournalTextBlockStyle = "paragraph"): JournalConten
   };
 }
 
-function createInitialJournalDraft(vehicleId: string): JournalDraft {
+function createInitialJournalDraft(vehicleId: string, sourceLanguage: "ja" | "en"): JournalDraft {
   return {
     title: "",
+    sourceLanguage,
+    occurredOn: localDateInputValue(),
+    occurredPrecision: "day",
     bodyOriginal: "",
     vehicleId,
     linkedRecordId: "",
     displayFields: ["service_date", "odometer", "actions"],
     media: [],
     contentBlocks: [newTextBlock()],
-    visibility: "private",
+    visibility: "public",
     knowledgeExtractionConsent: false,
   };
 }
@@ -92,27 +112,56 @@ function hasMeaningfulJournalDraft(draft: JournalDraft): boolean {
     draft.linkedRecordId ||
     draft.media.length ||
     draft.contentBlocks.some((block) => block.type === "text" && block.text.trim()) ||
-    draft.visibility !== "private" ||
     draft.knowledgeExtractionConsent,
   );
 }
 
-export function JournalForm() {
-  const { data, locale, addJournal } = useApp();
+export function JournalForm({
+  journal,
+  vehicleId,
+  promptId,
+}: {
+  journal?: GarageJournalPost;
+  vehicleId?: string;
+  promptId?: string;
+}) {
+  const {
+    data,
+    locale,
+    addJournal,
+    updateJournal,
+    isRemoteAlpha,
+    alphaJournalSharingAvailable,
+    alphaJournalMediaSharingAvailable,
+  } = useApp();
   const router = useRouter();
   const ja = locale === "ja";
-  const vehicle = data.vehicles[0];
-  const localDraftKey = journalLocalDraftKey();
+  const selectedPrompt = findJournalPrompt(promptId);
+  const vehicle = journal?.vehicleId
+    ? data.vehicles.find((item) => item.id === journal.vehicleId)
+    : data.vehicles.find(
+        (item) => item.id === vehicleId && item.ownerProfileId === data.currentProfileId,
+      ) ?? getPreferredVehicle(
+        data.vehicles.filter((item) => item.ownerProfileId === data.currentProfileId),
+      );
+  const localDraftKey = journalLocalDraftKey(data.currentProfileId, journal?.id, promptId);
   const initialDraft = useMemo(
-    () => createInitialJournalDraft(vehicle?.id ?? ""),
-    [vehicle?.id],
+    () => journal
+      ? journalToDraft(journal)
+      : createInitialJournalDraft(vehicle?.id ?? "", locale),
+    [journal, locale, vehicle?.id],
   );
   const [draft, setDraft] = useState<JournalDraft>(initialDraft);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveTakingLong, setSaveTakingLong] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [preparingMedia, setPreparingMedia] = useState(false);
   const [mediaError, setMediaError] = useState("");
-  const [draftReady, setDraftReady] = useState(false);
+  const [draftReady, setDraftReady] = useState(Boolean(journal));
   const [draftStatus, setDraftStatus] = useState<"idle" | "restored" | "saved" | "error">("idle");
+  const [pendingDraft, setPendingDraft] = useState<ReturnType<typeof loadJournalLocalDraft>>(null);
+  const [completion, setCompletion] = useState<GarageJournalPost | null>(null);
   const [omittedMediaCount, setOmittedMediaCount] = useState(0);
   const [pendingMedia, setPendingMedia] = useState<PendingMedia[]>([]);
   const [insertAfterBlockId, setInsertAfterBlockId] = useState<string | null>(null);
@@ -120,24 +169,40 @@ export function JournalForm() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const submitFeedbackRef = useRef<HTMLDivElement>(null);
+  const draftRef = useRef(draft);
   const validation = validateJournalDraft(draft);
-  const missingMediaDescription = pendingMedia.some(
-    ({ attachment }) => !attachment.altText.trim(),
-  );
+  const imageAttachments = draft.media.filter((attachment) => attachment.kind === "image");
+  const legacyPrivatePhotoCount = journal?.visibility === "public"
+    ? journal.media.filter(
+        (attachment) =>
+          attachment.kind === "image" && attachment.privacyState === "private_only",
+      ).length
+    : 0;
+
+  useEffect(() => {
+    draftRef.current = draft;
+  }, [draft]);
 
   useEffect(() => {
     pendingMediaRef.current = pendingMedia;
   }, [pendingMedia]);
 
   useEffect(() => {
+    if (journal) return;
     const timer = window.setTimeout(() => {
-      const stored = loadJournalLocalDraft();
+      const stored = loadJournalLocalDraft(localDraftKey);
       if (stored) {
         const storedDraft = stored.value.draft;
         const vehicleExists = data.vehicles.some((item) => item.id === storedDraft.vehicleId);
         const recordExists = data.records.some((item) => item.id === storedDraft.linkedRecordId);
         const restoredDraft = {
           ...storedDraft,
+          occurredOn:
+            storedDraft.occurredPrecision && storedDraft.occurredPrecision !== "day"
+              ? undefined
+              : storedDraft.occurredOn ?? localDateInputValue(),
+          occurredPrecision: storedDraft.occurredPrecision ?? "day",
           vehicleId: vehicleExists ? storedDraft.vehicleId : vehicle?.id ?? "",
           linkedRecordId: recordExists ? storedDraft.linkedRecordId : "",
           contentBlocks: storedDraft.contentBlocks.length
@@ -145,33 +210,40 @@ export function JournalForm() {
             : [newTextBlock()],
         };
         if (hasMeaningfulJournalDraft(restoredDraft)) {
-          setDraft(restoredDraft);
-          setOmittedMediaCount(stored.value.omittedMediaCount);
-          setDraftStatus("restored");
-        } else {
-          clearLocalDraft(localDraftKey);
+          if (hasMeaningfulJournalDraft(draftRef.current)) {
+            setPendingDraft({ ...stored, value: { ...stored.value, draft: restoredDraft } });
+          } else {
+            setPendingDraft({ ...stored, value: { ...stored.value, draft: restoredDraft } });
+          }
         }
       }
       setDraftReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [data.records, data.vehicles, localDraftKey, vehicle?.id]);
+  }, [data.records, data.vehicles, journal, localDraftKey, vehicle?.id]);
 
   useEffect(() => {
+    if (journal) return;
     if (!draftReady) return;
-    if (!hasMeaningfulJournalDraft(draft)) {
-      clearLocalDraft(localDraftKey);
-      return;
-    }
+    if (!hasMeaningfulJournalDraft(draft)) return;
     const timer = window.setTimeout(() => {
       const restorable = createRestorableJournalDraft(draft);
-      setOmittedMediaCount(restorable.omittedMediaCount);
+      const omittedMediaCountToSave = Math.max(
+        restorable.omittedMediaCount,
+        omittedMediaCount,
+      );
+      setOmittedMediaCount(omittedMediaCountToSave);
       setDraftStatus(
-        saveLocalDraft(localDraftKey, restorable) ? "saved" : "error",
+        saveLocalDraft(localDraftKey, {
+          ...restorable,
+          omittedMediaCount: omittedMediaCountToSave,
+        })
+          ? "saved"
+          : "error",
       );
     }, 600);
     return () => window.clearTimeout(timer);
-  }, [draft, draftReady, localDraftKey]);
+  }, [draft, draftReady, journal, localDraftKey, omittedMediaCount]);
 
   function discardDraft() {
     pendingMediaRef.current.forEach(({ previewUrl }) => URL.revokeObjectURL(previewUrl));
@@ -179,45 +251,131 @@ export function JournalForm() {
     setPendingMedia([]);
     setDraft(initialDraft);
     setDraftStatus("idle");
+    setPendingDraft(null);
     setOmittedMediaCount(0);
     setSubmitted(false);
     setMediaError("");
+  }
+
+  function restoreDraft() {
+    const stored = pendingDraft;
+    if (!stored) return;
+    const restoredDraft = stored.value.draft;
+    setDraft(restoredDraft);
+    setOmittedMediaCount(stored.value.omittedMediaCount);
+    setPendingDraft(null);
+    setDraftStatus("restored");
+  }
+
+  function startNewDraft() {
+    clearLocalDraft(localDraftKey);
+    setPendingDraft(null);
+    setDraft(initialDraft);
+    setDraftStatus("idle");
+    setOmittedMediaCount(0);
+  }
+
+  function changeVisibility(visibility: JournalVisibility) {
+    if (isRemoteAlpha && visibility === "followers") return;
+    if (isRemoteAlpha && visibility === "public" && !alphaJournalSharingAvailable) return;
+    if (visibility !== "public") {
+      setPendingMedia((current) =>
+        current.map((item) => ({
+          ...item,
+          attachment: { ...item.attachment, privacyState: "private_only" },
+        })),
+      );
+    }
+    setDraft((current) => ({
+      ...current,
+      visibility,
+      media:
+        visibility === "public"
+          ? current.media
+          : current.media.map((attachment) => ({
+              ...attachment,
+              privacyState: "private_only",
+            })),
+    }));
   }
 
   useEffect(() => () => {
     pendingMediaRef.current.forEach(({ previewUrl }) => URL.revokeObjectURL(previewUrl));
   }, []);
 
-  async function submit(event: FormEvent) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const submittedDraft = draft;
+    const submittedValidation = validateJournalDraft(submittedDraft);
     setSubmitted(true);
-    if (!validation.valid || missingMediaDescription) {
+    setSaveError("");
+    if (!submittedValidation.valid) {
       window.requestAnimationFrame(() => {
-        if (validation.errors.title) {
-          titleInputRef.current?.focus();
-          return;
+        const firstInvalidField = submittedValidation.errors.title
+          ? titleInputRef.current
+          : formRef.current?.querySelector<HTMLElement>(
+              ".has-error input, .has-error textarea, [aria-invalid='true']",
+            );
+        if (firstInvalidField) {
+          firstInvalidField.focus();
+          firstInvalidField.scrollIntoView({ behavior: "smooth", block: "center" });
+        } else {
+          submitFeedbackRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
         }
-        formRef.current
-          ?.querySelector<HTMLElement>(".has-error input, .has-error textarea, [aria-invalid='true'], .note-text-block textarea")
-          ?.focus();
       });
       return;
     }
-    if (saving) return;
-    setSaving(true);
-    try {
-      const journal = await addJournal(
-        draft,
-        pendingMedia.map(({ attachment, file }) => ({ attachment, blob: file })),
-      );
-      clearLocalDraft(localDraftKey);
-      router.push(`/journal/${journal.id}`);
-    } catch {
-      setMediaError(
+    if (
+      isRemoteAlpha &&
+      !alphaJournalMediaSharingAvailable &&
+      submittedDraft.visibility === "public" &&
+      imageAttachments.length > 0
+    ) {
+      setSaveError(
         ja
-          ? "端末へ保存できませんでした。入力内容は下書きとして残しています。容量を確認して、もう一度お試しください。"
-          : "This journal could not be saved. Your text remains in the local draft. Check available storage and try again.",
+          ? "写真共有の準備が完了していないため、写真付き記録はいまは自分だけに保存してください。"
+          : "Photo sharing is not ready. Save this record with photos for yourself for now.",
       );
+      window.requestAnimationFrame(() => {
+        submitFeedbackRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      });
+      return;
+    }
+    if (saving || preparingMedia) return;
+    setSaving(true);
+    setSaveTakingLong(false);
+    const slowSaveTimer = window.setTimeout(() => {
+      setSaveTakingLong(true);
+    }, 8000);
+    try {
+      const savedJournal = journal
+        ? await updateJournal(
+            journal.id,
+            submittedDraft,
+            pendingMedia.map(({ attachment, file }) => ({ attachment, blob: file })),
+          )
+        : await addJournal(
+            submittedDraft,
+            pendingMedia.map(({ attachment, file }) => ({ attachment, blob: file })),
+          );
+      clearLocalDraft(localDraftKey);
+      window.clearTimeout(slowSaveTimer);
+      if (journal) {
+        router.push(`/journal/${savedJournal.id}?updated=1`);
+      } else {
+        setSaving(false);
+        setCompletion(savedJournal);
+      }
+    } catch (error) {
+      window.clearTimeout(slowSaveTimer);
+      setSaveTakingLong(false);
+      setSaveError(journalSaveErrorMessage(error, ja));
       setSaving(false);
     }
   }
@@ -266,15 +424,16 @@ export function JournalForm() {
   }
 
   function openMediaPicker(afterId: string | null) {
+    if (preparingMedia || saving) return;
     setInsertAfterBlockId(afterId);
     fileInputRef.current?.click();
   }
 
-  function selectMedia(event: ChangeEvent<HTMLInputElement>) {
+  async function selectMedia(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
     setMediaError("");
-    if (pendingMedia.length + files.length > maxMediaCount) {
+    if (draft.media.length + files.length > maxMediaCount) {
       setMediaError(
         ja
           ? `1投稿につき${maxMediaCount}ファイルまで追加できます。`
@@ -282,47 +441,71 @@ export function JournalForm() {
       );
       return;
     }
-    const unsupported = files.find(
-      (file) => !file.type.startsWith("image/") && !file.type.startsWith("video/"),
+    const imageSourceError = files
+      .filter((file) => !file.type.startsWith("video/"))
+      .map((file) => validateSourceImage(file))
+      .find((error) => error !== null);
+    const unsupportedVideo = files.find(
+      (file) => !file.type.startsWith("video/") && validateSourceImage(file) === "unsupported_image",
     );
-    const tooLarge = files.find((file) =>
-      file.type.startsWith("video/")
-        ? file.size > maxVideoBytes
-        : file.size > maxImageBytes,
+    const oversizedVideo = files.find(
+      (file) => file.type.startsWith("video/") && file.size > maxVideoBytes,
     );
-    if (unsupported || tooLarge) {
+    if (unsupportedVideo || imageSourceError || oversizedVideo) {
       setMediaError(
-        unsupported
-          ? ja
-            ? "画像または動画ファイルを選んでください。"
-            : "Choose image or video files."
+        imageSourceError
+          ? translate(locale, imagePreparationMessageKey(new Error(imageSourceError)))
           : ja
-            ? "画像は10MB、動画は100MBまでです。"
-            : "Images are limited to 10 MB and videos to 100 MB.",
+            ? "動画は100MBまでです。"
+            : "Videos are limited to 100 MB.",
       );
       return;
     }
 
     const now = new Date().toISOString();
-    const additions = files.map((file): PendingMedia => {
-      const id = `journal-media-${crypto.randomUUID()}`;
-      return {
-        attachment: {
-          id,
-          kind: file.type.startsWith("video/") ? "video" : "image",
-          source: "local_blob",
-          storageKey: id,
-          mimeType: file.type,
-          sizeBytes: file.size,
-          altText: "",
-          privacyState: "private_only",
-          createdAt: now,
-          isDemo: false,
-        },
-        file,
-        previewUrl: URL.createObjectURL(file),
-      };
-    });
+    const additions: PendingMedia[] = [];
+    setPreparingMedia(true);
+    try {
+      for (const file of files) {
+        const id = `journal-media-${crypto.randomUUID()}`;
+        const isVideo = file.type.startsWith("video/");
+        const prepared = isVideo
+          ? null
+          : await preparePrivateAlphaImage(file, {
+              maxDimension: 1800,
+              maxOutputBytes: maxPreparedJournalImageBytes,
+            });
+        const blob = prepared?.blob ?? file;
+        additions.push({
+          attachment: {
+            id,
+            kind: isVideo ? "video" : "image",
+            source: "local_blob",
+            storageKey: id,
+            mimeType: blob.type,
+            sizeBytes: blob.size,
+            altText: "",
+            privacyState:
+              isRemoteAlpha &&
+              draft.visibility === "public" &&
+              !isVideo
+                ? "public_ready"
+                : "private_only",
+            createdAt: now,
+            isDemo: false,
+          },
+          file: blob,
+          previewUrl: URL.createObjectURL(blob),
+        });
+      }
+      setOmittedMediaCount(0);
+    } catch (error) {
+      additions.forEach(({ previewUrl }) => URL.revokeObjectURL(previewUrl));
+      setMediaError(translate(locale, imagePreparationMessageKey(error)));
+      setPreparingMedia(false);
+      return;
+    }
+    setPreparingMedia(false);
     setPendingMedia((current) => [...current, ...additions]);
     setDraft((current) => {
       const mediaBlocks = additions.map(({ attachment }) => ({
@@ -379,17 +562,21 @@ export function JournalForm() {
     }));
   }
 
+  if (completion) {
+    return <JournalCompletion journal={completion} vehicle={vehicle} locale={locale} mode="detailed" />;
+  }
+
   return (
-    <form ref={formRef} className="journal-form note-editor-form" onSubmit={submit} noValidate aria-busy={saving}>
+    <form ref={formRef} className="journal-form note-editor-form" onSubmit={submit} noValidate aria-busy={saving || preparingMedia}>
       <section className="note-editor-shell">
         <header className="note-editor-header">
           <div>
-            <span className="eyebrow">YOUR GARAGE STORY</span>
-            <strong>{ja ? "その日の出来事を、好きな形で" : "Tell the story your way"}</strong>
+            <span className="eyebrow">DETAILED RECORD</span>
+            <strong>{ja ? "愛車の記録を、詳しく残す" : "Keep a detailed vehicle record"}</strong>
             <small>
               {ja
-                ? "壊れた日も、路上で止まった日も、直って走れた日も。AIは本文を代筆しません。"
-                : "Breakdowns, roadside stops, and the first drive after a fix. AI will not write it for you."}
+                ? "タイトル、長文、複数の写真や動画を使えます。写真と一言だけなら「さっと記録」が向いています。"
+                : "Use a title, long-form text, and multiple photos or videos. For a photo and one line, use Quick record."}
             </small>
           </div>
           <Link href="/records/new" className="secondary-action">
@@ -397,12 +584,32 @@ export function JournalForm() {
             {ja ? "整備記録だけ残す" : "Maintenance record only"}
           </Link>
         </header>
+        {selectedPrompt && (
+          <aside className="journal-prompt-hint" aria-label={selectedPrompt.label}>
+            <strong>{selectedPrompt.label}</strong>
+            <ul>{selectedPrompt.hint.map((item) => <li key={item}>{item}</li>)}</ul>
+          </aside>
+        )}
         <JournalDraftStatus
           status={draftStatus}
           omittedMediaCount={omittedMediaCount}
           ja={ja}
           onDiscard={discardDraft}
         />
+        {pendingDraft && (
+          <div className="local-draft-status is-restored" role="status">
+            <span>
+              <strong>{ja ? "書きかけの記録があります" : "You have an unfinished record"}</strong>
+              <br />
+              {ja ? "前回入力していた内容を復元できます。" : "You can restore what you entered last time."}
+            </span>
+            <span className="local-draft-actions">
+              <button type="button" onClick={restoreDraft}>{ja ? "下書きを復元" : "Restore draft"}</button>
+              <button type="button" onClick={() => { clearLocalDraft(localDraftKey); setPendingDraft(null); }}>{ja ? "下書きを削除" : "Delete draft"}</button>
+              <button type="button" onClick={startNewDraft}>{ja ? "新しく書く" : "Start new"}</button>
+            </span>
+          </div>
+        )}
 
         <label className={submitted && validation.errors.title ? "note-title has-error" : "note-title"}>
           <span className="sr-only">{ja ? "タイトル" : "Title"}</span>
@@ -416,6 +623,22 @@ export function JournalForm() {
           {submitted && validation.errors.title && (
             <small>{ja ? "タイトルを入力してください" : "Enter a title"}</small>
           )}
+        </label>
+
+        <OccurrenceDateFields
+          value={draft}
+          locale={locale}
+          error={submitted && validation.errors.occurredOn ? validation.errors.occurredOn : undefined}
+          onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
+        />
+
+        <label className="field journal-source-language">
+          {ja ? "この文章の原文言語" : "Original language of this post"}
+          <select value={draft.sourceLanguage ?? locale} onChange={(event) => setDraft((current) => ({ ...current, sourceLanguage: event.target.value }))}>
+            <option value="ja">日本語</option>
+            <option value="en">English</option>
+          </select>
+          <small>{ja ? "画面の表示言語ではなく、実際に書いている言語を選びます。" : "Choose the language you are actually writing in, independently of the interface language."}</small>
         </label>
 
         <div className="note-block-list">
@@ -468,17 +691,29 @@ export function JournalForm() {
                       </div>
                       <label className={submitted && !media.attachment.altText.trim() ? "field has-error" : "field"}>
                         {ja ? "写真・動画の説明" : "Media description"}
-                        <input value={media.attachment.altText} onChange={(event) => describeMedia(media.attachment.id, event.target.value)} placeholder={ja ? "何が写っているか、ひとこと添える" : "Add a short description"} />
+                        <input value={media.attachment.altText} onChange={(event) => describeMedia(media.attachment.id, event.target.value)} placeholder={ja ? "何が写っているか、ひとこと添える" : "Add a short description"} aria-invalid={submitted && !media.attachment.altText.trim()} />
                         {submitted && !media.attachment.altText.trim() && <small>{ja ? "説明を入力してください" : "Add a description"}</small>}
                       </label>
                     </div>
-                  ) : null}
+                  ) : (() => {
+                    const attachment = draft.media.find((item) => item.id === block.mediaId);
+                    return attachment ? (
+                      <div className="note-media-block">
+                        <JournalMedia attachments={[attachment]} locale={locale} />
+                        <label className={submitted && !attachment.altText.trim() ? "field has-error" : "field"}>
+                          {ja ? "写真・動画の説明" : "Media description"}
+                          <input value={attachment.altText} onChange={(event) => describeMedia(attachment.id, event.target.value)} placeholder={ja ? "何が写っているか、ひとこと添える" : "Add a short description"} aria-invalid={submitted && !attachment.altText.trim()} />
+                          {submitted && !attachment.altText.trim() && <small>{ja ? "説明を入力してください" : "Add a description"}</small>}
+                        </label>
+                      </div>
+                    ) : null;
+                  })()}
                 </article>
                 <BlockInsertMenu
                   ja={ja}
                   onText={(style) => addText(block.id, style)}
                   onMedia={() => openMediaPicker(block.id)}
-                  mediaDisabled={pendingMedia.length >= maxMediaCount}
+                  mediaDisabled={draft.media.length >= maxMediaCount || preparingMedia || saving}
                 />
               </div>
             );
@@ -486,42 +721,176 @@ export function JournalForm() {
           {draft.contentBlocks.length === 0 && (
             <div className="note-empty-editor">
               <p>{ja ? "文章でも写真でも、好きなところから始められます。" : "Begin with words or media."}</p>
-              <BlockInsertMenu ja={ja} onText={(style) => addText(null, style)} onMedia={() => openMediaPicker(null)} mediaDisabled={false} />
+              <BlockInsertMenu ja={ja} onText={(style) => addText(null, style)} onMedia={() => openMediaPicker(null)} mediaDisabled={preparingMedia || saving} />
             </div>
           )}
         </div>
 
-        <input ref={fileInputRef} hidden type="file" accept="image/*,video/*" multiple tabIndex={-1} aria-hidden="true" onChange={selectMedia} />
+        <input ref={fileInputRef} hidden type="file" accept="image/*,video/*" multiple tabIndex={-1} aria-hidden="true" onChange={selectMedia} disabled={preparingMedia || saving} />
+        {preparingMedia && <p className="image-preparation-note" role="status"><ShieldCheck size={15} aria-hidden="true" />{translate(locale, "preparingPhoto")}</p>}
         {mediaError && <p className="media-error" role="alert">{mediaError}</p>}
         {submitted && validation.errors.bodyOriginal && (
           <p className="media-error" role="alert">
             {ja ? "文章、写真・動画、または関連する整備記録を追加してください。" : "Add text, media, or a related maintenance record."}
           </p>
         )}
-        {pendingMedia.length > 0 && (
+        {draft.media.length > 0 && draft.visibility !== "public" && (
           <div className="media-privacy-notice">
             <ShieldAlert size={20} aria-hidden="true" />
-            <div><strong>{ja ? "実ファイル付き投稿は現在、非公開のみ" : "Real media remains private for now"}</strong><p>{ja ? "ナンバー・顔・位置情報の公開前処理が完成するまで、端末内の非公開記録として保存します。" : "Until privacy processing is complete, media stays private on this device."}</p></div>
+            <div>
+              <strong>{ja ? "写真は記録の公開範囲に従って保存します" : "Photos use the record audience"}</strong>
+              <p>{ja ? "本文と写真は同じ公開範囲になります。" : "The text and photos use the same audience."}</p>
+            </div>
           </div>
         )}
       </section>
 
       <section className="journal-settings">
         <div className="section-heading compact"><div><span className="eyebrow">MAINTENANCE CONTEXT</span><h2>{ja ? "整備記録を添える" : "Attach maintenance context"}</h2></div><Link2 size={21} aria-hidden="true" /></div>
-        <label className="field">{ja ? "関連する整備記録" : "Related maintenance record"}<select value={draft.linkedRecordId} onChange={(event) => setDraft((current) => ({ ...current, linkedRecordId: event.target.value }))}><option value="">{ja ? "関連付けない" : "No linked record"}</option>{data.records.map((record) => <option key={record.id} value={record.id}>{record.serviceDate} · {record.summary}</option>)}</select></label>
+        <label className="field">{ja ? "関連する整備記録" : "Related maintenance record"}<select value={draft.linkedRecordId} onChange={(event) => setDraft((current) => ({ ...current, linkedRecordId: event.target.value }))}><option value="">{ja ? "関連付けない" : "No linked record"}</option>{data.records.map((record) => <option key={record.id} value={record.id}>{maintenanceRecordDateLabel(record, locale)} · {record.summary}</option>)}</select></label>
         {draft.linkedRecordId && <fieldset className="journal-field-options"><legend>{ja ? "記事に表示する定型情報" : "Structured details to show"}</legend>{displayFieldOptions.map((option) => <label className="checkbox-row" key={option.value}><input type="checkbox" checked={draft.displayFields.includes(option.value)} onChange={() => toggleDisplayField(option.value)} /><span>{ja ? option.ja : option.en}</span></label>)}</fieldset>}
       </section>
 
       <section className="journal-settings">
         <div className="section-heading compact"><div><span className="eyebrow">PRIVACY</span><h2>{ja ? "公開範囲" : "Audience"}</h2></div><ShieldCheck size={21} aria-hidden="true" /></div>
-        <div className="segmented-control" role="group" aria-label={ja ? "公開範囲" : "Audience"}>{([ ["private", ja ? "非公開" : "Private"], ["followers", ja ? "フォロワー" : "Followers"], ["public", ja ? "公開" : "Public"] ] as Array<[JournalVisibility, string]>).map(([value, label]) => <button type="button" className={draft.visibility === value ? "is-selected" : ""} aria-pressed={draft.visibility === value} onClick={() => setDraft((current) => ({ ...current, visibility: value }))} key={value}>{label}</button>)}</div>
-        {validation.errors.media === "private_only" && <div className="media-publication-gate" role="alert"><ShieldAlert size={19} aria-hidden="true" /><span>{ja ? "実ファイルの公開前処理が未実装です。" : "Privacy processing for real media is not implemented."}</span><button type="button" className="secondary-action" onClick={() => setDraft((current) => ({ ...current, visibility: "private" }))}>{ja ? "非公開に戻す" : "Make private"}</button></div>}
+        {!journal && (
+          <p className="settings-help">
+            {isRemoteAlpha
+              ? ja
+                ? "初期値は『α参加者に公開』です。自分だけの記録として保存することもできます。"
+                : "The default is shared with alpha participants. You can also save a record for yourself only."
+              : ja
+                ? "初期値は公開です。自分だけの記録として保存することもできます。"
+                : "The default is public. You can also save a record for yourself only."}
+          </p>
+        )}
+        <div className={`segmented-control ${isRemoteAlpha ? "has-two-options" : ""}`} role="group" aria-label={ja ? "公開範囲" : "Audience"}>
+          {([
+            ["private", ja ? "自分だけ" : "Only me"],
+            ...(!isRemoteAlpha ? [["followers", ja ? "フォロワー" : "Followers"]] : []),
+            ["public", isRemoteAlpha ? (ja ? "α参加者に公開" : "Alpha participants") : (ja ? "公開" : "Public")],
+          ] as Array<[JournalVisibility, string]>).map(([value, label]) => (
+            <button
+              type="button"
+              className={draft.visibility === value ? "is-selected" : ""}
+              aria-pressed={draft.visibility === value}
+              onClick={() => changeVisibility(value)}
+              disabled={isRemoteAlpha && value === "public" && !alphaJournalSharingAvailable}
+              key={value}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {isRemoteAlpha && !alphaJournalSharingAvailable && (
+          <p className="settings-help">
+            {ja
+              ? "共有機能の準備がまだ完了していないため、現在は自分だけに保存できます。"
+              : "Sharing setup is not complete yet, so records can currently be saved only for you."}
+          </p>
+        )}
+        {isRemoteAlpha && draft.visibility === "public" && (
+          <p className="settings-help">
+            {ja
+              ? "ログイン済みのP0・α参加者だけが、投稿本文、写真、表示用車名を見られます。関連する非公開整備記録は共有しません。"
+              : "Only signed-in P0 and alpha participants can see the post text, photos, and vehicle label. Linked private maintenance records are not shared."}
+          </p>
+        )}
+        {isRemoteAlpha &&
+          draft.visibility === "public" &&
+          imageAttachments.length > 0 &&
+          alphaJournalMediaSharingAvailable && (
+          <p className="settings-help">
+            {ja
+              ? "写真は記録本文と同じ範囲で公開します。ナンバー、人物、住所が分かる背景を保存前に確認してください。"
+              : "Photos use the same audience as the record. Check plates, people, and address-revealing backgrounds before saving."}
+          </p>
+        )}
+        {draft.visibility === "public" && legacyPrivatePhotoCount > 0 && (
+          <p className="settings-help">
+            {ja
+              ? `以前の設定で非公開にした写真${legacyPrivatePhotoCount}枚は、この編集だけで公開へ変更しません。`
+              : `${legacyPrivatePhotoCount} photo${legacyPrivatePhotoCount === 1 ? "" : "s"} kept private under the previous setting will not be published by this edit.`}
+          </p>
+        )}
+        {isRemoteAlpha &&
+          !alphaJournalMediaSharingAvailable &&
+          draft.visibility === "public" &&
+          imageAttachments.length > 0 && (
+          <div className="media-publication-gate" role="status">
+            <ShieldAlert size={19} aria-hidden="true" />
+            <span>
+              {ja
+                ? "写真共有の準備中です。本文と写真の公開範囲を一致させるため、今回は自分だけに保存してください。"
+                : "Photo sharing is still being prepared. Save this for yourself so the text and photo audience remain consistent."}
+            </span>
+          </div>
+        )}
+        {isRemoteAlpha && draft.visibility === "public" && draft.media.some((item) => item.kind === "video") && (
+          <div className="media-publication-gate" role="status">
+            <ShieldCheck size={19} aria-hidden="true" />
+            <span>{ja ? "動画はα参加者へ共有せず、自分の履歴だけに残します。" : "Videos remain in your private history and are not shared with alpha participants."}</span>
+          </div>
+        )}
         <label className="consent-option"><input type="checkbox" checked={draft.knowledgeExtractionConsent} onChange={(event) => setDraft((current) => ({ ...current, knowledgeExtractionConsent: event.target.checked }))} /><span><strong>{ja ? "本文をナレッジ検索の参考候補にする" : "Allow this story to inform knowledge search"}</strong><small>{ja ? "AIは本文を代筆せず、公開後も出典付きの未確認投稿として扱います。" : "AI never writes the story and treats it as cited, unverified owner content."}</small></span></label>
       </section>
 
-      <div className="form-actions"><button type="submit" className="primary-action" disabled={saving}><Save size={17} aria-hidden="true" />{saving ? ja ? "保存中…" : "Saving…" : draft.visibility === "private" ? ja ? "非公開で保存" : "Save privately" : ja ? "公開範囲を確認して保存" : "Review audience and save"}</button></div>
+      <div className="journal-submit-area">
+        {submitted && !validation.valid && (
+          <div ref={submitFeedbackRef} className="form-submit-feedback is-error" role="alert">
+            <ShieldAlert size={18} aria-hidden="true" />
+            <span>{journalValidationMessage(validation, ja)}</span>
+          </div>
+        )}
+        {saveTakingLong && (
+          <div className="form-submit-feedback" role="status">
+            <LoaderCircle className="spin" size={18} aria-hidden="true" />
+            <span>
+              {ja
+                ? "保存を続けています。写真や通信状況によって少し時間がかかることがあります。"
+                : "Still saving. Photos or network conditions can make this take a little longer."}
+            </span>
+          </div>
+        )}
+        {saveError && (
+          <div className="form-submit-feedback is-error" role="alert">
+            <ShieldAlert size={18} aria-hidden="true" />
+            <span>{saveError}</span>
+          </div>
+        )}
+        <div className="form-actions">
+          <button type="submit" className="primary-action" disabled={saving || preparingMedia}>
+            {saving
+              ? <LoaderCircle className="spin" size={17} aria-hidden="true" />
+              : <Save size={17} aria-hidden="true" />}
+            {saving ? ja ? "保存中…" : "Saving…" : journal ? (ja ? "変更を保存" : "Save changes") : draft.visibility === "private" ? ja ? "詳しい記録を非公開で保存" : "Save detailed record privately" : ja ? "公開範囲を確認して保存" : "Review audience and save"}
+          </button>
+        </div>
+      </div>
     </form>
   );
+}
+
+function journalValidationMessage(
+  validation: ReturnType<typeof validateJournalDraft>,
+  ja: boolean,
+): string {
+  const issues: string[] = [];
+  if (validation.errors.title) {
+    issues.push(ja ? "タイトル" : "title");
+  }
+  if (validation.errors.occurredOn) {
+    issues.push(ja ? "日付・時期" : "date or period");
+  }
+  if (validation.errors.bodyOriginal) {
+    issues.push(ja ? "文章・写真・関連する整備記録" : "text, media, or a linked maintenance record");
+  }
+  if (validation.errors.media === "description_required") {
+    issues.push(ja ? "写真・動画の説明" : "media description");
+  }
+  return ja
+    ? `保存前に確認が必要です：${issues.join("、")}。`
+    : `Check the following before saving: ${issues.join(", ")}.`;
 }
 
 function JournalDraftStatus({
