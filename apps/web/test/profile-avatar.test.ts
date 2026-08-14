@@ -6,6 +6,7 @@ const avatar = readFileSync(new URL("../components/profile-avatar.tsx", import.m
 const alphaProfile = readFileSync(new URL("../lib/alpha-profile.ts", import.meta.url), "utf8");
 const appShell = readFileSync(new URL("../components/app-shell.tsx", import.meta.url), "utf8");
 const garage = readFileSync(new URL("../app/garage/page.tsx", import.meta.url), "utf8");
+const garageVehicleIdentity = readFileSync(new URL("../components/garage-vehicle-identity.tsx", import.meta.url), "utf8");
 const publicProfile = readFileSync(new URL("../app/profile/[id]/page.tsx", import.meta.url), "utf8");
 const journalCard = readFileSync(new URL("../components/journal-card.tsx", import.meta.url), "utf8");
 const journalDetail = readFileSync(new URL("../app/journal/[id]/page.tsx", import.meta.url), "utf8");
@@ -25,8 +26,9 @@ test("profile avatars download private image paths and render the resulting blob
 });
 
 test("Garage connects the current owner profile to the shared avatar", () => {
-  assert.match(garage, /import \{ ProfileAvatar \} from "@\/components\/profile-avatar"/);
-  assert.match(garage, /imagePath=\{owner\?\.profileImagePath\}/);
+  assert.match(garage, /ownerImagePath=\{owner\?\.profileImagePath\}/);
+  assert.match(garageVehicleIdentity, /import \{ ProfileAvatar \} from "@\/components\/profile-avatar"/);
+  assert.match(garageVehicleIdentity, /imagePath=\{ownerImagePath\}/);
 });
 
 test("saved profile image paths reach every primary Avatar surface", () => {

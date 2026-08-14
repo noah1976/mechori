@@ -1,12 +1,11 @@
 "use client";
 
 import { DemoNotice } from "@/components/demo-notice";
+import { GarageVehicleIdentity } from "@/components/garage-vehicle-identity";
 import { JournalMedia } from "@/components/journal-media";
-import { ProfileAvatar } from "@/components/profile-avatar";
 import { useApp } from "@/lib/app-context";
 import { garageServiceAttributionLabel } from "@/lib/garage-pilot";
 import {
-  formatOwnershipDuration,
   formatOwnershipPeriod,
   displayVehicleModel,
   getOwnJournals,
@@ -16,7 +15,6 @@ import {
   maintenanceRecordDateKey,
   maintenanceRecordDateLabel,
   resolveJournalDisplayContent,
-  summarizeVehicleRelationship,
   type JournalEventType,
   type JournalMediaAttachment,
   type MaintenanceServiceAttributionV1,
@@ -117,8 +115,6 @@ function GarageContent() {
       </div>
     );
   }
-  const relationship = summarizeVehicleRelationship(vehicle);
-  const ownershipDuration = formatOwnershipDuration(locale, relationship);
   const vehicleModel = displayVehicleModel(vehicle, locale);
   const vehicleLabel = `${vehicle.make} ${vehicleModel}`;
   const isPreviousVehicle = vehicle.ownershipType === "previously_owned";
@@ -174,19 +170,12 @@ function GarageContent() {
             <span>{isPreviousVehicle ? (ja ? "これまでの愛車" : "Previously owned") : (ja ? "いまの愛車" : "Current vehicle")}</span>
             {vehicle.isDemo && <span className="demo-label">DEMO</span>}
           </div>
-          <p className="garage-v2-make">{vehicle.make}</p>
-          <h1>{vehicleModel}</h1>
-          {vehicle.grade && <p className="garage-v2-grade">{vehicle.grade}</p>}
-          {vehicle.nickname && <p className="garage-v2-nickname">{vehicle.nickname}</p>}
-          <div className="garage-v2-owner-line">
-            <ProfileAvatar displayName={owner?.displayName ?? "MECHORI"} imagePath={owner?.profileImagePath} />
-            <span>{ja ? `${owner?.displayName ?? "オーナー"}の愛車` : `${owner?.displayName ?? "Owner"}'s vehicle`}</span>
-          </div>
-          <p className="garage-v2-life-line" aria-label={ja ? "車両と所有の情報" : "Vehicle and ownership information"}>
-            {relationship.vehicleAgeYears !== undefined && <span>{ja ? `${relationship.vehicleAgeYears}年を走ってきた` : `${relationship.vehicleAgeYears} years on the road`}</span>}
-            {ownershipDuration && <span>{ownershipDuration}</span>}
-            {vehicle.currentOdometerReading.displayedValue > 0 && <span>{vehicle.currentOdometerReading.displayedValue.toLocaleString()} {vehicle.currentOdometerReading.unit}</span>}
-          </p>
+          <GarageVehicleIdentity
+            vehicle={vehicle}
+            locale={locale}
+            ownerDisplayName={owner?.displayName}
+            ownerImagePath={owner?.profileImagePath}
+          />
           {vehicle.ownerComment && <blockquote className="garage-v2-owner-note">{vehicle.ownerComment}</blockquote>}
           <div className="garage-v2-record-actions">
             <Link href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`} className="primary-action garage-v2-record-action"><Camera size={18} />{ja ? "このクルマの記録を残す" : "Add a record for this vehicle"}</Link>

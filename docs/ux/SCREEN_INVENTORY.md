@@ -31,7 +31,7 @@
 
 ## Garage Visual Pilot v2
 
-`/garage`はDesign Direction v1のPilotとして、Vehicle photo / fallback identity、owner、ownership、ひとつの記録CTA、整備と日常の統合timelineを優先する。v2はDesktopで大判写真とidentity sheetを非対称に組み、Mobileではphoto → identity → actionへ自然に崩す。timelineはcardの反復ではなく、整備と日常を異なるmarkerで示すchronological spineとする。Human QAフィードバックにより、make／model／任意gradeを独立表示し、Garageだけrecord FABを出さず、Heroのsurfaceをcanvasへなじませた。人間QAではiPhoneとPCで、最初のviewportのVehicle identity、写真なし・長い車名・複数台選択、記録なし、整備／DIY／お店・工場／思い出のtimeline、既存の作成・編集・共有導線、PC sidebarとSP navigationを確認する。Home、Feed、公開Garageなどへこの見せ方を展開するかはPilotの確認後に決める。Human QA pending。
+`/garage`はDesign Direction v1のPilotとして、Vehicle photo / fallback identity、owner、ownership、ひとつの記録CTA、整備と日常の統合timelineを優先する。v2はDesktopで大判写真とidentity sheetを非対称に組み、Mobileではphoto → identity → actionへ自然に崩す。Vehicle identityはmake、車名と同じ強さのgrade、任意の型式と年式、車齢・所有・走行距離の順に表示し、未入力のgradeや型式にはplaceholderを置かない。timelineはcardの反復ではなく、整備と日常を異なるmarkerで示すchronological spineとする。Garageだけrecord FABを出さず、Heroのsurfaceをcanvasへなじませた。人間QAではiPhoneとPCで、最初のviewportのVehicle identity、grade・型式の有無、写真なし・長い車名・複数台選択、記録なし、整備／DIY／お店・工場／思い出のtimeline、既存の作成・編集・共有導線、PC sidebarとSP navigationを確認する。Home、Feed、公開Garageなどへこの見せ方を展開するかはPilotの確認後に決める。Human QA pending。
 
 ## CURRENTで確認できる構造上の論点
 

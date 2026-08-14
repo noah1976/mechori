@@ -70,7 +70,7 @@ Garageは車両台帳ではなく、Vehicle、Owner、Historyを見返す場所�
 
 - Taste SkillのDesign Guidanceを適用し、`DESIGN_VARIANCE=7`、`MOTION_INTENSITY=3`、`VISUAL_DENSITY=4`をGarage Pilotの目安とする。外部fontやmotion libraryは追加しない。
 - KPI的な数値帯、連続したsurface/card、uppercase eyebrow、同格CTAを減らし、余白、写真、date、短いcopyで階層を作る。Desktopは非対称のphoto + identity、Mobileはphoto → identity → actionの順に崩す。
-- 車齢・所有期間・走行距離はdashboard metricではなくVehicle identityの一部として扱う。
+- 車齢・所有期間・走行距離はdashboard metricではなくVehicle identityの一部として扱う。Vehicle identityはmake、車名とgrade、任意の型式と年式、事実としての車齢・所有期間・走行距離の順に固定し、gradeと型式の有無で意味づけを変えない。
 - 写真がないVehicleも、車名・年式・所有時間を用いた静かなfallbackで未完成に見せない。Timelineは重いcardの繰り返しではなく、日付とmarkerを持つ一本の履歴として扱う。
 - このPilotの人間QA後にのみ、HomeやFeedなどへのDesign Language展開を判断する。DB、RLS、RPC、workspace data contractはこのVisual Pilotの対象外とする。Human QA pending。
 - v2 Human QAの初回フィードバックでは、make／model／任意gradeを意味単位で階層化し、Garageのrecord FABをHero CTAと重複させず、Hero周辺の白いsurfaceをcontent canvasへなじませる。再確認はHuman QAで行う。
