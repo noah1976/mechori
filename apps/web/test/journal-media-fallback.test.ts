@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { journalMediaFallback } from "../lib/journal-media-fallback.ts";
 
@@ -23,4 +24,13 @@ test("inline media is not classified as a legacy local-media failure", () => {
 
   assert.equal(fallback.kind, "other");
   assert.equal(fallback.message, "Photo is unavailable");
+});
+
+test("compact timelines keep a local-only legacy media fallback subordinate to record text", () => {
+  const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(
+    css,
+    /\.journal-media\.compact \.journal-media-placeholder\.is-local-unavailable \{ min-height: 68px; aspect-ratio: auto; padding: 12px 14px; \}/,
+  );
 });

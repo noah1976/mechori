@@ -166,3 +166,11 @@
 - **Garage media P1の原因**: 旧詳細Journalの`local_blob`写真はIndexedDBのoriginごとの端末内参照であるため、別端末・別browser・ProductionとPreviewの別originでは復元できない。新規Quick Recordの`alpha_inline`写真と、既存`alpha_shared`の共有写真は別経路である。今回、復元不能な旧local mediaは本文を妨げない小さな縮退表示にし、共有写真の取得失敗は既存の再試行／診断対象として維持する。legacy写真の移行・回復は未実装。
 - **Design Language適用範囲**: 共通Header、authenticated Home、Garage、Quick Record、Journal detailを、白地・短い事実的copy・余白・内容主体・一つの主要CTAというGarage由来の文脈へ寄せた。Search、Profile、Notificationsは優先度Bとして今回未統一。Admin／Professional／prototypeは対象外。
 - **再テスト前の人間確認**: iPhone Safariで、未ログインLanding上部、Header中央、Quick Record本文のみ／写真付き保存、Garage timelineの旧／新写真、Home → Garage → Record → Timelineの連続性を確認する。コード上の状態はHuman QA ready候補であり、実機確認前に完了扱いにはしない。
+
+## 14. 2026-08-15 Quick Record iPhone Safari QA修正（PR #5継続）
+
+- **写真付き保存の原因と修正**: 本文保存とは別に、Quick Record／詳細Journalがlazy social hydration由来の共有ready判定を投稿前に使っていた。その一時状態がfalseの間は、既存の共有アップロードを試さず「共有機能の準備が完了していないため、自分だけに保存」と止めていた。公開写真は既存の`alpha_inline` → 認証済み`alpha-journal-media` Storage → `alpha_shared` payload → shared Journal RPC経路を実行して結果で判定するよう戻した。失敗時はprivate化せず、workspace rollbackと入力保持を行い、安全な再試行メッセージを返す。
+- **公開範囲**: 新規Quick Recordの写真は本文と同じ公開範囲を使う。αでの通常値「α参加者に公開」を写真だけprivateへ落とさず、`自分だけ`は明示的なprivacy選択として維持する。新規の共有写真はorigin単位のIndexedDBではなく、認証済みshared Storageを読む設計である。
+- **QA polish**: 本文placeholderを「愛車で何をしましたか？」へ変更し、Quick Recordの写真操作をOS標準file picker一つの「写真を追加」へ統合した。下書き操作、詳細設定のgrouping、日付fieldのmin-inline-size、保存CTAのbottom safe area、Home／Journalのmedia containerを整えた。旧`local_blob`のTimeline fallbackは本文より目立たない68px最小高へ縮小した。
+- **未解決P1／要確認**: legacy `local_blob`写真の別端末・別originでの回復／migrationは未実装。未ログインLanding上部の大きな余白はコード上で原因を確定できていない。iPhone Safariでは本文のみ、写真付きの「α参加者に公開」と「自分だけ」、保存直後のTimeline、別session／別deviceでの共有写真、日付field、下書き、bottom navigationとの距離を確認する。
+- **状態**: 自動検証完了後もPR #5はopen・未merge、Human QA ready。PR #2／PR #3、`main`、Netlify／Supabase設定は変更しない。

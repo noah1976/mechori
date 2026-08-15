@@ -40,9 +40,15 @@ test("a body-only quick record remains a vehicle journal entry for the existing 
 
 test("keeps the composer focused on vehicle, body, optional photo, and save", () => {
   const composer = read("../components/quick-event-form.tsx");
+  const photoActions = read("../components/photo-source-actions.tsx");
   assert.match(composer, /eventType.*"other"/);
-  assert.match(composer, /愛車に何がありましたか？/);
+  assert.match(composer, /愛車で何をしましたか？/);
   assert.match(composer, /PhotoSourceActions/);
+  assert.equal(composer.match(/<PhotoSourceActions/g)?.length, 1);
+  assert.match(composer, /variant="single"/);
+  assert.match(photoActions, /single \? \(/);
+  assert.match(photoActions, /写真を追加/);
+  assert.doesNotMatch(photoActions, /capture="environment"[\s\S]*写真を追加/);
   assert.match(composer, /記録する/);
   assert.match(composer, /<details className="quick-composer-details">/);
   assert.match(composer, /quick-composer-photo-row/);
@@ -54,6 +60,8 @@ test("composer styles keep the mobile writing surface and save action prominent"
   assert.match(css, /\.quick-note-field textarea \{ min-height: 208px;/);
   assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.quick-note-field textarea \{ min-height: 180px; font-size: 17px;/);
   assert.match(css, /\.quick-composer-submit \.primary-action \{ width: 100%; justify-content: center; \}/);
+  assert.match(css, /\.quick-event-page \{ padding-bottom: calc\(34px \+ env\(safe-area-inset-bottom\)\); \}/);
+  assert.match(css, /\.photo-source-actions\.is-single \{ grid-template-columns: minmax\(0, 1fr\); width: auto; \}/);
 });
 
 test("opens the universal composer by default and preserves an explicit detailed route", () => {

@@ -131,8 +131,6 @@ export function JournalForm({
     addJournal,
     updateJournal,
     isRemoteAlpha,
-    alphaJournalSharingAvailable,
-    alphaJournalMediaSharingAvailable,
   } = useApp();
   const router = useRouter();
   const ja = locale === "ja";
@@ -277,7 +275,6 @@ export function JournalForm({
 
   function changeVisibility(visibility: JournalVisibility) {
     if (isRemoteAlpha && visibility === "followers") return;
-    if (isRemoteAlpha && visibility === "public" && !alphaJournalSharingAvailable) return;
     if (visibility !== "public") {
       setPendingMedia((current) =>
         current.map((item) => ({
@@ -325,25 +322,6 @@ export function JournalForm({
             block: "center",
           });
         }
-      });
-      return;
-    }
-    if (
-      isRemoteAlpha &&
-      !alphaJournalMediaSharingAvailable &&
-      submittedDraft.visibility === "public" &&
-      imageAttachments.length > 0
-    ) {
-      setSaveError(
-        ja
-          ? "写真共有の準備が完了していないため、写真付き記録はいまは自分だけに保存してください。"
-          : "Photo sharing is not ready. Save this record with photos for yourself for now.",
-      );
-      window.requestAnimationFrame(() => {
-        submitFeedbackRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
       });
       return;
     }
@@ -775,20 +753,12 @@ export function JournalForm({
               className={draft.visibility === value ? "is-selected" : ""}
               aria-pressed={draft.visibility === value}
               onClick={() => changeVisibility(value)}
-              disabled={isRemoteAlpha && value === "public" && !alphaJournalSharingAvailable}
               key={value}
             >
               {label}
             </button>
           ))}
         </div>
-        {isRemoteAlpha && !alphaJournalSharingAvailable && (
-          <p className="settings-help">
-            {ja
-              ? "共有機能の準備がまだ完了していないため、現在は自分だけに保存できます。"
-              : "Sharing setup is not complete yet, so records can currently be saved only for you."}
-          </p>
-        )}
         {isRemoteAlpha && draft.visibility === "public" && (
           <p className="settings-help">
             {ja
@@ -799,32 +769,17 @@ export function JournalForm({
         {isRemoteAlpha &&
           draft.visibility === "public" &&
           imageAttachments.length > 0 &&
-          alphaJournalMediaSharingAvailable && (
           <p className="settings-help">
             {ja
               ? "写真は記録本文と同じ範囲で公開します。ナンバー、人物、住所が分かる背景を保存前に確認してください。"
               : "Photos use the same audience as the record. Check plates, people, and address-revealing backgrounds before saving."}
-          </p>
-        )}
+          </p>}
         {draft.visibility === "public" && legacyPrivatePhotoCount > 0 && (
           <p className="settings-help">
             {ja
               ? `以前の設定で非公開にした写真${legacyPrivatePhotoCount}枚は、この編集だけで公開へ変更しません。`
               : `${legacyPrivatePhotoCount} photo${legacyPrivatePhotoCount === 1 ? "" : "s"} kept private under the previous setting will not be published by this edit.`}
           </p>
-        )}
-        {isRemoteAlpha &&
-          !alphaJournalMediaSharingAvailable &&
-          draft.visibility === "public" &&
-          imageAttachments.length > 0 && (
-          <div className="media-publication-gate" role="status">
-            <ShieldAlert size={19} aria-hidden="true" />
-            <span>
-              {ja
-                ? "写真共有の準備中です。本文と写真の公開範囲を一致させるため、今回は自分だけに保存してください。"
-                : "Photo sharing is still being prepared. Save this for yourself so the text and photo audience remain consistent."}
-            </span>
-          </div>
         )}
         {isRemoteAlpha && draft.visibility === "public" && draft.media.some((item) => item.kind === "video") && (
           <div className="media-publication-gate" role="status">

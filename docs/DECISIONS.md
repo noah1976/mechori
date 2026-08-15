@@ -615,3 +615,11 @@
 - 決定: GarageのQuiet Machineryを共通Design Languageとして、共有Header、authenticated Home、Garage、Quick Record、Journal detailへ限定適用する。白地、短い事実的copy、余白、内容主体、明確な一つの主要CTAを優先し、Search、Profile、Notifications、Admin、Professionalの全面改修は後続とする。
 - 決定: 旧`local_blob`写真が端末・originごとのIndexedDBを参照する制約は、消えた写真を共有済みと誤認させない小さな縮退表示で扱う。共有済み写真の取得失敗と混同せず、legacy media移行・回復は別課題に残す。
 - 影響: Workspace、DB、RLS、RPC、Journal／Maintenanceのdata contract、公開範囲、Follow、Notificationの挙動は変更しない。未ログインLandingの大きな余白はコードだけで原因を断定せず、iPhone Safariで再確認する。
+
+### 決定: 写真付きQuick Recordも本文と同じ公開範囲で共有する
+
+- 日付: 2026-08-15
+- 状態: 実装・Human QA待ち
+- 背景: iPhone Safari QAで、写真付きQuick Recordだけが共有readyの一時的なclient判定によって公開保存を止められ、「自分だけ」への切替を促していた。これは写真・愛車記録を参加者同士で見るENGAGEMENTの目的と、本文と写真の公開範囲を一致させる既存方針に反する。
+- 決定: 新規Quick Recordと詳細Journalは、公開写真を既存の認証済みshared Storage／shared Journal publish経路で実際に処理し、その成否で判定する。投稿前のlazy hydrationの能力値で写真付き公開を拒否しない。写真だけを強制privateにせず、本文の「α参加者に公開」またはユーザーが選んだ「自分だけ」を同じく適用する。
+- 影響: `alpha_inline`は保存時にshared Storageの`alpha_shared`参照へ変換され、別origin・別deviceでも取得可能な共有データとなる。共有処理に失敗した場合は記録を公開済み・写真なしとして残さず、既存のrollbackと入力保持を使う。旧`local_blob`写真のorigin限定の回復は別P1のままとする。

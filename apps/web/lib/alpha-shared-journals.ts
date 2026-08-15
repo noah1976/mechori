@@ -16,14 +16,6 @@ export const alphaSharedJournalMediaBucket = "alpha-journal-media";
 const maxPreparedSharedImageBytes = 460 * 1024;
 const maxSharedImageDimension = 1400;
 
-export async function alphaSharedJournalMediaAvailable(): Promise<boolean> {
-  const supabase = createSupabaseBrowserClient();
-  const { data, error } = await supabase.rpc(
-    "alpha_shared_journal_media_available",
-  );
-  return !error && data === true;
-}
-
 export async function loadAlphaSharedJournals(): Promise<AlphaSharedJournal[]> {
   const supabase = createSupabaseBrowserClient();
   const { data, error } = await supabase.rpc("list_alpha_shared_journals");

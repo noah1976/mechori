@@ -148,3 +148,12 @@ P-069のように本番で再現した不具合は、テスト成功だけを根
 - `[~]` Garage Timelineの旧`local_blob`写真は別端末・別originで復元できない制約を明確化し、本文を妨げない縮退表示へ改善した。新規Quick Record写真、既存共有写真、legacy local写真をそれぞれ確認し、legacy移行が未実装であることを記録する。
 - `[~]` 共通Header、authenticated Home、Garage、Quick Record、Journal detailへGarage由来のDesign Languageを限定適用した。Home → Garage → Record → Timelineの一貫性をiPhone SafariとPCで確認する。Search、Profile、Notificationsは優先度B、Admin／Professionalは今回対象外。
 - `[ ]` 上記の実機QA後、既存αテスター3名へ再テストを依頼する。評価は「投稿できる」だけでなく、説明なしで記録できるか、画面を跨いでも同じサービスに見えるか、また記録したいと思えるかとする。
+
+## 12. 2026-08-15 Quick Record 写真共有・モバイルQA追補
+
+- `[~]` Quick Recordの写真入口は「写真を追加」一つになった。iPhone SafariとAndroid browserで、OS標準pickerから写真ライブラリ・撮影・ファイル選択を自然に開始でき、同じ写真操作が二重表示されないことを確認する。
+- `[~]` 本文のみ、本文＋写真の両方を「α参加者に公開」で保存し、保存直後のGarage Timelineと別session／別deviceの共有表示を確認する。写真付きだけがprivateへ誘導されないことを確認する。
+- `[~]` 「自分だけ」で写真付き保存し、共有一覧や他userから読めないことを確認する。公開写真の失敗時は入力が残り、安全な再試行メッセージになることを確認する。
+- `[~]` Quick Recordの詳細設定で日付inputがiPhone幅からはみ出さないこと、下書き復元／新しく書く／削除／破棄の重要度が分かること、keyboard表示時も「記録する」がbottom navigationやsafe areaに隠れないことを確認する。
+- `[~]` Garage Timelineで、新規共有写真、既存shared写真、旧`local_blob`写真を区別して確認する。旧local写真は本文を残した縮退表示になることを確認し、別origin／別deviceでの回復は未実装P1として記録する。
+- `[~]` Home、Garage、Quick Record、Journal detailで画像がcontainer外へ出ないこと、Headerのviewport中央、未ログインLanding上部余白をiPhone Safariで確認する。Landing余白の原因は要確認のままにする。

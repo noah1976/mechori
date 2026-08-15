@@ -23,7 +23,7 @@ import {
   type Vehicle,
 } from "@mechori/core";
 import { translate, type TranslationKey } from "@mechori/i18n";
-import { LoaderCircle, Save, ShieldAlert, ShieldCheck } from "lucide-react";
+import { LoaderCircle, Save, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -39,6 +39,7 @@ import {
 } from "@/lib/local-draft-store";
 import { ServiceAttributionField } from "@/components/service-attribution-field";
 import { quickRecordTitle } from "@/lib/quick-record";
+import { journalSaveErrorMessage } from "@/lib/journal-save-error";
 
 const eventTypes: Array<{ value: JournalEventType; label: TranslationKey }> = [
   { value: "delivery", label: "eventDelivery" },
@@ -74,8 +75,6 @@ export function QuickEventForm({
     addJournal,
     updateJournal,
     isRemoteAlpha,
-    alphaJournalSharingAvailable,
-    alphaJournalMediaSharingAvailable,
   } = useApp();
   const editing = Boolean(journal);
   const [eventType, setEventType] = useState<JournalEventType>(journal?.eventType ?? "other");
@@ -206,27 +205,6 @@ export function QuickEventForm({
       return;
     }
     if (saving || preparing) return;
-    if (isRemoteAlpha && visibility === "public" && !alphaJournalSharingAvailable) {
-      setPublicationError(
-        locale === "ja"
-          ? "共有機能の準備が完了していないため、いまは自分だけに保存してください。"
-          : "Sharing setup is not complete. Save this record for yourself for now.",
-      );
-      return;
-    }
-    if (
-      isRemoteAlpha &&
-      !alphaJournalMediaSharingAvailable &&
-      visibility === "public" &&
-      (image || existingAttachment?.kind === "image")
-    ) {
-      setPublicationError(
-        locale === "ja"
-          ? "写真共有の準備が完了していないため、写真付き記録はいまは自分だけに保存してください。"
-          : "Photo sharing is not ready. Save this record with a photo for yourself for now.",
-      );
-      return;
-    }
     setSaveTakingLong(false);
     setError("");
     setPublicationError("");
@@ -242,10 +220,7 @@ export function QuickEventForm({
         sizeBytes: image.sizeBytes,
         altText: `${vehicle.make} ${vehicleModel}`,
         privacyState:
-          visibility === "public" &&
-          alphaJournalMediaSharingAvailable
-            ? "public_ready"
-            : "private_only",
+          visibility === "public" ? "public_ready" : "private_only",
         createdAt: new Date().toISOString(),
         isDemo: false,
       } : undefined;
@@ -254,10 +229,7 @@ export function QuickEventForm({
           ? {
               ...existingAttachment,
               privacyState:
-                visibility === "public" &&
-                alphaJournalMediaSharingAvailable
-                  ? "public_ready" as const
-                  : "private_only" as const,
+                visibility === "public" ? "public_ready" as const : "private_only" as const,
             }
           : undefined);
       const draft: JournalDraft = {
@@ -312,10 +284,10 @@ export function QuickEventForm({
         setSaving(false);
         setCompletion(savedJournal);
       }
-    } catch {
+    } catch (caught) {
       if (slowSaveTimer !== undefined) window.clearTimeout(slowSaveTimer);
       setSaveTakingLong(false);
-      setError("momentSaveError");
+      setPublicationError(journalSaveErrorMessage(caught, locale === "ja"));
       setSaving(false);
     }
   }
@@ -344,9 +316,9 @@ export function QuickEventForm({
               {locale === "ja" ? "前回入力していた内容を復元できます。" : "You can restore what you entered last time."}
             </span>
             <span className="local-draft-actions">
-              <button type="button" onClick={restoreDraft}>{locale === "ja" ? "下書きを復元" : "Restore draft"}</button>
-              <button type="button" onClick={() => { clearLocalDraft(localDraftKey); setPendingDraft(null); }}>{locale === "ja" ? "下書きを削除" : "Delete draft"}</button>
-              <button type="button" onClick={startNewDraft}>{locale === "ja" ? "新しく書く" : "Start new"}</button>
+              <button type="button" className="primary-action draft-restore-action" onClick={restoreDraft}>{locale === "ja" ? "下書きを復元" : "Restore draft"}</button>
+              <button type="button" className="secondary-action draft-new-action" onClick={startNewDraft}>{locale === "ja" ? "新しく書く" : "Start new"}</button>
+              <button type="button" className="draft-delete-action" onClick={() => { clearLocalDraft(localDraftKey); setPendingDraft(null); }}>{locale === "ja" ? "下書きを削除" : "Delete draft"}</button>
             </span>
           </div>
         )}
@@ -360,7 +332,7 @@ export function QuickEventForm({
                   : locale === "ja" ? "下書きを保存できません。投稿フォームはそのまま使えます。" : "The draft could not be saved. You can still post."}
               {omittedMediaCount > 0 && (locale === "ja" ? " 未送信の写真は再度選択してください。" : " Re-select the unsent photo before posting.")}
             </span>
-            <button type="button" onClick={startNewDraft}>{locale === "ja" ? "下書きを破棄" : "Discard draft"}</button>
+            <button type="button" className="draft-discard-action" onClick={startNewDraft}>{locale === "ja" ? "下書きを破棄" : "Discard draft"}</button>
           </div>
         )}
         <label className="field quick-note-field">
@@ -369,7 +341,7 @@ export function QuickEventForm({
             maxLength={500}
             value={note}
             onChange={(event) => setNote(event.target.value)}
-            placeholder={locale === "ja" ? "愛車に何がありましたか？" : "What happened with your vehicle?"}
+            placeholder={locale === "ja" ? "愛車で何をしましたか？" : "What did you do with your vehicle?"}
             autoFocus={!editing}
           />
         </label>
@@ -385,6 +357,7 @@ export function QuickEventForm({
             locale={locale}
             preparing={preparing}
             disabled={preparing || saving}
+            variant="single"
             onChange={selectPhoto}
           />
           <p className="image-preparation-note">
@@ -434,103 +407,82 @@ export function QuickEventForm({
               onChange={(patch) => setOccurrence((current) => ({ ...current, ...patch }))}
             />
             <section className="quick-event-audience" aria-labelledby="quick-event-audience-heading">
-          <div>
-            <strong id="quick-event-audience-heading">
-              {locale === "ja" ? "この記録を見る人" : "Who can see this record"}
-            </strong>
-            <small>
-              {isRemoteAlpha
-                ? locale === "ja"
-                  ? "初期値は『α参加者に公開』です。自分だけの記録として保存することもできます。"
-                  : "The default is shared with alpha participants. You can also save a record for yourself only."
-                : locale === "ja"
-                  ? "初期値は公開です。自分だけの記録として保存することもできます。"
-                  : "The default is public. You can also save a record for yourself only."}
-            </small>
-          </div>
-          <div className={`segmented-control ${isRemoteAlpha ? "has-two-options" : ""}`} role="group" aria-label={locale === "ja" ? "公開範囲" : "Audience"}>
-            <button
-              type="button"
-              className={visibility === "private" ? "is-selected" : ""}
-              aria-pressed={visibility === "private"}
-              onClick={() => {
-                setVisibility("private");
-                setPublicationError("");
-              }}
-            >
-              {locale === "ja" ? "自分だけ" : "Only me"}
-            </button>
-            {!isRemoteAlpha && (
-              <button
-                type="button"
-                className={visibility === "followers" ? "is-selected" : ""}
-                aria-pressed={visibility === "followers"}
-                onClick={() => {
-                  setVisibility("followers");
-                  setPublicationError("");
-                }}
-              >
-                {locale === "ja" ? "フォロワー" : "Followers"}
-              </button>
-            )}
-            <button
-              type="button"
-              className={visibility === "public" ? "is-selected" : ""}
-              aria-pressed={visibility === "public"}
-              disabled={isRemoteAlpha && !alphaJournalSharingAvailable}
-              onClick={() => {
-                setVisibility("public");
-                setPublicationError("");
-              }}
-            >
-              {isRemoteAlpha
-                ? locale === "ja" ? "α参加者に公開" : "Alpha participants"
-                : locale === "ja" ? "公開" : "Public"}
-            </button>
-          </div>
-          {isRemoteAlpha && visibility === "public" && (
-            <p className="settings-help">
-              {locale === "ja"
-                ? "ログイン済みのP0・α参加者に、本文、写真、表示用車名を共有します。"
-                : "The text, photo, and vehicle label are shared with signed-in P0 and alpha participants."}
-            </p>
-          )}
-          {visibility === "public" && hasLegacyPrivatePhoto && !image && (
-            <p className="settings-help">
-              {locale === "ja"
-                ? "以前の設定で非公開にした写真は、この編集だけで公開へ変更しません。"
-                : "The photo kept private under the previous setting will not be published by this edit."}
-            </p>
-          )}
-          {isRemoteAlpha &&
-            alphaJournalMediaSharingAvailable &&
-            visibility === "public" &&
-            (image || existingAttachment?.kind === "image") && (
-            <p className="settings-help">
-              {locale === "ja"
-                ? "写真は記録本文と同じ範囲で公開します。ナンバー、人物、住所が分かる背景を保存前に確認してください。"
-                : "The photo uses the same audience as the record. Check plates, people, and address-revealing backgrounds before saving."}
-            </p>
-          )}
-          {isRemoteAlpha &&
-            !alphaJournalMediaSharingAvailable &&
-            visibility === "public" &&
-            (image || existingAttachment?.kind === "image") && (
-            <p className="media-publication-gate">
-              <ShieldAlert size={18} aria-hidden="true" />
-              {locale === "ja"
-                ? "写真共有の準備中です。本文と写真の公開範囲を一致させるため、今回は自分だけに保存してください。"
-                : "Photo sharing is still being prepared. Save this for yourself so the text and photo audience remain consistent."}
-            </p>
-          )}
-          {isRemoteAlpha && !alphaJournalSharingAvailable && (
-            <p className="media-publication-gate">
-              <ShieldAlert size={18} aria-hidden="true" />
-              {locale === "ja"
-                ? "共有機能の準備が完了するまでは、自分だけに保存できます。"
-                : "Until sharing setup is complete, records can be saved only for you."}
-            </p>
-          )}
+              <div>
+                <strong id="quick-event-audience-heading">
+                  {locale === "ja" ? "この記録を見る人" : "Who can see this record"}
+                </strong>
+                <small>
+                  {isRemoteAlpha
+                    ? locale === "ja"
+                      ? "初期値は『α参加者に公開』です。自分だけの記録として保存することもできます。"
+                      : "The default is shared with alpha participants. You can also save a record for yourself only."
+                    : locale === "ja"
+                      ? "初期値は公開です。自分だけの記録として保存することもできます。"
+                      : "The default is public. You can also save a record for yourself only."}
+                </small>
+              </div>
+              <div className={`segmented-control ${isRemoteAlpha ? "has-two-options" : ""}`} role="group" aria-label={locale === "ja" ? "公開範囲" : "Audience"}>
+                <button
+                  type="button"
+                  className={visibility === "private" ? "is-selected" : ""}
+                  aria-pressed={visibility === "private"}
+                  onClick={() => {
+                    setVisibility("private");
+                    setPublicationError("");
+                  }}
+                >
+                  {locale === "ja" ? "自分だけ" : "Only me"}
+                </button>
+                {!isRemoteAlpha && (
+                  <button
+                    type="button"
+                    className={visibility === "followers" ? "is-selected" : ""}
+                    aria-pressed={visibility === "followers"}
+                    onClick={() => {
+                      setVisibility("followers");
+                      setPublicationError("");
+                    }}
+                  >
+                    {locale === "ja" ? "フォロワー" : "Followers"}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={visibility === "public" ? "is-selected" : ""}
+                  aria-pressed={visibility === "public"}
+                  onClick={() => {
+                    setVisibility("public");
+                    setPublicationError("");
+                  }}
+                >
+                  {isRemoteAlpha
+                    ? locale === "ja" ? "α参加者に公開" : "Alpha participants"
+                    : locale === "ja" ? "公開" : "Public"}
+                </button>
+              </div>
+              {isRemoteAlpha && visibility === "public" && (
+                <p className="settings-help">
+                  {locale === "ja"
+                    ? "ログイン済みのP0・α参加者に、本文、写真、表示用車名を共有します。"
+                    : "The text, photo, and vehicle label are shared with signed-in P0 and alpha participants."}
+                </p>
+              )}
+              {visibility === "public" && hasLegacyPrivatePhoto && !image && (
+                <p className="settings-help">
+                  {locale === "ja"
+                    ? "以前の設定で非公開にした写真は、この編集だけで公開へ変更しません。"
+                    : "The photo kept private under the previous setting will not be published by this edit."}
+                </p>
+              )}
+              {isRemoteAlpha &&
+                visibility === "public" &&
+                (image || existingAttachment?.kind === "image") && (
+                <p className="settings-help">
+                  {locale === "ja"
+                    ? "写真は記録本文と同じ範囲で公開します。ナンバー、人物、住所が分かる背景を保存前に確認してください。"
+                    : "The photo uses the same audience as the record. Check plates, people, and address-revealing backgrounds before saving."}
+                </p>
+              )}
             </section>
           </div>
         </details>

@@ -104,6 +104,12 @@ Garage由来のDesign Languageを、αテスターが頻繁に通る範囲へ限
 - 本当に復元できない旧端末内写真は、本文を妨げる大きなerror surfaceにせず、小さく状態を伝える。共有写真の通信・権限エラーは同じ見た目で隠さず、診断可能な状態を維持する。
 - 今回の適用範囲は共通Header、authenticated Home、Garage、Quick Record、Journal detailまで。Search、Profile、Notificationsは優先度B、Admin、Professional、prototypeは対象外とする。
 
+### Quick Record QA follow-up
+
+- Quick Recordの写真入口は、用途別の複数buttonではなく、OS標準の画像pickerを開く一つの「写真を追加」にする。iPhone SafariとAndroid browserが写真ライブラリ、撮影、ファイル選択を各OSの自然な選択肢として提示できることを優先する。
+- `愛車で何をしましたか？`のように、故障だけへ寄せない短い事実的copyを使う。詳細設定は同じpageのProgressive Disclosureとして、境界線と余白で静かに区切り、古い別formの印象を作らない。
+- 取得不能なlegacy local写真はTimeline本文より大きなerror surfaceにしない。一方、共有写真の失敗は隠さず、再試行可能な状態と区別する。新規共有写真は記録本文と同じaudienceで扱う。
+
 ## 未確定
 
 - ロゴ
