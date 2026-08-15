@@ -208,6 +208,6 @@
 - **戦略中核**: 車両個体、仕様、症状・出来事、作業、部品、結果、再発・解決、出典を結ぶ整備Evidenceを中核にし、記録から再利用・対応・結果追記へ戻る循環をEvidence Loopとして扱う。Evidence Graphは内部戦略概念であり、一般向けMarketing用語にはまだしない。
 - **現在のProduct優先**: Quick RecordはEvidence intakeであり、現αでは簡単な記録と再利用意欲を最優先にする。次の重要stepは投稿前の詳細入力ではなくpost-save enrichmentとresult follow-upである。
 - **Consumer / B2B**: Owner FreeはEvidence supply、愛車履歴、獲得、network形成を担う。現αを営業型B2Bへ依存させず、Professionalは3工場程度の実業務でEvidence workflowを観察してから大型実装を判断する。長期的な主利益基盤はProfessional / B2Bである。
-- **Monetization**: AffiliateはConsumer基盤原価の補填、AI超過枠はAPI原価回収、Owner Plusは補助収益として役割を分ける。Free 2台の固定制限は、複数台ContributorのEvidence supplyを確認するまで保留・再検証とする。
+- **Monetization**: AffiliateはConsumer基盤原価の補填、AI超過枠はAPI原価回収、Owner Plusは補助収益として役割を分ける。Free 2台の旧仮説はsupersededとし、愛車登録台数をPaywallにしない。未接続の`maxOwnedVehicles` prototypeとtestは後続のcode cleanup対象。
 - **Growth / Measurement**: ProductはUniversalな登録を維持し、GTMでは2〜3 clusterへ獲得を寄せる実験を検討する。Monthly Completed Evidence Loopsは長期North Star候補であり、現αではQuick Record成功、再訪、enrichment、Meaningful Reuse、結果追記、共有後の後悔等のLeading Indicatorを優先する。
 - **未実装・仮説**: Professional Network、Knowledge Infrastructure、Evidence API、AI-driven enrichment、正式公開後のPublic / Followers only / Private、Nativeは将来仮説またはGate後の対象であり、今回implementation scopeへ追加しない。

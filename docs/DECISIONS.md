@@ -85,7 +85,7 @@
 - 背景: Free、Owner Plus、Professionalの差を画面や決済サービスへ直接埋め込まず、検証後に変更可能にするため。
 - 決定: Freeは車種を問わず所有車両2台と登録車両の検索、Owner Plusは複数台と未登録車種検索、ProfessionalはWebで全車種を対象とする業務検索を初期仮説とする。Freeの広告は将来仮説でありMVPには導入しない。
 - 影響: 価格、Owner Plusの台数、OCR・AI枠、広告方式は未確定の設定値として扱う。
-- 2026-08-16改定: EntitlementSetとして変更可能にする設計判断は維持する。Free 2台の実適用は、複数台ContributorのEvidence supplyを阻害する可能性から初期保留・再検証へ変更した。下記「Consumer Evidence supplyと長期B2B収益を同じ循環へ統合する」を参照。
+- 2026-08-16改定: この台数差の仮説はsuperseded。Freeの2台上限を廃止し、愛車登録台数をOwner Plusの課金軸にしない。複数台ContributorのEvidence supplyを止めないためであり、EntitlementSetの処理量・高度機能等の境界は維持する。下記「Consumer Evidence supplyと長期B2B収益を同じ循環へ統合する」を参照。
 
 ### 決定: 貢献評価と情報の正確性を分離する
 
@@ -561,7 +561,7 @@
 - 料金モデル
 - 本番実装時のリポジトリ構成の最終確定
 - FIAT Barchettaの仕様分類粒度
-- Owner Plusの登録台数と各プランの価格・利用枠
+- Owner Plusの高度管理価値と各プランの価格・利用枠
 - 貢献バッジの名称、基準、表示範囲
 - Professionalの工場間相談料金、知識還元方式、最初の帳票、最初の対象地域
 
@@ -665,7 +665,7 @@
 
 - 状態: Monetization role definition
 - 決定: Owner FreeはEvidence supply、愛車履歴、user acquisition、network形成を担い、Consumer ARPU最大化を最優先にしない。知見投稿・結果追記・本人データ権利をPaywallで阻害しない。
-- 改定: 2026-07-13のFree 2台仮説は、Entitlement境界としては維持するが、初期検証で適用する固定仕様から保留・再検証へ変更する。複数台所有者のContribution、原価、Owner Plusの支払理由を確認してから判断し、永久に台数課金しないDecisionにはしない。
+- 改定: 2026-07-13のFree 2台仮説はsupersededとし、Freeの登録台数上限を廃止する。複数台所有者はEvidenceを多く供給し得る重要Contributorであり、愛車を登録する行為をOwner PlusのPaywallにしない。Owner Plusは台数解放ではなく、高度な整理、比較、出力、処理量等の追加価値で別途検証する。未接続の`maxOwnedVehicles`権限プロトタイプはProduct方針として利用せず、後続のcode cleanup対象とする。
 - 決定: Affiliateは部品購入意図が自然に存在する場所でConsumer基盤のStorage、配信、AI、infrastructure等の原価を補填する初期収益候補とし、最終的な巨大利益エンジンにはしない。報酬額でSearch順位、AI回答、Parts recommendation、Evidence評価を歪めない。
 - 決定: AI超過課金は無料枠を超えるAPI原価回収を主目的とし、Owner PlusはEvidence supplyを阻害しないConsumer側の補助収益とする。
 - 決定: 長期的な主要利益基盤はProfessional / B2Bとし、Professional SaaS、Professional Network、Knowledge Infrastructureの三層を段階検証する。Networkの取引・成約手数料、Evidence API、部品適合・症例data、業務system integrationは将来仮説であり現αでは実装しない。
