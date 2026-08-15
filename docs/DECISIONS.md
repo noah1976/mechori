@@ -570,3 +570,21 @@
 - 状態: 運用方針
 - 決定: 地域別の法令・規制要求を、一次資料、Product Impact、既存設計、必要変更、実装参照、検証、専門家確認へ追跡する`docs/GLOBAL_COMPLIANCE.md`を正本の索引レイヤーとして追加する。Japan、EU / EEA、United Kingdom、United States、Australia、Canadaを初期対象とし、具体的な法的結論は調査後に決定する。より広い国際公開、Native Drive Log、広告、Professional課金の前にReview Gateを通す。
 - 影響: 現行のPrivacy、Trust、Safety、AI、Moderation、Professional、Data Model文書は各領域の正本として維持する。今回、Web検索、法律調査、法的助言、年齢制限、DB、コード、実装を変更しない。αは停止扱いにしない。
+
+### 決定: 知見を無料の中心価値とし、収益化と機能評価を分離する
+
+- 日付: 2026-08-15
+- 状態: 運用方針
+- 決定: MECHORIでは、知見を提供するユーザーを重要な資産と考え、知見の投稿・蓄積をPaywallで阻害しない。AI利用は無料枠と超過課金を候補とするが、主目的は大きな利益ではなくAPI原価回収であり、利用量・原価・安全性を確認してから正式化する。Professional／B2Bは将来候補として検証するが、初期収益を営業型B2Bに依存しない。
+- 決定: パーツ購入導線のアフィリエイトは初期収益候補の一つとする。MECHORI側の部品・メーカー・品番・OEM番号・使用実績と、国別に交換可能な購入先／affiliate URLを分離し、特定merchantへ依存しない。報酬額によって検索順位、AI回答、推奨内容を歪めない。
+- 決定: AIメカニックのcharacter UX／cosmeticsはアイデアとして保持するが後回しとし、中心価値は蓄積された知見を必要なときに使えることとする。機能案はCORE、ENGAGEMENT、MONETIZATION、単なる肥大化の観点で評価する。
+- 決定: Drive Recordはナビゲーション・ルート探索サービスへ拡張せず、MAU、愛車との記憶、Vehicle Timelineを厚くするENGAGEMENT機能として扱う。
+- 正本: 料金・無料枠・AI原価・広告・アフィリエイトの詳細は`docs/MONETIZATION.md`と`docs/BUSINESS_MODEL.md`、機能評価とDriveのロードマップは`docs/ROADMAP.md`と`docs/SOCIAL_LAYER.md`、AIの境界は`docs/AI_POLICY.md`に置く。
+- 影響: この判断は新しい課金、広告、merchant接続、AI処理、Drive Log実装を開始するものではない。各機能は既存の承認・法務・安全・原価ゲートを通す。
+
+### 決定: main・Preview・人間QAを分離したリリースcheckpointを維持する
+
+- 日付: 2026-08-15
+- 状態: 運用方針
+- 決定: `main`をProduction基準とし、feature branch → Pull Request → Netlify Deploy Preview → 人間QA → `main`の順で扱う。Preview確認のためにProduction deployを繰り返さず、コード実装、checks、Preview反映、実機QA、mergeを別状態として記録する。
+- 影響: PR #2のGarage Vehicle Identity改善はopen・未merge、PR #3のDeploy Preview OAuth origin許可とsession cookie修正は実装・Preview反映済みだが、iPhone Safari実機QA待ちである。Garage timelineの「端末内メディアが見つかりません」再発はP1調査項目とし、原因未確認のまま完了扱いにしない。

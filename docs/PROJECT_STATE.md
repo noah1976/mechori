@@ -1,7 +1,7 @@
 # MECHORI Project State
 
-- 更新日時: 2026-08-12
-- 対象ブランチ: `codex/remote-alpha-foundation`
+- 更新日時: 2026-08-15
+- 対象ブランチ: `codex/project-documentation-checkpoint`
 - HEAD基準: 本書を含む現在ブランチの`git log -1`を正とする
 - 本番URL: `https://mechori-alpha.netlify.app`
 - 状態文書のルール: 実装、テスト、本番反映、人間QAを別々に判定する。コード、テスト、Git履歴、既存の運用記録を照合し、根拠のない項目は完了にしない。本書を現在の実装状態の正本とする。
@@ -130,3 +130,12 @@
 ## 9. Global Compliance Review
 
 `docs/GLOBAL_COMPLIANCE.md`に、Japan、EU / EEA、United Kingdom、United States、Australia、Canadaを初期対象とするGlobal Legal / Safety Compliance Reviewの追跡基盤を追加した。これは法令調査や法的結論ではなく、一次資料から地域別要求をProduct Requirement、設計、実装、検証、専門家レビューへ接続するための文書フレームワークである。より広い国際公開、Native Drive Log、広告、Professional課金の前にReview Gateを通す将来必須項目として扱う。具体的な年齢制限、地域別要件、法的適用可否は未確定であり、現在のαを停止扱いにしない。
+
+## 10. 2026-08-15 Documentation Checkpoint
+
+- **基準とリリース運用**: `main`をProduction基準とし、feature branch → Pull Request → Netlify Deploy Preview → 人間QA → `main`の順で確認する。確認目的のProduction deployは繰り返さない。今回のcheckpointは`origin/main`（`a01eb18`）を基準にした文書専用branchであり、コードは変更していない。
+- **PR #2**: `codex/garage-vehicle-identity`のGarage Vehicle Identity改善はopenのままで、`main`へ未merge。人間QA待ちとして扱う。
+- **PR #3**: `codex/deploy-preview-auth`はopen。`0928fb3`のDeploy Preview origin許可と、`f982c7a`のOAuth callback session cookie保存を含む。最新Deploy Preview `https://deploy-preview-3--mechori-alpha.netlify.app`はNetlify checkが成功しHTTP 200を返すが、iPhone SafariのGoogleログイン実機QAは未完了である。
+- **新たに判明したP1**: Garage timelineの一部で「端末内メディアが見つかりません」が再発している。Storage、端末内メディア、再読込・logout・別端末時の境界を調査し、原因を特定するまで解決済みと扱わない。現時点ではデータ損失や全利用者への影響範囲は要確認である。
+- **P0/P1/P2**: 新規P0は確認されていない。P1は上記のGarage media再発、PR #3のiPhone Safari OAuth QA、既存α機能の本番実機QAである。P2はP-075B/C、Native、AI本格提供、Professional課金等の既存Deferred項目で、今回変更しない。
+- **次の確認**: まずGarage media再発の再現条件と影響範囲を記録し、並行してPR #2／#3の人間QA結果をチェックリストへ反映する。原因不明のまま項目をDONEへ移さない。
