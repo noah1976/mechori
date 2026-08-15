@@ -459,7 +459,8 @@
 - 状態: DONE
 - 目的: Free、Owner Plus、Professionalの検索範囲と提供クライアントを、決済・画面から独立して管理する。
 - 成果物: `docs/PLAN_ENTITLEMENTS.md`、`packages/core/src/entitlements.ts`
-- 完了条件: Free 2台、所有車両検索、未登録車種検索、Professional Web業務検索を設定可能な権限として定義し、テストがある。
+- 完了条件: Free 2台という当時の仮説、所有車両検索、未登録車種検索、Professional Web業務検索を設定可能な権限として定義し、テストがある。
+- 2026-08-16再評価: Entitlement境界の実装完了は維持するが、Free 2台の適用はEvidence supplyを阻害する可能性から初期保留・再検証へ変更した。DONEは権限設計に対する状態であり、2台制限のProduct採用を意味しない。
 - 依存タスク: MECH-003
 - 所有者確認の要否: 必要。価格と利用枠は未確定。
 

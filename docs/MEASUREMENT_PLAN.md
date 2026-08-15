@@ -51,6 +51,27 @@ MECHORIの初期検証を、登録者数や感想だけで判断しないため�
 
 単なるページ再読込や言語切替は含めません。
 
+### Evidence Intake / Enrichment / Completed Evidence Loop
+
+`Evidence Intake`は、Quick Record、Journal、Maintenance Record等によって、Vehicleへ本文、写真、作業事実等が最初に保存された状態です。保存数だけではEvidenceの品質や再利用成立を示しません。
+
+`Evidence Enrichment`は、保存後に走行距離、使用部品、作業情報、症状、確認状態、結果等が、本人確認を保って追加された状態です。Quick Recordの投稿前必須にはせず、post-save enrichmentと後日の編集を含めます。
+
+`Completed Evidence Loop`は、同じVehicle・記録・Evidenceについて、初回保存とは別に検索、閲覧、履歴共有、工場提示等のMeaningful Reuseが発生し、その後の対応・作業と、改善、変化なし、再発、未解決等の結果が追記された状態です。単なる閲覧、Like、AI要約生成だけでは完了に含めません。詳細なevent contractと集計窓は実データを確認してから固定します。
+
+`Monthly Completed Evidence Loops`は長期North Star候補です。現αでは母数とKnowledge密度が小さいため唯一のKPIにせず、実際に複数のLoopを継続観測でき、入力元・再利用・結果追記を重複なく集計できる段階で主要経営指標への昇格を検討します。
+
+現αでは、既存指標を優先しながら次をLeading Indicatorとして観察します。
+
+- Quick Record保存成功とFirst Record Time
+- 2件目の記録、再訪、30-day Meaningful Reuse
+- post-save enrichmentまたは後日構造化追記
+- 他者の記録閲覧と、根拠付き検索・工場提示等の再利用
+- 結果・再発・未解決の追記
+- α共有投稿の削除、公開範囲変更希望、写真公開への不安・後悔の定性Feedback
+
+投稿後の後悔等は、現時点で新しいAnalytics基盤や自由本文収集を決定しません。削除・設定変更等の既存事実と人間QA・Feedbackで確認し、必要性とPrivacyを確認してから計測方法を決めます。
+
 ### MAU / Value Reach MAU / Value Action MAU
 
 `MAU`は暦月内に、ログイン済みで1回以上セッションを開始した重複しない利用者です。ログイン画面の表示、未ログインの公開ページ閲覧、運営者による代理操作は含めません。
@@ -105,6 +126,7 @@ GA4とClarityは導線・表示崩れ・操作上の詰まりを把握する補�
 | First Record Time | 登録から最初の保存までの時間の中央値 | 計測 | 短縮傾向 |
 | Records per Recorded Vehicle | 利用者確認済み記録 / Recorded Vehicle | 3件以上 | 4件以上 |
 | Result Follow-up Rate | 結果追記された未解決記録 / 追記期限を迎えた未解決記録 | 観察 | 25% |
+| Completed Evidence Loops | 再利用後に対応・作業と結果追記まで確認できたEvidence Loop | 定性・件数観察 | 定義を固定して件数観察 |
 | Search Success Rate | Evidence-backed Search Success / 評価された検索 | 40% | 50% |
 | Organic Acquisition Share | 個別勧誘以外の登録 / 全登録 | 観察 | 20%以上 |
 | Owner Plus Intent | 具体価格で有料参加意思を示した人数 | 観察 | 10人 |

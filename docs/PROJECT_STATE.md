@@ -1,6 +1,6 @@
 # MECHORI Project State
 
-- 更新日時: 2026-08-15
+- 更新日時: 2026-08-16
 - 対象ブランチ: `codex/quick-record-composer`
 - HEAD基準: 本書を含む現在ブランチの`git log -1`を正とする
 - 本番URL: `https://mechori-alpha.netlify.app`
@@ -202,3 +202,12 @@
 - **表示方針**: `JournalCard`は共通して過剰なborder、上端accent、shadow、固定高本文、重いfooterを外し、余白とdividerを中心に分離する。titleと本文が実質同じ場合は表示上だけtitleを省き、投稿内容は改変しない。Homeでは通常のα参加者公開labelと独立した「読む」CTAを省き、例外Visibility、Like、既存の投稿タップ導線を維持する。
 - **Home上部**: 月次の4件KPI tileを、同じ導線を保った低優先度のinline summaryへ縮小した。Homeのrecord FABはmobileでサイズとshadowを抑え、bottom navigationのsafe areaを維持する。Hero内の同一record CTAは置かず、主要actionを重複させない。
 - **状態**: 自動テスト後もSHIPPED_NEEDS_QA。iPhone SafariとPCで、複数投稿の読みやすさ、長文、写真の収まり、owner／Vehicle／date、Like、投稿詳細、例外Visibility、FABとbottom navigationの距離を確認する。Search、Profile、NotificationsのDesign統一は今回対象外。
+
+## 19. 2026-08-16 Product / Business Strategy Checkpoint（PR #5継続）
+
+- **戦略中核**: 車両個体、仕様、症状・出来事、作業、部品、結果、再発・解決、出典を結ぶ整備Evidenceを中核にし、記録から再利用・対応・結果追記へ戻る循環をEvidence Loopとして扱う。Evidence Graphは内部戦略概念であり、一般向けMarketing用語にはまだしない。
+- **現在のProduct優先**: Quick RecordはEvidence intakeであり、現αでは簡単な記録と再利用意欲を最優先にする。次の重要stepは投稿前の詳細入力ではなくpost-save enrichmentとresult follow-upである。
+- **Consumer / B2B**: Owner FreeはEvidence supply、愛車履歴、獲得、network形成を担う。現αを営業型B2Bへ依存させず、Professionalは3工場程度の実業務でEvidence workflowを観察してから大型実装を判断する。長期的な主利益基盤はProfessional / B2Bである。
+- **Monetization**: AffiliateはConsumer基盤原価の補填、AI超過枠はAPI原価回収、Owner Plusは補助収益として役割を分ける。Free 2台の固定制限は、複数台ContributorのEvidence supplyを確認するまで保留・再検証とする。
+- **Growth / Measurement**: ProductはUniversalな登録を維持し、GTMでは2〜3 clusterへ獲得を寄せる実験を検討する。Monthly Completed Evidence Loopsは長期North Star候補であり、現αではQuick Record成功、再訪、enrichment、Meaningful Reuse、結果追記、共有後の後悔等のLeading Indicatorを優先する。
+- **未実装・仮説**: Professional Network、Knowledge Infrastructure、Evidence API、AI-driven enrichment、正式公開後のPublic / Followers only / Private、Nativeは将来仮説またはGate後の対象であり、今回implementation scopeへ追加しない。

@@ -85,6 +85,7 @@
 - 背景: Free、Owner Plus、Professionalの差を画面や決済サービスへ直接埋め込まず、検証後に変更可能にするため。
 - 決定: Freeは車種を問わず所有車両2台と登録車両の検索、Owner Plusは複数台と未登録車種検索、ProfessionalはWebで全車種を対象とする業務検索を初期仮説とする。Freeの広告は将来仮説でありMVPには導入しない。
 - 影響: 価格、Owner Plusの台数、OCR・AI枠、広告方式は未確定の設定値として扱う。
+- 2026-08-16改定: EntitlementSetとして変更可能にする設計判断は維持する。Free 2台の実適用は、複数台ContributorのEvidence supplyを阻害する可能性から初期保留・再検証へ変更した。下記「Consumer Evidence supplyと長期B2B収益を同じ循環へ統合する」を参照。
 
 ### 決定: 貢献評価と情報の正確性を分離する
 
@@ -649,3 +650,33 @@
 - 背景: 写真付きQuick Recordの共有copyは、新しいjournal revisionごとに一意なobject pathを生成する。それにもかかわらず`upsert`を使うと、insertだけで済む投稿にもStorageのupdate／conflict権限経路を要求し、operation別に絞ったshared bucket RLSと不要に干渉する。また、事前に正規化した`alpha_inline`画像をdata URLから再fetch・再encodeすることはiPhone Safariで余分な失敗点になる。
 - 決定: 新規共有copyは`upsert: false`のinsertで保存する。Quick Recordが既に画像形式・寸法・460KB上限へ正規化した`alpha_inline`は直接Blob化してuploadし、再変換しない。Storage uploadとshared Journal RPCがともに成功した場合だけshared payloadへ`alpha_shared`参照を入れる。
 - 影響: 写真付き投稿をprivateへ強制しない。公開copyはorigin-local IndexedDBではなくshared Storageとshared Journal payloadで参照される。旧`local_blob`を暗黙に移行しない。失敗時は入力と既存記録を保持し、技術詳細をUIへ出さず、安全なoperation／status／codeだけを診断する。
+
+## 2026-08-16
+
+### 決定: MECHORIの事業中核を整備EvidenceとEvidence Loopとして整理する
+
+- 状態: Product / Business strategy
+- 背景: MECHORIにはConsumer履歴、Journal、検索、Affiliate、Professional等の複数レイヤーがある。これらを個別事業として並べると、何がProduct valueと企業価値を生むか不明瞭になるため。
+- 決定: 車両個体、車両仕様、症状・出来事、作業、使用部品、結果、再発・解決、出典・実例の関係を、確認状態と公開範囲を保って結ぶ整備Evidenceを戦略中核に置く。この内部関係モデルを`Evidence Graph`と呼ぶが、現時点で一般向けMarketing用語にはしない。
+- 決定: `記録 -> 整理・Evidence化 -> 検索・閲覧・再利用 -> 対応・作業 -> 結果追記 -> 次の再利用`を`Evidence Loop`とする。Quick RecordはEvidence intakeであり、post-save enrichmentとresult follow-upが投稿をMECHORI固有のEvidenceへ変える橋である。投稿前の大量入力へ戻さない。
+- 影響: 今後の機能はEvidence supply、Evidence化、Evidence Loop、Owner・Professional間の循環のどれを強くするかで評価する。ただし現αでは「簡単に記録できる」「もう一度使いたくなる」Owner UXを優先し、Evidence量だけを目的に入力負荷を増やさない。
+
+### 決定: Consumer Evidence supplyと長期B2B収益を同じ循環へ統合する
+
+- 状態: Monetization role definition
+- 決定: Owner FreeはEvidence supply、愛車履歴、user acquisition、network形成を担い、Consumer ARPU最大化を最優先にしない。知見投稿・結果追記・本人データ権利をPaywallで阻害しない。
+- 改定: 2026-07-13のFree 2台仮説は、Entitlement境界としては維持するが、初期検証で適用する固定仕様から保留・再検証へ変更する。複数台所有者のContribution、原価、Owner Plusの支払理由を確認してから判断し、永久に台数課金しないDecisionにはしない。
+- 決定: Affiliateは部品購入意図が自然に存在する場所でConsumer基盤のStorage、配信、AI、infrastructure等の原価を補填する初期収益候補とし、最終的な巨大利益エンジンにはしない。報酬額でSearch順位、AI回答、Parts recommendation、Evidence評価を歪めない。
+- 決定: AI超過課金は無料枠を超えるAPI原価回収を主目的とし、Owner PlusはEvidence supplyを阻害しないConsumer側の補助収益とする。
+- 決定: 長期的な主要利益基盤はProfessional / B2Bとし、Professional SaaS、Professional Network、Knowledge Infrastructureの三層を段階検証する。Networkの取引・成約手数料、Evidence API、部品適合・症例data、業務system integrationは将来仮説であり現αでは実装しない。
+- 整理: 「初期収益を営業型B2Bへ依存しない」は現在のGTMを指し、「長期的な主収益はProfessional / B2B」は到達を目指すBusiness Modelを指す。初期から営業、導入支援、個別Customizationへ大量時間を使わないため、両者は矛盾しない。
+
+### 決定: Product Universal / GTM Clusteredと段階的なEvidence指標を採用する
+
+- 状態: Growth / Measurement / Professional validation policy
+- 決定: Productは希少車、並行輸入車、限定車、グレード不明、catalog未登録を含め登録可能なUniversal設計を維持する。GTMはKnowledge密度とMeaningful Reuseを観察するため、2〜3程度の車種・近接車種・利用目的・community clusterへ獲得を集中させる実験を行える。これは対応車種制限ではない。
+- 決定: `Monthly Completed Evidence Loops`を長期North Star候補とするが、現α3〜5人では唯一の経営KPIにしない。Quick Record成功、再投稿・再訪、post-save enrichment、Evidence化、他者記録閲覧、Meaningful Reuse、結果追記、投稿後削除・後悔をLeading Indicatorとして観察し、複数Loopを継続集計できる段階で昇格を再検討する。
+- 決定: Professionalの初期validationはKnowledge Search単体ではなく、`Owner履歴受領 -> 案件記録 -> 写真・部品・結果 -> 顧客報告 -> Owner履歴返却`のEvidence workflowを有力仮説とする。3工場程度の数件の実業務を観察し、時間、手戻り、説明、履歴引き継ぎの改善を確認するまで大型SaaSを作らない。
+- 決定: Professionalを会計、請求、在庫、予約、CRM、汎用ERP、工場別個別受託へ無制限に広げない。複数工場で同じ反復課題が確認された機能だけを共通Product候補にする。
+- 決定: αのQuick Record共有固定は入力負荷、共有、Evidence supplyを検証する現在フェーズのexperimentである。下書きは公開前private状態とし、正式公開後はPublic / Followers only / Private等のUser Controlを再検討できる。投稿後削除、公開範囲変更希望、写真公開への不安・後悔も、Privacyを守れる範囲で観察する。
+- 決定: Native着手はcalendarだけで決めず、Webのretention、repeated recording、mobile UX、camera・notification等の実機限界、Evidence Loopへの寄与をGateにする。

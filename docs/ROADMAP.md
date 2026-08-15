@@ -45,7 +45,7 @@ Phase 3へ進む前に、`docs/ALPHA_PLAYBOOK.md`に従って特に親しい友�
 - 公開前レビューを行う。
 - P-085のService Provider／Professional Organization／OWNER・STAFF／Founding Garage基盤を使い、βまでに少なくとも1軒のFounding Garage候補へ参加条件を提示して実運用を共同確認する。
 - 整備記録ではDIY／お店・工場／不明と当時のProvider snapshotを残す。Claim、重複統合、Provider確認済み実績、公開Discoveryはβ後の検証結果で段階導入する。
-- β中盤から、オーナー向けネイティブアプリの開発に着手する。WebとNativeをαから二重開発せず、Webで固めたコアユースケースを再利用する。
+- β中盤はオーナー向けネイティブアプリの判断候補時期とする。着手はcalendarだけで決めず、Webでretentionとrepeated recordingが確認され、camera、notification、offline、media capture等のmobile UX制約がEvidence intake・Evidence Loopを妨げていることを確認するGateを通す。WebとNativeをαから二重開発せず、通過時はWebで固めたコアユースケースを再利用する。
 - β拡大前に、`docs/GLOBAL_COMPLIANCE.md`のResearch Frameworkを使い、対象地域・機能・一次資料・Product Decision・専門家確認の要否を追跡する。これは具体的な法的結論を含むものではない。
 
 ## Phase 4: 車種コミュニティ検証 100人
@@ -64,8 +64,9 @@ Phase 3へ進む前に、`docs/ALPHA_PLAYBOOK.md`に従って特に親しい友�
 
 ## Phase 6: 初期収益化検証
 
+- 部品購入意図が自然に存在する箇所で、AffiliateがConsumer基盤原価の一部を補填できるかを小規模に検証する。Search順位、AI回答、Parts recommendation、Evidence評価へ報酬を反映しない。
 - Owner Plus有料ベータ10人を目安に、支払理由、原価、継続を確認する。
-- Professional有料または有償実証3拠点を目安に、調査時間と受託判断への価値を確認する。
+- Professional有料または有償実証3拠点を目安に、Owner履歴受領から顧客報告・履歴返却までの一つのEvidence workflowで、時間、手戻り、説明、受託判断への価値を確認する。
 - 工場内症例庫から共有用概要を作る負担、公開可能範囲、希望する対価を確認する。
 - 対応経験シグナルによる相談候補と、工場間の有料事例レビューを小規模に検証する。
 - 作業報告や見積下書き等、一つの反復帳票で再入力時間を測り、巨大な工場基幹システムを先行開発しない。
@@ -76,7 +77,7 @@ Phase 3へ進む前に、`docs/ALPHA_PLAYBOOK.md`に従って特に親しい友�
 
 - 他車種・他メーカー・バイク等へ拡張する。
 - メカニック確認済み情報を扱う。
-- β中盤で着手したオーナー向けExpo / React Native版を正式公開後も拡張する。
+- retention、repeated recording、mobile UX制約、Evidence Loop寄与のGateを通過して着手した場合、オーナー向けExpo / React Native版を正式公開後も拡張する。
 - ネイティブ版では、写真・動画・音声をその場で非公開下書きへ追加し、作業前・確認中・交換後・結果を一つの記録へまとめる撮影セッションを検討する。
 - Professionalでは、許諾ナレッジ利用台帳、知識クレジット、工場間相談、帳票出力・送信を検証順に追加する。
 - 国別帳票は、共通取引データと地域パックを分離し、現地専門家と工場の確認を得られた地域から追加する。

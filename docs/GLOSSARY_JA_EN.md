@@ -81,8 +81,8 @@ UI、検索、データモデル、安全表示で使う日本語と英語を統
 
 | 日本語・表示名 | 英語 | 使用上の注意 |
 | --- | --- | --- |
-| Free | Free | 2台と登録車両検索は初期仮説 |
-| Owner Plus | Owner Plus | 複数台・未登録車種検索の個人向け仮説 |
+| Free | Free | 基本記録・Evidence supply。固定2台上限は初期保留 |
+| Owner Plus | Owner Plus | 高度管理・処理量・未登録車種検索等の個人向け補助収益仮説 |
 | Professional | Professional | Web業務検索。契約を技量認証にしない |
 
 ## 未確定
