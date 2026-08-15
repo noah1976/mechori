@@ -23,7 +23,7 @@ import {
   type Vehicle,
 } from "@mechori/core";
 import { translate, type TranslationKey } from "@mechori/i18n";
-import { Camera, LoaderCircle, Save, ShieldAlert, ShieldCheck } from "lucide-react";
+import { LoaderCircle, Save, ShieldAlert, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -38,6 +38,7 @@ import {
   saveLocalDraft,
 } from "@/lib/local-draft-store";
 import { ServiceAttributionField } from "@/components/service-attribution-field";
+import { quickRecordTitle } from "@/lib/quick-record";
 
 const eventTypes: Array<{ value: JournalEventType; label: TranslationKey }> = [
   { value: "delivery", label: "eventDelivery" },
@@ -77,7 +78,7 @@ export function QuickEventForm({
     alphaJournalMediaSharingAvailable,
   } = useApp();
   const editing = Boolean(journal);
-  const [eventType, setEventType] = useState<JournalEventType>(journal?.eventType ?? "photo");
+  const [eventType, setEventType] = useState<JournalEventType>(journal?.eventType ?? "other");
   const [serviceAttribution, setServiceAttribution] = useState<MaintenanceServiceAttributionV1>(
     () => normalizeServiceAttribution(journal?.serviceAttribution),
   );
@@ -173,7 +174,7 @@ export function QuickEventForm({
   function startNewDraft() {
     clearLocalDraft(localDraftKey);
     setPendingDraft(null);
-    setEventType("photo");
+    setEventType("other");
     setOccurrence({ occurredOn: localDateInputValue(), occurredPrecision: "day" });
     setNote("");
     setVisibility("public");
@@ -231,7 +232,6 @@ export function QuickEventForm({
     setPublicationError("");
     let slowSaveTimer: number | undefined;
     try {
-      const selectedType = eventTypes.find((item) => item.value === eventType)!;
       const mediaId = image ? `journal-media-${crypto.randomUUID()}` : existingAttachment?.id;
       const newAttachment: JournalMediaAttachment | undefined = image && mediaId ? {
         id: mediaId,
@@ -261,7 +261,7 @@ export function QuickEventForm({
             }
           : undefined);
       const draft: JournalDraft = {
-        title: translate(locale, selectedType.label),
+        title: quickRecordTitle(note, locale),
         sourceLanguage: journal?.sourceLanguage ?? locale,
         eventType,
         ...occurrence,
@@ -330,7 +330,10 @@ export function QuickEventForm({
 
   return (
     <div className="page-stack narrow-page quick-event-page">
-      <header className="page-header"><div><span className="eyebrow">{editing ? "EDIT A MOMENT" : "ADD A MOMENT"}</span><h1>{editing ? (locale === "ja" ? "短い記録を編集" : "Edit quick record") : translate(locale, "momentWithVehicle", { vehicle: vehicleModel })}</h1><p>{locale === "ja" ? "写真と一言で残す、短い愛車記録です。日付や内容はあとから直せます。" : "A quick vehicle record with a photo and a short note. You can edit it later."}</p></div></header>
+      <header className="quick-composer-header">
+        <p className="quick-composer-vehicle">{vehicle.make} {vehicleModel}</p>
+        <h1>{editing ? (locale === "ja" ? "記録を編集" : "Edit record") : (locale === "ja" ? "記録する" : "New record")}</h1>
+      </header>
       <form className="quick-event-form" onSubmit={submit} aria-busy={saving || preparing}>
         {pendingDraft && (
           <div className="local-draft-status is-restored" role="status">
@@ -359,9 +362,23 @@ export function QuickEventForm({
             <button type="button" onClick={startNewDraft}>{locale === "ja" ? "下書きを破棄" : "Discard draft"}</button>
           </div>
         )}
-        <section className="quick-event-photo">
-          {image ? <Image src={image.dataUrl} alt="" fill sizes="(max-width: 760px) 100vw, 680px" unoptimized /> : existingImageSource ? <Image src={existingImageSource} alt={existingAttachment?.altText ?? ""} fill sizes="(max-width: 760px) 100vw, 680px" unoptimized /> : <div><Camera size={38} /><strong>{translate(locale, "photoOptional")}</strong><span>{translate(locale, "addTodaysPhoto")}</span></div>}
-        </section>
+        <label className="field quick-note-field">
+          <span className="sr-only">{locale === "ja" ? "記録本文" : "Record text"}</span>
+          <textarea
+            maxLength={500}
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder={locale === "ja" ? "愛車に何がありましたか？" : "What happened with your vehicle?"}
+            autoFocus={!editing}
+          />
+        </label>
+        {(image || existingImageSource) && (
+          <section className="quick-event-photo">
+            {image
+              ? <Image src={image.dataUrl} alt="" fill sizes="(max-width: 760px) 100vw, 680px" unoptimized />
+              : <Image src={existingImageSource!} alt={existingAttachment?.altText ?? ""} fill sizes="(max-width: 760px) 100vw, 680px" unoptimized />}
+          </section>
+        )}
         <PhotoSourceActions
           locale={locale}
           preparing={preparing}
@@ -376,23 +393,44 @@ export function QuickEventForm({
               : "The photo uses the same audience as the record."
             : translate(locale, "momentPrivateFirst")}
         </p>
-        <fieldset className="event-type-picker"><legend>{translate(locale, "momentKindQuestion")}</legend>{eventTypes.map((item) => <button type="button" key={item.value} className={eventType === item.value ? "is-selected" : ""} aria-pressed={eventType === item.value} onClick={() => setEventType(item.value)}>{translate(locale, item.label)}</button>)}</fieldset>
-        {journalSupportsServiceAttribution(eventType) && (
-          <ServiceAttributionField
-            value={serviceAttribution}
-            onChange={setServiceAttribution}
-            locale={locale}
-            compact
-          />
+        {error && <p className="form-error-summary" role="alert">{translate(locale, error)}</p>}
+        {publicationError && <p className="form-error-summary" role="alert">{publicationError}</p>}
+        {saveTakingLong && (
+          <div className="form-submit-feedback" role="status">
+            <LoaderCircle className="spin" size={18} aria-hidden="true" />
+            <span>
+              {locale === "ja"
+                ? "保存を続けています。写真や通信状況によって少し時間がかかることがあります。"
+                : "Still saving. Photos or network conditions can make this take a little longer."}
+            </span>
+          </div>
         )}
-        <OccurrenceDateFields
-          value={occurrence}
-          locale={locale}
-          error={error === "momentDateMissing" ? translate(locale, error) : undefined}
-          onChange={(patch) => setOccurrence((current) => ({ ...current, ...patch }))}
-        />
-        <label className="field quick-note-field"><span>{translate(locale, "oneSentenceRequired")}</span><textarea maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} placeholder={translate(locale, "momentPlaceholder")} /></label>
-        <section className="quick-event-audience" aria-labelledby="quick-event-audience-heading">
+        <div className="quick-composer-submit">
+          <Link href={journal ? `/journal/${journal.id}` : "/garage"} className="text-link">{translate(locale, "later")}</Link>
+          <button className="primary-action" type="submit" disabled={saving || preparing}>
+            {saving ? <LoaderCircle className="spin" size={17} aria-hidden="true" /> : <Save size={17} aria-hidden="true" />}
+            {locale === "ja" ? (saving ? "記録中" : "記録する") : (saving ? "Saving" : "Save record")}
+          </button>
+        </div>
+        <details className="quick-composer-details">
+          <summary>{locale === "ja" ? "日付・公開範囲などを設定" : "Set date, audience, and more"}</summary>
+          <div className="quick-composer-details-body">
+            <fieldset className="event-type-picker"><legend>{translate(locale, "momentKindQuestion")}</legend>{eventTypes.map((item) => <button type="button" key={item.value} className={eventType === item.value ? "is-selected" : ""} aria-pressed={eventType === item.value} onClick={() => setEventType(item.value)}>{translate(locale, item.label)}</button>)}</fieldset>
+            {journalSupportsServiceAttribution(eventType) && (
+              <ServiceAttributionField
+                value={serviceAttribution}
+                onChange={setServiceAttribution}
+                locale={locale}
+                compact
+              />
+            )}
+            <OccurrenceDateFields
+              value={occurrence}
+              locale={locale}
+              error={error === "momentDateMissing" ? translate(locale, error) : undefined}
+              onChange={(patch) => setOccurrence((current) => ({ ...current, ...patch }))}
+            />
+            <section className="quick-event-audience" aria-labelledby="quick-event-audience-heading">
           <div>
             <strong id="quick-event-audience-heading">
               {locale === "ja" ? "この記録を見る人" : "Who can see this record"}
@@ -490,20 +528,14 @@ export function QuickEventForm({
                 : "Until sharing setup is complete, records can be saved only for you."}
             </p>
           )}
-        </section>
-        {error && <p className="form-error-summary" role="alert">{translate(locale, error)}</p>}
-        {publicationError && <p className="form-error-summary" role="alert">{publicationError}</p>}
-        {saveTakingLong && (
-          <div className="form-submit-feedback" role="status">
-            <LoaderCircle className="spin" size={18} aria-hidden="true" />
-            <span>
-              {locale === "ja"
-                ? "保存を続けています。写真や通信状況によって少し時間がかかることがあります。"
-                : "Still saving. Photos or network conditions can make this take a little longer."}
-            </span>
+            </section>
           </div>
+        </details>
+        {!editing && (
+          <Link href={`/journal/new?vehicle=${encodeURIComponent(vehicle.id)}&mode=detailed`} className="quick-composer-detailed-link">
+            {locale === "ja" ? "詳しく記録する" : "Write a detailed record"}
+          </Link>
         )}
-        <div className="form-actions"><Link href={journal ? `/journal/${journal.id}` : "/garage"} className="secondary-action">{translate(locale, "later")}</Link><button className="primary-action" type="submit" disabled={saving || preparing}>{saving ? <LoaderCircle className="spin" size={17} aria-hidden="true" /> : <Save size={17} aria-hidden="true" />}{translate(locale, saving ? "addingMoment" : "saveMoment")}</button></div>
       </form>
     </div>
   );

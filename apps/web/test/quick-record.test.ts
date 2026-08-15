@@ -1,0 +1,61 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+import { addJournalToData, cloneDemoData } from "@mechori/core";
+import { quickRecordTitle } from "../lib/quick-record.ts";
+
+const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
+
+test("uses the first written line as a compact title without asking for one", () => {
+  assert.equal(quickRecordTitle("オイルを交換した\n静かになった", "ja"), "オイルを交換した");
+  assert.equal(quickRecordTitle("  A   short   note  ", "en"), "A short note");
+  assert.equal(quickRecordTitle("x".repeat(84), "en"), "x".repeat(80));
+});
+
+test("a body-only quick record remains a vehicle journal entry for the existing timeline", () => {
+  const data = cloneDemoData();
+  const vehicle = data.vehicles[0]!;
+  const body = "雨上がりに少し走った。\nエンジンの調子はいい。";
+  const result = addJournalToData(data, {
+    title: quickRecordTitle(body, "ja"),
+    eventType: "other",
+    occurredOn: "2026-08-15",
+    occurredPrecision: "day",
+    bodyOriginal: body,
+    vehicleId: vehicle.id,
+    linkedRecordId: "",
+    displayFields: [],
+    media: [],
+    contentBlocks: [{ id: "quick-body", type: "text", style: "paragraph", text: body }],
+    visibility: "private",
+    knowledgeExtractionConsent: false,
+  }, "ja", "2026-08-15T08:00:00.000Z");
+
+  assert.equal(result.journal.vehicleId, vehicle.id);
+  assert.equal(result.journal.eventType, "other");
+  assert.equal(result.journal.title, "雨上がりに少し走った。");
+  assert.equal(result.journal.bodyOriginal, body);
+  assert.equal(result.data.journals[0]?.id, result.journal.id);
+});
+
+test("keeps the composer focused on vehicle, body, optional photo, and save", () => {
+  const composer = read("../components/quick-event-form.tsx");
+  assert.match(composer, /eventType.*"other"/);
+  assert.match(composer, /愛車に何がありましたか？/);
+  assert.match(composer, /PhotoSourceActions/);
+  assert.match(composer, /記録する/);
+  assert.match(composer, /<details className="quick-composer-details">/);
+});
+
+test("opens the universal composer by default and preserves an explicit detailed route", () => {
+  const page = read("../app/journal/new/page.tsx");
+  assert.match(page, /if \(!detailed\) return <QuickRecordEntry/);
+  assert.match(page, /mode"\) === "detailed"/);
+  assert.match(page, /Boolean\(promptId\)/);
+});
+
+test("the vehicle context route does not make users choose a prompt before writing", () => {
+  const page = read("../app/garage/[vehicleId]/event/new/page.tsx");
+  assert.match(page, /<QuickEventForm vehicle=\{vehicle\} \/>/);
+  assert.doesNotMatch(page, /JournalPrompts/);
+});

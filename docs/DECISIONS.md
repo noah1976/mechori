@@ -588,3 +588,11 @@
 - 状態: 運用方針
 - 決定: `main`をProduction基準とし、feature branch → Pull Request → Netlify Deploy Preview → 人間QA → `main`の順で扱う。Preview確認のためにProduction deployを繰り返さず、コード実装、checks、Preview反映、実機QA、mergeを別状態として記録する。
 - 影響: PR #2のGarage Vehicle Identity改善はopen・未merge、PR #3のDeploy Preview OAuth origin許可とsession cookie修正は実装・Preview反映済みだが、iPhone Safari実機QA待ちである。Garage timelineの「端末内メディアが見つかりません」再発はP1調査項目とし、原因未確認のまま完了扱いにしない。
+
+### 決定: 記録入力は「まず書ける。整理はあと。」を原則にする
+
+- 日付: 2026-08-15
+- 状態: 実装・人間QA待ち
+- 背景: αテスター3名が、記録開始時に並ぶ分類・整備項目・公開設定によって短い出来事さえ残しにくいと報告した。MECHORIでは知見を残す行為そのものが重要な価値であり、構造化の都合で最初の投稿を止めない。
+- 決定: Universal Composerの最小入力はVehicle、本文、任意の写真、保存とする。通常の記録は既存`GarageJournalPost`へ、本文先頭行から生成した内部title、`other` event type、当日の発生日、既存公開範囲の既定値で保存する。日付、公開範囲、種別、DIY／お店・工場、その他の詳細はProgressive Disclosureで任意に追加できる。詳しいJournal、構造化整備記録、AI構造化は別の明示導線または将来機能として維持する。
+- 影響: Workspace JSON、DB、RLS、RPC、既存Journal／Maintenanceのdata contractは変更しない。AIによる本文解析・部品抽出は今回実装せず、将来はユーザー確認を伴う構造化候補として検討する。
