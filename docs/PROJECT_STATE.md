@@ -175,14 +175,21 @@
 - **未解決P1／要確認**: legacy `local_blob`写真の別端末・別originでの回復／migrationは未実装。未ログインLanding上部の大きな余白はコード上で原因を確定できていない。iPhone Safariでは本文のみ、写真付きの「α参加者に公開」と「自分だけ」、保存直後のTimeline、別session／別deviceでの共有写真、日付field、下書き、bottom navigationとの距離を確認する。
 - **状態**: 自動検証完了後もPR #5はopen・未merge、Human QA ready。PR #2／PR #3、`main`、Netlify／Supabase設定は変更しない。
 
-## 16. 2026-08-15 Quick Record公開範囲方針
+## 15. 2026-08-15 Quick Record公開範囲方針
 
 - **現在のProduct decision**: Quick Record / Universal Composerでは、保存時の公開範囲を毎回選ばせず、「α参加者に公開」を固定のdefaultとして扱う。入力画面から「自分だけ／α参加者に公開」の2択UIを削除する実装を次のUI polishで反映する。
 - **理由**: Quick Recordの「まず書ける。整理はあと。」に対し、投稿ごとのVisibility判断は不要な認知負荷になる。共有された愛車記録がTimeline、他ownerの経験、Knowledge accumulation、再訪理由を育てるため、通常投稿は共有を中心にする。
 - **下書きとの境界**: 入力途中のprivate状態は下書きで扱う。下書きは公開せず、正式保存時にα参加者へ公開する。「自分だけ」をQuick Recordの正式保存後に常設する需要は未確認であり、仮説だけで入力UIを増やさない。
 - **将来と範囲**: 正式公開後などにPublic／Followers only／Privateの3段階を再検討する余地は残す。この判断はQuick Recordだけを対象とし、Maintenance Recordや詳しいJournal等の既存Visibility仕様は変更しない。
 
-## 15. 2026-08-15 P-086 共有写真保存経路の修正（PR #5継続）
+## 16. 2026-08-15 Quick Recordの保存後enrichment方針
+
+- **次回実装方針**: Quick Record画面の投稿前「詳しく記録する」別入口を廃止し、`Vehicle → 本文 → 写真（任意）→ 記録する`で正式保存を先に完了する。保存後に必要なユーザーだけが任意の構造化情報追加へ進む。
+- **保存契約**: 保存後のBottom Sheet等で「整備情報を追加／閉じる」を提示する。追加をしない、スキップする、閉じる、途中で離れる場合も、直前に保存した投稿は失われず、保存失敗扱いにしない。後から記録詳細で追加・編集できる方向とする。
+- **「あとで」の再整理**: 現在の投稿前詳細項目を、投稿前に本当に必要なもの、保存後へ移せるもの、廃止可能なものへ実装時に分類する。今回、既存項目を機械的に削除したり、Quick Record専用の巨大data modelを決めたりしない。
+- **状態**: これはQuick Record / Universal Composerだけの次回UI・実装方針であり、Maintenance Record、詳しいJournalの既存data model・Visibilityは変更しない。αではAIによる動的質問を必須にしない。Human QA前は未実装方針として扱う。
+
+## 17. 2026-08-15 P-086 共有写真保存経路の修正（PR #5継続）
 
 - **再現範囲**: iPhone Safariで本文＋写真の「α参加者に公開」だけが、記録本体の保存後にshared photo copyの更新で失敗した。本文のみ、写真選択・preview、private写真の各経路とは分離して扱う。
 - **原因（code／RLS contract）**: 新規共有画像はjournal ID・更新時刻・media IDを含む一意のobject pathを生成するにもかかわらず、Storage uploadを`upsert: true`で実行していた。`alpha-journal-media`の現行RLSはoperationごとのreadを絞っており、新規画像にも不要なupdate／conflict経路を通す設計だった。また`alpha_inline`のdata URLを`fetch`してから再度canvas変換しており、iPhone Safariで余分な失敗点になっていた。
