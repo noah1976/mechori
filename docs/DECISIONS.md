@@ -680,3 +680,12 @@
 - 決定: Professionalを会計、請求、在庫、予約、CRM、汎用ERP、工場別個別受託へ無制限に広げない。複数工場で同じ反復課題が確認された機能だけを共通Product候補にする。
 - 決定: αのQuick Record共有固定は入力負荷、共有、Evidence supplyを検証する現在フェーズのexperimentである。下書きは公開前private状態とし、正式公開後はPublic / Followers only / Private等のUser Controlを再検討できる。投稿後削除、公開範囲変更希望、写真公開への不安・後悔も、Privacyを守れる範囲で観察する。
 - 決定: Native着手はcalendarだけで決めず、Webのretention、repeated recording、mobile UX、camera・notification等の実機限界、Evidence Loopへの寄与をGateにする。
+
+### 決定: αテスター由来の二つの価値表現を検証仮説として保持する
+
+- 日付: 2026-08-16
+- 状態: Qualitative product signal / validation pending
+- 観測: α版テストユーザーから「整備士にとってのGitHub（ポートフォリオ）」と「クルマのカルテ（オーナーが変わっても残る整備記録）」という表現が出た。
+- 決定: 前者をProfessionalの技術実績・相談・協業へつながる価値仮説、後者を所有者を越えて許諾済みEvidenceがVehicleへ継続する価値仮説として保持する。ConsumerとB2Bを別事業にせず、Vehicleへ残る履歴とProfessionalへ返る実績を同じEvidence Loopの両面として扱う。
+- 境界: 「クルマのカルテ」は個人情報、非公開記録、請求書、位置情報、写真等の自動移管を意味しない。所有者変更時も同意、公開範囲、出典、削除・訂正権を維持し、車両状態や整備品質を保証しない。「整備士のGitHub」は人気、投稿数、Professional契約だけで技術力・資格・安全性を保証しない。
+- 検証: 同じ言葉をMarketingで先行反復するのではなく、Ownerの履歴引き継ぎ行動とProfessionalの実案件・ポートフォリオ利用が発生するかを確認する。共感コメントだけで需要・支払意思の検証完了としない。

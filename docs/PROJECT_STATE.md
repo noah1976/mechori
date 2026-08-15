@@ -210,4 +210,5 @@
 - **Consumer / B2B**: Owner FreeはEvidence supply、愛車履歴、獲得、network形成を担う。現αを営業型B2Bへ依存させず、Professionalは3工場程度の実業務でEvidence workflowを観察してから大型実装を判断する。長期的な主利益基盤はProfessional / B2Bである。
 - **Monetization**: AffiliateはConsumer基盤原価の補填、AI超過枠はAPI原価回収、Owner Plusは補助収益として役割を分ける。Free 2台の旧仮説はsupersededとし、愛車登録台数をPaywallにしない。未接続の`maxOwnedVehicles` prototypeとtestは後続のcode cleanup対象。
 - **Growth / Measurement**: ProductはUniversalな登録を維持し、GTMでは2〜3 clusterへ獲得を寄せる実験を検討する。Monthly Completed Evidence Loopsは長期North Star候補であり、現αではQuick Record成功、再訪、enrichment、Meaningful Reuse、結果追記、共有後の後悔等のLeading Indicatorを優先する。
+- **αテスターの定性シグナル**: 「整備士にとってのGitHub（ポートフォリオ）」と「クルマのカルテ（オーナーが変わっても残る整備記録）」という表現が得られた。前者はProfessionalへ返る技術実績、後者はVehicleへ継続する許諾済み履歴の仮説として保持する。需要・支払意思・実利用は未検証であり、Marketing claimや品質保証として先行利用しない。
 - **未実装・仮説**: Professional Network、Knowledge Infrastructure、Evidence API、AI-driven enrichment、正式公開後のPublic / Followers only / Private、Nativeは将来仮説またはGate後の対象であり、今回implementation scopeへ追加しない。
