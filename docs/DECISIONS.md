@@ -624,6 +624,15 @@
 - 決定: 新規Quick Recordと詳細Journalは、公開写真を既存の認証済みshared Storage／shared Journal publish経路で実際に処理し、その成否で判定する。投稿前のlazy hydrationの能力値で写真付き公開を拒否しない。写真だけを強制privateにせず、本文の「α参加者に公開」またはユーザーが選んだ「自分だけ」を同じく適用する。
 - 影響: `alpha_inline`は保存時にshared Storageの`alpha_shared`参照へ変換され、別origin・別deviceでも取得可能な共有データとなる。共有処理に失敗した場合は記録を公開済み・写真なしとして残さず、既存のrollbackと入力保持を使う。旧`local_blob`写真のorigin限定の回復は別P1のままとする。
 
+### 決定: Quick Recordの正式保存は「α参加者に公開」に固定する
+
+- 日付: 2026-08-15
+- 状態: Product decision・次回UI polishで実装
+- 背景: 従来のQuick Recordで「自分だけ／α参加者に公開」を毎回選ばせると、「まず書ける。整理はあと。」という入力原則に反し、投稿前の判断を一つ増やしていた。共有された愛車記録・写真・整備経験がTimelineとKnowledge accumulationを育てるため、現αでは標準共有を優先する。
+- 決定: Quick Record / Universal Composerの正式保存は「α参加者に公開」を固定とし、入力画面から公開範囲の2択UIを削除する。最小UXはVehicle、本文、写真（任意）、記録するを維持する。作業途中や確認前の内容は下書きとしてprivateに保持し、正式保存前には公開しない。
+- 判断理由: 作業途中は下書き、公開したくない情報を含む写真は投稿前の確認、個人的な詳細は詳しい記録UXで扱えるため、現時点でQuick Recordへprivate選択を常設する実ユーザー需要は確認されていない。仮説だけで入力UIを増やさず、Knowledge contributionを阻害しない。
+- 将来: 正式公開後など、Public／Followers only／Privateの3段階Visibilityを再検討する余地は残す。「自分だけ」という概念をMECHORY全体から削除する判断ではない。Maintenance Record、詳しいJournal、その他の記録種別の既存Visibility仕様は今回変更しない。
+
 ### 決定: 新規Quick Recordの共有写真はStorageの新規insertとしてpublishする
 
 - 日付: 2026-08-15

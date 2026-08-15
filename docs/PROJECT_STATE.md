@@ -8,7 +8,7 @@
 
 ## 1. 現在テスターが利用できる主要フロー
 
-招待URLからGoogleログインし、クルマまたはバイクを登録する。車種マスタにない車両、写真のない車両、過去に所有していた車両も登録を開始できる。記録開始時はVehicle、本文、任意の写真だけで保存でき、日付、公開範囲、種別、整備情報は必要なときに追加する。詳しいJournal形式と構造化整備記録は明示的な詳細導線として維持する。
+招待URLからGoogleログインし、クルマまたはバイクを登録する。車種マスタにない車両、写真のない車両、過去に所有していた車両も登録を開始できる。記録開始時はVehicle、本文、任意の写真だけで保存でき、Quick Recordは現αでは「α参加者に公開」を既定かつ固定とする。日付、種別、整備情報は必要なときに追加する。詳しいJournal形式と構造化整備記録は明示的な詳細導線として維持する。
 
 保存後は車両の時間軸、Garage、フィードで履歴を振り返り、投稿へのいいね、投稿者プロフィール、車両プロフィール、人・クルマ検索、ユーザー／車両フォローを試せる。プロフィール設定、ログアウト、フィードバック、管理者向け運用画面も実装されている。下書きはブラウザ内に保存され、保存成功後に完了画面からGarage、投稿詳細、次の記録、ホームへ進める。
 
@@ -174,6 +174,13 @@
 - **QA polish**: 本文placeholderを「愛車で何をしましたか？」へ変更し、Quick Recordの写真操作をOS標準file picker一つの「写真を追加」へ統合した。下書き操作、詳細設定のgrouping、日付fieldのmin-inline-size、保存CTAのbottom safe area、Home／Journalのmedia containerを整えた。旧`local_blob`のTimeline fallbackは本文より目立たない68px最小高へ縮小した。
 - **未解決P1／要確認**: legacy `local_blob`写真の別端末・別originでの回復／migrationは未実装。未ログインLanding上部の大きな余白はコード上で原因を確定できていない。iPhone Safariでは本文のみ、写真付きの「α参加者に公開」と「自分だけ」、保存直後のTimeline、別session／別deviceでの共有写真、日付field、下書き、bottom navigationとの距離を確認する。
 - **状態**: 自動検証完了後もPR #5はopen・未merge、Human QA ready。PR #2／PR #3、`main`、Netlify／Supabase設定は変更しない。
+
+## 16. 2026-08-15 Quick Record公開範囲方針
+
+- **現在のProduct decision**: Quick Record / Universal Composerでは、保存時の公開範囲を毎回選ばせず、「α参加者に公開」を固定のdefaultとして扱う。入力画面から「自分だけ／α参加者に公開」の2択UIを削除する実装を次のUI polishで反映する。
+- **理由**: Quick Recordの「まず書ける。整理はあと。」に対し、投稿ごとのVisibility判断は不要な認知負荷になる。共有された愛車記録がTimeline、他ownerの経験、Knowledge accumulation、再訪理由を育てるため、通常投稿は共有を中心にする。
+- **下書きとの境界**: 入力途中のprivate状態は下書きで扱う。下書きは公開せず、正式保存時にα参加者へ公開する。「自分だけ」をQuick Recordの正式保存後に常設する需要は未確認であり、仮説だけで入力UIを増やさない。
+- **将来と範囲**: 正式公開後などにPublic／Followers only／Privateの3段階を再検討する余地は残す。この判断はQuick Recordだけを対象とし、Maintenance Recordや詳しいJournal等の既存Visibility仕様は変更しない。
 
 ## 15. 2026-08-15 P-086 共有写真保存経路の修正（PR #5継続）
 
