@@ -157,3 +157,12 @@
 - **P1**: Garage Timelineの「端末内メディアが見つかりません」再発は継続。IndexedDB、local Blob、legacy media reference、Supabase media、旧新保存方式の差を候補として、再現条件と影響範囲を確定するまで解決済みと扱わない。未ログインLandingのheader余白、ログイン後headerの中央ずれ、画面間のheader／title／navigation不統一も次のUI修正対象とする。
 - **再テスト条件**: Quick Recordの本文のみ／写真付き入力、Vehicle選択、30秒程度の投稿、保存後Timeline反映、迷いの有無を確認できること。主要記録flowが実機で動き、media問題の原因・影響範囲が明確または解決し、Headerの目立つ崩れと主要画面のVisual inconsistencyが改善されていることを最低条件とする。
 - **次の状態**: 自動検証済み・実機QA待ちの機能を完了扱いにしない。人間QA後に、既存αテスターが「また記録したい」と感じるかを最重要の評価軸として記録する。
+
+## 13. 2026-08-15 α再テスト前 UX Improvement Pass（PR #5継続）
+
+- **対象と状態**: PR #5 `codex/quick-record-composer`で、Quick Record、共通Header、Garage／Journalの表示をα再テスト前に整える。PR #2、PR #3はopen・未mergeのまま変更しない。今回のコードは自動検証後にHuman QAへ回す。
+- **Quick Record**: 最小入力（Vehicle、本文、任意写真、記録する）は維持し、本文・写真・保存操作を近づけ、詳細設定を初期表示から外す。`alpha_inline`の新規Quick Record写真はworkspaceに保存する既存経路を使い、端末ローカルBlob依存を新たに増やさない。
+- **Header**: モバイルHeaderを左右固定slotと中央titleの共有構造にし、左右action数に影響されずtitle／brandがviewport中央に来るようにする。未ログインLandingの大きな上部余白はコード上で原因を断定できておらず、safe area・Netlify Drawer等を含めてiPhone QAで再確認する。
+- **Garage media P1の原因**: 旧詳細Journalの`local_blob`写真はIndexedDBのoriginごとの端末内参照であるため、別端末・別browser・ProductionとPreviewの別originでは復元できない。新規Quick Recordの`alpha_inline`写真と、既存`alpha_shared`の共有写真は別経路である。今回、復元不能な旧local mediaは本文を妨げない小さな縮退表示にし、共有写真の取得失敗は既存の再試行／診断対象として維持する。legacy写真の移行・回復は未実装。
+- **Design Language適用範囲**: 共通Header、authenticated Home、Garage、Quick Record、Journal detailを、白地・短い事実的copy・余白・内容主体・一つの主要CTAというGarage由来の文脈へ寄せた。Search、Profile、Notificationsは優先度Bとして今回未統一。Admin／Professional／prototypeは対象外。
+- **再テスト前の人間確認**: iPhone Safariで、未ログインLanding上部、Header中央、Quick Record本文のみ／写真付き保存、Garage timelineの旧／新写真、Home → Garage → Record → Timelineの連続性を確認する。コード上の状態はHuman QA ready候補であり、実機確認前に完了扱いにはしない。

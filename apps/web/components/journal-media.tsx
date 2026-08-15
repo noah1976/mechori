@@ -15,6 +15,7 @@ import {
   type SharedMediaLoadDiagnostic,
 } from "@/lib/shared-media-diagnostics";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { journalMediaFallback } from "@/lib/journal-media-fallback";
 
 const reportedMediaDiagnostics = new Set<string>();
 
@@ -90,23 +91,28 @@ function JournalMediaItem({
     }
     let active = true;
     let objectUrl: string | undefined;
-    const blobPromise = loadJournalMediaBlob(attachment);
-    void blobPromise.then((result) => {
-      if (!active) return;
-      if (result.blob) {
-        objectUrl = URL.createObjectURL(result.blob);
-        setSource(objectUrl);
-      } else if (result.diagnostic) {
-        setFailureId(result.diagnostic.errorId);
-        void reportSharedMediaDiagnostic(
-          result.diagnostic,
-          attachment.assetPath,
-        ).then((code) => {
-          if (active && code) setProbeCode(code);
-        });
-      }
-      setLoading(false);
-    });
+    void loadJournalMediaBlob(attachment)
+      .then((result) => {
+        if (!active) return;
+        if (result.blob) {
+          objectUrl = URL.createObjectURL(result.blob);
+          setSource(objectUrl);
+        } else if (result.diagnostic) {
+          setFailureId(result.diagnostic.errorId);
+          void reportSharedMediaDiagnostic(
+            result.diagnostic,
+            attachment.assetPath,
+          ).then((code) => {
+            if (active && code) setProbeCode(code);
+          });
+        }
+      })
+      .catch(() => {
+        // Local media can be unavailable after a browser reset or on another origin.
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
     return () => {
       active = false;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
@@ -123,21 +129,17 @@ function JournalMediaItem({
   }
 
   if (!source) {
-    const sharedPhotoUnavailable = attachment.source === "alpha_shared";
+    const fallback = journalMediaFallback(attachment, locale);
+    const sharedPhotoUnavailable = fallback.kind === "shared";
     return (
-      <div className="journal-media-placeholder">
+      <div className={`journal-media-placeholder${fallback.kind === "local" ? " is-local-unavailable" : ""}`}>
         {attachment.kind === "image" ? (
           <ImageIcon size={22} aria-hidden="true" />
         ) : (
           <Video size={22} aria-hidden="true" />
         )}
-        <span>{sharedPhotoUnavailable
-          ? locale === "ja"
-            ? "共有写真を読み込めません"
-            : "Shared photo is unavailable"
-          : locale === "ja"
-            ? "端末内メディアが見つかりません"
-            : "Local media not found"}</span>
+        <span>{fallback.message}</span>
+        {fallback.detail && <small>{fallback.detail}</small>}
         {sharedPhotoUnavailable && failureId && (
           <small>{locale === "ja" ? `確認番号: ${failureId}` : `Reference: ${failureId}`}</small>
         )}

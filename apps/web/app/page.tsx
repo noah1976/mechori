@@ -31,7 +31,6 @@ import {
   TriangleAlert,
   UserPlus,
   UsersRound,
-  Wrench,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -207,12 +206,12 @@ export default function HomePage() {
       ) : (
       <section className="home-community-stage">
         <div className="home-community-intro">
-          <span className="eyebrow">{signedIn ? "TODAY IN THE GARAGE" : "PUBLIC VEHICLE RECORDS"}</span>
-          <h1>{ja ? "愛車の整備も、日々の出来事も、一台の履歴に。" : "Breakdowns and the drives after them."}</h1>
+          <span className="eyebrow">{signedIn ? "YOUR VEHICLE HISTORY" : "PUBLIC VEHICLE RECORDS"}</span>
+          <h1>{ja ? "愛車の記録を、いつでも。" : "Keep your vehicle history close."}</h1>
           <p>
             {ja
-              ? "整備記録を自分のために残し、困ったときは同型車の事例を探せます。写真や言葉で残した日々も、愛車の履歴につながります。"
-              : "Keep maintenance for yourself and look for comparable owner cases when needed. Photos and everyday notes stay connected to the same vehicle history."}
+                ? "整備も日々の出来事も、このクルマの履歴として残せます。必要なときは、同型車の公開事例も探せます。"
+                : "Keep maintenance and everyday moments in one vehicle history, then search shared cases when you need them."}
           </p>
           <div className="home-community-actions">
             <Link
@@ -220,15 +219,11 @@ export default function HomePage() {
               className="primary-action"
             >
               <Camera size={19} aria-hidden="true" />
-              {ja ? "さっと記録" : "Quick record"}
+              {ja ? "記録する" : "Record"}
             </Link>
             <Link href="/people" className="secondary-action">
               <UsersRound size={18} aria-hidden="true" />
               {ja ? "人・クルマを探す" : "Find people and vehicles"}
-            </Link>
-            <Link href="/records/new" className="secondary-action">
-              <Wrench size={18} aria-hidden="true" />
-              {ja ? "整備記録だけ残す" : "Maintenance record only"}
             </Link>
           </div>
           <form className="home-knowledge-prompt" onSubmit={search}>

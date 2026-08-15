@@ -94,6 +94,16 @@ Garageは当面のDesign North Starとして扱う。ただし、HomeやQuick Re
 - 次の検証値は、記録のしやすさ、主要導線の連続性、Visual consistency、実機での安定性、また投稿したくなる感覚。新機能を増やす前に既存αテスターの再利用意欲を確認する。
 - Garage Timelineのmedia問題とHeaderの余白・中央ずれは、Design polishだけでなく実機QAで再現条件を確認する。原因不明の表示を見た目の調整だけで隠さない。
 
+## α再テスト前 UX Improvement Pass
+
+Garage由来のDesign Languageを、αテスターが頻繁に通る範囲へ限定して適用する。目的は画面数を増やすことではなく、Home → Garage → Record → Timelineが一つのサービスとして自然に読めることにある。
+
+- 共通Headerは、モバイルで左右固定slotと中央titleを用い、左右actionの有無に関係なくbrand／page titleを視覚的に中央へ置く。未ログインLandingの上部余白は実機で検証し、コード上の推測だけで原因を確定しない。
+- Quick Recordは本文、任意写真、保存の操作を近くに置き、最初に書き始める余白を優先する。詳細設定は初期画面の主役にしない。
+- Homeは一つの記録CTAを主役にし、Garageは車両と時間軸、Journal detailは読む内容を主役にする。全面的なcard／borderの反復を避け、白地、余白、短い事実的copyで区切る。
+- 本当に復元できない旧端末内写真は、本文を妨げる大きなerror surfaceにせず、小さく状態を伝える。共有写真の通信・権限エラーは同じ見た目で隠さず、診断可能な状態を維持する。
+- 今回の適用範囲は共通Header、authenticated Home、Garage、Quick Record、Journal detailまで。Search、Profile、Notificationsは優先度B、Admin、Professional、prototypeは対象外とする。
+
 ## 未確定
 
 - ロゴ

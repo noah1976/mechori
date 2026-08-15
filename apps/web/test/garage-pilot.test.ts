@@ -41,4 +41,6 @@ test("Garage identity keeps make, model, and an optional grade as separate visua
   assert.match(source, /garage-v2-make/);
   assert.match(source, /<h1>\{vehicleModel\}<\/h1>/);
   assert.match(source, /vehicle\.grade && <p className="garage-v2-grade">\{vehicle\.grade\}<\/p>/);
+  assert.match(source, /車齢 \$\{relationship\.vehicleAgeYears\}年/);
+  assert.match(source, /所有 \$\{ownershipDuration\}/);
 });

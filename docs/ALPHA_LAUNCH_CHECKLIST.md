@@ -140,3 +140,11 @@ P-069のように本番で再現した不具合は、テスト成功だけを根
 - PR #2のGarage Vehicle Identity改善はopen・未mergeで、人間QA待ち。
 - PR #3のDeploy Preview OAuth origin許可とsession cookie修正は実装済み・Deploy Preview反映済み。iPhone Safariでのログイン確立は未確認のため、Googleログインを完了扱いにしない。
 - Garage timelineの「端末内メディアが見つかりません」再発はP1調査項目として記録する。既存92項目は削除・統合せず、原因と影響範囲の確認後に該当QA項目を更新する。
+
+## 11. 2026-08-15 UX Improvement Pass 追補
+
+- `[~]` P-086 Quick Recordの初期画面をVehicle、本文、任意写真、保存へ絞り、詳細設定はProgressive Disclosureに維持した。iPhone Safariで本文のみ／写真付き保存、keyboard表示中の保存、Vehicle自動選択、Timeline反映を人間QAする。
+- `[~]` モバイル共通Headerを左右固定slot＋中央titleへ変更した。未ログインLandingの大きな上部余白、ログイン後のbrand／page titleの物理的な中央、右action追加時の崩れをiPhoneで確認する。
+- `[~]` Garage Timelineの旧`local_blob`写真は別端末・別originで復元できない制約を明確化し、本文を妨げない縮退表示へ改善した。新規Quick Record写真、既存共有写真、legacy local写真をそれぞれ確認し、legacy移行が未実装であることを記録する。
+- `[~]` 共通Header、authenticated Home、Garage、Quick Record、Journal detailへGarage由来のDesign Languageを限定適用した。Home → Garage → Record → Timelineの一貫性をiPhone SafariとPCで確認する。Search、Profile、Notificationsは優先度B、Admin／Professionalは今回対象外。
+- `[ ]` 上記の実機QA後、既存αテスター3名へ再テストを依頼する。評価は「投稿できる」だけでなく、説明なしで記録できるか、画面を跨いでも同じサービスに見えるか、また記録したいと思えるかとする。

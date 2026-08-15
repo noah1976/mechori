@@ -606,3 +606,12 @@
 - 決定: Garageの見た目を全画面へコピーするのではなく、Header、Typography hierarchy、spacing、card／border／radius、button、icon、accent color、image presentation、section hierarchy、Mobile layoutの共通Design Languageを抽出して主要導線へ適用する。prototype、admin、professionalは同じ優先度で全面改修しない。
 - 再テストの評価軸: 「投稿できる」だけでなく、説明なしで記録できる、画面移動後も同じサービスに見える、また愛車の記録を残したいと思える、を確認する。知見投稿を阻害しないことを機能追加より優先する。
 - 影響: P-086は実装済み・iPhone Safari実機QA待ちとして維持する。Garage Timeline mediaの「端末内メディアが見つかりません」は独立したP1として原因確定まで未解決とする。PR #5はPR #3のPreview OAuth修正を取り込んだが、PR #3自体はmergeしない。
+
+### 決定: α再テスト前の改善は投稿開始と主要journeyの連続性へ絞る
+
+- 日付: 2026-08-15
+- 状態: 実装・Human QA待ち
+- 決定: Quick Recordでは初期表示をVehicle、本文、任意写真、保存に留め、本文・写真・保存の関係を近づける。日付、公開範囲、種別、整備情報などの既存詳細はProgressive Disclosureに残し、初回投稿を止めない。
+- 決定: GarageのQuiet Machineryを共通Design Languageとして、共有Header、authenticated Home、Garage、Quick Record、Journal detailへ限定適用する。白地、短い事実的copy、余白、内容主体、明確な一つの主要CTAを優先し、Search、Profile、Notifications、Admin、Professionalの全面改修は後続とする。
+- 決定: 旧`local_blob`写真が端末・originごとのIndexedDBを参照する制約は、消えた写真を共有済みと誤認させない小さな縮退表示で扱う。共有済み写真の取得失敗と混同せず、legacy media移行・回復は別課題に残す。
+- 影響: Workspace、DB、RLS、RPC、Journal／Maintenanceのdata contract、公開範囲、Follow、Notificationの挙動は変更しない。未ログインLandingの大きな余白はコードだけで原因を断定せず、iPhone Safariで再確認する。

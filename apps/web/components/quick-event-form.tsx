@@ -331,6 +331,7 @@ export function QuickEventForm({
   return (
     <div className="page-stack narrow-page quick-event-page">
       <header className="quick-composer-header">
+        <p className="quick-composer-kicker">{locale === "ja" ? "愛車の記録" : "Vehicle record"}</p>
         <p className="quick-composer-vehicle">{vehicle.make} {vehicleModel}</p>
         <h1>{editing ? (locale === "ja" ? "記録を編集" : "Edit record") : (locale === "ja" ? "記録する" : "New record")}</h1>
       </header>
@@ -379,20 +380,22 @@ export function QuickEventForm({
               : <Image src={existingImageSource!} alt={existingAttachment?.altText ?? ""} fill sizes="(max-width: 760px) 100vw, 680px" unoptimized />}
           </section>
         )}
-        <PhotoSourceActions
-          locale={locale}
-          preparing={preparing}
-          disabled={preparing || saving}
-          onChange={selectPhoto}
-        />
-        <p className="image-preparation-note">
-          <ShieldCheck size={15} />
-          {isRemoteAlpha
-            ? locale === "ja"
-              ? "写真は記録本文と同じ公開範囲で保存します。"
-              : "The photo uses the same audience as the record."
-            : translate(locale, "momentPrivateFirst")}
-        </p>
+        <div className="quick-composer-photo-row">
+          <PhotoSourceActions
+            locale={locale}
+            preparing={preparing}
+            disabled={preparing || saving}
+            onChange={selectPhoto}
+          />
+          <p className="image-preparation-note">
+            <ShieldCheck size={15} />
+            {isRemoteAlpha
+              ? locale === "ja"
+                ? "写真は記録本文と同じ公開範囲で保存します。"
+                : "The photo uses the same audience as the record."
+              : translate(locale, "momentPrivateFirst")}
+          </p>
+        </div>
         {error && <p className="form-error-summary" role="alert">{translate(locale, error)}</p>}
         {publicationError && <p className="form-error-summary" role="alert">{publicationError}</p>}
         {saveTakingLong && (

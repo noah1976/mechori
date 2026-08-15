@@ -45,6 +45,15 @@ test("keeps the composer focused on vehicle, body, optional photo, and save", ()
   assert.match(composer, /PhotoSourceActions/);
   assert.match(composer, /記録する/);
   assert.match(composer, /<details className="quick-composer-details">/);
+  assert.match(composer, /quick-composer-photo-row/);
+});
+
+test("composer styles keep the mobile writing surface and save action prominent", () => {
+  const css = read("../app/globals.css");
+
+  assert.match(css, /\.quick-note-field textarea \{ min-height: 208px;/);
+  assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.quick-note-field textarea \{ min-height: 180px; font-size: 17px;/);
+  assert.match(css, /\.quick-composer-submit \.primary-action \{ width: 100%; justify-content: center; \}/);
 });
 
 test("opens the universal composer by default and preserves an explicit detailed route", () => {
