@@ -145,5 +145,5 @@
 
 - **優先理由**: αテスター3名が現在の記録入力を面倒と感じており、MECHORIの重要資産である知見・愛車の記録の流入を妨げている。P-086はGarage Visual展開より先に、投稿開始の認知負荷を下げる。
 - **決定済みの最小入力**: Vehicle、本文、任意の写真、記録する。分類、タイトル、走行距離、部品、費用、Providerなどは初回に必須にしない。保存後または詳細設定で追加するProgressive Disclosureを基本とする。
-- **実装状態**: `codex/quick-record-composer`は`origin/main`を基準に、PR #4の文書commit `e8af299`をcherry-pickして開始した。PR #2とPR #3のコードは取り込まず変更しない。Quick Record PRのcommit、Preview、実機QAはこの実装後に追記する。
+- **実装状態**: `codex/quick-record-composer`は`origin/main`を基準に、PR #4の文書commit `e8af299`をcherry-pick（`b6c4112`）して開始した。Quick Record実装commitは`9f6f5fe`で、PR #5としてopen・未merge。PR #2とPR #3のコードは取り込まず変更していない。Deploy PreviewとiPhone Safari実機QAは未完了である。
 - **既知P1**: Garage timelineの「端末内メディアが見つかりません」再発はQuick Recordとは別のP1として残す。今回の写真経路で明確な原因が見つかった場合だけ関連を追記する。
