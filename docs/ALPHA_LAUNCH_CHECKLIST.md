@@ -122,7 +122,20 @@
 
 P-069のように本番で再現した不具合は、テスト成功だけを根拠に解決済みとしない。確認日、端末、ログイン状態、対象記録、再読込・再試行の結果、必要な診断コードを所有者の手元へ記録する。Googleアカウント、内部UUID、署名URL、アクセストークンは文書へ記載しない。
 
-## 9. 2026-08-15 checkpoint追補
+## 9. 次のα改善フェーズ再テスト
+
+既存92項目を維持したまま、次のまとまった改善フェーズを以下の順で確認する。
+
+- `[ ]` P-086 Quick RecordをiPhone Safariで実機QAする（入口、本文のみ、本文＋写真、Vehicle選択、詳細設定なしの保存、30秒程度の完了、保存後Timeline反映、入力中の迷い、保存失敗・下書き復元）。
+- `[ ]` Garage Timelineの「端末内メディアが見つかりません」を複数投稿で再現確認し、IndexedDB／local Blob／legacy media reference／Supabase media／保存方式差のどこで起きるかと影響範囲を記録する。原因不明のままDONEにしない。
+- `[ ]` 未ログインLandingのheader余白、ログイン後headerの視覚的中央、画面間のheader／title／navigation不統一をiPhone優先で確認する。
+- `[ ]` GarageをDesign North Starとして、Home、Quick Record、Vehicle Timeline／Record、Journal、Search、Profile／Notificationsの主要journeyで共通Design Languageを確認する。全routeの一括改修やprototype／admin／professionalの同格改修は行わない。
+- `[ ]` αテスター3名へ再テストを依頼し、説明なしで記録できるか、記録が面倒でなくなったか、画面移動後も同じサービスに見えるか、また記録したいと思えるかを収集する。
+- `[ ]` 再テスト前の最低条件（Quick Record実機動作、media問題の解決または原因・影響範囲の明確化、Headerの目立つ崩れ解消、主要journeyのVisual consistency）を満たしたことを確認する。
+
+このフェーズでは実機QA中の不満を一件ずつ即修正せず、収集後にまとめて優先順位を判断する。P-086、Garage media、Header／Navigation、Design consistencyは、コード完成・自動検証・Preview反映・人間QAを別状態として記録する。
+
+## 10. 2026-08-15 checkpoint追補（当初記録）
 
 - PR #2のGarage Vehicle Identity改善はopen・未mergeで、人間QA待ち。
 - PR #3のDeploy Preview OAuth origin許可とsession cookie修正は実装済み・Deploy Preview反映済み。iPhone Safariでのログイン確立は未確認のため、Googleログインを完了扱いにしない。

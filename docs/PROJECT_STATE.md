@@ -147,3 +147,13 @@
 - **決定済みの最小入力**: Vehicle、本文、任意の写真、記録する。分類、タイトル、走行距離、部品、費用、Providerなどは初回に必須にしない。保存後または詳細設定で追加するProgressive Disclosureを基本とする。
 - **実装状態**: `codex/quick-record-composer`は`origin/main`を基準に、PR #4の文書commit `e8af299`をcherry-pick（`b6c4112`）して開始した。Quick Record実装commitは`9f6f5fe`で、PR #5としてopen・未merge。PR #2とPR #3のコードは取り込まず変更していない。Deploy PreviewとiPhone Safari実機QAは未完了である。
 - **既知P1**: Garage timelineの「端末内メディアが見つかりません」再発はQuick Recordとは別のP1として残す。今回の写真経路で明確な原因が見つかった場合だけ関連を追記する。
+
+## 12. 2026-08-15 次のα改善フェーズ
+
+- **現在状態**: PR #5 `codex/quick-record-composer`はopen・未merge。Quick Record実装、PR #4相当のdocumentation checkpoint、PR #3のDeploy Preview OAuth／callback session cookie修正を同じbranchへ取り込んだ。統合後の最新commitは`0bf985d`。PR #3自体はopenのままで、`main`へは未merge。
+- **Preview確認**: `https://deploy-preview-5--mechori-alpha.netlify.app`は表示可能。Supabase AuthenticationのRedirect URLsへDeploy Preview callback wildcardを追加済みで、iPhone SafariからGoogleログインを開始し、Preview #5へ戻ることを確認した。秘密情報や認証値は記録しない。
+- **フェーズ目的**: 新機能を大量追加するのではなく、「記録が面倒で分かりにくい」「画面ごとに別サービスのように見える」というα体験を、既存αテスター3名の再テストまでに改善する。知見投稿を促すため、入力しやすさと主要導線の一貫性を優先する。
+- **実施順序**: 1) Quick RecordのiPhone Safari実機UX QA、2) Garage Timeline media再発とHeader／Navigationの既知UI問題をまとめて調査・修正、3) GarageをDesign North StarとしてHome、Quick Record、Vehicle Timeline／Record、Journal、Search、Profile／Notificationsの主要journeyへ共通Design Languageを適用、4) αテスター3名へ再テストを依頼する。実機QA中の不満はその場で個別修正せず、一旦収集してまとめて判断する。
+- **P1**: Garage Timelineの「端末内メディアが見つかりません」再発は継続。IndexedDB、local Blob、legacy media reference、Supabase media、旧新保存方式の差を候補として、再現条件と影響範囲を確定するまで解決済みと扱わない。未ログインLandingのheader余白、ログイン後headerの中央ずれ、画面間のheader／title／navigation不統一も次のUI修正対象とする。
+- **再テスト条件**: Quick Recordの本文のみ／写真付き入力、Vehicle選択、30秒程度の投稿、保存後Timeline反映、迷いの有無を確認できること。主要記録flowが実機で動き、media問題の原因・影響範囲が明確または解決し、Headerの目立つ崩れと主要画面のVisual inconsistencyが改善されていることを最低条件とする。
+- **次の状態**: 自動検証済み・実機QA待ちの機能を完了扱いにしない。人間QA後に、既存αテスターが「また記録したい」と感じるかを最重要の評価軸として記録する。

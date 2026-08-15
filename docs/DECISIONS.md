@@ -596,3 +596,13 @@
 - 背景: αテスター3名が、記録開始時に並ぶ分類・整備項目・公開設定によって短い出来事さえ残しにくいと報告した。MECHORIでは知見を残す行為そのものが重要な価値であり、構造化の都合で最初の投稿を止めない。
 - 決定: Universal Composerの最小入力はVehicle、本文、任意の写真、保存とする。通常の記録は既存`GarageJournalPost`へ、本文先頭行から生成した内部title、`other` event type、当日の発生日、既存公開範囲の既定値で保存する。日付、公開範囲、種別、DIY／お店・工場、その他の詳細はProgressive Disclosureで任意に追加できる。詳しいJournal、構造化整備記録、AI構造化は別の明示導線または将来機能として維持する。
 - 影響: Workspace JSON、DB、RLS、RPC、既存Journal／Maintenanceのdata contractは変更しない。AIによる本文解析・部品抽出は今回実装せず、将来はユーザー確認を伴う構造化候補として検討する。
+
+### 決定: Quick Record後のα改善は実機QAとDesign統一を一つのフェーズで行う
+
+- 日付: 2026-08-15
+- 状態: 次フェーズ方針
+- 背景: Quick Recordで投稿開始の入力負荷は下げたが、実際の使いやすさはiPhone Safariの操作で確認する必要がある。またGarageと他画面の印象差が、MECHORIを別サービスの集合に見せる要因になっている。
+- 決定: 次のαテスター再テストまでは、Quick Record実機UX QA、既知のGarage Timeline media問題とHeader／Navigation問題の調査、GarageをDesign North Starとした主要journeyのDesign Unification Pass、αテスター3名の再テストの順に進める。実機QA中の不満は個別に即修正せず、まとめて優先順位を判断する。
+- 決定: Garageの見た目を全画面へコピーするのではなく、Header、Typography hierarchy、spacing、card／border／radius、button、icon、accent color、image presentation、section hierarchy、Mobile layoutの共通Design Languageを抽出して主要導線へ適用する。prototype、admin、professionalは同じ優先度で全面改修しない。
+- 再テストの評価軸: 「投稿できる」だけでなく、説明なしで記録できる、画面移動後も同じサービスに見える、また愛車の記録を残したいと思える、を確認する。知見投稿を阻害しないことを機能追加より優先する。
+- 影響: P-086は実装済み・iPhone Safari実機QA待ちとして維持する。Garage Timeline mediaの「端末内メディアが見つかりません」は独立したP1として原因確定まで未解決とする。PR #5はPR #3のPreview OAuth修正を取り込んだが、PR #3自体はmergeしない。

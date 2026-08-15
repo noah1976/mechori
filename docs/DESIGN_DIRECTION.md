@@ -84,6 +84,16 @@ Garageは車両台帳ではなく、Vehicle、Owner、Historyを見返す場所�
 - このPilotの人間QA後にのみ、HomeやFeedなどへのDesign Language展開を判断する。DB、RLS、RPC、workspace data contractはこのVisual Pilotの対象外とする。Human QA pending。
 - v2 Human QAの初回フィードバックでは、make／model／任意gradeを意味単位で階層化し、Garageのrecord FABをHero CTAと重複させず、Hero周辺の白いsurfaceをcontent canvasへなじませる。再確認はHuman QAで行う。
 
+## 次のαフェーズ: GarageをDesign North Starとして主要journeyを統一する
+
+Garageは当面のDesign North Starとして扱う。ただし、HomeやQuick RecordなどをGarageの複製にするのではなく、Garageで検証したQuiet Machinery / Living Vehicle Historyの考え方から、主要journeyに共通する視覚言語を抽出する。
+
+- 優先順は、Home → Garage → Quick Record → Vehicle Timeline／Record → Journal → Search → Profile／Notificationsとする。約50の全routeを一度に改修せず、αテスターが頻繁に使う導線から揃える。
+- 共通化の対象はHeader、Navigation、Typography hierarchy、margin／padding、card、border、radius、button、icon、accent color、image presentation、section hierarchy、Mobile layout。左右のaction数に影響されないHeaderの視覚的な中央配置も含める。
+- Vehicle写真、記録の時間軸、短い事実的copy、余白をUI chromeより優先する。黒＋黄色などの強い表現はOnboardingや重要な強調部分など意図した場所に限定し、全画面の支配色にはしない。
+- 次の検証値は、記録のしやすさ、主要導線の連続性、Visual consistency、実機での安定性、また投稿したくなる感覚。新機能を増やす前に既存αテスターの再利用意欲を確認する。
+- Garage Timelineのmedia問題とHeaderの余白・中央ずれは、Design polishだけでなく実機QAで再現条件を確認する。原因不明の表示を見た目の調整だけで隠さない。
+
 ## 未確定
 
 - ロゴ
