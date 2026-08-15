@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { alphaInviteCookieName } from "@/lib/auth-flow";
 import { getPublicRequestOrigin } from "@/lib/public-origin";
 import { getMechoriRuntime } from "@/lib/runtime-config";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createSupabaseRouteClient } from "@/lib/supabase/server";
 
 const acceptedRedemptionStatuses = new Set(["redeemed", "already_redeemed"]);
 
@@ -17,12 +17,17 @@ export async function GET(request: NextRequest) {
   const returnTo = sanitizeLocalReturnPath(request.nextUrl.searchParams.get("returnTo"));
   if (!code) return finish(request, authErrorPath("oauth_failed", mode, returnTo));
 
-  const supabase = await createSupabaseServerClient();
+  const authRouteClient = createSupabaseRouteClient(request);
+  const { supabase } = authRouteClient;
   const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-  if (exchangeError) return finish(request, authErrorPath("oauth_failed", mode, returnTo));
+  if (exchangeError) {
+    return finish(request, authErrorPath("oauth_failed", mode, returnTo), authRouteClient);
+  }
 
   const { data: authData, error: userError } = await supabase.auth.getUser();
-  if (userError || !authData.user) return finish(request, authErrorPath("oauth_failed", mode, returnTo));
+  if (userError || !authData.user) {
+    return finish(request, authErrorPath("oauth_failed", mode, returnTo), authRouteClient);
+  }
 
   const invite = request.cookies.get(alphaInviteCookieName)?.value;
   let accessError: string | undefined;
@@ -55,12 +60,14 @@ export async function GET(request: NextRequest) {
     return finish(
       request,
       authErrorPath(normalizeAccessError(accessError), mode, returnTo),
+      authRouteClient,
     );
   }
 
   return finish(
     request,
     withAuthResult(returnTo, invite ? "sign_up" : "login", Boolean(invite)),
+    authRouteClient,
   );
 }
 
@@ -90,8 +97,13 @@ function normalizeAccessError(value: string): string {
     : "invalid_invitation";
 }
 
-function finish(request: NextRequest, path: string) {
+function finish(
+  request: NextRequest,
+  path: string,
+  authRouteClient?: ReturnType<typeof createSupabaseRouteClient>,
+) {
   const response = NextResponse.redirect(new URL(path, getPublicRequestOrigin(request)));
+  authRouteClient?.applyTo(response);
   response.cookies.set(alphaInviteCookieName, "", { path: "/auth", maxAge: 0 });
   return response;
 }

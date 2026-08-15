@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { NextRequest, NextResponse } from "next/server";
 import { requireAlphaSupabaseConfig } from "@/lib/runtime-config";
+import { createAuthRouteCookieBridge } from "@/lib/supabase/auth-route-cookies";
 
 export async function createSupabaseServerClient() {
   const config = requireAlphaSupabaseConfig();
@@ -22,4 +24,19 @@ export async function createSupabaseServerClient() {
       },
     },
   });
+}
+
+export function createSupabaseRouteClient(request: NextRequest) {
+  const config = requireAlphaSupabaseConfig();
+  const cookieBridge = createAuthRouteCookieBridge(request.cookies);
+  const supabase = createServerClient(config.url, config.publishableKey, {
+    cookies: cookieBridge.cookies,
+  });
+
+  return {
+    supabase,
+    applyTo(response: NextResponse) {
+      return cookieBridge.applyTo(response);
+    },
+  };
 }
