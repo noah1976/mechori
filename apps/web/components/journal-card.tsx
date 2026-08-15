@@ -22,6 +22,7 @@ import { ProfileAvatar } from "@/components/profile-avatar";
 import { ProfileSafetyMenu } from "@/components/profile-safety-menu";
 import { useApp } from "@/lib/app-context";
 import { journalDetailHref } from "@/lib/journal-detail-route";
+import { hasDistinctJournalTitle } from "@/lib/journal-feed-presentation";
 import { publicProfileHref } from "@/lib/public-profile-url";
 
 export function JournalCard({
@@ -36,6 +37,7 @@ export function JournalCard({
   authorLinkEnabled = true,
   alphaAudience = false,
   showPrivateMedia = false,
+  variant = "default",
 }: {
   journal: GarageJournalPost;
   sharedJournal?: GarageJournalPost;
@@ -47,6 +49,7 @@ export function JournalCard({
   authorLinkEnabled?: boolean;
   alphaAudience?: boolean;
   showPrivateMedia?: boolean;
+  variant?: "default" | "home";
   safety?: {
     muted: boolean;
     blocked: boolean;
@@ -83,8 +86,11 @@ export function JournalCard({
     : displayJournal.vehicleTargetId
       ? `/v/${encodeURIComponent(displayJournal.vehicleTargetId)}`
       : undefined;
+  const showTitle = hasDistinctJournalTitle(display.title, display.body);
+  const showVisibility = variant !== "home" || displayJournal.visibility !== "public";
+  const showReadAction = variant !== "home";
   return (
-    <article className="journal-card">
+    <article className={variant === "home" ? "journal-card journal-card-home" : "journal-card"}>
       <Link
         href={detailHref}
         prefetch={false}
@@ -136,7 +142,7 @@ export function JournalCard({
         </div>
       </div>
       <JournalMedia attachments={visibleMedia} locale={locale} compact priority={mediaPriority} vehicleHref={vehicleHref} />
-      <h3>{display.title}</h3>
+      {showTitle && <h3>{display.title}</h3>}
       <p>{display.body}</p>
       {!display.translated && display.sourceLanguage !== locale && (
         <small className="translation-note">
@@ -151,7 +157,7 @@ export function JournalCard({
         </div>
       )}
       <footer>
-        <span>
+        {showVisibility && <span>
           {displayJournal.visibility === "private" ? (
             <Lock size={15} aria-hidden="true" />
           ) : displayJournal.visibility === "followers" ? (
@@ -164,7 +170,7 @@ export function JournalCard({
             : displayJournal.visibility === "public" && alphaAudience
               ? ja ? "α参加者に公開" : "Shared with alpha participants"
               : translate(locale, displayJournal.visibility)}
-        </span>
+        </span>}
         {isOwnJournal ? (
           <span className="journal-like-status">
             <Heart size={15} aria-hidden="true" />
@@ -196,10 +202,10 @@ export function JournalCard({
             {appreciationCount}
           </button>
         )}
-        <Link href={detailHref} prefetch={false} className="text-link">
+        {showReadAction && <Link href={detailHref} prefetch={false} className="text-link">
           {ja ? "読む" : "Read"}
           <ArrowRight size={15} aria-hidden="true" />
-        </Link>
+        </Link>}
       </footer>
       {reactionError && <small className="form-error" role="alert">{ja ? "いいねを保存できませんでした。もう一度お試しください。" : "The like could not be saved. Please try again."}</small>}
     </article>

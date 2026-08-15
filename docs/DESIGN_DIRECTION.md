@@ -123,6 +123,13 @@ Garage由来のDesign Languageを、αテスターが頻繁に通る範囲へ限
 - `愛車で何をしましたか？`のように、故障だけへ寄せない短い事実的copyを使う。詳細設定は同じpageのProgressive Disclosureとして、境界線と余白で静かに区切り、古い別formの印象を作らない。
 - 取得不能なlegacy local写真はTimeline本文より大きなerror surfaceにしない。一方、共有写真の失敗は隠さず、再試行可能な状態と区別する。新規共有写真は記録本文と同じaudienceで扱う。
 
+### Authenticated Home Feed
+
+- Homeの投稿一覧は、cardの集合ではなく、人とVehicleの記録が続くFeedとして扱う。owner、Vehicle、date、本文、任意写真、最小のreactionをこの順で読む。
+- 投稿は重いwhite surface、上端accent line、強いshadow、同じvisibility label、独立した重複CTAで囲わない。投稿間は余白と必要最小限のdividerで区切る。titleと本文が同じ内容なら、内容を改変せず表示上の重複だけを避ける。
+- Homeの月次情報は行動を妨げない低優先度のsummaryとし、Feedをfirst-class contentにする。mobileのrecord FABは内容を覆わず、bottom navigationとsafe areaから十分離す。
+- Journal CardはHomeだけの特別な装飾にせず、Garage由来のwhite base、読みやすい本文、写真の収まり、控えめなsocial metadataを各投稿一覧へ共通適用する。Human QAでHome、Feed、公開Profileの読みやすさを確認する。
+
 ## 未確定
 
 - ロゴ

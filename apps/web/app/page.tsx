@@ -7,6 +7,7 @@ import { JournalMedia } from "@/components/journal-media";
 import { RecordCard } from "@/components/record-card";
 import { useApp } from "@/lib/app-context";
 import { journalDetailHref } from "@/lib/journal-detail-route";
+import { hasDistinctJournalTitle } from "@/lib/journal-feed-presentation";
 import {
   buildMonthlyOwnerSummary,
   getFollowedSharedFeed,
@@ -22,7 +23,6 @@ import {
   ArrowRight,
   BookOpenText,
   CalendarDays,
-  Camera,
   CarFront,
   FileClock,
   Heart,
@@ -95,6 +95,9 @@ export default function HomePage() {
   const featuredDisplay = featuredDisplayJournal
     ? resolveJournalDisplayContent(data, featuredDisplayJournal, locale)
     : undefined;
+  const featuredHasDistinctTitle = featuredDisplay
+    ? hasDistinctJournalTitle(featuredDisplay.title, featuredDisplay.body)
+    : false;
   const feed = allFeed.filter((journal) => journal.id !== featuredJournal?.id).slice(0, 2);
   const [query, setQuery] = useState("");
   const router = useRouter();
@@ -206,26 +209,17 @@ export default function HomePage() {
       ) : (
       <section className="home-community-stage">
         <div className="home-community-intro">
-          <span className="eyebrow">{signedIn ? "YOUR VEHICLE HISTORY" : "PUBLIC VEHICLE RECORDS"}</span>
           <h1>{ja ? "愛車の記録を、いつでも。" : "Keep your vehicle history close."}</h1>
           <p>
             {ja
                 ? "整備も日々の出来事も、このクルマの履歴として残せます。必要なときは、同型車の公開事例も探せます。"
                 : "Keep maintenance and everyday moments in one vehicle history, then search shared cases when you need them."}
           </p>
-          <div className="home-community-actions">
-            <Link
-              href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`}
-              className="primary-action"
-            >
-              <Camera size={19} aria-hidden="true" />
-              {ja ? "記録する" : "Record"}
-            </Link>
-            <Link href="/people" className="secondary-action">
-              <UsersRound size={18} aria-hidden="true" />
-              {ja ? "人・クルマを探す" : "Find people and vehicles"}
-            </Link>
-          </div>
+          <Link href="/people" className="home-community-link">
+            <UsersRound size={18} aria-hidden="true" />
+            {ja ? "人・クルマを探す" : "Find people and vehicles"}
+            <ArrowRight size={16} aria-hidden="true" />
+          </Link>
           <form className="home-knowledge-prompt" onSubmit={search}>
             <Search size={20} aria-hidden="true" />
             <div>
@@ -240,8 +234,7 @@ export default function HomePage() {
           <Link href={journalDetailHref(featuredJournal.id)} prefetch={false} className="home-featured-journal">
             <JournalMedia attachments={visibleMediaFor(featuredJournal)} locale={locale} compact priority />
             <div className="home-featured-copy">
-              <span className="eyebrow">{signedIn ? isRemoteAlpha ? "FROM ALPHA GARAGES" : "FROM YOUR FOLLOWING" : "PUBLIC RECORD"}</span>
-              <h2>{featuredDisplay?.title}</h2>
+              {featuredHasDistinctTitle && <h2>{featuredDisplay?.title}</h2>}
               <p>{featuredDisplay?.body}</p>
               <footer><span>{featuredJournal.vehicleLabel}</span><span><Heart size={15} aria-hidden="true" />{featuredJournal.appreciationCount}</span></footer>
             </div>
@@ -273,13 +266,12 @@ export default function HomePage() {
       {!signedIn && <DemoNotice />}
 
       {signedIn && (
-        <section className="monthly-owner-band" aria-labelledby="monthly-owner-heading">
-          <div className="monthly-owner-heading">
+        <section className="home-monthly-summary" aria-labelledby="monthly-owner-heading">
+          <div className="home-monthly-summary-heading">
             <span className="monthly-owner-icon"><CalendarDays size={22} aria-hidden="true" /></span>
-            <div><span className="eyebrow">THIS MONTH</span><h2 id="monthly-owner-heading">{ja ? `${monthLabel}の愛車` : `Your vehicles in ${monthLabel}`}</h2></div>
-            <p>{ja ? "整備がない月も、愛車の履歴と気になるクルマの続きをここから見返せます。" : "Even without maintenance this month, return to your vehicle history and the cars you follow."}</p>
+            <h2 id="monthly-owner-heading">{ja ? `${monthLabel}の愛車` : `Your vehicles in ${monthLabel}`}</h2>
           </div>
-          <div className="monthly-owner-actions">
+          <div className="home-monthly-summary-actions">
             <Link href={unresolvedRecord ? `/records/${unresolvedRecord.id}/edit` : "/records"}>
               <TriangleAlert size={19} aria-hidden="true" />
               <span><strong>{monthly.unresolvedCount}</strong><small>{ja ? "未解決・要追記" : "unresolved follow-ups"}</small></span>
@@ -300,10 +292,9 @@ export default function HomePage() {
         </section>
       )}
 
-      <section>
-        <div className="section-heading">
+      <section className="home-feed-section">
+        <div className="home-feed-heading">
           <div>
-            <span className="eyebrow">{signedIn ? "FOLLOWING" : "PUBLIC RECORDS"}</span>
             <h2>{signedIn ? (ja ? "フォロー中の人・クルマの続き" : "Stories from people and vehicles you follow") : (ja ? "公開されている愛車の記録" : "Public vehicle stories")}</h2>
           </div>
           {signedIn && (
@@ -313,7 +304,7 @@ export default function HomePage() {
             </Link>
           )}
         </div>
-        <div className="journal-grid">
+        <div className="home-journal-feed">
           {feed.map((journal) => (
             <JournalCard
               key={journal.id}
@@ -343,6 +334,7 @@ export default function HomePage() {
               }
               alphaAudience={isRemoteAlpha}
               showPrivateMedia={signedIn && journal.authorProfileId === data.currentProfileId}
+              variant="home"
             />
           ))}
         </div>

@@ -161,3 +161,9 @@ P-069のように本番で再現した不具合は、テスト成功だけを根
 - `[~]` Quick Recordの詳細設定で日付inputがiPhone幅からはみ出さないこと、下書き復元／新しく書く／削除／破棄の重要度が分かること、keyboard表示時も「記録する」がbottom navigationやsafe areaに隠れないことを確認する。
 - `[~]` Garage Timelineで、新規共有写真、既存shared写真、旧`local_blob`写真を区別して確認する。旧local写真は本文を残した縮退表示になることを確認し、別origin／別deviceでの回復は未実装P1として記録する。
 - `[~]` Home、Garage、Quick Record、Journal detailで画像がcontainer外へ出ないこと、Headerのviewport中央、未ログインLanding上部余白をiPhone Safariで確認する。Landing余白の原因は要確認のままにする。
+
+## 13. 2026-08-15 Authenticated Home Feed QA追補
+
+- `[~]` Authenticated Homeで、投稿一覧が大きなcardの2列gridではなく、owner、Vehicle、date、本文、任意写真、最小metadataの順に読める単列FeedであることをiPhone SafariとPCで確認する。長い本文、複数投稿、写真あり／なし、titleと本文が同じ投稿を含める。
+- `[~]` Homeの通常「α参加者に公開」labelと重複した「読む」CTAがFeedを占有せず、Like、投稿詳細、owner／Vehicle link、followers-onlyやprivateなど例外Visibilityの表示が維持されることを確認する。
+- `[~]` 月次summaryがFeedより目立たず、各既存導線が動くこと、Homeの「記録する」FABがbottom navigation・safe area・Feed本文を妨げないことを確認する。

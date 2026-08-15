@@ -458,7 +458,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {showRecordFab && (
         <Link
           href={preferredVehicle ? `/garage/${encodeURIComponent(preferredVehicle.id)}/event/new` : "/journal/new"}
-          className="record-fab"
+          className={pathname === "/" ? "record-fab record-fab-home" : "record-fab"}
           aria-label={locale === "ja" ? "記録する" : "Create a record"}
         >
           <Plus size={19} aria-hidden="true" />

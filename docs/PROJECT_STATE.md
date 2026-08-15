@@ -195,3 +195,10 @@
 - **原因（code／RLS contract）**: 新規共有画像はjournal ID・更新時刻・media IDを含む一意のobject pathを生成するにもかかわらず、Storage uploadを`upsert: true`で実行していた。`alpha-journal-media`の現行RLSはoperationごとのreadを絞っており、新規画像にも不要なupdate／conflict経路を通す設計だった。また`alpha_inline`のdata URLを`fetch`してから再度canvas変換しており、iPhone Safariで余分な失敗点になっていた。
 - **修正と境界**: Quick Recordで既に460KB以下へ正規化済みの`alpha_inline`画像を直接Blobへ戻し、再fetch・再encodeせず、shared bucketへ新規insert（`upsert: false`）する。shared Journal RPC成功後にだけ`alpha_shared`参照をpublishするため、新規公開写真は別origin・別deviceでもshared Storage＋shared dataから取得できる。旧`local_blob`写真は移行せず、origin限定のlegacy P1として残す。
 - **観測性と次のQA**: 失敗時はuser、journal ID、object path、画像内容を含めず、operation・HTTP status・safe Storage error codeだけをbrowser diagnosticへ記録する。iPhone Safariで小さい写真、通常のiPhone写真、private写真を各1件保存し、公開写真のTimeline・別session／別device表示を確認する。実機前はSHIPPED_NEEDS_QAを維持する。
+
+## 18. 2026-08-15 Authenticated Home Feed Design Unification（PR #5継続）
+
+- **実装状態**: Authenticated Homeの投稿一覧を、2列の大きなSurface cardではなく、owner・Vehicle・date、本文、任意写真、最小のsocial metadataを順に読む単列Feedへ変更した。既存のJournal data、Like、投稿詳細、owner／Vehicle link、visibility、写真取得経路は変更していない。
+- **表示方針**: `JournalCard`は共通して過剰なborder、上端accent、shadow、固定高本文、重いfooterを外し、余白とdividerを中心に分離する。titleと本文が実質同じ場合は表示上だけtitleを省き、投稿内容は改変しない。Homeでは通常のα参加者公開labelと独立した「読む」CTAを省き、例外Visibility、Like、既存の投稿タップ導線を維持する。
+- **Home上部**: 月次の4件KPI tileを、同じ導線を保った低優先度のinline summaryへ縮小した。Homeのrecord FABはmobileでサイズとshadowを抑え、bottom navigationのsafe areaを維持する。Hero内の同一record CTAは置かず、主要actionを重複させない。
+- **状態**: 自動テスト後もSHIPPED_NEEDS_QA。iPhone SafariとPCで、複数投稿の読みやすさ、長文、写真の収まり、owner／Vehicle／date、Like、投稿詳細、例外Visibility、FABとbottom navigationの距離を確認する。Search、Profile、NotificationsのDesign統一は今回対象外。
