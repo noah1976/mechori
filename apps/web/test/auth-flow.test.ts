@@ -4,6 +4,7 @@ import {
   alphaAuthErrorMessage,
   authCallbackUrl,
   authContinuationUrl,
+  isAllowedMechoriAuthOrigin,
   resolvePublicOrigin,
 } from "../lib/auth-flow.ts";
 
@@ -33,26 +34,45 @@ test("sanitizes external return paths in OAuth continuation and callback URLs", 
   assert.equal(callback.searchParams.get("mode"), "signup");
 });
 
-test("prefers the configured public site over a Netlify branch origin", () => {
+test("uses a verified MECHORI deploy preview origin over the configured production origin", () => {
   assert.equal(
     resolvePublicOrigin({
-      fallbackOrigin: "https://codex-remote-alpha-foundation--mechori-alpha.netlify.app",
+      fallbackOrigin: "https://deploy-preview-2--mechori-alpha.netlify.app",
       configuredOrigin: origin,
-      forwardedHost: "codex-remote-alpha-foundation--mechori-alpha.netlify.app",
+      forwardedHost: "deploy-preview-2--mechori-alpha.netlify.app",
       forwardedProto: "https",
     }),
-    origin,
+    "https://deploy-preview-2--mechori-alpha.netlify.app",
   );
 });
 
-test("uses the forwarded public host when no site URL is configured", () => {
+test("allows the production origin and numeric MECHORI deploy previews only", () => {
+  assert.equal(isAllowedMechoriAuthOrigin(origin), true);
+  assert.equal(isAllowedMechoriAuthOrigin("https://deploy-preview-2--mechori-alpha.netlify.app"), true);
+  assert.equal(isAllowedMechoriAuthOrigin("https://deploy-preview-302--mechori-alpha.netlify.app"), true);
+
+  for (const candidate of [
+    "https://foo--mechori-alpha.netlify.app",
+    "https://deploy-preview-abc--mechori-alpha.netlify.app",
+    "https://deploy-preview-2--other-project.netlify.app",
+    "https://mechori-alpha.attacker.example",
+    "http://deploy-preview-2--mechori-alpha.netlify.app",
+    "https://deploy-preview-2--mechori-alpha.netlify.app:444",
+    "https://deploy-preview-2--mechori-alpha.netlify.app.attacker.example",
+  ]) {
+    assert.equal(isAllowedMechoriAuthOrigin(candidate), false, candidate);
+  }
+});
+
+test("falls back to production when proxy headers do not identify an allowed MECHORI origin", () => {
   assert.equal(
     resolvePublicOrigin({
       fallbackOrigin: "http://internal:3000",
-      forwardedHost: "mechori.com, internal:3000",
+      configuredOrigin: origin,
+      forwardedHost: "deploy-preview-abc--mechori-alpha.netlify.app, internal:3000",
       forwardedProto: "https, http",
     }),
-    "https://mechori.com",
+    origin,
   );
 });
 
