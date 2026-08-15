@@ -15,6 +15,31 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 export const alphaSharedJournalMediaBucket = "alpha-journal-media";
 const maxPreparedSharedImageBytes = 460 * 1024;
 const maxSharedImageDimension = 1400;
+const maxInlineDataUrlCharacters = Math.ceil((maxPreparedSharedImageBytes * 4) / 3) + 2_048;
+
+export type AlphaSharedJournalMediaOperation =
+  | "load_inline_media"
+  | "prepare_shared_media"
+  | "upload_shared_media"
+  | "publish_shared_journal";
+
+export class AlphaSharedJournalMediaError extends Error {
+  readonly operation: AlphaSharedJournalMediaOperation;
+  readonly httpStatus: number | null;
+  readonly safeErrorCode: string;
+
+  constructor(
+    message: string,
+    operation: AlphaSharedJournalMediaOperation,
+    sourceError?: unknown,
+  ) {
+    super(message);
+    this.name = "AlphaSharedJournalMediaError";
+    this.operation = operation;
+    this.httpStatus = safeHttpStatus(sourceError);
+    this.safeErrorCode = safeStorageErrorCode(sourceError, message);
+  }
+}
 
 export async function loadAlphaSharedJournals(): Promise<AlphaSharedJournal[]> {
   const supabase = createSupabaseBrowserClient();
@@ -54,7 +79,11 @@ export async function publishAlphaSharedJournal(
   });
   if (error) {
     await removeSharedMediaQuietly(uploadedPaths);
-    throw new Error("alpha_shared_journal_publish_failed");
+    throw new AlphaSharedJournalMediaError(
+      "alpha_shared_journal_publish_failed",
+      "publish_shared_journal",
+      error,
+    );
   }
   await removeStaleSharedJournalImagesQuietly(
     userData.user.id,
@@ -108,12 +137,29 @@ async function uploadSharedJournalImages(
         continue;
       }
       const privateBlob = await loadPrivateAttachmentBlob(attachment);
-      if (!privateBlob) throw new Error("shared_image_not_found");
-      const prepared = await prepareSharedJournalImage(privateBlob, attachment);
+      if (!privateBlob) {
+        throw new AlphaSharedJournalMediaError(
+          "shared_image_not_found",
+          "load_inline_media",
+        );
+      }
+      let prepared: { blob: Blob; mimeType: string };
+      try {
+        prepared = await prepareSharedJournalImage(privateBlob, attachment);
+      } catch (error) {
+        throw new AlphaSharedJournalMediaError(
+          "shared_image_prepare_failed",
+          "prepare_shared_media",
+          error,
+        );
+      }
       const blob = prepared.blob;
       const mimeType = normalizedSharedMimeType(prepared.mimeType);
       if (!mimeType || blob.size < 1 || blob.size > alphaSharedJournalMaxMediaBytes) {
-        throw new Error("invalid_shared_image");
+        throw new AlphaSharedJournalMediaError(
+          "invalid_shared_image",
+          "prepare_shared_media",
+        );
       }
       const path = [
         safePathSegment(userId),
@@ -126,9 +172,17 @@ async function uploadSharedJournalImages(
         .upload(path, blob, {
           cacheControl: "3600",
           contentType: mimeType,
-          upsert: true,
+          // Every publish revision has a new path. Avoid the Storage upsert path,
+          // which unnecessarily evaluates update policies for a brand-new object.
+          upsert: false,
         });
-      if (error) throw new Error("alpha_shared_image_upload_failed");
+      if (error) {
+        throw new AlphaSharedJournalMediaError(
+          "alpha_shared_image_upload_failed",
+          "upload_shared_media",
+          error,
+        );
+      }
       uploadedPaths.push(path);
       sharedMedia.push({
         id: attachment.id,
@@ -145,6 +199,7 @@ async function uploadSharedJournalImages(
     }
     return { sharedMedia, uploadedPaths };
   } catch (error) {
+    reportSharedMediaWriteFailure(error);
     await removeSharedMediaQuietly(uploadedPaths);
     throw error;
   }
@@ -155,6 +210,18 @@ async function prepareSharedJournalImage(
   attachment: JournalMediaAttachment,
 ): Promise<{ blob: Blob; mimeType: string }> {
   const sourceMimeType = blob.type || attachment.mimeType || "application/octet-stream";
+  const inlineMimeType = normalizedSharedMimeType(sourceMimeType);
+  if (
+    attachment.source === "alpha_inline" &&
+    inlineMimeType &&
+    blob.size > 0 &&
+    blob.size <= maxPreparedSharedImageBytes
+  ) {
+    // Quick Record already normalizes alpha_inline images before the workspace
+    // is persisted. Re-encoding a data URL a second time is unnecessary and
+    // unreliable on mobile Safari.
+    return { blob, mimeType: inlineMimeType };
+  }
   const prepared = await preparePrivateAlphaImage(
     new File(
       [blob],
@@ -176,10 +243,27 @@ async function loadPrivateAttachmentBlob(
     return journalMediaStore.load(attachment.storageKey);
   }
   if (attachment.source === "alpha_inline" && attachment.assetPath) {
-    const response = await fetch(attachment.assetPath);
-    return response.ok ? response.blob() : null;
+    return alphaInlineDataUrlToBlob(attachment.assetPath);
   }
   return null;
+}
+
+export function alphaInlineDataUrlToBlob(dataUrl: string): Blob | null {
+  if (dataUrl.length === 0 || dataUrl.length > maxInlineDataUrlCharacters) return null;
+  const match = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/i.exec(dataUrl);
+  if (!match) return null;
+  const mimeType = normalizedSharedMimeType(match[1] ?? "");
+  if (!mimeType) return null;
+  try {
+    const binary = atob(match[2] ?? "");
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) {
+      bytes[index] = binary.charCodeAt(index);
+    }
+    return new Blob([bytes], { type: mimeType });
+  } catch {
+    return null;
+  }
 }
 
 async function removeStaleSharedJournalImages(
@@ -255,4 +339,43 @@ function safePathSegment(value: string): string {
   const normalized = value.replace(/[^A-Za-z0-9_-]/g, "-").replace(/-+/g, "-");
   if (!normalized) throw new Error("invalid_shared_image_path");
   return normalized.slice(0, 160);
+}
+
+function reportSharedMediaWriteFailure(error: unknown): void {
+  const diagnostic = error instanceof AlphaSharedJournalMediaError
+    ? {
+        operation: error.operation,
+        httpStatus: error.httpStatus,
+        errorCode: error.safeErrorCode,
+      }
+    : {
+        operation: "prepare_shared_media" as const,
+        httpStatus: null,
+        errorCode: "unknown_shared_media_error",
+      };
+  // This client-side diagnostic intentionally omits user, journal, object-path,
+  // and image details. It is available through browser debugging when a mobile
+  // Storage response needs to be correlated with the safe UI error.
+  console.warn("[P-086 shared-photo-write]", diagnostic);
+}
+
+function safeHttpStatus(error: unknown): number | null {
+  if (!error || typeof error !== "object") return null;
+  const value = (error as Record<string, unknown>).status
+    ?? (error as Record<string, unknown>).statusCode;
+  const parsed = typeof value === "number"
+    ? value
+    : typeof value === "string" && /^\d{3}$/.test(value)
+      ? Number(value)
+      : NaN;
+  return Number.isInteger(parsed) && parsed >= 100 && parsed <= 599 ? parsed : null;
+}
+
+function safeStorageErrorCode(error: unknown, fallback: string): string {
+  if (!error || typeof error !== "object") return fallback;
+  const item = error as Record<string, unknown>;
+  const value = item.error ?? item.code ?? item.name;
+  if (typeof value !== "string") return fallback;
+  const normalized = value.trim().toLowerCase().replace(/\s+/g, "_");
+  return /^[a-z0-9_.-]{1,64}$/.test(normalized) ? normalized : fallback;
 }

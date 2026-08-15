@@ -7,6 +7,10 @@ import {
   createAlphaSharedJournalPayload,
   type JournalMediaAttachment,
 } from "@mechori/core";
+import {
+  AlphaSharedJournalMediaError,
+  alphaInlineDataUrlToBlob,
+} from "../lib/alpha-shared-journals.ts";
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
@@ -70,4 +74,29 @@ test("forms do not preflight-block public photo sharing before the shared upload
   assert.doesNotMatch(context, /alphaJournalMediaSharingAvailable/);
   assert.match(context, /await publishAlphaSharedJournal\(/);
   assert.match(context, /throw alphaJournalSyncError\(error\)/);
+});
+
+test("prepared alpha_inline images become uploadable Blobs without refetching their data URL", async () => {
+  const blob = alphaInlineDataUrlToBlob("data:image/webp;base64,AAEC");
+
+  assert.ok(blob);
+  assert.equal(blob.type, "image/webp");
+  assert.equal(blob.size, 3);
+  assert.deepEqual(Array.from(new Uint8Array(await blob.arrayBuffer())), [0, 1, 2]);
+  assert.equal(alphaInlineDataUrlToBlob("data:image/heic;base64,AAEC"), null);
+});
+
+test("shared photo writes use a fresh Storage insert and expose only safe diagnostics", () => {
+  const source = read("../lib/alpha-shared-journals.ts");
+  const failure = new AlphaSharedJournalMediaError(
+    "alpha_shared_image_upload_failed",
+    "upload_shared_media",
+    { statusCode: "403", error: "Unauthorized" },
+  );
+
+  assert.match(source, /upsert:\s*false/);
+  assert.doesNotMatch(source, /fetch\(attachment\.assetPath\)/);
+  assert.equal(failure.operation, "upload_shared_media");
+  assert.equal(failure.httpStatus, 403);
+  assert.equal(failure.safeErrorCode, "unauthorized");
 });

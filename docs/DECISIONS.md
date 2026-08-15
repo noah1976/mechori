@@ -623,3 +623,11 @@
 - 背景: iPhone Safari QAで、写真付きQuick Recordだけが共有readyの一時的なclient判定によって公開保存を止められ、「自分だけ」への切替を促していた。これは写真・愛車記録を参加者同士で見るENGAGEMENTの目的と、本文と写真の公開範囲を一致させる既存方針に反する。
 - 決定: 新規Quick Recordと詳細Journalは、公開写真を既存の認証済みshared Storage／shared Journal publish経路で実際に処理し、その成否で判定する。投稿前のlazy hydrationの能力値で写真付き公開を拒否しない。写真だけを強制privateにせず、本文の「α参加者に公開」またはユーザーが選んだ「自分だけ」を同じく適用する。
 - 影響: `alpha_inline`は保存時にshared Storageの`alpha_shared`参照へ変換され、別origin・別deviceでも取得可能な共有データとなる。共有処理に失敗した場合は記録を公開済み・写真なしとして残さず、既存のrollbackと入力保持を使う。旧`local_blob`写真のorigin限定の回復は別P1のままとする。
+
+### 決定: 新規Quick Recordの共有写真はStorageの新規insertとしてpublishする
+
+- 日付: 2026-08-15
+- 状態: 実装・Human QA待ち
+- 背景: 写真付きQuick Recordの共有copyは、新しいjournal revisionごとに一意なobject pathを生成する。それにもかかわらず`upsert`を使うと、insertだけで済む投稿にもStorageのupdate／conflict権限経路を要求し、operation別に絞ったshared bucket RLSと不要に干渉する。また、事前に正規化した`alpha_inline`画像をdata URLから再fetch・再encodeすることはiPhone Safariで余分な失敗点になる。
+- 決定: 新規共有copyは`upsert: false`のinsertで保存する。Quick Recordが既に画像形式・寸法・460KB上限へ正規化した`alpha_inline`は直接Blob化してuploadし、再変換しない。Storage uploadとshared Journal RPCがともに成功した場合だけshared payloadへ`alpha_shared`参照を入れる。
+- 影響: 写真付き投稿をprivateへ強制しない。公開copyはorigin-local IndexedDBではなくshared Storageとshared Journal payloadで参照される。旧`local_blob`を暗黙に移行しない。失敗時は入力と既存記録を保持し、技術詳細をUIへ出さず、安全なoperation／status／codeだけを診断する。

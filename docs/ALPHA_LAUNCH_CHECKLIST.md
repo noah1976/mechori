@@ -153,6 +153,7 @@ P-069のように本番で再現した不具合は、テスト成功だけを根
 
 - `[~]` Quick Recordの写真入口は「写真を追加」一つになった。iPhone SafariとAndroid browserで、OS標準pickerから写真ライブラリ・撮影・ファイル選択を自然に開始でき、同じ写真操作が二重表示されないことを確認する。
 - `[~]` 本文のみ、本文＋写真の両方を「α参加者に公開」で保存し、保存直後のGarage Timelineと別session／別deviceの共有表示を確認する。写真付きだけがprivateへ誘導されないことを確認する。
+- `[~]` P-086共有写真保存: Quick Recordの公開写真は、事前に正規化した`alpha_inline` Blobをshared Storageの新規insertとして保存し、shared Journal RPC成功後に`alpha_shared`参照をpublishする。iPhone Safariで小さい写真・通常のiPhone写真・private写真を保存し、公開写真だけが別session／別deviceでも表示されることを確認する。失敗時は本文・選択写真・下書きが残り、diagnosticのstage／HTTP status／safe error codeだけを記録する。
 - `[~]` 「自分だけ」で写真付き保存し、共有一覧や他userから読めないことを確認する。公開写真の失敗時は入力が残り、安全な再試行メッセージになることを確認する。
 - `[~]` Quick Recordの詳細設定で日付inputがiPhone幅からはみ出さないこと、下書き復元／新しく書く／削除／破棄の重要度が分かること、keyboard表示時も「記録する」がbottom navigationやsafe areaに隠れないことを確認する。
 - `[~]` Garage Timelineで、新規共有写真、既存shared写真、旧`local_blob`写真を区別して確認する。旧local写真は本文を残した縮退表示になることを確認し、別origin／別deviceでの回復は未実装P1として記録する。

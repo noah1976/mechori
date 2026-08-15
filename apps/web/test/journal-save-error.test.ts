@@ -24,6 +24,10 @@ test("keeps shared photo failures distinct from record persistence failures", ()
     "alpha_shared_image_sync_failed",
   );
   assert.equal(
+    journalSaveErrorCode(new Error("shared_image_prepare_failed")),
+    "alpha_shared_image_sync_failed",
+  );
+  assert.equal(
     journalSaveErrorCode(new Error("alpha_journal_sharing_unavailable")),
     "alpha_shared_journal_sync_failed",
   );

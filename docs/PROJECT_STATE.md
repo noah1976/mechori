@@ -174,3 +174,10 @@
 - **QA polish**: 本文placeholderを「愛車で何をしましたか？」へ変更し、Quick Recordの写真操作をOS標準file picker一つの「写真を追加」へ統合した。下書き操作、詳細設定のgrouping、日付fieldのmin-inline-size、保存CTAのbottom safe area、Home／Journalのmedia containerを整えた。旧`local_blob`のTimeline fallbackは本文より目立たない68px最小高へ縮小した。
 - **未解決P1／要確認**: legacy `local_blob`写真の別端末・別originでの回復／migrationは未実装。未ログインLanding上部の大きな余白はコード上で原因を確定できていない。iPhone Safariでは本文のみ、写真付きの「α参加者に公開」と「自分だけ」、保存直後のTimeline、別session／別deviceでの共有写真、日付field、下書き、bottom navigationとの距離を確認する。
 - **状態**: 自動検証完了後もPR #5はopen・未merge、Human QA ready。PR #2／PR #3、`main`、Netlify／Supabase設定は変更しない。
+
+## 15. 2026-08-15 P-086 共有写真保存経路の修正（PR #5継続）
+
+- **再現範囲**: iPhone Safariで本文＋写真の「α参加者に公開」だけが、記録本体の保存後にshared photo copyの更新で失敗した。本文のみ、写真選択・preview、private写真の各経路とは分離して扱う。
+- **原因（code／RLS contract）**: 新規共有画像はjournal ID・更新時刻・media IDを含む一意のobject pathを生成するにもかかわらず、Storage uploadを`upsert: true`で実行していた。`alpha-journal-media`の現行RLSはoperationごとのreadを絞っており、新規画像にも不要なupdate／conflict経路を通す設計だった。また`alpha_inline`のdata URLを`fetch`してから再度canvas変換しており、iPhone Safariで余分な失敗点になっていた。
+- **修正と境界**: Quick Recordで既に460KB以下へ正規化済みの`alpha_inline`画像を直接Blobへ戻し、再fetch・再encodeせず、shared bucketへ新規insert（`upsert: false`）する。shared Journal RPC成功後にだけ`alpha_shared`参照をpublishするため、新規公開写真は別origin・別deviceでもshared Storage＋shared dataから取得できる。旧`local_blob`写真は移行せず、origin限定のlegacy P1として残す。
+- **観測性と次のQA**: 失敗時はuser、journal ID、object path、画像内容を含めず、operation・HTTP status・safe Storage error codeだけをbrowser diagnosticへ記録する。iPhone Safariで小さい写真、通常のiPhone写真、private写真を各1件保存し、公開写真のTimeline・別session／別device表示を確認する。実機前はSHIPPED_NEEDS_QAを維持する。
