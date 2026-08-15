@@ -35,6 +35,16 @@ MECHORIに信頼できる収益化の見通しが立つまで、継続的なサ�
 
 月額5,000円は目標額ではなく、必ず事前承認を必要とする上限として扱う。
 
+## Codexモデル選定と自走
+
+- トークンと利用コストを常に考慮し、通常作業で高コストのモデルを安易に使用しない。
+- `Luna`は文書作業、定型作業、軽微なCSS、GitHub／Netlify等の定型操作、単純な調査に使う。
+- `Terra`は通常の機能実装、UI変更、コンポーネント実装、一般的なデバッグに使う。
+- `Sol`はリポジトリ全体監査、アーキテクチャ、難しい設計判断、原因不明の高度なデバッグに限って使う。
+- 安全な調査、実装、テスト、lint、typecheck、build、git diff確認、文書更新、commit、push、PR作成は、途中承認を求めず可能な範囲で最後まで自律的に進める。
+- blockerがあっても、他に進められる安全な作業を先に完了する。単なる不確実性だけを理由に停止しない。
+- 破壊的・不可逆な操作、課金、秘密情報、データ損失、security risk、mainへのmergeなど、所有者の判断が必要な事項だけ確認へ戻す。
+
 ## 参照文書
 
 - プロダクト・事業・設計・実装の長期原則: `docs/CONSTITUTION.md`
@@ -115,6 +125,13 @@ MECHORIに信頼できる収益化の見通しが立つまで、継続的なサ�
 - 本番実機で再現する不具合は、テスト成功だけを根拠に解決済みとしない。
 - 最終報告には、対応したP番号と新しい状態を記載する。
 
+### Project state checkpoint
+
+- CodexはMECHORIの重要な作業の節目で、プロジェクト状態をMarkdownへ記録する。原則として現在の実装状態は`docs/PROJECT_STATE.md`を起点に確認し、計画は`docs/BACKLOG.md`、重要な判断は`docs/DECISIONS.md`、人間QAは`docs/ALPHA_LAUNCH_CHECKLIST.md`へ責務に応じて記録する。
+- 少なくとも、大きな機能・UI変更の完了時、Pull Requestを`main`へmergeする段階、複数Backlog項目をまとめて完了した時、仕様・アーキテクチャ・収益化などの重要方針変更時、新しいP0/P1問題の発見時、大きな作業フェーズの終了時、長期中断の可能性がある時に更新を検討する。
+- 状態記録には、現在の状態、完了したこと、未完了、P0/P1/P2、新たに判明した問題、重要な意思決定と理由、次に行うこと、関連PR／branch、更新日を最低限残す。
+- 既存の改善・修正項目や過去の意思決定を、理由なく削除しない。方針を変更する場合は旧方針を消すだけでなく、変更理由と置き換え先を追記して追跡可能にする。
+
 ## UI/UX設計
 
 - UI変更前に`docs/ux/`の該当文書を確認する。
@@ -122,3 +139,69 @@ MECHORIに信頼できる収益化の見通しが立つまで、継続的なサ�
 - 新規画面や主要導線変更時は`docs/ux/SCREEN_INVENTORY.md`または`docs/ux/USER_FLOWS.md`を更新する。
 - UI実装完了と人間によるUX確認を別状態として扱う。
 - 内部実装名をユーザー向け文言へそのまま表示しない。
+
+## GitHubアカウント運用
+
+このリポジトリ `noah1976/mechori` は個人GitHubアカウント `noah1976` の所有である。一方、このMacの通常のGitHub CLI active accountは仕事用 `noah1976insemble` を使用する。
+
+### グローバルactive accountを変更しない
+
+- MECHORY作業中も、Mac全体のGitHub CLI active accountは `noah1976insemble` のまま維持する。
+- MECHORYのために `gh auth switch`、`gh auth login`、`gh auth logout`、`gh auth refresh` を実行しない。
+
+### MECHORY専用token
+
+- `noah1976/mechori` に対するGitHub API、Pull Request確認・作成などの `gh` 操作では、`MECHORI_GITHUB_TOKEN` を使用する。
+- 使用時は、コマンド単位で `GH_TOKEN` として渡す。
+
+```bash
+GH_TOKEN="$MECHORI_GITHUB_TOKEN" gh api ...
+GH_TOKEN="$MECHORI_GITHUB_TOKEN" gh pr view ...
+GH_TOKEN="$MECHORI_GITHUB_TOKEN" gh pr create --base main ...
+```
+
+- GitHub操作の前に、tokenの値を表示せず、設定有無だけ確認する。
+
+```bash
+if [ -n "${MECHORI_GITHUB_TOKEN:-}" ]; then
+  echo "MECHORI_GITHUB_TOKEN=set"
+else
+  echo "MECHORI_GITHUB_TOKEN=unset"
+fi
+```
+
+- `MECHORI_GITHUB_TOKEN` が未設定の場合は、認証設定を変更せず、`gh auth login` 等も実行しない。GitHub書き込み操作を停止し、最終報告で未設定と伝える。
+- tokenの値や一部を `AGENTS.md`、`.env`、source code、documentation、commit、log、最終報告へ出力しない。
+
+### MECHORIでのGitHub操作
+
+- `noah1976/mechori` に対する `gh` 操作は、必ずコマンド単位で `GH_TOKEN="$MECHORI_GITHUB_TOKEN"` を付けて行う。
+- `main` へ直接pushしない。原則として作業ブランチを使用する。
+- 実装確認が必要な場合は作業ブランチをpushし、`main` 向けPull Requestを作成する。
+- 指示がない限りPull Requestをmergeしない。
+- Netlify Deploy Previewが利用できる場合は、本番deployではなくPreviewを利用する。
+- 確認目的だけでProduction deployを手動実行しない。
+
+### 認証設定を壊さない
+
+- SSHキーの削除、再生成、差し替えを行わない。
+- GitHub CLIの保存済みアカウント、GitHubのSSH設定、Git credential設定、credential helper、remote URLを変更しない。
+- 既存のGit/SSH認証環境を維持する。
+
+### 作業終了時
+
+- `gh auth switch` は使用しない。
+- 可能であれば `gh auth status --hostname github.com` で、グローバルactive accountが意図せず変更されていないことだけ確認する。
+- 認証エラーが発生しても自動修復しない。
+- GitHub操作を行った場合、最終報告に以下を記載する。
+
+```text
+MECHORI GitHub authentication: repository-scoped token used
+Global GitHub CLI account: unchanged
+```
+
+- `MECHORI_GITHUB_TOKEN` が未設定でGitHub操作を行わなかった場合は、次を記載する。
+
+```text
+警告: MECHORI_GITHUB_TOKEN が未設定のためGitHub操作を実行していません
+```
