@@ -758,10 +758,11 @@ button { cursor: pointer; }
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  min-height: 50px;
-  padding: 0 12px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 11px;
   font-size: 16px;
-  line-height: normal;
+  line-height: 42px;
 }
 .quick-record-sheet-backdrop { position: fixed; inset: 0; z-index: 40; display: flex; align-items: flex-end; justify-content: center; padding: 16px 16px calc(84px + env(safe-area-inset-bottom)); background: rgba(20, 29, 27, 0.28); }
 .quick-record-sheet { width: min(100%, 640px); max-height: min(76vh, 680px); overflow: auto; padding: 22px 20px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 -8px 28px rgba(20, 29, 27, 0.16); }
