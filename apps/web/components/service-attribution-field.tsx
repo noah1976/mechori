@@ -96,7 +96,7 @@ export function ServiceAttributionField({
             <div className="selected-provider">
               <Building2 size={18} aria-hidden="true" />
               <span><strong>{value.providerDisplayNameSnapshot}</strong>{value.providerLocalitySnapshot && <small>{value.providerLocalitySnapshot}</small>}</span>
-              <button type="button" className="text-button" onClick={() => onChange({ version: 1, performedByType: "service_provider" })}>{ja ? "変更" : "Change"}</button>
+              <button type="button" className="text-link selected-provider-change" onClick={() => onChange({ version: 1, performedByType: "service_provider" })}>{ja ? "変更" : "Change"}</button>
             </div>
           ) : adding ? (
             <div className="service-provider-add-form">

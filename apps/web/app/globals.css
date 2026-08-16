@@ -737,7 +737,7 @@ button { cursor: pointer; }
 .event-type-picker legend { padding: 0 6px; color: var(--muted); font-size: 12px; font-weight: 800; }
 .event-type-picker button { min-height: 36px; padding: 0 10px; color: var(--muted); background: #fff; border: 1px solid var(--line); border-radius: 4px; font-size: 12px; font-weight: 750; }
 .event-type-picker button.is-selected { color: #fff; background: var(--brand); border-color: var(--brand); }
-.occurrence-date-fields { display: grid; min-inline-size: 0; max-inline-size: 100%; gap: 13px; margin: 0; padding: 15px; border: 1px solid var(--line); }
+.occurrence-date-fields { display: grid; inline-size: 100%; min-inline-size: 0; max-inline-size: 100%; box-sizing: border-box; gap: 13px; margin: 0; padding: 15px; border: 1px solid var(--line); }
 .occurrence-date-fields legend { padding: 0 6px; color: var(--muted); font-size: 12px; font-weight: 800; }
 .date-precision-picker { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); }
 .date-precision-picker button { min-height: 40px; padding: 6px 8px; color: var(--muted); background: var(--surface); border: 0; border-left: 1px solid var(--line); font-size: 12px; font-weight: 750; }
@@ -767,9 +767,11 @@ button { cursor: pointer; }
 .quick-record-sheet-icon { color: var(--brand); margin-bottom: 12px; }
 .quick-record-sheet-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
 .quick-record-sheet-heading .icon-action { flex: none; }
-.quick-record-enrichment-form { display: grid; gap: 17px; margin-top: 20px; }
+.quick-record-enrichment-form { display: grid; min-inline-size: 0; gap: 17px; margin-top: 20px; }
 .quick-record-sheet-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 20px; }
 .quick-record-sheet-actions .primary-action, .quick-record-sheet-actions .secondary-action { min-height: 44px; }
+.selected-provider-change { min-width: 44px; min-height: 44px; justify-content: flex-end; padding: 0; color: var(--brand); background: transparent; border: 0; font-size: 13px; }
+.selected-provider-change:hover { color: var(--brand-strong); text-decoration: underline; text-underline-offset: 3px; }
 .occurrence-period-note { margin-top: 1px; }
 .occurrence-date-help { color: var(--muted); line-height: 1.5; }
 .occurrence-date-fields.has-error { border-color: var(--danger); }
