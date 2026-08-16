@@ -220,3 +220,10 @@
 - **Home implementation**: Authenticated HomeはFollowing Feedをfirst surfaceに移し、特集Journal、decorative English label、重いcardを撤去した。JournalCardは本文を先に読み、任意写真を後に続ける共通presentationにし、Home画像containerはinline sizeとmin/max widthを明示してviewport外へのはみ出しを防ぐ。自分の履歴、Search、月次summary、Activationはsecondaryに保つ。
 - **α仮説とQA**: Feed-firstは、記録のない日にも再訪理由、Evidence discovery、Meaningful Reuseを生むかを確認する未検証仮説である。WAU / MAU改善を断定しない。iPhone SafariとPCで、複数投稿、長文、写真あり／なし、owner / Vehicle / date、Like、投稿詳細、例外Visibility、Search、FABとbottom navigation、画像の横はみ出しを確認する。
 - **P1 / 次の作業**: legacy `local_blob`写真の別端末・別originでの回復は未解決P1、未ログインLanding上部余白は要確認のまま。Quick Record実機QAとHomeの人間QAを終えた後、αテスター再テストへ進む。PR #5はopen・未merge。PR #2、PR #3、`main`、Netlify / Supabase設定は変更しない。
+
+## 21. 2026-08-16 Home = Following Feed / Quick Record保存契約の実装（PR #5継続）
+
+- **Home**: Authenticated HomeをFollowingの数件previewではなく、取得済みFollowing Feedを連続して読むmain surfaceへ変更した。`すべて見る`で別Feedへ送る導線は外し、自分の履歴、Garage、Knowledge Search、月次summary、ActivationはFeed後方のsecondary moduleとして維持する。mobileでは既存FABを唯一のprimary Quick Record entryとし、desktopだけに控えめなtext entryを残す。α noticeはFeedより後方のcompact noteへ下げた。Feed-firstによるrevisit、WAU / MAU、Meaningful Reuseの改善は未検証のα仮説である。
+- **Quick Record**: 新規保存時のVisibility 2択と投稿前の「詳しく記録する」入口を削除した。新規Quick Recordは`public`として保存され、現αのshared publish経路によりα参加者へ共有される。下書きは端末内の公開前private状態であり、写真バイナリは保持しない。既存詳細Journal / MaintenanceのVisibility仕様は変更していない。
+- **保存後optional enrichment**: 初期記録を`Vehicle → 本文 → 任意写真 → 記録する`で先に保存し、成功後だけ「整備情報を追加／閉じる」のBottom Sheetを表示する。今回の安全な最小再利用は記録種別、発生時期、DIY／お店・工場のattributionであり、既存Journal updateを使う。Skip、Close、browser離脱、追加入力の保存失敗では初期投稿を削除・失敗扱いにしない。後日の詳細追加は既存record edit導線で引き続き可能だが、部品・費用・走行距離等のpost-save入力の拡張は別P2とする。
+- **mobile P1修正とQA**: iPhone Safariの日付inputはnative control自身だけでなくfield／wrapperのmin-content幅が残ることを原因候補とし、date wrapper、fieldset、fieldへ`min-width: 0`と幅制約を明示した。コード・自動検証後も、320 / 375 / 390 / 430pxでの日付、Bottom Sheetとkeyboard / bottom navigation、本文のみ・共有写真付き保存、enrichmentのSkip / Close / failure、下書きを人間QAするまでSHIPPED_NEEDS_QAとする。

@@ -18,13 +18,17 @@ test("authenticated home renders a content-first journal stream", () => {
   assert.match(home, /className="home-journal-feed"/);
   assert.match(home, /variant="home"/);
   assert.match(home, /home-following-section/);
-  assert.match(home, /新しい愛車の記録/);
+  assert.match(home, /フォロー中の記録/);
+  assert.match(home, /const feed = signedIn \? allFeed : allFeed\.slice\(0, 4\)/);
   assert.match(home, /className="home-monthly-summary"/);
   assert.match(home, /className="home-knowledge-section"/);
   assert.doesNotMatch(home, /className="monthly-owner-band"/);
   assert.doesNotMatch(home, /YOUR VEHICLE HISTORY/);
   assert.doesNotMatch(home, /home-featured-journal/);
   assert.doesNotMatch(home, /FROM ALPHA GARAGES/);
+  assert.match(home, /home-record-link-desktop/);
+  assert.match(css, /\.home-record-link-desktop \{ display: none; \}/);
+  assert.doesNotMatch(home, /href="\/feed"/);
 });
 
 test("journal cards retain owner, vehicle, date, likes, and detail navigation", () => {

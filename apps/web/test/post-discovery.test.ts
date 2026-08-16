@@ -26,14 +26,15 @@ test("post authors and vehicles have separate public destinations", () => {
   assert.doesNotMatch(detail, /href=\{`\/profile\/\$\{author\.id\}`\}/);
 });
 
-test("fixed prompts remain optional and route into the existing journal form", () => {
+test("legacy prompts remain available to the legacy form without adding a Quick Record entry", () => {
   assert.match(prompts, /今日は、愛車のどんな記録を残しますか？/);
   for (const id of ["why-this-car", "memorable-event", "breakdown-or-repair", "recent-part", "today-drive"]) {
     assert.match(promptData, new RegExp(`id: "${id}"`));
   }
   assert.match(prompts, /\/journal\/new\?prompt=/);
-  assert.match(newJournal, /<JournalPrompts/);
-  assert.match(newJournal, /promptId/);
+  assert.match(newJournal, /<QuickRecordEntry/);
+  assert.doesNotMatch(newJournal, /JournalPrompts/);
+  assert.doesNotMatch(newJournal, /promptId/);
   assert.match(form, /findJournalPrompt/);
   assert.match(form, /journal-prompt-hint/);
 });

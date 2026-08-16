@@ -72,7 +72,8 @@ export default function HomePage() {
             left.publishedAt ?? left.createdAt,
           ),
         );
-  const feed = allFeed.slice(0, 4);
+  // Home is the following feed for signed-in alpha users; signed-out discovery stays compact.
+  const feed = signedIn ? allFeed : allFeed.slice(0, 4);
   const [query, setQuery] = useState("");
   const router = useRouter();
   const ja = locale === "ja";
@@ -133,8 +134,6 @@ export default function HomePage() {
 
   return (
     <div className="page-stack">
-      {signedIn && <DemoNotice />}
-
       {signedIn && isRemoteAlpha && sharedJournalLoadState === "loading" && (
         <p className="muted-copy" role="status">{ja ? "みんなの記録を読み込んでいます…" : "Loading shared records…"}</p>
       )}
@@ -206,15 +205,9 @@ export default function HomePage() {
         <div className="home-feed-heading">
           <div>
             <p className="home-section-label">{ja ? "フォロー中" : "Following"}</p>
-            <h1 id="following-feed-heading">{ja ? "新しい愛車の記録" : "New vehicle records"}</h1>
+            <h1 id="following-feed-heading">{ja ? "フォロー中の記録" : "Following feed"}</h1>
             <p>{ja ? "フォローしている人とクルマの新しい記録です。" : "Recent records from people and vehicles you follow."}</p>
           </div>
-          {allFeed.length > feed.length && (
-            <Link href="/feed" className="text-link">
-              {ja ? "すべて見る" : "View all"}
-              <ArrowRight size={16} aria-hidden="true" />
-            </Link>
-          )}
         </div>
         {feed.length ? <div className="home-journal-feed">
           {feed.map((journal) => (
@@ -258,8 +251,8 @@ export default function HomePage() {
           <Link href="/people" className="text-link"><UsersRound size={16} aria-hidden="true" />{ja ? "人・クルマを探す" : "Find people and vehicles"}</Link>
         </div>}
         <div className="home-following-actions">
-          <Link href="/journal/new" className="home-record-link">
-            <PenLine size={17} aria-hidden="true" />
+          <Link href="/journal/new" className="text-link home-record-link-desktop">
+            <PenLine size={16} aria-hidden="true" />
             {ja ? "記録する" : "Record"}
           </Link>
           <Link href="/garage" className="text-link">
@@ -267,6 +260,7 @@ export default function HomePage() {
             {ja ? "自分のガレージ" : "My Garage"}
           </Link>
         </div>
+        <DemoNotice compact />
       </section>}
 
       {!signedIn && <section className="home-feed-section home-public-feed" aria-labelledby="public-feed-heading">
@@ -338,7 +332,7 @@ export default function HomePage() {
             <TriangleAlert size={19} aria-hidden="true" />
             <span><strong>{monthly.unresolvedCount}</strong><small>{ja ? "未解決・要追記" : "unresolved follow-ups"}</small></span>
           </Link>
-          <Link href="/feed">
+          <Link href="#following-feed-heading">
             <BookOpenText size={19} aria-hidden="true" />
             <span><strong>{monthly.followingUpdateCount}</strong><small>{ja ? "今月のフォロー更新" : "followed updates this month"}</small></span>
           </Link>

@@ -68,16 +68,18 @@ export function OccurrenceDateFields({
         ))}
       </div>
       {precision === "day" && (
-        <label className="field">
-          <span>{ja ? "日付" : "Date"}</span>
-          <input
-            type="date"
-            max={localDateInputValue()}
-            value={value.occurredOn ?? ""}
-            onChange={(event) => onChange({ occurredOn: event.target.value })}
-            aria-invalid={Boolean(error)}
-          />
-        </label>
+        <div className="occurrence-date-control">
+          <label className="field">
+            <span>{ja ? "日付" : "Date"}</span>
+            <input
+              type="date"
+              max={localDateInputValue()}
+              value={value.occurredOn ?? ""}
+              onChange={(event) => onChange({ occurredOn: event.target.value })}
+              aria-invalid={Boolean(error)}
+            />
+          </label>
+        </div>
       )}
       {(precision === "month" || precision === "year") && (
         <div className="occurrence-partial-date">

@@ -27,7 +27,7 @@ test("a body-only quick record remains a vehicle journal entry for the existing 
     displayFields: [],
     media: [],
     contentBlocks: [{ id: "quick-body", type: "text", style: "paragraph", text: body }],
-    visibility: "private",
+    visibility: "public",
     knowledgeExtractionConsent: false,
   }, "ja", "2026-08-15T08:00:00.000Z");
 
@@ -50,8 +50,12 @@ test("keeps the composer focused on vehicle, body, optional photo, and save", ()
   assert.match(photoActions, /写真を追加/);
   assert.doesNotMatch(photoActions, /capture="environment"[\s\S]*写真を追加/);
   assert.match(composer, /記録する/);
-  assert.match(composer, /<details className="quick-composer-details">/);
   assert.match(composer, /quick-composer-photo-row/);
+  assert.match(composer, /const visibility: JournalVisibility = journal\?\.visibility \?\? "public"/);
+  assert.match(composer, /QuickRecordCompletionSheet/);
+  assert.match(composer, /\{editing && <details className="quick-composer-details">/);
+  assert.doesNotMatch(composer, /quick-event-audience/);
+  assert.doesNotMatch(composer, /詳しく記録する/);
 });
 
 test("composer styles keep the mobile writing surface and save action prominent", () => {
@@ -64,11 +68,27 @@ test("composer styles keep the mobile writing surface and save action prominent"
   assert.match(css, /\.photo-source-actions\.is-single \{ grid-template-columns: minmax\(0, 1fr\); width: auto; \}/);
 });
 
-test("opens the universal composer by default and preserves an explicit detailed route", () => {
+test("always opens the universal composer instead of a pre-save detailed route", () => {
   const page = read("../app/journal/new/page.tsx");
-  assert.match(page, /if \(!detailed\) return <QuickRecordEntry/);
-  assert.match(page, /mode"\) === "detailed"/);
-  assert.match(page, /Boolean\(promptId\)/);
+  assert.match(page, /return <QuickRecordEntry initialVehicleId=\{vehicleId\} \/>;/);
+  assert.doesNotMatch(page, /JournalForm/);
+  assert.doesNotMatch(page, /JournalPrompts/);
+  assert.doesNotMatch(page, /mode"\) === "detailed"/);
+});
+
+test("post-save enrichment is optional and cannot replace the saved record", () => {
+  const sheet = read("../components/quick-record-completion-sheet.tsx");
+  const context = read("../lib/app-context.tsx");
+  const composer = read("../components/quick-event-form.tsx");
+  assert.match(sheet, /記録しました/);
+  assert.match(sheet, /整備情報も追加しますか？/);
+  assert.match(sheet, /onClose/);
+  assert.match(sheet, /onSaveEnrichment/);
+  assert.match(sheet, /元の記録は残っています/);
+  assert.match(sheet, /journalToDraft\(journal\)/);
+  assert.match(composer, /const savedJournal = journal \? await updateJournal\(journal\.id, draft\) : await addJournal\(draft\)/);
+  assert.match(composer, /setCompletion\(savedJournal\)/);
+  assert.match(context, /await saveAlphaWorkspace\(data\);[\s\S]*?setData\(data\);/);
 });
 
 test("the vehicle context route does not make users choose a prompt before writing", () => {

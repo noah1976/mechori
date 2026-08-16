@@ -25,12 +25,11 @@ import {
 import { translate, type TranslationKey } from "@mechori/i18n";
 import { LoaderCircle, Save, ShieldCheck } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { OccurrenceDateFields } from "@/components/occurrence-date-fields";
 import { PhotoSourceActions } from "@/components/photo-source-actions";
-import { JournalCompletion } from "@/components/journal-completion";
+import { QuickRecordCompletionSheet } from "@/components/quick-record-completion-sheet";
 import {
   clearLocalDraft,
   loadQuickEventLocalDraft,
@@ -100,16 +99,9 @@ export function QuickEventForm({
   const [saving, setSaving] = useState(false);
   const [saveTakingLong, setSaveTakingLong] = useState(false);
   const [preparing, setPreparing] = useState(false);
-  const [visibility, setVisibility] = useState<JournalVisibility>(
-    isRemoteAlpha && journal?.visibility === "followers"
-      ? "private"
-      : journal?.visibility ?? "public",
-  );
+  // New Quick Records are shared with alpha participants; a local draft is the private pre-save state.
+  const visibility: JournalVisibility = journal?.visibility ?? "public";
   const existingAttachment = journal?.media[0];
-  const hasLegacyPrivatePhoto =
-    journal?.visibility === "public" &&
-    existingAttachment?.kind === "image" &&
-    existingAttachment.privacyState === "private_only";
   const [publicationError, setPublicationError] = useState("");
   const [draftReady, setDraftReady] = useState(Boolean(journal));
   const [draftStatus, setDraftStatus] = useState<"idle" | "restored" | "saved" | "error">("idle");
@@ -124,7 +116,7 @@ export function QuickEventForm({
     if (journal) return;
     const timer = window.setTimeout(() => {
       const stored = loadQuickEventLocalDraft(localDraftKey);
-      if (stored && (stored.value.note.trim() || stored.value.hasPhoto || stored.value.visibility !== "private")) {
+      if (stored && (stored.value.note.trim() || stored.value.hasPhoto)) {
         setPendingDraft(stored);
       }
       setDraftReady(true);
@@ -140,7 +132,7 @@ export function QuickEventForm({
           eventType,
           ...occurrence,
           note,
-          visibility,
+          visibility: "public",
           hasPhoto: Boolean(image) || omittedMediaCount > 0,
           ...(journalSupportsServiceAttribution(eventType) ? { serviceAttribution } : {}),
         })
@@ -149,7 +141,7 @@ export function QuickEventForm({
       );
     }, 600);
     return () => window.clearTimeout(timer);
-  }, [draftReady, eventType, image, journal, localDraftKey, note, occurrence, omittedMediaCount, serviceAttribution, visibility]);
+  }, [draftReady, eventType, image, journal, localDraftKey, note, occurrence, omittedMediaCount, serviceAttribution]);
 
   function restoreDraft() {
     const stored = pendingDraft;
@@ -163,7 +155,6 @@ export function QuickEventForm({
       occurredPeriodNote: stored.value.occurredPeriodNote,
     });
     setNote(stored.value.note);
-    setVisibility(stored.value.visibility as JournalVisibility);
     setServiceAttribution(normalizeServiceAttribution(stored.value.serviceAttribution));
     setOmittedMediaCount(stored.value.hasPhoto ? 1 : 0);
     setPendingDraft(null);
@@ -176,7 +167,6 @@ export function QuickEventForm({
     setEventType("other");
     setOccurrence({ occurredOn: localDateInputValue(), occurredPrecision: "day" });
     setNote("");
-    setVisibility("public");
     setServiceAttribution(unknownServiceAttribution());
     setOmittedMediaCount(0);
     setDraftStatus("idle");
@@ -266,8 +256,8 @@ export function QuickEventForm({
       if (!validation.valid) {
         setPublicationError(
           locale === "ja"
-            ? "公開範囲と写真の確認状態を見直してください。"
-            : "Check the audience and photo confirmation.",
+            ? "記録内容を確認してください。"
+            : "Check the record details.",
         );
         return;
       }
@@ -297,7 +287,18 @@ export function QuickEventForm({
     : undefined;
 
   if (completion) {
-    return <JournalCompletion journal={completion} vehicle={vehicle} locale={locale} mode="quick" />;
+    return (
+      <QuickRecordCompletionSheet
+        journal={completion}
+        locale={locale}
+        onClose={() => router.push(`/journal/${completion.id}`)}
+        onSaveEnrichment={async (draft) => {
+          const updated = await updateJournal(completion.id, draft);
+          setCompletion(updated);
+          return updated;
+        }}
+      />
+    );
   }
 
   return (
@@ -382,14 +383,13 @@ export function QuickEventForm({
           </div>
         )}
         <div className="quick-composer-submit">
-          <Link href={journal ? `/journal/${journal.id}` : "/garage"} className="text-link">{translate(locale, "later")}</Link>
           <button className="primary-action" type="submit" disabled={saving || preparing}>
             {saving ? <LoaderCircle className="spin" size={17} aria-hidden="true" /> : <Save size={17} aria-hidden="true" />}
             {locale === "ja" ? (saving ? "記録中" : "記録する") : (saving ? "Saving" : "Save record")}
           </button>
         </div>
-        <details className="quick-composer-details">
-          <summary>{locale === "ja" ? "日付・公開範囲などを設定" : "Set date, audience, and more"}</summary>
+        {editing && <details className="quick-composer-details">
+          <summary>{locale === "ja" ? "追加情報を編集" : "Edit additional details"}</summary>
           <div className="quick-composer-details-body">
             <fieldset className="event-type-picker"><legend>{translate(locale, "momentKindQuestion")}</legend>{eventTypes.map((item) => <button type="button" key={item.value} className={eventType === item.value ? "is-selected" : ""} aria-pressed={eventType === item.value} onClick={() => setEventType(item.value)}>{translate(locale, item.label)}</button>)}</fieldset>
             {journalSupportsServiceAttribution(eventType) && (
@@ -406,91 +406,8 @@ export function QuickEventForm({
               error={error === "momentDateMissing" ? translate(locale, error) : undefined}
               onChange={(patch) => setOccurrence((current) => ({ ...current, ...patch }))}
             />
-            <section className="quick-event-audience" aria-labelledby="quick-event-audience-heading">
-              <div>
-                <strong id="quick-event-audience-heading">
-                  {locale === "ja" ? "この記録を見る人" : "Who can see this record"}
-                </strong>
-                <small>
-                  {isRemoteAlpha
-                    ? locale === "ja"
-                      ? "初期値は『α参加者に公開』です。自分だけの記録として保存することもできます。"
-                      : "The default is shared with alpha participants. You can also save a record for yourself only."
-                    : locale === "ja"
-                      ? "初期値は公開です。自分だけの記録として保存することもできます。"
-                      : "The default is public. You can also save a record for yourself only."}
-                </small>
-              </div>
-              <div className={`segmented-control ${isRemoteAlpha ? "has-two-options" : ""}`} role="group" aria-label={locale === "ja" ? "公開範囲" : "Audience"}>
-                <button
-                  type="button"
-                  className={visibility === "private" ? "is-selected" : ""}
-                  aria-pressed={visibility === "private"}
-                  onClick={() => {
-                    setVisibility("private");
-                    setPublicationError("");
-                  }}
-                >
-                  {locale === "ja" ? "自分だけ" : "Only me"}
-                </button>
-                {!isRemoteAlpha && (
-                  <button
-                    type="button"
-                    className={visibility === "followers" ? "is-selected" : ""}
-                    aria-pressed={visibility === "followers"}
-                    onClick={() => {
-                      setVisibility("followers");
-                      setPublicationError("");
-                    }}
-                  >
-                    {locale === "ja" ? "フォロワー" : "Followers"}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className={visibility === "public" ? "is-selected" : ""}
-                  aria-pressed={visibility === "public"}
-                  onClick={() => {
-                    setVisibility("public");
-                    setPublicationError("");
-                  }}
-                >
-                  {isRemoteAlpha
-                    ? locale === "ja" ? "α参加者に公開" : "Alpha participants"
-                    : locale === "ja" ? "公開" : "Public"}
-                </button>
-              </div>
-              {isRemoteAlpha && visibility === "public" && (
-                <p className="settings-help">
-                  {locale === "ja"
-                    ? "ログイン済みのP0・α参加者に、本文、写真、表示用車名を共有します。"
-                    : "The text, photo, and vehicle label are shared with signed-in P0 and alpha participants."}
-                </p>
-              )}
-              {visibility === "public" && hasLegacyPrivatePhoto && !image && (
-                <p className="settings-help">
-                  {locale === "ja"
-                    ? "以前の設定で非公開にした写真は、この編集だけで公開へ変更しません。"
-                    : "The photo kept private under the previous setting will not be published by this edit."}
-                </p>
-              )}
-              {isRemoteAlpha &&
-                visibility === "public" &&
-                (image || existingAttachment?.kind === "image") && (
-                <p className="settings-help">
-                  {locale === "ja"
-                    ? "写真は記録本文と同じ範囲で公開します。ナンバー、人物、住所が分かる背景を保存前に確認してください。"
-                    : "The photo uses the same audience as the record. Check plates, people, and address-revealing backgrounds before saving."}
-                </p>
-              )}
-            </section>
           </div>
-        </details>
-        {!editing && (
-          <Link href={`/journal/new?vehicle=${encodeURIComponent(vehicle.id)}&mode=detailed`} className="quick-composer-detailed-link">
-            {locale === "ja" ? "詳しく記録する" : "Write a detailed record"}
-          </Link>
-        )}
+        </details>}
       </form>
     </div>
   );

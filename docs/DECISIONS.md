@@ -628,19 +628,21 @@
 ### 決定: Quick Recordの詳細入力は保存後の任意enrichmentへ統合する
 
 - 日付: 2026-08-15
-- 状態: Product decision・次回UI／実装待ち
+- 状態: Product decision・2026-08-16 PR #5実装、Human QA pending
 - 背景: Quick Recordと投稿前の「詳しく記録する」を並べると、どちらが本当の記録入口か迷い、投稿前に走行距離、費用、部品、DIY／店舗、症状、原因、作業内容などを要求する構造化フォームになりやすい。これは「まず書ける。整理はあと。」とKnowledge contributionを優先する方針に反する。
 - 決定: Quick Recordは`Vehicle → 本文 → 写真（任意）→ 記録する`で保存を先に完了する。投稿前の「詳しく記録する」別入口は廃止するが、詳細情報そのものは維持する。保存成功後に軽量な「整備情報を追加／閉じる」導線を任意表示し、追加しない、スキップする、Bottom Sheetを閉じる、途中で離れる場合も保存済み投稿を失敗扱い・削除扱いにしない。後から記録詳細で追加・編集できる方向とする。
 - 実装境界: 追加候補は走行距離、費用、部品、部品番号、DIY／店舗、Provider、症状、原因、作業内容、結果などだが、今回これらを全確定しない。既存Journal／Maintenance data modelを再利用し、Quick Record専用の巨大data modelを作らない。「あとで」の既存項目は、投稿前必須・保存後移行・廃止可能へ実装時に整理する。
 - 将来: 内容に応じて追加項目を変えるUXやAIによる候補提案は検討可能だが、αではAI動的質問を必須にしない。正式保存時の「α参加者に公開」固定、下書きの公開前private状態、詳細記録の既存Visibility仕様とは整合させる。
+- 実装更新: Quick Recordの新規保存を先に確定し、成功後に既存Journal updateを使うBottom Sheetを表示する。今回の任意入力は記録種別、発生時期、DIY／お店・工場のattributionに限定する。Skip、Close、追加入力失敗は初期投稿をrollbackしない。部品、費用、走行距離等の拡張は別の実利用確認後に扱う。
 
 ### 決定: Quick Recordの正式保存は「α参加者に公開」に固定する
 
 - 日付: 2026-08-15
-- 状態: Product decision・次回UI polishで実装
+- 状態: Product decision・2026-08-16 PR #5実装、Human QA pending
 - 背景: 従来のQuick Recordで「自分だけ／α参加者に公開」を毎回選ばせると、「まず書ける。整理はあと。」という入力原則に反し、投稿前の判断を一つ増やしていた。共有された愛車記録・写真・整備経験がTimelineとKnowledge accumulationを育てるため、現αでは標準共有を優先する。
 - 決定: Quick Record / Universal Composerの正式保存は「α参加者に公開」を固定とし、入力画面から公開範囲の2択UIを削除する。最小UXはVehicle、本文、写真（任意）、記録するを維持する。作業途中や確認前の内容は下書きとしてprivateに保持し、正式保存前には公開しない。
 - 判断理由: 作業途中は下書き、公開したくない情報を含む写真は投稿前の確認、個人的な詳細は詳しい記録UXで扱えるため、現時点でQuick Recordへprivate選択を常設する実ユーザー需要は確認されていない。仮説だけで入力UIを増やさず、Knowledge contributionを阻害しない。
+- 実装更新: 新規Quick Recordの入力画面からVisibility 2択と関連copyを外し、`public`で保存して既存alpha shared publish経路へ渡す。下書きは端末内の公開前状態に留まり、写真バイナリを永続化しない。
 - 将来: 正式公開後など、Public／Followers only／Privateの3段階Visibilityを再検討する余地は残す。「自分だけ」という概念をMECHORY全体から削除する判断ではない。Maintenance Record、詳しいJournal、その他の記録種別の既存Visibility仕様は今回変更しない。
 
 ### 決定: 新規Quick Recordの共有写真はStorageの新規insertとしてpublishする
@@ -703,7 +705,7 @@
 ### 決定: Authenticated HomeはFollowing Feed-firstをα仮説として検証する
 
 - 日付: 2026-08-16
-- 状態: α UI implementation / Human QA pending
+- 状態: 2026-08-16 PR #5実装 / Human QA pending
 - 背景: 記録や整備の用事がない日にもMECHORIを開く理由を作るには、Dashboardより先に、フォローしているOwner / Vehicleの新しいEvidenceへ触れられる必要がある。
-- 決定: Authenticated Homeのmain surfaceをFollowing Feedに置く。投稿はowner、Vehicle、date、本文、任意写真、最小metadataの順に読み、重いcard、decorative English eyebrow、上端accent、強いshadowを使わない。自分の履歴、Search、月次summaryは導線を維持したままsecondaryへ下げる。
+- 決定: Authenticated Homeのmain surfaceをFollowing Feedに置く。Followingの数件previewではなく、取得済みのFeedをHome内で連続して読む。投稿はowner、Vehicle、date、本文、任意写真、最小metadataの順に読み、重いcard、decorative English eyebrow、上端accent、強いshadowを使わない。自分の履歴、Search、月次summaryは導線を維持したままsecondaryへ下げる。
 - 検証: Feed-firstがrevisit、WAU / MAU、Meaningful Reuse、Evidence discoveryを改善するかは未検証であり、αでHome visit、Feed閲覧・詳細遷移、Garage visit、Quick Record開始、2回目session / recordとの関係を確認する。Likeやフォロー数の競争を目的にしない。

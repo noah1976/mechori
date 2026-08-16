@@ -32,12 +32,12 @@
 - `[~]` 表示名・`@username`・bioを設定する
 - `[~]` 愛車を登録し、愛称・所有開始時期・メイン写真を設定する
 - `[~]` P-084B: 新規Vehicleは「MECHORI内で見つけられる」が既定ONで、ownerが編集画面からOFF／ONできる。OFF後は検索から消え、外部匿名共有と既存Vehicle Followは変わらないことを確認する
-- `[~]` P-086: Garageまたは「記録する」からUniversal Composerを開き、Vehicle、本文のみ、または本文＋写真で保存する。日付・公開範囲・種別は必要時だけ詳細設定を開き、保存後にGarage Timelineへ反映されることを確認する
+- `[~]` P-086: Garageまたは「記録する」からUniversal Composerを開き、Vehicle、本文のみ、または本文＋写真で保存する。Quick Record初期画面に公開範囲・種別・「詳しく記録する」別入口がなく、保存後にGarage Timelineへ反映されることを確認する
 - `[~]` Garageから詳しい記録を、写真なしで保存する
 - `[~]` P-085: 整備記録で「自分で作業／お店・工場／不明・記録しない」を選び、既存Provider検索または店名＋市区町村の最小追加を行う。編集後も当時の名称snapshotが維持されることを確認する
 - `[~]` 写真・写真説明付きの詳しい記録を保存する
 - `[~]` 発生日を正確な日付、年月ごろ、年ごろ、時期不明で保存する（日付入力は作成・編集画面で人間QA待ち）
-- `[~]` 公開範囲を選び、記録本文と写真が同じ範囲になることを確認する
+- `[~]` 詳しいJournal / Maintenanceでは既存Visibility仕様を確認する（Quick Recordでは公開範囲を選ばない）
 - `[~]` 新規詳細記録の公開範囲初期値が「α参加者に公開」で、既存のVisibility仕様を確認する（Quick Recordの旧仕様記録。新しい固定公開方針は下記の追補で確認する）
 - `[~]` 保存後の完了画面からGarage、投稿詳細、次の記録、ホームへ移動する
 - `[~]` 投稿を再読込して、履歴・写真・説明・並び順を確認する
@@ -143,7 +143,7 @@ P-069のように本番で再現した不具合は、テスト成功だけを根
 
 ## 11. 2026-08-15 UX Improvement Pass 追補
 
-- `[~]` P-086 Quick Recordの初期画面をVehicle、本文、任意写真、保存へ絞り、詳細設定はProgressive Disclosureに維持した。iPhone Safariで本文のみ／写真付き保存、keyboard表示中の保存、Vehicle自動選択、Timeline反映を人間QAする。
+- `[~]` P-086 Quick Recordの初期画面をVehicle、本文、任意写真、保存へ絞った。保存後だけ任意の整備情報Bottom Sheetを出し、iPhone Safariで本文のみ／写真付き保存、Close / Skip、追加入力の失敗、keyboard表示中の保存、Vehicle自動選択、Timeline反映を人間QAする。
 - `[~]` モバイル共通Headerを左右固定slot＋中央titleへ変更した。未ログインLandingの大きな上部余白、ログイン後のbrand／page titleの物理的な中央、右action追加時の崩れをiPhoneで確認する。
 - `[~]` Garage Timelineの旧`local_blob`写真は別端末・別originで復元できない制約を明確化し、本文を妨げない縮退表示へ改善した。新規Quick Record写真、既存共有写真、legacy local写真をそれぞれ確認し、legacy移行が未実装であることを記録する。
 - `[~]` 共通Header、authenticated Home、Garage、Quick Record、Journal detailへGarage由来のDesign Languageを限定適用した。Home → Garage → Record → Timelineの一貫性をiPhone SafariとPCで確認する。Search、Profile、Notificationsは優先度B、Admin／Professionalは今回対象外。
@@ -157,8 +157,8 @@ P-069のように本番で再現した不具合は、テスト成功だけを根
 - `[ ]` Quick Recordの公開範囲UIが表示されず、保存すると「α参加者に公開」になることを確認する。入力途中で離れた下書きは公開されず、下書き復元後に正式保存した時だけ共有されることを確認する。Maintenance Recordや詳しい記録の既存Visibility選択はこの項目で変更しない。
 - `[ ]` Quick Record画面に投稿前の「詳しく記録する」別入口がないことを確認する。「記録する」で本文・任意写真の投稿が先に保存され、保存後の追加入力はoptionalであることを確認する。
 - `[ ]` 保存後の追加案内で「整備情報を追加」または「閉じる／スキップする」を選べること、閉じても元投稿が残ること、追加入力に失敗しても元投稿を破壊しないことを確認する。後から記録詳細で追加・編集できることも確認する。
-- `[~]` 「自分だけ」で写真付き保存し、共有一覧や他userから読めないことを確認する。公開写真の失敗時は入力が残り、安全な再試行メッセージになることを確認する。
-- `[~]` Quick Recordの詳細設定で日付inputがiPhone幅からはみ出さないこと、下書き復元／新しく書く／削除／破棄の重要度が分かること、keyboard表示時も「記録する」がbottom navigationやsafe areaに隠れないことを確認する。
+- `[~]` Quick Recordの本文＋写真を「α参加者に公開」で保存し、共有一覧・別session／別deviceで表示されることを確認する。共有写真の失敗時は入力が残り、安全な再試行メッセージになることを確認する。
+- `[~]` 保存後の整備情報sheetと既存編集画面で日付inputがiPhone幅からはみ出さないこと、下書き復元／新しく書く／削除／破棄の重要度が分かること、keyboard表示時も「記録する」がbottom navigationやsafe areaに隠れないことを確認する。
 - `[~]` Garage Timelineで、新規共有写真、既存shared写真、旧`local_blob`写真を区別して確認する。旧local写真は本文を残した縮退表示になることを確認し、別origin／別deviceでの回復は未実装P1として記録する。
 - `[~]` Home、Garage、Quick Record、Journal detailで画像がcontainer外へ出ないこと、Headerのviewport中央、未ログインLanding上部余白をiPhone Safariで確認する。Landing余白の原因は要確認のままにする。
 
@@ -167,5 +167,5 @@ P-069のように本番で再現した不具合は、テスト成功だけを根
 - `[~]` Authenticated Homeで、投稿一覧が大きなcardの2列gridではなく、owner、Vehicle、date、本文、任意写真、最小metadataの順に読める単列FeedであることをiPhone SafariとPCで確認する。長い本文、複数投稿、写真あり／なし、titleと本文が同じ投稿を含める。
 - `[~]` Homeの通常「α参加者に公開」labelと重複した「読む」CTAがFeedを占有せず、Like、投稿詳細、owner／Vehicle link、followers-onlyやprivateなど例外Visibilityの表示が維持されることを確認する。
 - `[~]` 月次summaryがFeedより目立たず、各既存導線が動くこと、Homeの「記録する」FABがbottom navigation・safe area・Feed本文を妨げないことを確認する。
-- `[~]` Following FeedがAuthenticated Homeのfirst surfaceにあり、特集Journal、`FROM ALPHA GARAGES`等のdecorative English label、上端accent付きの大きな投稿cardがないことを確認する。Feed-firstが再訪理由になるかは、実機操作とαヒアリングで検証し、実測前にWAU / MAU改善と扱わない。
+- `[~]` Following FeedがAuthenticated Homeそのものであり、数件previewの「すべて見る」へ依存せず続きをscrollできることを確認する。特集Journal、`FROM ALPHA GARAGES`等のdecorative English label、上端accent付きの大きな投稿cardがないことを確認する。Feed-firstが再訪理由になるかは、実機操作とαヒアリングで検証し、実測前にWAU / MAU改善と扱わない。
 - `[~]` Home Feedの写真が320px、375px、390px、430px前後のiPhone Safari幅でcontainer・viewportから横にはみ出さず、本文、写真、Like、detail linkがそれぞれ操作できることを確認する。

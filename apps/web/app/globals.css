@@ -102,6 +102,7 @@ button { cursor: pointer; }
 .local-draft-actions > button, .local-draft-status > .draft-discard-action { min-height: 34px; flex: none; padding: 5px 9px; border-radius: 4px; font-size: 12px; }
 .local-draft-actions > .primary-action { color: #fff; background: var(--brand); border-color: var(--brand); }
 .local-draft-actions > .secondary-action { color: var(--brand-strong); background: transparent; border-color: #9eb5c0; }
+.local-draft-actions > .draft-delete-action, .local-draft-status > .draft-discard-action { color: #7a3732; border-color: transparent; text-decoration: underline; text-underline-offset: 3px; }
 .draft-delete-action, .draft-discard-action { color: var(--muted); background: transparent; border: 0; text-decoration: underline; text-underline-offset: 3px; }
 .journal-completion { min-height: 45vh; align-content: center; }
 .journal-completion-message { grid-template-columns: auto minmax(0, 1fr); font-size: 15px; }
@@ -228,6 +229,8 @@ button { cursor: pointer; }
 .demo-notice strong, .demo-notice span { display: block; }
 .demo-notice strong { font-size: 12px; }
 .demo-notice span { margin-top: 2px; font-size: 13px; line-height: 1.45; }
+.demo-notice.is-compact { margin-top: 4px; padding: 9px 11px; border-left-width: 3px; }
+.demo-notice.is-compact span { font-size: 12px; }
 .demo-label { display: inline-flex; align-items: center; width: fit-content; min-height: 22px; padding: 0 7px; border: 1px solid currentColor; border-radius: 3px; font-size: 10px; font-weight: 850; letter-spacing: 0.06em; }
 
 .home-hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr); gap: 34px; align-items: stretch; min-height: 430px; }
@@ -723,8 +726,6 @@ button { cursor: pointer; }
 .quick-composer-details-body { display: grid; min-width: 0; gap: 20px; padding: 8px 0 6px; }
 .quick-composer-details-body > .event-type-picker, .quick-composer-details-body > .occurrence-date-fields { margin: 0; padding: 0 0 20px; border: 0; border-bottom: 1px solid var(--line); }
 .quick-composer-details-body > .event-type-picker legend, .quick-composer-details-body > .occurrence-date-fields legend { padding: 0 0 9px; }
-.quick-composer-details-body > .quick-event-audience { min-width: 0; padding: 0 0 20px; border-top: 0; border-bottom: 1px solid var(--line); }
-.quick-composer-detailed-link { justify-self: start; min-height: 36px; display: inline-flex; align-items: center; color: var(--muted); font-size: 12px; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
 .quick-record-entry { gap: 18px; }
 .quick-record-vehicle-picker { display: grid; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 750; }
 .quick-record-vehicle-picker select { min-height: 46px; padding: 0 10px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 5px; font-size: 15px; font-weight: 750; }
@@ -743,7 +744,9 @@ button { cursor: pointer; }
 .date-precision-picker button:first-child { border-left: 0; }
 .date-precision-picker button.is-selected { color: #fff; background: var(--brand); }
 .occurrence-partial-date { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.7fr); gap: 10px; }
-.occurrence-date-fields .field { min-width: 0; }
+.occurrence-date-fields > *, .occurrence-date-control, .occurrence-date-fields .field { min-width: 0; max-width: 100%; }
+.occurrence-date-control { inline-size: 100%; max-inline-size: 100%; }
+.occurrence-date-control .field { display: grid; inline-size: 100%; }
 .occurrence-date-fields input[type="date"] {
   box-sizing: border-box;
   inline-size: 100%;
@@ -757,6 +760,16 @@ button { cursor: pointer; }
   font-size: 16px;
   line-height: normal;
 }
+.quick-record-sheet-backdrop { position: fixed; inset: 0; z-index: 40; display: flex; align-items: flex-end; justify-content: center; padding: 16px 16px calc(84px + env(safe-area-inset-bottom)); background: rgba(20, 29, 27, 0.28); }
+.quick-record-sheet { width: min(100%, 640px); max-height: min(76vh, 680px); overflow: auto; padding: 22px 20px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 -8px 28px rgba(20, 29, 27, 0.16); }
+.quick-record-sheet h1 { margin: 0; font-size: 22px; line-height: 1.25; }
+.quick-record-sheet > p, .quick-record-sheet-heading p { margin: 7px 0 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+.quick-record-sheet-icon { color: var(--brand); margin-bottom: 12px; }
+.quick-record-sheet-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.quick-record-sheet-heading .icon-action { flex: none; }
+.quick-record-enrichment-form { display: grid; gap: 17px; margin-top: 20px; }
+.quick-record-sheet-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 20px; }
+.quick-record-sheet-actions .primary-action, .quick-record-sheet-actions .secondary-action { min-height: 44px; }
 .occurrence-period-note { margin-top: 1px; }
 .occurrence-date-help { color: var(--muted); line-height: 1.5; }
 .occurrence-date-fields.has-error { border-color: var(--danger); }
@@ -1198,8 +1211,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .home-journal-feed .journal-media, .home-journal-feed .journal-media-item { min-width: 0; max-width: 100%; }
 .home-journal-feed .journal-media-item { inline-size: 100%; }
 .home-following-actions { display: flex; align-items: center; gap: 14px; padding-top: 4px; }
-.home-record-link { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 12px; color: #fff; background: var(--brand); border: 1px solid var(--brand); border-radius: 5px; font-size: 13px; font-weight: 750; text-decoration: none; }
-.home-record-link:hover { color: #fff; background: var(--brand-strong); border-color: var(--brand-strong); }
+.home-record-link-desktop { display: inline-flex; }
 .home-feed-empty { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 10px 12px; padding: 20px 0; color: var(--muted); border-block: 1px solid var(--line); }
 .home-feed-empty > svg { margin-top: 2px; color: var(--brand); }
 .home-feed-empty strong, .home-feed-empty p { display: block; }
@@ -1652,9 +1664,6 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .segmented-control button { min-height: 42px; padding: 0 8px; color: var(--muted); background: transparent; border: 0; border-radius: 4px; font-weight: 750; }
 .segmented-control button.is-selected { color: var(--ink); background: #fff; box-shadow: 0 1px 4px rgba(23, 33, 28, 0.12); }
 .segmented-control button:disabled { cursor: not-allowed; opacity: 0.52; }
-.quick-event-audience { display: grid; gap: 12px; padding-top: 18px; border-top: 1px solid var(--line); }
-.quick-event-audience > div:first-child { display: grid; gap: 4px; }
-.quick-event-audience > div:first-child small { color: var(--muted); line-height: 1.5; }
 .public-media-confirmation { border-left-color: #2f6f82; }
 .alpha-community-feed { grid-template-columns: minmax(0, 820px); justify-content: center; }
 .consent-option { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 11px; padding: 15px; background: var(--surface-soft); border-left: 3px solid #94aa9f; }
@@ -1909,6 +1918,11 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .quick-composer-submit { align-items: stretch; flex-direction: column-reverse; gap: 10px; }
   .quick-composer-submit .primary-action { width: 100%; justify-content: center; }
   .quick-event-page { padding-bottom: calc(34px + env(safe-area-inset-bottom)); }
+  .quick-record-sheet-backdrop { align-items: flex-end; padding: 12px 12px calc(80px + env(safe-area-inset-bottom)); }
+  .quick-record-sheet { max-height: min(80vh, 680px); padding: 20px 16px 16px; }
+  .quick-record-sheet-actions { flex-direction: column; }
+  .quick-record-sheet-actions .primary-action, .quick-record-sheet-actions .secondary-action { width: 100%; justify-content: center; }
+  .home-record-link-desktop { display: none; }
   .date-precision-picker { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .date-precision-picker button:nth-child(3) { border-left: 0; }
   .date-precision-picker button:nth-child(n + 3) { border-top: 1px solid var(--line); }
