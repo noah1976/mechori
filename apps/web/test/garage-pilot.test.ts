@@ -38,6 +38,15 @@ test("Garage timeline keeps provider snapshots available after provider data cha
   );
 });
 
+test("Garage timeline prefers the shared photo representation used by journal detail", () => {
+  const source = readFileSync(new URL("../app/garage/page.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /preferSharedJournalMediaForDisplay\(/);
+  assert.match(source, /sharedJournals\.find\(\(item\) => item\.id === journal\.id\)/);
+  assert.match(source, /media: displayJournal\.media\[0\]/);
+  assert.doesNotMatch(source, /media: journal\.media\[0\]/);
+});
+
 test("Garage identity keeps make, model, trim, specifications, and facts in a factual hierarchy", () => {
   const source = readFileSync(new URL("../app/garage/page.tsx", import.meta.url), "utf8");
   assert.match(source, /<GarageVehicleIdentity/);

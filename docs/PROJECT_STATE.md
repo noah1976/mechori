@@ -233,3 +233,8 @@
 - **PR #3 Auth監査**: `f982c7a`は現PR #5のancestorであり、現行`auth-flow`、callback、Supabase route cookie bridge、関連testを比較してDeploy Preview OAuth修正がFully incorporatedであることを確認した。Productionと`deploy-preview-<digits>--mechori-alpha.netlify.app`だけをHTTPS・portなしで許可し、類似hostを拒否する。callbackはsession cookie mutationをrequestと最終redirect responseへ適用し、no-store headerを維持する。PR #3自体はopen・未mergeのまま。
 - **PR #2 Vehicle Identity移植**: PR #2のVehicle Identity hierarchyと、車齢・所有期間・走行距離の純粋な整形意図を、現PR #5のGarage Heroへ移植した。メーカー、車名＋trim、型式・年式、事実情報、Ownerの順に表示し、欠損値はplaceholderを出さず省略する。PR #2の古いcard／CSS／spacingは取り込んでいない。長い車名はwrapし、320 / 375 / 390 / 430pxのiPhone Safari実機確認は未実施。
 - **状態**: PR #5は自動検証・Deploy Preview反映後、mainへmergeせずHuman QAで止める候補である。iPhone SafariではPreview login、Home Following Feed、GarageのVehicle Identity（長い値・欠損値を含む）、Quick Record本文のみ／写真付き、post-save enrichment、Timeline / detail、Logout → Loginを確認する。legacy `local_blob` media recoveryは未解決P1、Landing上部余白は要確認のままとする。
+
+## 23. 2026-08-16 Garage Timeline shared photo representation fix（PR #5継続）
+
+- **原因と修正**: Garage Timelineだけがworkspace内の`journal.media[0]`をそのまま表示していたため、同じ公開済み記録に対応する`alpha_shared` Storage参照があっても、先行する端末依存`local_blob`を読もうとして縮退表示になっていた。Journal detail／Feedと同じ`preferSharedJournalMediaForDisplay`をGarageにも適用し、`public_ready`の写真はshared Journalの`alpha_shared`参照を優先する。これにより、detailで表示できる共有写真をTimelineでも同じ経路で表示する。
+- **境界**: private写真と、shared copyが存在しない真のlegacy `local_blob`は置き換えず、本文を残す既存fallbackを維持する。legacy写真の別origin／別device回復そのものは未解決P1で、人間QAでTimelineとdetailの表示一致を再確認する。

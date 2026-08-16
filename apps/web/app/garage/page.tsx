@@ -14,6 +14,7 @@ import {
   journalOccurrenceLabel,
   maintenanceRecordDateKey,
   maintenanceRecordDateLabel,
+  preferSharedJournalMediaForDisplay,
   resolveJournalDisplayContent,
   type JournalEventType,
   type JournalMediaAttachment,
@@ -37,6 +38,7 @@ function GarageContent() {
     locale,
     signedIn,
     isRemoteAlpha,
+    sharedJournals,
     workspaceLoadState,
     retryWorkspace,
     resetDemo,
@@ -121,7 +123,14 @@ function GarageContent() {
   const ownershipPeriod = formatOwnershipPeriod(vehicle, locale);
   const timeline: GarageTimelineItem[] = [
     ...journals.map((journal) => {
-      const display = resolveJournalDisplayContent(data, journal, locale);
+      // The local workspace may retain a device-only media reference while the
+      // alpha-visible journal has the corresponding shared Storage reference.
+      // Use the same display representation as Journal detail and the feed.
+      const displayJournal = preferSharedJournalMediaForDisplay(
+        journal,
+        sharedJournals.find((item) => item.id === journal.id),
+      );
+      const display = resolveJournalDisplayContent(data, displayJournal, locale);
       return ({
       id: journal.id,
       kind: "journal" as const,
@@ -131,7 +140,7 @@ function GarageContent() {
       body: display.body,
       eventType: journal.eventType,
       href: `/journal/${journal.id}`,
-      media: journal.media[0],
+      media: displayJournal.media[0],
       serviceAttribution: journal.serviceAttribution,
       });
     }),
