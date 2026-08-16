@@ -33,6 +33,8 @@
 - `[~]` 愛車を登録し、愛称・所有開始時期・メイン写真を設定する
 - `[~]` P-084B: 新規Vehicleは「MECHORI内で見つけられる」が既定ONで、ownerが編集画面からOFF／ONできる。OFF後は検索から消え、外部匿名共有と既存Vehicle Followは変わらないことを確認する
 - `[~]` P-086: Garageまたは「記録する」からUniversal Composerを開き、Vehicle、本文のみ、または本文＋写真で保存する。Quick Record初期画面に公開範囲・種別・「詳しく記録する」別入口がなく、保存後にGarage Timelineへ反映されることを確認する
+- `[~]` PR #5統合QA: Deploy PreviewでGoogle OAuth後に同じPreviewへ戻り、Logout → Login後もsessionが維持されることを確認する。Productionと正規の`deploy-preview-<digits>--mechori-alpha.netlify.app`以外のoriginは許可しない。
+- `[~]` Garage Vehicle Identity: メーカー、車名＋trim、型式・年式、車齢／所有期間／走行距離、Ownerを順に確認する。長い車名は320 / 375 / 390 / 430pxで横にはみ出さず、trim・型式・年式・走行距離等が未入力の場合は「不明」等のplaceholderを表示せず自然に省略する。人間QA待ち
 - `[~]` Garageから詳しい記録を、写真なしで保存する
 - `[~]` P-085: 整備記録で「自分で作業／お店・工場／不明・記録しない」を選び、既存Provider検索または店名＋市区町村の最小追加を行う。編集後も当時の名称snapshotが維持されることを確認する
 - `[~]` 写真・写真説明付きの詳しい記録を保存する
