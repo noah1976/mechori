@@ -43,6 +43,7 @@ test("Garage timeline prefers the shared photo representation used by journal de
 
   assert.match(source, /preferSharedJournalMediaForDisplay\(/);
   assert.match(source, /sharedJournals\.find\(\(item\) => item\.id === journal\.id\)/);
+  assert.match(source, /void ensureSocialData\(\)\.catch\(\(\) => undefined\)/);
   assert.match(source, /media: displayJournal\.media\[0\]/);
   assert.doesNotMatch(source, /media: journal\.media\[0\]/);
 });

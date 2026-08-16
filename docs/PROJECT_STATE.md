@@ -236,5 +236,5 @@
 
 ## 23. 2026-08-16 Garage Timeline shared photo representation fix（PR #5継続）
 
-- **原因と修正**: Garage Timelineだけがworkspace内の`journal.media[0]`をそのまま表示していたため、同じ公開済み記録に対応する`alpha_shared` Storage参照があっても、先行する端末依存`local_blob`を読もうとして縮退表示になっていた。Journal detail／Feedと同じ`preferSharedJournalMediaForDisplay`をGarageにも適用し、`public_ready`の写真はshared Journalの`alpha_shared`参照を優先する。これにより、detailで表示できる共有写真をTimelineでも同じ経路で表示する。
+- **原因と修正**: Garage Timelineだけがworkspace内の`journal.media[0]`をそのまま表示し、さらに共有Journalをhydrateしていなかったため、同じ公開済み記録に対応する`alpha_shared` Storage参照があっても、端末依存`local_blob`を読もうとして縮退表示になっていた。Journal detail／Feedと同じsocial hydrationと`preferSharedJournalMediaForDisplay`をGarageにも適用し、`public_ready`の写真はshared Journalの`alpha_shared`参照を優先する。これにより、detailで表示できる共有写真をTimelineでも同じ経路で表示する。
 - **境界**: private写真と、shared copyが存在しない真のlegacy `local_blob`は置き換えず、本文を残す既存fallbackを維持する。legacy写真の別origin／別device回復そのものは未解決P1で、人間QAでTimelineとdetailの表示一致を再確認する。

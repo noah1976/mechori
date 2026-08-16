@@ -43,6 +43,7 @@ function GarageContent() {
     retryWorkspace,
     resetDemo,
     recordEngagement,
+    ensureSocialData,
   } = useApp();
   const params = useSearchParams();
   const ownVehicles = data.vehicles.filter(
@@ -64,6 +65,11 @@ function GarageContent() {
   useEffect(() => {
     if (signedIn) recordEngagement("garage_viewed");
   }, [recordEngagement, signedIn]);
+  useEffect(() => {
+    if (signedIn && isRemoteAlpha && workspaceLoadState === "ready") {
+      void ensureSocialData().catch(() => undefined);
+    }
+  }, [ensureSocialData, isRemoteAlpha, signedIn, workspaceLoadState]);
   useEffect(() => {
     const selected = params.get("vehicle");
     if (params.get("moment") !== "added") {
@@ -125,7 +131,7 @@ function GarageContent() {
     ...journals.map((journal) => {
       // The local workspace may retain a device-only media reference while the
       // alpha-visible journal has the corresponding shared Storage reference.
-      // Use the same display representation as Journal detail and the feed.
+      // Use the same hydrated display representation as Journal detail and feed.
       const displayJournal = preferSharedJournalMediaForDisplay(
         journal,
         sharedJournals.find((item) => item.id === journal.id),
