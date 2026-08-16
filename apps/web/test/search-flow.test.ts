@@ -13,6 +13,15 @@ test("search conditions submit through one form action", () => {
   assert.match(source, /setSubmittedCriteria\(nextCriteria\)/);
 });
 
+test("search submit reveals the result region below the form", () => {
+  assert.match(source, /const resultsAnchorRef = useRef<HTMLElement>\(null\)/);
+  assert.match(source, /shouldRevealResults\.current = true/);
+  assert.match(source, /anchor\.scrollIntoView\(\{ behavior, block: "start" \}\)/);
+  assert.match(source, /className="search-results-anchor"/);
+  assert.match(source, /id="search-results-heading"/);
+  assert.match(css, /\.search-results-anchor \{[\s\S]*?scroll-margin-top: 82px/);
+});
+
 test("search separates empty results from retryable errors", () => {
   assert.match(source, /検索結果を取得できませんでした/);
   assert.match(source, /もう一度試す/);

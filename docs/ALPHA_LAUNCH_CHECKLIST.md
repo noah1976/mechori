@@ -72,7 +72,7 @@
 - `[~]` 他人のプロフィールで公開車両・公開Journalだけが表示される
 - `[~]` P-078: プロフィール画像表示は実機確認済み。認証済みBlob取得方式を維持したままHooks lint違反を修正し、表示回帰は人間QA待ち
 - `[~]` AUD-004: private Avatarをsession内cache・single-flightで共有し、変更・削除・logout・ユーザー切替時にinvalidate／clearする。人間QAでは複数画面の再利用、変更直後、削除後、logout後を確認する
-- `[~]` P-079: 検索画面ではFABを非表示にし、フォーム末尾の「この条件で探す」、Enter／キーボード検索、0件時の記録導線、エラー時の再試行を実装。人間QA待ち
+- `[~]` P-079: 検索画面ではFABを非表示にし、フォーム末尾の「この条件で探す」、Enter／キーボード検索、送信後の検索結果へのscroll/focus、0件時の記録導線、エラー時の再試行を実装。iPhone Safari人間QA待ち
 - `[~]` P-084B（AUD-005）: 外部匿名共有`alpha_public_vehicle_shares`とは別に、active α participantだけが読むVehicle Discovery read modelを使う。既存active α Vehicleは最小フィールドで初期backfillし、新規Vehicleは「MECHORI内で見つけられる」を既定ONとして保存する。ownerは編集画面からOFF／ONを変更でき、OFFは検索対象だけを外し、外部匿名共有と既存Vehicle Followを変更しない。`FIAT`／`Barchetta`／`カブ`検索、Vehicle Follow→Connections反映→解除、owner Followとの独立、inactive・private・block対象の除外を人間QAする。旧版の「今後のVehicleは初期非公開」という記載は、2026-08-12のowner-controlled default ON実装に合わせて訂正した。`バルケッタ`の日本語aliasは別課題
 - `[~]` P-080（AUD-002）: フォロー操作が型付きResultを返し、同一対象の処理中重複を防止。Follow解除RPCの曖昧なDELETE条件を対象user IDの明示変数へ修正し、通常ユーザー・管理者とも自分のperson followだけを解除できるようにした。RLSは維持し、P-073の通知はFollow時のみ生成する。migration適用後にConnections／公開Garage／相互フォローを人間QAする
 - `[~]` AUD-001／AUD-003: ナビ定義をroute・ラベル・サーフェス・認証／管理者条件・現在地判定へ集約し、認証状態・権限・routeから実際の項目を返す振る舞いテストへ改善。外部UI・route・DB・RLS変更なし。P-075前の基盤整備として人間QA待ち
