@@ -126,9 +126,10 @@ Garage由来のDesign Languageを、αテスターが頻繁に通る範囲へ限
 ### Authenticated Home Feed
 
 - Homeの投稿一覧は、cardの集合ではなく、人とVehicleの記録が続くFeedとして扱う。owner、Vehicle、date、本文、任意写真、最小のreactionをこの順で読む。
+- Authenticated HomeはFollowing Feedをfirst surfaceに置く。これは、記録する用事がない日にも他Owner / Vehicleの続きから再訪理由を作れるかを確かめるα仮説であり、Retention改善を前提にしない。自分の履歴、Search、月次summaryは役割を保ったままsecondaryに置く。
 - 投稿は重いwhite surface、上端accent line、強いshadow、同じvisibility label、独立した重複CTAで囲わない。投稿間は余白と必要最小限のdividerで区切る。titleと本文が同じ内容なら、内容を改変せず表示上の重複だけを避ける。
 - Homeの月次情報は行動を妨げない低優先度のsummaryとし、Feedをfirst-class contentにする。mobileのrecord FABは内容を覆わず、bottom navigationとsafe areaから十分離す。
-- Journal CardはHomeだけの特別な装飾にせず、Garage由来のwhite base、読みやすい本文、写真の収まり、控えめなsocial metadataを各投稿一覧へ共通適用する。Human QAでHome、Feed、公開Profileの読みやすさを確認する。
+- Journal CardはHomeだけの特別な装飾にせず、Garage由来のwhite base、読みやすい本文、写真の収まり、控えめなsocial metadataを各投稿一覧へ共通適用する。写真はcontainerとviewportからはみ出さず、本文の後に自然に続く。Human QAでHome、Feed、公開Profileの読みやすさを確認する。
 
 ## 未確定
 

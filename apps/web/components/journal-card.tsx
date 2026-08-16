@@ -141,7 +141,6 @@ export function JournalCard({
           )}
         </div>
       </div>
-      <JournalMedia attachments={visibleMedia} locale={locale} compact priority={mediaPriority} vehicleHref={vehicleHref} />
       {showTitle && <h3>{display.title}</h3>}
       <p>{display.body}</p>
       {!display.translated && display.sourceLanguage !== locale && (
@@ -156,6 +155,7 @@ export function JournalCard({
           <strong>{record.summary}</strong>
         </div>
       )}
+      <JournalMedia attachments={visibleMedia} locale={locale} compact priority={mediaPriority} vehicleHref={vehicleHref} />
       <footer>
         {showVisibility && <span>
           {displayJournal.visibility === "private" ? (

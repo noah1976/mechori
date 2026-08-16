@@ -167,3 +167,5 @@ P-069のように本番で再現した不具合は、テスト成功だけを根
 - `[~]` Authenticated Homeで、投稿一覧が大きなcardの2列gridではなく、owner、Vehicle、date、本文、任意写真、最小metadataの順に読める単列FeedであることをiPhone SafariとPCで確認する。長い本文、複数投稿、写真あり／なし、titleと本文が同じ投稿を含める。
 - `[~]` Homeの通常「α参加者に公開」labelと重複した「読む」CTAがFeedを占有せず、Like、投稿詳細、owner／Vehicle link、followers-onlyやprivateなど例外Visibilityの表示が維持されることを確認する。
 - `[~]` 月次summaryがFeedより目立たず、各既存導線が動くこと、Homeの「記録する」FABがbottom navigation・safe area・Feed本文を妨げないことを確認する。
+- `[~]` Following FeedがAuthenticated Homeのfirst surfaceにあり、特集Journal、`FROM ALPHA GARAGES`等のdecorative English label、上端accent付きの大きな投稿cardがないことを確認する。Feed-firstが再訪理由になるかは、実機操作とαヒアリングで検証し、実測前にWAU / MAU改善と扱わない。
+- `[~]` Home Feedの写真が320px、375px、390px、430px前後のiPhone Safari幅でcontainer・viewportから横にはみ出さず、本文、写真、Like、detail linkがそれぞれ操作できることを確認する。

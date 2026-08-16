@@ -3,20 +3,14 @@
 import { DemoNotice } from "@/components/demo-notice";
 import { ActivationChecklist } from "@/components/activation-checklist";
 import { JournalCard } from "@/components/journal-card";
-import { JournalMedia } from "@/components/journal-media";
 import { RecordCard } from "@/components/record-card";
 import { useApp } from "@/lib/app-context";
-import { journalDetailHref } from "@/lib/journal-detail-route";
-import { hasDistinctJournalTitle } from "@/lib/journal-feed-presentation";
 import {
   buildMonthlyOwnerSummary,
   getFollowedSharedFeed,
   getFollowingFeed,
   getPreferredVehicle,
-  journalMediaForViewer,
   maintenanceRecordDateKey,
-  preferSharedJournalMediaForDisplay,
-  resolveJournalDisplayContent,
 } from "@mechori/core";
 import { translate } from "@mechori/i18n";
 import {
@@ -27,6 +21,7 @@ import {
   FileClock,
   Heart,
   LogIn,
+  PenLine,
   Search,
   TriangleAlert,
   UserPlus,
@@ -77,28 +72,7 @@ export default function HomePage() {
             left.publishedAt ?? left.createdAt,
           ),
         );
-  const visibleMediaFor = (journal: (typeof allFeed)[number]) =>
-    journalMediaForViewer(
-      preferSharedJournalMediaForDisplay(
-        journal,
-        sharedJournals.find((item) => item.id === journal.id),
-      ),
-      signedIn && journal.authorProfileId === data.currentProfileId,
-    );
-  const featuredJournal = allFeed.find((journal) => visibleMediaFor(journal).length > 0) ?? allFeed[0];
-  const featuredDisplayJournal = featuredJournal
-    ? preferSharedJournalMediaForDisplay(
-        featuredJournal,
-        sharedJournals.find((item) => item.id === featuredJournal.id),
-      )
-    : undefined;
-  const featuredDisplay = featuredDisplayJournal
-    ? resolveJournalDisplayContent(data, featuredDisplayJournal, locale)
-    : undefined;
-  const featuredHasDistinctTitle = featuredDisplay
-    ? hasDistinctJournalTitle(featuredDisplay.title, featuredDisplay.body)
-    : false;
-  const feed = allFeed.filter((journal) => journal.id !== featuredJournal?.id).slice(0, 2);
+  const feed = allFeed.slice(0, 4);
   const [query, setQuery] = useState("");
   const router = useRouter();
   const ja = locale === "ja";
@@ -206,44 +180,7 @@ export default function HomePage() {
             <span>{ja ? "根拠付きナレッジ" : "CITED KNOWLEDGE"}</span>
           </div>
         </section>
-      ) : (
-      <section className="home-community-stage">
-        <div className="home-community-intro">
-          <h1>{ja ? "愛車の記録を、いつでも。" : "Keep your vehicle history close."}</h1>
-          <p>
-            {ja
-                ? "整備も日々の出来事も、このクルマの履歴として残せます。必要なときは、同型車の公開事例も探せます。"
-                : "Keep maintenance and everyday moments in one vehicle history, then search shared cases when you need them."}
-          </p>
-          <Link href="/people" className="home-community-link">
-            <UsersRound size={18} aria-hidden="true" />
-            {ja ? "人・クルマを探す" : "Find people and vehicles"}
-            <ArrowRight size={16} aria-hidden="true" />
-          </Link>
-          <form className="home-knowledge-prompt" onSubmit={search}>
-            <Search size={20} aria-hidden="true" />
-            <div>
-              <small>{ja ? "公開されている整備事例を調べる" : "Search shared experience"}</small>
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={ja ? "症状や部品名を入力" : "My car is doing this…"} aria-label={translate(locale, "search")} />
-            </div>
-            <button type="submit" aria-label={translate(locale, "search")}><ArrowRight size={20} aria-hidden="true" /></button>
-          </form>
-        </div>
-
-        {featuredJournal && (
-          <Link href={journalDetailHref(featuredJournal.id)} prefetch={false} className="home-featured-journal">
-            <JournalMedia attachments={visibleMediaFor(featuredJournal)} locale={locale} compact priority />
-            <div className="home-featured-copy">
-              {featuredHasDistinctTitle && <h2>{featuredDisplay?.title}</h2>}
-              <p>{featuredDisplay?.body}</p>
-              <footer><span>{featuredJournal.vehicleLabel}</span><span><Heart size={15} aria-hidden="true" />{featuredJournal.appreciationCount}</span></footer>
-            </div>
-          </Link>
-        )}
-      </section>
-      )}
-
-      {signedIn && <ActivationChecklist />}
+      ) : null}
 
       {!signedIn && (
         <section className="signed-out-discovery" aria-labelledby="signed-out-search-heading">
@@ -265,46 +202,21 @@ export default function HomePage() {
 
       {!signedIn && <DemoNotice />}
 
-      {signedIn && (
-        <section className="home-monthly-summary" aria-labelledby="monthly-owner-heading">
-          <div className="home-monthly-summary-heading">
-            <span className="monthly-owner-icon"><CalendarDays size={22} aria-hidden="true" /></span>
-            <h2 id="monthly-owner-heading">{ja ? `${monthLabel}の愛車` : `Your vehicles in ${monthLabel}`}</h2>
-          </div>
-          <div className="home-monthly-summary-actions">
-            <Link href={unresolvedRecord ? `/records/${unresolvedRecord.id}/edit` : "/records"}>
-              <TriangleAlert size={19} aria-hidden="true" />
-              <span><strong>{monthly.unresolvedCount}</strong><small>{ja ? "未解決・要追記" : "unresolved follow-ups"}</small></span>
-            </Link>
-            <Link href="/feed">
-              <BookOpenText size={19} aria-hidden="true" />
-              <span><strong>{monthly.followingUpdateCount}</strong><small>{ja ? "今月のフォロー更新" : "followed updates this month"}</small></span>
-            </Link>
-            <Link href={monthly.journalCount > 0 ? "/garage" : "/journal/new"}>
-              <Heart size={19} aria-hidden="true" />
-              <span><strong>{monthly.journalCount}</strong><small>{ja ? "今月残した愛車記録" : "vehicle records this month"}</small></span>
-            </Link>
-            <Link href="/garage/history">
-              <FileClock size={19} aria-hidden="true" />
-              <span><strong>{monthly.recordCount}</strong><small>{ja ? "今月の整備記録" : "maintenance records this month"}</small></span>
-            </Link>
-          </div>
-        </section>
-      )}
-
-      <section className="home-feed-section">
+      {signedIn && <section className="home-feed-section home-following-section" aria-labelledby="following-feed-heading">
         <div className="home-feed-heading">
           <div>
-            <h2>{signedIn ? (ja ? "フォロー中の人・クルマの続き" : "Stories from people and vehicles you follow") : (ja ? "公開されている愛車の記録" : "Public vehicle stories")}</h2>
+            <p className="home-section-label">{ja ? "フォロー中" : "Following"}</p>
+            <h1 id="following-feed-heading">{ja ? "新しい愛車の記録" : "New vehicle records"}</h1>
+            <p>{ja ? "フォローしている人とクルマの新しい記録です。" : "Recent records from people and vehicles you follow."}</p>
           </div>
-          {signedIn && (
+          {allFeed.length > feed.length && (
             <Link href="/feed" className="text-link">
-              {ja ? "フィードを見る" : "View feed"}
+              {ja ? "すべて見る" : "View all"}
               <ArrowRight size={16} aria-hidden="true" />
             </Link>
           )}
         </div>
-        <div className="home-journal-feed">
+        {feed.length ? <div className="home-journal-feed">
           {feed.map((journal) => (
             <JournalCard
               key={journal.id}
@@ -337,13 +249,56 @@ export default function HomePage() {
               variant="home"
             />
           ))}
+        </div> : <div className="home-feed-empty">
+          <BookOpenText size={22} aria-hidden="true" />
+          <div>
+            <strong>{ja ? "フォロー中の新しい記録はありません" : "No new records from people you follow"}</strong>
+            <p>{ja ? "人やクルマをフォローすると、ここで新しい記録を確認できます。" : "Follow people or vehicles to see their new records here."}</p>
+          </div>
+          <Link href="/people" className="text-link"><UsersRound size={16} aria-hidden="true" />{ja ? "人・クルマを探す" : "Find people and vehicles"}</Link>
+        </div>}
+        <div className="home-following-actions">
+          <Link href="/journal/new" className="home-record-link">
+            <PenLine size={17} aria-hidden="true" />
+            {ja ? "記録する" : "Record"}
+          </Link>
+          <Link href="/garage" className="text-link">
+            <CarFront size={16} aria-hidden="true" />
+            {ja ? "自分のガレージ" : "My Garage"}
+          </Link>
         </div>
-      </section>
+      </section>}
+
+      {!signedIn && <section className="home-feed-section home-public-feed" aria-labelledby="public-feed-heading">
+        <div className="home-feed-heading">
+          <div>
+            <p className="home-section-label">{ja ? "公開記録" : "Public records"}</p>
+            <h2 id="public-feed-heading">{ja ? "公開されている愛車の記録" : "Public vehicle records"}</h2>
+          </div>
+        </div>
+        {feed.length ? <div className="home-journal-feed">
+          {feed.map((journal) => (
+            <JournalCard
+              key={journal.id}
+              journal={journal}
+              author={data.profiles.find((profile) => profile.id === journal.authorProfileId)}
+              record={data.records.find((record) => record.id === journal.linkedRecordId)}
+              locale={locale}
+              translations={data.contentTranslations}
+              showPrivateMedia={false}
+              variant="home"
+            />
+          ))}
+        </div> : <div className="home-feed-empty">
+          <BookOpenText size={22} aria-hidden="true" />
+          <div><strong>{ja ? "公開記録はまだありません" : "No public records yet"}</strong></div>
+        </div>}
+      </section>}
 
       {signedIn && <section>
         <div className="section-heading">
           <div>
-            <span className="eyebrow">PRIVATE HISTORY</span>
+            <span className="section-label">{ja ? "自分の履歴" : "My history"}</span>
             <h2>{translate(locale, "recentRecords")}</h2>
           </div>
           <Link href="/records" className="text-link">
@@ -357,6 +312,48 @@ export default function HomePage() {
           ))}
         </div>
       </section>}
+
+      {signedIn && <section className="home-knowledge-section" aria-labelledby="home-search-heading">
+        <div>
+          <span className="section-label">{ja ? "記録を探す" : "Search records"}</span>
+          <h2 id="home-search-heading">{ja ? "整備事例を調べる" : "Search maintenance records"}</h2>
+        </div>
+        <form className="home-knowledge-prompt" onSubmit={search}>
+          <Search size={20} aria-hidden="true" />
+          <div>
+            <small>{ja ? "症状や部品名を入力" : "Search by symptom or part"}</small>
+            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={ja ? "例: オイル交換、異音" : "e.g. oil change, unusual noise"} aria-label={translate(locale, "search")} />
+          </div>
+          <button type="submit" aria-label={translate(locale, "search")}><ArrowRight size={20} aria-hidden="true" /></button>
+        </form>
+      </section>}
+
+      {signedIn && <section className="home-monthly-summary" aria-labelledby="monthly-owner-heading">
+        <div className="home-monthly-summary-heading">
+          <span className="monthly-owner-icon"><CalendarDays size={22} aria-hidden="true" /></span>
+          <h2 id="monthly-owner-heading">{ja ? `${monthLabel}の愛車` : `Your vehicles in ${monthLabel}`}</h2>
+        </div>
+        <div className="home-monthly-summary-actions">
+          <Link href={unresolvedRecord ? `/records/${unresolvedRecord.id}/edit` : "/records"}>
+            <TriangleAlert size={19} aria-hidden="true" />
+            <span><strong>{monthly.unresolvedCount}</strong><small>{ja ? "未解決・要追記" : "unresolved follow-ups"}</small></span>
+          </Link>
+          <Link href="/feed">
+            <BookOpenText size={19} aria-hidden="true" />
+            <span><strong>{monthly.followingUpdateCount}</strong><small>{ja ? "今月のフォロー更新" : "followed updates this month"}</small></span>
+          </Link>
+          <Link href={monthly.journalCount > 0 ? "/garage" : "/journal/new"}>
+            <Heart size={19} aria-hidden="true" />
+            <span><strong>{monthly.journalCount}</strong><small>{ja ? "今月残した愛車記録" : "vehicle records this month"}</small></span>
+          </Link>
+          <Link href="/garage/history">
+            <FileClock size={19} aria-hidden="true" />
+            <span><strong>{monthly.recordCount}</strong><small>{ja ? "今月の整備記録" : "maintenance records this month"}</small></span>
+          </Link>
+        </div>
+      </section>}
+
+      {signedIn && <ActivationChecklist />}
     </div>
   );
 }

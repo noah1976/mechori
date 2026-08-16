@@ -266,3 +266,11 @@ M1では、車種名だけで結論を出さず、本人が自己選択した次
 - 最大500件、最大400日を上限とする。
 - DEMOリセット時に削除する。
 - この端末内実装はイベント定義と画面導線の検証用であり、複数利用者の本番MAU集計には使用しない。
+
+## Authenticated Home Feed-firstのα仮説
+
+Following FeedをAuthenticated Homeのfirst surfaceに置くのは、記録や整備の用事がない日にも再訪理由、Evidence discovery、Meaningful Reuseが生まれるかを確かめるためである。WAU / MAUの改善は実測前の仮説であり、Feed閲覧数だけを成功指標にしない。
+
+- 既存の`feed_viewed`、Journal detail open、Like、`garage_viewed`、Quick Record start / save、2回目session / recordの時系列を、個人本文・Vehicle identifierを増やさず確認する。
+- Feed閲覧が増えても、detail open、Garage visit、記録、結果追記、Meaningful Reuseへつながらなければ、単なる消費時間を成功扱いにしない。
+- αの少人数では数値を一般化せず、再訪理由と「他Owner / Vehicleの記録から役立ったこと」を短いinterviewで補完する。

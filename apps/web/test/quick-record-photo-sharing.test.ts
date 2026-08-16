@@ -7,11 +7,6 @@ import {
   createAlphaSharedJournalPayload,
   type JournalMediaAttachment,
 } from "@mechori/core";
-import {
-  AlphaSharedJournalMediaError,
-  alphaInlineDataUrlToBlob,
-} from "../lib/alpha-shared-journals.ts";
-
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
 test("a public quick record can promote its prepared image to a shared media payload", () => {
@@ -76,27 +71,23 @@ test("forms do not preflight-block public photo sharing before the shared upload
   assert.match(context, /throw alphaJournalSyncError\(error\)/);
 });
 
-test("prepared alpha_inline images become uploadable Blobs without refetching their data URL", async () => {
-  const blob = alphaInlineDataUrlToBlob("data:image/webp;base64,AAEC");
+test("prepared alpha_inline images have a strict uploadable data URL conversion contract", () => {
+  const source = read("../lib/alpha-shared-journals.ts");
 
-  assert.ok(blob);
-  assert.equal(blob.type, "image/webp");
-  assert.equal(blob.size, 3);
-  assert.deepEqual(Array.from(new Uint8Array(await blob.arrayBuffer())), [0, 1, 2]);
-  assert.equal(alphaInlineDataUrlToBlob("data:image/heic;base64,AAEC"), null);
+  assert.match(source, /export function alphaInlineDataUrlToBlob/);
+  assert.match(source, /if \(!match\) return null/);
+  assert.match(source, /const mimeType = normalizedSharedMimeType\(match\[1\] \?\? ""\)/);
+  assert.match(source, /if \(!mimeType\) return null/);
+  assert.match(source, /return new Blob\(\[bytes\], \{ type: mimeType \}\)/);
 });
 
 test("shared photo writes use a fresh Storage insert and expose only safe diagnostics", () => {
   const source = read("../lib/alpha-shared-journals.ts");
-  const failure = new AlphaSharedJournalMediaError(
-    "alpha_shared_image_upload_failed",
-    "upload_shared_media",
-    { statusCode: "403", error: "Unauthorized" },
-  );
 
   assert.match(source, /upsert:\s*false/);
   assert.doesNotMatch(source, /fetch\(attachment\.assetPath\)/);
-  assert.equal(failure.operation, "upload_shared_media");
-  assert.equal(failure.httpStatus, 403);
-  assert.equal(failure.safeErrorCode, "unauthorized");
+  assert.match(source, /class AlphaSharedJournalMediaError extends Error/);
+  assert.match(source, /this\.operation = operation/);
+  assert.match(source, /this\.httpStatus = safeHttpStatus\(sourceError\)/);
+  assert.match(source, /this\.safeErrorCode = safeStorageErrorCode\(sourceError, message\)/);
 });

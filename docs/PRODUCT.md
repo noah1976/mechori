@@ -45,6 +45,12 @@ Owner向けConsumer体験はEvidence supply、愛車履歴、獲得、network形
 
 両表現は同じEvidence Loopの二つの視点です。前者はEvidenceを残したProfessionalの実績、後者はEvidenceが帰属するVehicleの継続履歴を示します。今後のインタビューでは、説明なしでも同じ価値が伝わるか、実利用へつながるかを検証します。
 
+### クルマのカルテとVehicle continuity
+
+「クルマのカルテ」は、前Ownerと次Ownerが直接会わなくても、Physical Vehicleに紐づく許諾済みの整備Evidenceを次のOwner、工場、利用者へ安全に再利用できるようにする仮説である。Vehicle自体、Vehicleとの期間付き関係、過去EvidenceへのAccessを分け、継承はデータcopyや過去投稿のauthor変更ではなく、transfer-safeなEvidenceへのAccess Grantとして扱う。
+
+MECHORIは法的Ownership、車両状態、走行距離、整備品質を保証しない。VIN / chassis numberを知っていることも、Vehicleをclaimする権利と同一視しない。個人情報、private memo、位置情報、private photo、invoice原本、個人的費用、communicationは所有者変更だけで自動移管しない。具体的なTransfer / Recovery UX、identifier matching、DB正規化はβ前のArchitecture DecisionとしてDeferredにする。
+
 ## 究極的な目的
 
 旧車趣味を、より広く、維持しやすく、始めやすい趣味にします。

@@ -689,3 +689,21 @@
 - 決定: 前者をProfessionalの技術実績・相談・協業へつながる価値仮説、後者を所有者を越えて許諾済みEvidenceがVehicleへ継続する価値仮説として保持する。ConsumerとB2Bを別事業にせず、Vehicleへ残る履歴とProfessionalへ返る実績を同じEvidence Loopの両面として扱う。
 - 境界: 「クルマのカルテ」は個人情報、非公開記録、請求書、位置情報、写真等の自動移管を意味しない。所有者変更時も同意、公開範囲、出典、削除・訂正権を維持し、車両状態や整備品質を保証しない。「整備士のGitHub」は人気、投稿数、Professional契約だけで技術力・資格・安全性を保証しない。
 - 検証: 同じ言葉をMarketingで先行反復するのではなく、Ownerの履歴引き継ぎ行動とProfessionalの実案件・ポートフォリオ利用が発生するかを確認する。共感コメントだけで需要・支払意思の検証完了としない。
+
+### 決定: 「クルマのカルテ」はVehicle Succession Contractを前提にする
+
+- 日付: 2026-08-16
+- 状態: Architecture principle / implementation deferred
+- 背景: 中古車流通では前Ownerと次Ownerが直接会わないケースが標準であり、`Vehicle.ownerId`を書き換えるだけでは、個人情報を守りながら車両に残るEvidenceを継承できない。
+- 決定: β正規化前に、Owner・外部identifierから独立したstable internal IDを持つ`PhysicalVehicle`、User / Organizationとの期間付き`VehicleRelationship`、過去Evidenceを読む権利を表す`EvidenceAccessGrant`を別概念として扱う。VehicleRelationshipはMECHORI上の関係claimであり、法的Ownershipを保証しない。次Ownerは過去Evidenceのauthorにならず、transfer-safeなEvidenceへのGrantを得て、訂正request、反証、現在状態、結果追記をappend-orientedに追加する。
+- 決定: 継承には、協力可能な前OwnerのTransfer Routeと、前Owner不在でも成立するRecovery Routeを将来用意する。Transfer tokenはPhysicalVehicle ID、Owner情報、Evidenceを含めないopaque server-side tokenとし、scoped、revocable、expiring、single-useを基本とする。token利用は認証済みUserのclaim開始であり、即Access Grantではない。Recoveryではidentifierをserver-side matching signalとして使い、Public Vehicle Searchを提供せず、grant前にVehicle ID、identifier全文、過去Owner、Evidenceを返さない。
+- Minimum Vehicle Succession Contract: 1) PhysicalVehicleはstable internal IDを持つ。2) Relationshipは期間付きで分離する。3) legal Ownershipを保証しない。4) RelationshipとAccess Grantを分離する。5) VIN / chassisを必須・主キー・ownership proofにしない。6) identifierはsource付きで訂正可能なassertionとして扱う。7) identifierのPublic Searchを作らない。8) tokenはopaque / scoped / revocable / expiring / single-use。9) tokenはclaim開始に留める。10) Recovery Claimを可能にする。11) transferable EvidenceとOwner-private dataを分離する。12) 新Ownerに過去Evidenceのauthorshipを移さない。13) Evidenceはrevisionedで訂正・反証・結果を追加する。14) Identity / Relationship / Provenance / Accessのtrustを分離する。15) Duplicate PhysicalVehicleを自動mergeしない。
+- 影響: VIN / chassisは強いidentity assertion候補だが必須化せず、engine numberはPhysicalVehicle IDに使わない。engine swapはVehicleに起きたEvidenceとして扱う。Transfer UI、QR、Recovery Claim、identifier保存・matching、Access Grant、DB migrationは今回実装しない。
+
+### 決定: Authenticated HomeはFollowing Feed-firstをα仮説として検証する
+
+- 日付: 2026-08-16
+- 状態: α UI implementation / Human QA pending
+- 背景: 記録や整備の用事がない日にもMECHORIを開く理由を作るには、Dashboardより先に、フォローしているOwner / Vehicleの新しいEvidenceへ触れられる必要がある。
+- 決定: Authenticated Homeのmain surfaceをFollowing Feedに置く。投稿はowner、Vehicle、date、本文、任意写真、最小metadataの順に読み、重いcard、decorative English eyebrow、上端accent、強いshadowを使わない。自分の履歴、Search、月次summaryは導線を維持したままsecondaryへ下げる。
+- 検証: Feed-firstがrevisit、WAU / MAU、Meaningful Reuse、Evidence discoveryを改善するかは未検証であり、αでHome visit、Feed閲覧・詳細遷移、Garage visit、Quick Record開始、2回目session / recordとの関係を確認する。Likeやフォロー数の競争を目的にしない。

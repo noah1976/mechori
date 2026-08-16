@@ -23,6 +23,16 @@
 
 ## READY
 
+### MECH-044 Vehicle Successionのβ正規化契約
+
+- 優先度: P1
+- 状態: READY
+- 目的: 「クルマのカルテ」を将来実現できるよう、現在のOwnerに埋め込まれたVehicle表現から、PhysicalVehicle、VehicleRelationship、EvidenceAccessGrant、identifier assertion、rights projectionへ安全に移行できる正規化境界を設計する。
+- 成果物: `docs/DATA_MODEL.md`、migration / backfill plan、既存Vehicle / Journal / Maintenance attributionの互換方針、Recovery / Transferのthreat model。
+- 完了条件: legal Ownershipを保証しない語彙、identifierの非公開照合、transfer-safe EvidenceとOwner-private dataの分離、revision / provenance、duplicateの手動review方針、account deletion / withdrawalの処理境界を定義する。UI、QR、Recovery Claim、VIN収集、物理DB migrationは所有者承認とβ Gateまで実施しない。
+- 依存タスク: MECH-003、MECH-038、`TRUST_AND_VERIFICATION.md`、`PRIVACY.md`
+- 所有者確認の要否: 必要。実identifier、実車両、実Accountの取り扱い、DB migration、外部照合、法務確認は別途承認する。
+
 ### MECH-038 遠隔α用Supabase Adapter・RLS・招待API
 
 - 優先度: P0

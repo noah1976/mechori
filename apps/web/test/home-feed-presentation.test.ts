@@ -17,9 +17,14 @@ test("feed presentation suppresses only title and body duplicates", () => {
 test("authenticated home renders a content-first journal stream", () => {
   assert.match(home, /className="home-journal-feed"/);
   assert.match(home, /variant="home"/);
+  assert.match(home, /home-following-section/);
+  assert.match(home, /新しい愛車の記録/);
   assert.match(home, /className="home-monthly-summary"/);
+  assert.match(home, /className="home-knowledge-section"/);
   assert.doesNotMatch(home, /className="monthly-owner-band"/);
   assert.doesNotMatch(home, /YOUR VEHICLE HISTORY/);
+  assert.doesNotMatch(home, /home-featured-journal/);
+  assert.doesNotMatch(home, /FROM ALPHA GARAGES/);
 });
 
 test("journal cards retain owner, vehicle, date, likes, and detail navigation", () => {
@@ -33,7 +38,12 @@ test("journal cards retain owner, vehicle, date, likes, and detail navigation", 
 
 test("journal cards use a shared content-first presentation and the home FAB is restrained", () => {
   assert.match(css, /\.journal-card \{ position: relative; min-width: 0; padding: 22px 0 26px; background: transparent; border: 0; border-radius: 0;/);
-  assert.match(css, /\.journal-card > \.journal-media \{ max-width: 100%; margin: 15px 0 0;/);
+  assert.match(css, /\.journal-card > \.journal-media \{ inline-size: 100%; min-width: 0; max-width: 100%; margin: 15px 0 0;/);
   assert.match(css, /\.home-journal-feed \.journal-card \+ \.journal-card \{ border-top: 1px solid var\(--line\); \}/);
+  assert.match(css, /\.home-journal-feed \.journal-media, \.home-journal-feed \.journal-media-item \{ min-width: 0; max-width: 100%; \}/);
   assert.match(css, /\.record-fab-home \{ min-height: 44px; padding-inline: 14px; border-radius: 6px;/);
+});
+
+test("journal card keeps the record text before its optional feed photo", () => {
+  assert.ok(card.indexOf("<p>{display.body}</p>") < card.indexOf("<JournalMedia attachments={visibleMedia}"));
 });

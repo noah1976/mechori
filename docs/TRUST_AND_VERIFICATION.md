@@ -13,6 +13,17 @@
 - 信頼度を根拠不明な単一パーセントへまとめない。
 - 訂正、未解決、再発、適合しなかった報告を不利に扱わない。
 
+## Vehicle continuityのTrust境界
+
+Vehicle successionでは、次のtrustを一つの`Verified Vehicle`や`Verified Owner` badgeへまとめない。
+
+- Vehicle Identity Confidence: identifier、仕様、写真等が同じPhysicalVehicleを指す確度
+- Vehicle Relationship Assurance: User / Organizationがその期間にVehicleとどの関係をclaimしたかの根拠
+- Evidence Provenance Confidence: 誰が、いつ、どのsourceでEvidenceを残し、確認・訂正したか
+- Access Authorization: ViewerがどのEvidence projectionを読めるか
+
+identifierはPublic Search keyではなく、将来のRecovery Claimでserver-side照合するsignalである。VehicleRelationshipを得た次Ownerは過去Evidenceのauthorにならず、誤りの上書きではなく訂正request、反証、current state、結果を追加する。過去Evidenceはrevisionとsourceを保つ。Vehicle Identity、Relationship、Provenanceの確度が高くても、Accessが自動的に生じるわけではない。
+
 ## 情報の分解
 
 投稿本文を一つの主張として扱わず、次へ分けます。

@@ -46,6 +46,7 @@ test("legacy profile IDs remain compatible while public usernames resolve", () =
 test("journal detail links use one encoded path and skip speculative prefetch", () => {
   assert.match(card, /journalDetailHref/);
   assert.match(card, /prefetch=\{false\}/);
-  assert.match(home, /journalDetailHref\(featuredJournal\.id\).*prefetch=\{false\}/);
+  assert.match(home, /variant="home"/);
+  assert.doesNotMatch(home, /featuredJournal/);
   assert.match(detailRoute, /encodeURIComponent\(journalId\)/);
 });

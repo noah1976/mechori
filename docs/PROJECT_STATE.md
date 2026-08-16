@@ -212,3 +212,11 @@
 - **Growth / Measurement**: ProductはUniversalな登録を維持し、GTMでは2〜3 clusterへ獲得を寄せる実験を検討する。Monthly Completed Evidence Loopsは長期North Star候補であり、現αではQuick Record成功、再訪、enrichment、Meaningful Reuse、結果追記、共有後の後悔等のLeading Indicatorを優先する。
 - **αテスターの定性シグナル**: 「整備士にとってのGitHub（ポートフォリオ）」と「クルマのカルテ（オーナーが変わっても残る整備記録）」という表現が得られた。前者はProfessionalへ返る技術実績、後者はVehicleへ継続する許諾済み履歴の仮説として保持する。需要・支払意思・実利用は未検証であり、Marketing claimや品質保証として先行利用しない。
 - **未実装・仮説**: Professional Network、Knowledge Infrastructure、Evidence API、AI-driven enrichment、正式公開後のPublic / Followers only / Private、Nativeは将来仮説またはGate後の対象であり、今回implementation scopeへ追加しない。
+
+## 20. 2026-08-16 Vehicle Succession ContractとHome Feed-first（PR #5継続）
+
+- **Vehicle continuity**: 「クルマのカルテ」を、PhysicalVehicleに紐づく許諾済みEvidenceを、前Ownerと次Ownerが会わない流通でも安全に再利用できるようにする仮説として整理した。β正規化前にPhysicalVehicle、VehicleRelationship、EvidenceAccessGrantを分離し、Identity / Relationship / Provenance / Accessのtrustも分離するconceptual contractを確定した。Transfer QR / token、Recovery Claim、identifier保存・matching、Access Grant、DB migrationはDeferredであり、今回実装していない。
+- **Rights / privacy**: identifierのPublic Searchは行わず、private memo、個人費用、位置、private photo、invoice原本、communicationを自動移管しない。Vehicle EvidenceとOwner private dataは別のretention policyを持ち、新Ownerは過去Evidenceのauthorではなく、許可されたprojectionへのAccessを得て追記・訂正request・反証を行う。
+- **Home implementation**: Authenticated HomeはFollowing Feedをfirst surfaceに移し、特集Journal、decorative English label、重いcardを撤去した。JournalCardは本文を先に読み、任意写真を後に続ける共通presentationにし、Home画像containerはinline sizeとmin/max widthを明示してviewport外へのはみ出しを防ぐ。自分の履歴、Search、月次summary、Activationはsecondaryに保つ。
+- **α仮説とQA**: Feed-firstは、記録のない日にも再訪理由、Evidence discovery、Meaningful Reuseを生むかを確認する未検証仮説である。WAU / MAU改善を断定しない。iPhone SafariとPCで、複数投稿、長文、写真あり／なし、owner / Vehicle / date、Like、投稿詳細、例外Visibility、Search、FABとbottom navigation、画像の横はみ出しを確認する。
+- **P1 / 次の作業**: legacy `local_blob`写真の別端末・別originでの回復は未解決P1、未ログインLanding上部余白は要確認のまま。Quick Record実機QAとHomeの人間QAを終えた後、αテスター再テストへ進む。PR #5はopen・未merge。PR #2、PR #3、`main`、Netlify / Supabase設定は変更しない。
