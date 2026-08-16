@@ -26,3 +26,9 @@ test("search submit fills the available form width without relying on the global
   assert.match(css, /\.search-submit \{ width: 100%; min-height: 50px;/);
   assert.match(source, /href="\/journal\/new"/);
 });
+
+test("search result and hazard selects match the standard mobile form-control height", () => {
+  assert.match(source, /結果.*?<select/);
+  assert.match(source, /危険度.*?<select/);
+  assert.match(css, /\.field select, \.filter-grid select \{ height:\s*44px; block-size:\s*44px; \}/);
+});
