@@ -238,3 +238,11 @@
 
 - **原因と修正**: Garage Timelineだけがworkspace内の`journal.media[0]`をそのまま表示し、さらに共有Journalをhydrateしていなかったため、同じ公開済み記録に対応する`alpha_shared` Storage参照があっても、端末依存`local_blob`を読もうとして縮退表示になっていた。Journal detail／Feedと同じsocial hydrationと`preferSharedJournalMediaForDisplay`をGarageにも適用し、`public_ready`の写真はshared Journalの`alpha_shared`参照を優先する。これにより、detailで表示できる共有写真をTimelineでも同じ経路で表示する。
 - **境界**: private写真と、shared copyが存在しない真のlegacy `local_blob`は置き換えず、本文を残す既存fallbackを維持する。legacy写真の別origin／別device回復そのものは未解決P1で、人間QAでTimelineとdetailの表示一致を再確認する。
+
+## 24. 2026-08-16 PR #5 main merge / Production smoke checkpoint
+
+- **main反映**: PR #5はCEOのGitHub UI操作でmerge済み。resulting main commitは`9e70d647b66064ef133314bdb0335aca63b36e46`。PR #2のVehicle Identity意図・logicとPR #3のDeploy Preview AuthはPR #5へ統合済み。
+- **Production**: `https://mechori-alpha.netlify.app`で`/`、`/garage`、`/journal/new`がHTTP 200。LandingのMECHORI表示も確認した。OAuthを含むauthenticated flowとiPhone実機UXは人間QAへ引き継ぐ。
+- **次の段階**: 新規開発ではなく、既存αユーザー3名の再テストへ移行する。Quick Record、Home Feed、Garage／Timeline、共有写真、保存後enrichment、Logout → Loginを実機で確認する。
+- **残課題**: P1はlegacy `local_blob`写真の別端末／別origin回復、未ログインLanding上部余白の再現確認。P2は既存Deferred項目。今回、Production／Supabase／DB設定は変更していない。
+- **関連PR**: PR #2はPR #5統合済みとしてsuperseded close。PR #3は既にmerged済みで、PR #5統合済みのコメントを追加した。

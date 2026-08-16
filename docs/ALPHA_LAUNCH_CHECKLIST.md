@@ -171,3 +171,9 @@ P-069のように本番で再現した不具合は、テスト成功だけを根
 - `[~]` 月次summaryがFeedより目立たず、各既存導線が動くこと、Homeの「記録する」FABがbottom navigation・safe area・Feed本文を妨げないことを確認する。
 - `[~]` Following FeedがAuthenticated Homeそのものであり、数件previewの「すべて見る」へ依存せず続きをscrollできることを確認する。特集Journal、`FROM ALPHA GARAGES`等のdecorative English label、上端accent付きの大きな投稿cardがないことを確認する。Feed-firstが再訪理由になるかは、実機操作とαヒアリングで検証し、実測前にWAU / MAU改善と扱わない。
 - `[~]` Home Feedの写真が320px、375px、390px、430px前後のiPhone Safari幅でcontainer・viewportから横にはみ出さず、本文、写真、Like、detail linkがそれぞれ操作できることを確認する。
+
+## 14. 2026-08-16 PR #5 Production checkpoint
+
+- `[~]` PR #5はmainへmerge済み。Productionの`/`、`/garage`、`/journal/new`はHTTP 200を返す。OAuth、authenticated Home、Garage、Quick Record、共有写真、保存後enrichment、Logout → LoginはCEOのiPhoneで人間QAする。
+- `[ ]` 上記Production人間QA後、既存αユーザー3名へ再テストを依頼する。
+- `[~]` legacy `local_blob`写真の別端末／別origin回復は未実装P1。未ログインLanding上部余白は再現確認待ち。
