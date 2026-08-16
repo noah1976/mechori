@@ -12,6 +12,9 @@ test("date fields use a full-width mobile-safe native date input", () => {
   const component = readFileSync(new URL("../components/occurrence-date-fields.tsx", import.meta.url), "utf8");
   assert.match(component, /type="date"/);
   assert.match(component, /className="occurrence-date-control"/);
+  assert.match(css, /\.occurrence-date-fields input\[type="date"\][\s\S]*?-webkit-appearance:\s*none/);
+  assert.match(css, /\.occurrence-date-fields input\[type="date"\][\s\S]*?appearance:\s*none/);
+  assert.match(css, /\.occurrence-date-fields input\[type="date"\][\s\S]*?display:\s*block/);
   assert.match(css, /\.occurrence-date-fields input\[type="date"\][\s\S]*?box-sizing:\s*border-box/);
   assert.match(css, /\.occurrence-date-fields \{[\s\S]*?inline-size:\s*100%/);
   assert.match(css, /\.occurrence-date-fields \{[\s\S]*?min-inline-size:\s*0/);

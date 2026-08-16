@@ -748,6 +748,9 @@ button { cursor: pointer; }
 .occurrence-date-control { inline-size: 100%; max-inline-size: 100%; }
 .occurrence-date-control .field { display: grid; inline-size: 100%; }
 .occurrence-date-fields input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
   box-sizing: border-box;
   inline-size: 100%;
   min-inline-size: 0;
