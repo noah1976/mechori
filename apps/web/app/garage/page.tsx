@@ -1,12 +1,11 @@
 "use client";
 
 import { DemoNotice } from "@/components/demo-notice";
+import { GarageVehicleIdentity } from "@/components/garage-vehicle-identity";
 import { JournalMedia } from "@/components/journal-media";
-import { ProfileAvatar } from "@/components/profile-avatar";
 import { useApp } from "@/lib/app-context";
 import { garageServiceAttributionLabel } from "@/lib/garage-pilot";
 import {
-  formatOwnershipDuration,
   formatOwnershipPeriod,
   displayVehicleModel,
   getOwnJournals,
@@ -15,8 +14,8 @@ import {
   journalOccurrenceLabel,
   maintenanceRecordDateKey,
   maintenanceRecordDateLabel,
+  preferSharedJournalMediaForDisplay,
   resolveJournalDisplayContent,
-  summarizeVehicleRelationship,
   type JournalEventType,
   type JournalMediaAttachment,
   type MaintenanceServiceAttributionV1,
@@ -39,10 +38,12 @@ function GarageContent() {
     locale,
     signedIn,
     isRemoteAlpha,
+    sharedJournals,
     workspaceLoadState,
     retryWorkspace,
     resetDemo,
     recordEngagement,
+    ensureSocialData,
   } = useApp();
   const params = useSearchParams();
   const ownVehicles = data.vehicles.filter(
@@ -64,6 +65,11 @@ function GarageContent() {
   useEffect(() => {
     if (signedIn) recordEngagement("garage_viewed");
   }, [recordEngagement, signedIn]);
+  useEffect(() => {
+    if (signedIn && isRemoteAlpha && workspaceLoadState === "ready") {
+      void ensureSocialData().catch(() => undefined);
+    }
+  }, [ensureSocialData, isRemoteAlpha, signedIn, workspaceLoadState]);
   useEffect(() => {
     const selected = params.get("vehicle");
     if (params.get("moment") !== "added") {
@@ -117,15 +123,20 @@ function GarageContent() {
       </div>
     );
   }
-  const relationship = summarizeVehicleRelationship(vehicle);
-  const ownershipDuration = formatOwnershipDuration(locale, relationship);
   const vehicleModel = displayVehicleModel(vehicle, locale);
   const vehicleLabel = `${vehicle.make} ${vehicleModel}`;
   const isPreviousVehicle = vehicle.ownershipType === "previously_owned";
   const ownershipPeriod = formatOwnershipPeriod(vehicle, locale);
   const timeline: GarageTimelineItem[] = [
     ...journals.map((journal) => {
-      const display = resolveJournalDisplayContent(data, journal, locale);
+      // The local workspace may retain a device-only media reference while the
+      // alpha-visible journal has the corresponding shared Storage reference.
+      // Use the same hydrated display representation as Journal detail and feed.
+      const displayJournal = preferSharedJournalMediaForDisplay(
+        journal,
+        sharedJournals.find((item) => item.id === journal.id),
+      );
+      const display = resolveJournalDisplayContent(data, displayJournal, locale);
       return ({
       id: journal.id,
       kind: "journal" as const,
@@ -135,7 +146,7 @@ function GarageContent() {
       body: display.body,
       eventType: journal.eventType,
       href: `/journal/${journal.id}`,
-      media: journal.media[0],
+      media: displayJournal.media[0],
       serviceAttribution: journal.serviceAttribution,
       });
     }),
@@ -157,7 +168,7 @@ function GarageContent() {
       {momentAdded && (
         <div className="lovable-success" role="status">
           <CheckCircle2 size={22} aria-hidden="true" />
-          <div><strong>{ja ? "このクルマとの記録が、ひとつ増えました。" : "One more moment has joined this vehicle's story."}</strong><span>{ja ? "Garageの時間軸に保存しました。" : "It is now part of the Garage timeline."}</span></div>
+          <div><strong>{ja ? "記録を追加しました。" : "Record added."}</strong><span>{ja ? "Garageの時間軸に保存しました。" : "It is now part of the Garage timeline."}</span></div>
           <button type="button" onClick={() => setMomentAdded(false)}>{ja ? "閉じる" : "Dismiss"}</button>
         </div>
       )}
@@ -174,19 +185,12 @@ function GarageContent() {
             <span>{isPreviousVehicle ? (ja ? "これまでの愛車" : "Previously owned") : (ja ? "いまの愛車" : "Current vehicle")}</span>
             {vehicle.isDemo && <span className="demo-label">DEMO</span>}
           </div>
-          <p className="garage-v2-make">{vehicle.make}</p>
-          <h1>{vehicleModel}</h1>
-          {vehicle.grade && <p className="garage-v2-grade">{vehicle.grade}</p>}
-          {vehicle.nickname && <p className="garage-v2-nickname">{vehicle.nickname}</p>}
-          <div className="garage-v2-owner-line">
-            <ProfileAvatar displayName={owner?.displayName ?? "MECHORI"} imagePath={owner?.profileImagePath} />
-            <span>{ja ? `${owner?.displayName ?? "オーナー"}の愛車` : `${owner?.displayName ?? "Owner"}'s vehicle`}</span>
-          </div>
-          <p className="garage-v2-life-line" aria-label={ja ? "車両と所有の情報" : "Vehicle and ownership information"}>
-            {relationship.vehicleAgeYears !== undefined && <span>{ja ? `${relationship.vehicleAgeYears}年を走ってきた` : `${relationship.vehicleAgeYears} years on the road`}</span>}
-            {ownershipDuration && <span>{ownershipDuration}</span>}
-            {vehicle.currentOdometerReading.displayedValue > 0 && <span>{vehicle.currentOdometerReading.displayedValue.toLocaleString()} {vehicle.currentOdometerReading.unit}</span>}
-          </p>
+          <GarageVehicleIdentity
+            vehicle={vehicle}
+            locale={locale}
+            ownerDisplayName={owner?.displayName}
+            ownerImagePath={owner?.profileImagePath}
+          />
           {vehicle.ownerComment && <blockquote className="garage-v2-owner-note">{vehicle.ownerComment}</blockquote>}
           <div className="garage-v2-record-actions">
             <Link href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`} className="primary-action garage-v2-record-action"><Camera size={18} />{ja ? "このクルマの記録を残す" : "Add a record for this vehicle"}</Link>
@@ -214,7 +218,7 @@ function GarageContent() {
       <section className="garage-v2-history">
         <div className="garage-v2-history-heading">
           <h2>{ja ? "このクルマの時間" : "This vehicle's history"}</h2>
-          <p>{timeline.length ? (ja ? `整備も思い出も、${timeline.length}件の出来事として残っています。` : `${timeline.length} moments, from maintenance to memories.`) : (ja ? "最初の出来事から、このクルマの時間が始まります。" : "This vehicle's story can start with one moment.")}</p>
+          <p>{timeline.length ? (ja ? `整備も思い出も、${timeline.length}件の記録があります。` : `${timeline.length} records, from maintenance to memories.`) : (ja ? "最初の記録を残しましょう。" : "Add the first record when you are ready.")}</p>
         </div>
         {timeline.length ? (
           <div className="garage-v2-timeline">
@@ -223,7 +227,7 @@ function GarageContent() {
           </div>
         ) : (
           <div className="garage-v2-empty-history">
-            <div><p>{ja ? "まだ何も書かれていない時間があります。" : "There is still an unwritten stretch of time."}</p><h3>{isPreviousVehicle ? (ja ? "覚えている出来事から残せます" : "Add what you remember") : (ja ? "このクルマとの最初の記録を残す" : "Add the first moment with this vehicle")}</h3><span>{isPreviousVehicle ? (ja ? "修理、ドライブ、手放した日のこと。分かる範囲から残せます。" : "A repair, drive, or final day can be remembered here.") : (ja ? "整備だけでなく、今日の一枚や短いドライブのことも、このクルマの履歴になります。" : "Maintenance, a photo, or a short drive all become part of this vehicle's history.")}</span><Link href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`} className="primary-action">{ja ? "このクルマの記録を残す" : "Add a record"}</Link></div>
+            <div><p>{ja ? "まだ記録がありません。" : "No records yet."}</p><h3>{isPreviousVehicle ? (ja ? "覚えている出来事を残す" : "Add what you remember") : (ja ? "このクルマの最初の記録を残す" : "Add the first record for this vehicle")}</h3><span>{isPreviousVehicle ? (ja ? "修理、ドライブ、手放した日のことなど、分かる範囲から残せます。" : "Record a repair, drive, or final day from what you remember.") : (ja ? "整備、写真、短いドライブなどを、このクルマの履歴として残せます。" : "Keep maintenance, photos, and short drives in this vehicle history.")}</span><Link href={`/garage/${encodeURIComponent(vehicle.id)}/event/new`} className="primary-action">{ja ? "このクルマの記録を残す" : "Add a record"}</Link></div>
           </div>
         )}
       </section>

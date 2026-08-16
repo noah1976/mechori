@@ -137,6 +137,16 @@ test("desktop shell hides mobile-only navigation surfaces while mobile restores 
   assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.app-menu-layer\s*\{\s*display:\s*flex;/);
 });
 
+test("mobile header reserves matching action slots around the centered title", () => {
+  const shell = readFileSync(new URL("../components/app-shell.tsx", import.meta.url), "utf8");
+  const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(shell, /className="top-bar-leading"/);
+  assert.match(shell, /className=\{`top-bar-title/);
+  assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.top-bar \{ height: 54px; grid-template-columns: 44px minmax\(0, 1fr\) 44px;/);
+  assert.match(css, /\.mobile-brand \{ display: block; justify-self: center; \}/);
+});
+
 test("feedback kind styles describe independent selectable buttons", () => {
   const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(css, /\.feedback-kind-picker\s*\{[^}]*gap:\s*8px;/);

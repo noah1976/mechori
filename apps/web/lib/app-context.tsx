@@ -74,7 +74,6 @@ import { loadAlphaPublicProfileImages } from "@/lib/alpha-public-owners";
 import { loadAlphaWorkspace, saveAlphaWorkspace } from "@/lib/alpha-workspace";
 import { journalMediaStore } from "@/lib/media-store";
 import {
-  alphaSharedJournalMediaAvailable,
   loadAlphaSharedJournals,
   publishAlphaSharedJournal,
   withdrawAlphaSharedJournal,
@@ -119,7 +118,6 @@ interface AppContextValue {
   isRemoteAlpha: boolean;
   alphaJournalSharingAvailable: boolean;
   sharedJournalLoadState: SharedJournalLoadState;
-  alphaJournalMediaSharingAvailable: boolean;
   sharedJournals: GarageJournalPost[];
   sharedProfiles: SocialProfile[];
   authSession: AuthSession;
@@ -205,10 +203,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
   const [sharedJournalLoadState, setSharedJournalLoadState] =
     useState<SharedJournalLoadState>(isRemoteAlpha ? "idle" : "ready");
-  const [
-    alphaJournalMediaSharingAvailable,
-    setAlphaJournalMediaSharingAvailable,
-  ] = useState(!isRemoteAlpha);
   const [alphaSharedContent, setAlphaSharedContent] = useState<AlphaSharedJournal[]>([]);
   const [alphaJournalReactions, setAlphaJournalReactions] = useState<
     Map<string, AlphaJournalReaction>
@@ -224,7 +218,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const socialProfileRef = useRef<string | null>(null);
   const socialCapabilitiesRef = useRef({
     sharing: !isRemoteAlpha,
-    mediaSharing: !isRemoteAlpha,
   });
   const avatarAuthProfileRef = useRef<string | null>(null);
   const [contentPolicyAccepted, setContentPolicyAccepted] = useState(!isRemoteAlpha);
@@ -250,12 +243,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     socialProfileRef.current = null;
     socialCapabilitiesRef.current = {
       sharing: !isRemoteAlpha,
-      mediaSharing: !isRemoteAlpha,
     };
     setAlphaSharedContent([]);
     setAlphaJournalReactions(new Map());
     setAlphaJournalSharingAvailable(!isRemoteAlpha);
-    setAlphaJournalMediaSharingAvailable(!isRemoteAlpha);
     setSharedJournalLoadState(isRemoteAlpha ? "idle" : "ready");
   }, []);
 
@@ -310,17 +301,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       socialProfileRef.current = profileId;
       setSharedJournalLoadState("loading");
       try {
-        const [profileFollows, loadedSharedContent, reactions, mediaSharingAvailable] =
+        const [profileFollows, loadedSharedContent, reactions] =
           await Promise.all([
             loadMyAlphaUserFollows(profileId),
             loadAlphaSharedJournals(),
             loadAlphaJournalReactions().catch(() => []),
-            alphaSharedJournalMediaAvailable().catch(() => false),
           ]);
         if (socialProfileRef.current !== profileId) return;
         socialCapabilitiesRef.current = {
           sharing: true,
-          mediaSharing: mediaSharingAvailable,
         };
         const currentFollowData = followDataRef.current;
         followDataRef.current = {
@@ -346,7 +335,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
           new Map(reactions.map((reaction) => [reaction.journalId, reaction])),
         );
         setAlphaJournalSharingAvailable(true);
-        setAlphaJournalMediaSharingAvailable(mediaSharingAvailable);
         setSharedJournalLoadState("ready");
 
         const authorIds = [...new Set(loadedSharedContent.map((item) => item.author.id))];
@@ -363,9 +351,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         if (socialProfileRef.current !== profileId) return;
-        socialCapabilitiesRef.current = { sharing: false, mediaSharing: false };
+        socialCapabilitiesRef.current = { sharing: false };
         setAlphaJournalSharingAvailable(false);
-        setAlphaJournalMediaSharingAvailable(false);
         setSharedJournalLoadState("error");
         throw error;
       }
@@ -625,28 +612,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (isRemoteAlpha && !contentPolicyAccepted) {
         throw new Error("content_policy_acceptance_required");
       }
-      if (isRemoteAlpha && draft.visibility === "public") {
-        try {
-          await ensureSocialData();
-        } catch {
-          throw new Error("alpha_journal_sharing_unavailable");
-        }
-        if (!socialCapabilitiesRef.current.sharing) {
-          throw new Error("alpha_journal_sharing_unavailable");
-        }
-      }
       const result = addJournalToData(data, draft, locale);
-      if (
-        isRemoteAlpha &&
-        result.journal.visibility === "public" &&
-        result.journal.media.some(
-          (attachment) =>
-            attachment.kind === "image" && attachment.privacyState === "public_ready",
-        ) &&
-        !socialCapabilitiesRef.current.mediaSharing
-      ) {
-        throw new Error("alpha_shared_image_sync_failed");
-      }
       await Promise.all(
         uploads.map(({ attachment, blob }) => {
           if (!attachment.storageKey) throw new Error("media_storage_key_required");
@@ -663,7 +629,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             result.journal,
             author?.displayName ?? "MECHORI User",
           );
-        } catch {
+        } catch (error) {
           await saveAlphaWorkspace(data);
           setData(data);
           await Promise.all(
@@ -672,7 +638,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               .filter((key): key is string => Boolean(key))
               .map((key) => journalMediaStore.delete(key)),
           );
-          throw new Error("alpha_shared_journal_publish_failed");
+          throw alphaJournalSyncError(error);
         }
         await refreshAlphaSharedContent();
       }
@@ -688,7 +654,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       authSession,
       contentPolicyAccepted,
       data,
-      ensureSocialData,
       locale,
       persist,
       refreshAlphaSharedContent,
@@ -700,31 +665,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!isSignedIn(authSession)) throw new Error("authentication_required");
       const previous = data.journals.find((journal) => journal.id === id);
       if (!previous) throw new Error("journal_not_found");
-      if (
-        isRemoteAlpha &&
-        (draft.visibility === "public" || previous.visibility === "public")
-      ) {
-        try {
-          await ensureSocialData();
-        } catch {
-          throw new Error("alpha_journal_sharing_unavailable");
-        }
-        if (!socialCapabilitiesRef.current.sharing) {
-          throw new Error("alpha_journal_sharing_unavailable");
-        }
-      }
       const result = updateJournalInData(data, id, draft);
-      if (
-        isRemoteAlpha &&
-        result.journal.visibility === "public" &&
-        result.journal.media.some(
-          (attachment) =>
-            attachment.kind === "image" && attachment.privacyState === "public_ready",
-        ) &&
-        !socialCapabilitiesRef.current.mediaSharing
-      ) {
-        throw new Error("alpha_shared_image_sync_failed");
-      }
       await Promise.all(
         uploads.map(({ attachment, blob }) => {
           if (!attachment.storageKey) throw new Error("media_storage_key_required");
@@ -779,7 +720,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       alphaSharedContent,
       authSession,
       data,
-      ensureSocialData,
       persist,
       refreshAlphaSharedContent,
     ],
@@ -1050,7 +990,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isRemoteAlpha,
       alphaJournalSharingAvailable,
       sharedJournalLoadState,
-      alphaJournalMediaSharingAvailable,
       sharedJournals: alphaSharedContent.map((item) => item.journal),
       sharedProfiles: [
         ...new Map(
@@ -1099,7 +1038,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       authSession,
       alphaJournalSharingAvailable,
       sharedJournalLoadState,
-      alphaJournalMediaSharingAvailable,
       alphaSharedContent,
       persistenceError,
       contentPolicyAccepted,

@@ -307,19 +307,27 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="content-column">
         <header className="top-bar">
+          <div className="top-bar-leading">
+            {authenticated && (
+              <button
+                type="button"
+                className="menu-trigger"
+                aria-label={locale === "ja" ? "メニューを開く" : "Open menu"}
+                aria-expanded={menuOpen}
+                aria-controls="app-menu-drawer"
+                onClick={() => setMenuOpen(true)}
+              >
+                <Menu size={22} aria-hidden="true" />
+              </button>
+            )}
+          </div>
           {authenticated ? (
-            <button
-              type="button"
-              className="menu-trigger"
-              aria-label={locale === "ja" ? "メニューを開く" : "Open menu"}
-              aria-expanded={menuOpen}
-              aria-controls="app-menu-drawer"
-              onClick={() => setMenuOpen(true)}
-            >
-              <Menu size={22} aria-hidden="true" />
-            </button>
-          ) : <Link href="/" className="mobile-brand">MECHORI</Link>}
-          <strong className={`top-bar-title${pathname === "/" ? " is-home" : ""}`}>{authenticated ? screenTitle(pathname, locale) : ""}</strong>
+            <strong className={`top-bar-title${pathname === "/" ? " is-home" : ""}`}>
+              {screenTitle(pathname, locale)}
+            </strong>
+          ) : (
+            <Link href="/" className="mobile-brand">MECHORI</Link>
+          )}
           <div className="top-bar-actions">
             {loggedOut && pathname !== "/auth" ? (
               <Link href="/auth" className="icon-text-button logged-out-header-login" aria-label={translate(locale, "signIn")} title={translate(locale, "signIn")}>
@@ -450,7 +458,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       {showRecordFab && (
         <Link
           href={preferredVehicle ? `/garage/${encodeURIComponent(preferredVehicle.id)}/event/new` : "/journal/new"}
-          className="record-fab"
+          className={pathname === "/" ? "record-fab record-fab-home" : "record-fab"}
           aria-label={locale === "ja" ? "記録する" : "Create a record"}
         >
           <Plus size={19} aria-hidden="true" />

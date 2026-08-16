@@ -42,6 +42,8 @@ function SearchContent() {
   const [isPending, startTransition] = useTransition();
   const ja = locale === "ja";
   const initialQueryTracked = useRef(false);
+  const resultsAnchorRef = useRef<HTMLElement>(null);
+  const shouldRevealResults = useRef(false);
   useEffect(() => {
     if (!initialQueryTracked.current && params.get("q")?.trim()) {
       recordEngagement("knowledge_searched");
@@ -78,6 +80,20 @@ function SearchContent() {
     setDiscoveryResultCount(count);
   }, []);
 
+  useEffect(() => {
+    if (!hasSubmitted || isPending || !shouldRevealResults.current) return;
+    const anchor = resultsAnchorRef.current;
+    if (!anchor) return;
+
+    shouldRevealResults.current = false;
+    const frame = window.requestAnimationFrame(() => {
+      const behavior = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+      anchor.scrollIntoView({ behavior, block: "start" });
+      anchor.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [hasSubmitted, isPending, submittedCriteria.revision]);
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (isPending) return;
@@ -89,6 +105,7 @@ function SearchContent() {
       hazard,
       revision: submittedCriteria.revision + 1,
     };
+    shouldRevealResults.current = true;
     startTransition(() => {
       setDiscoveryResultCount(0);
       setSubmittedCriteria(nextCriteria);
@@ -111,15 +128,19 @@ function SearchContent() {
         {isPending ? (ja ? "検索中…" : "Searching…") : (ja ? "この条件で探す" : "Search with these conditions")}
       </button>
     </form>
-    {hasSubmitted && <OwnerSearch query={submittedCriteria.keyword} submitted searchVersion={submittedCriteria.revision} onResultCountChange={handleDiscoveryResultCount} />}
-    {hasSubmitted && searchError ? (
-      <section className="empty-state search-result-state" role="alert">
-        <Search size={28} />
-        <h2>{ja ? "検索結果を取得できませんでした" : "Search results could not be loaded"}</h2>
-        <button type="button" className="secondary-action" onClick={() => setSubmittedCriteria((criteria) => ({ ...criteria, revision: criteria.revision + 1 }))}>{ja ? "もう一度試す" : "Try again"}</button>
-      </section>
-    ) : hasSubmitted ? (
-      <>
+    {hasSubmitted && <section ref={resultsAnchorRef} className="search-results-anchor" tabIndex={-1} aria-labelledby="search-results-heading">
+      <header className="search-results-summary" aria-live="polite">
+        <h2 id="search-results-heading">{isPending ? (ja ? "検索中…" : "Searching…") : (ja ? "検索結果" : "Search results")}</h2>
+        <p>{isPending ? (ja ? "条件に合う記録を確認しています。" : "Checking records that match these conditions.") : (ja ? "条件に合う記録を以下に表示します。" : "Matching records are shown below.")}</p>
+      </header>
+      <OwnerSearch query={submittedCriteria.keyword} submitted searchVersion={submittedCriteria.revision} onResultCountChange={handleDiscoveryResultCount} />
+      {searchError ? (
+        <section className="empty-state search-result-state" role="alert">
+          <Search size={28} />
+          <h2>{ja ? "検索結果を取得できませんでした" : "Search results could not be loaded"}</h2>
+          <button type="button" className="secondary-action" onClick={() => setSubmittedCriteria((criteria) => ({ ...criteria, revision: criteria.revision + 1 }))}>{ja ? "もう一度試す" : "Try again"}</button>
+        </section>
+      ) : <>
         <KnowledgeSynthesisPanel synthesis={knowledgeSynthesis} locale={locale} />
         {!hasResults && <section className="empty-state search-result-state">
           <Search size={28} />
@@ -128,8 +149,8 @@ function SearchContent() {
           <Link href="/journal/new" className="secondary-action"><FilePlus2 size={18} aria-hidden="true" />{ja ? "この内容を記録する" : "Record this experience"}</Link>
         </section>}
         {signedIn && results.length > 0 && <section><div className="section-heading"><div><span className="eyebrow">YOUR PRIVATE RECORDS · {results.length}</span><h2>{ja ? "自分の整備記録から一致" : "Matches in your own records"}</h2></div></div><div className="record-grid wide">{results.map((record) => <RecordCard key={record.id} record={record} locale={locale} />)}</div></section>}
-      </>
-    ) : null}
+      </>}
+    </section>}
   </div>;
 }
 

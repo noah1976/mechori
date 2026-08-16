@@ -23,14 +23,13 @@ import {
   type Vehicle,
 } from "@mechori/core";
 import { translate, type TranslationKey } from "@mechori/i18n";
-import { Camera, LoaderCircle, Save, ShieldAlert, ShieldCheck } from "lucide-react";
+import { LoaderCircle, Save, ShieldCheck } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { OccurrenceDateFields } from "@/components/occurrence-date-fields";
 import { PhotoSourceActions } from "@/components/photo-source-actions";
-import { JournalCompletion } from "@/components/journal-completion";
+import { QuickRecordCompletionSheet } from "@/components/quick-record-completion-sheet";
 import {
   clearLocalDraft,
   loadQuickEventLocalDraft,
@@ -38,6 +37,8 @@ import {
   saveLocalDraft,
 } from "@/lib/local-draft-store";
 import { ServiceAttributionField } from "@/components/service-attribution-field";
+import { quickRecordTitle } from "@/lib/quick-record";
+import { journalSaveErrorMessage } from "@/lib/journal-save-error";
 
 const eventTypes: Array<{ value: JournalEventType; label: TranslationKey }> = [
   { value: "delivery", label: "eventDelivery" },
@@ -73,11 +74,9 @@ export function QuickEventForm({
     addJournal,
     updateJournal,
     isRemoteAlpha,
-    alphaJournalSharingAvailable,
-    alphaJournalMediaSharingAvailable,
   } = useApp();
   const editing = Boolean(journal);
-  const [eventType, setEventType] = useState<JournalEventType>(journal?.eventType ?? "photo");
+  const [eventType, setEventType] = useState<JournalEventType>(journal?.eventType ?? "other");
   const [serviceAttribution, setServiceAttribution] = useState<MaintenanceServiceAttributionV1>(
     () => normalizeServiceAttribution(journal?.serviceAttribution),
   );
@@ -100,16 +99,9 @@ export function QuickEventForm({
   const [saving, setSaving] = useState(false);
   const [saveTakingLong, setSaveTakingLong] = useState(false);
   const [preparing, setPreparing] = useState(false);
-  const [visibility, setVisibility] = useState<JournalVisibility>(
-    isRemoteAlpha && journal?.visibility === "followers"
-      ? "private"
-      : journal?.visibility ?? "public",
-  );
+  // New Quick Records are shared with alpha participants; a local draft is the private pre-save state.
+  const visibility: JournalVisibility = journal?.visibility ?? "public";
   const existingAttachment = journal?.media[0];
-  const hasLegacyPrivatePhoto =
-    journal?.visibility === "public" &&
-    existingAttachment?.kind === "image" &&
-    existingAttachment.privacyState === "private_only";
   const [publicationError, setPublicationError] = useState("");
   const [draftReady, setDraftReady] = useState(Boolean(journal));
   const [draftStatus, setDraftStatus] = useState<"idle" | "restored" | "saved" | "error">("idle");
@@ -124,7 +116,7 @@ export function QuickEventForm({
     if (journal) return;
     const timer = window.setTimeout(() => {
       const stored = loadQuickEventLocalDraft(localDraftKey);
-      if (stored && (stored.value.note.trim() || stored.value.hasPhoto || stored.value.visibility !== "private")) {
+      if (stored && (stored.value.note.trim() || stored.value.hasPhoto)) {
         setPendingDraft(stored);
       }
       setDraftReady(true);
@@ -140,7 +132,7 @@ export function QuickEventForm({
           eventType,
           ...occurrence,
           note,
-          visibility,
+          visibility: "public",
           hasPhoto: Boolean(image) || omittedMediaCount > 0,
           ...(journalSupportsServiceAttribution(eventType) ? { serviceAttribution } : {}),
         })
@@ -149,7 +141,7 @@ export function QuickEventForm({
       );
     }, 600);
     return () => window.clearTimeout(timer);
-  }, [draftReady, eventType, image, journal, localDraftKey, note, occurrence, omittedMediaCount, serviceAttribution, visibility]);
+  }, [draftReady, eventType, image, journal, localDraftKey, note, occurrence, omittedMediaCount, serviceAttribution]);
 
   function restoreDraft() {
     const stored = pendingDraft;
@@ -163,7 +155,6 @@ export function QuickEventForm({
       occurredPeriodNote: stored.value.occurredPeriodNote,
     });
     setNote(stored.value.note);
-    setVisibility(stored.value.visibility as JournalVisibility);
     setServiceAttribution(normalizeServiceAttribution(stored.value.serviceAttribution));
     setOmittedMediaCount(stored.value.hasPhoto ? 1 : 0);
     setPendingDraft(null);
@@ -173,10 +164,9 @@ export function QuickEventForm({
   function startNewDraft() {
     clearLocalDraft(localDraftKey);
     setPendingDraft(null);
-    setEventType("photo");
+    setEventType("other");
     setOccurrence({ occurredOn: localDateInputValue(), occurredPrecision: "day" });
     setNote("");
-    setVisibility("public");
     setServiceAttribution(unknownServiceAttribution());
     setOmittedMediaCount(0);
     setDraftStatus("idle");
@@ -205,33 +195,11 @@ export function QuickEventForm({
       return;
     }
     if (saving || preparing) return;
-    if (isRemoteAlpha && visibility === "public" && !alphaJournalSharingAvailable) {
-      setPublicationError(
-        locale === "ja"
-          ? "共有機能の準備が完了していないため、いまは自分だけに保存してください。"
-          : "Sharing setup is not complete. Save this record for yourself for now.",
-      );
-      return;
-    }
-    if (
-      isRemoteAlpha &&
-      !alphaJournalMediaSharingAvailable &&
-      visibility === "public" &&
-      (image || existingAttachment?.kind === "image")
-    ) {
-      setPublicationError(
-        locale === "ja"
-          ? "写真共有の準備が完了していないため、写真付き記録はいまは自分だけに保存してください。"
-          : "Photo sharing is not ready. Save this record with a photo for yourself for now.",
-      );
-      return;
-    }
     setSaveTakingLong(false);
     setError("");
     setPublicationError("");
     let slowSaveTimer: number | undefined;
     try {
-      const selectedType = eventTypes.find((item) => item.value === eventType)!;
       const mediaId = image ? `journal-media-${crypto.randomUUID()}` : existingAttachment?.id;
       const newAttachment: JournalMediaAttachment | undefined = image && mediaId ? {
         id: mediaId,
@@ -242,10 +210,7 @@ export function QuickEventForm({
         sizeBytes: image.sizeBytes,
         altText: `${vehicle.make} ${vehicleModel}`,
         privacyState:
-          visibility === "public" &&
-          alphaJournalMediaSharingAvailable
-            ? "public_ready"
-            : "private_only",
+          visibility === "public" ? "public_ready" : "private_only",
         createdAt: new Date().toISOString(),
         isDemo: false,
       } : undefined;
@@ -254,14 +219,11 @@ export function QuickEventForm({
           ? {
               ...existingAttachment,
               privacyState:
-                visibility === "public" &&
-                alphaJournalMediaSharingAvailable
-                  ? "public_ready" as const
-                  : "private_only" as const,
+                visibility === "public" ? "public_ready" as const : "private_only" as const,
             }
           : undefined);
       const draft: JournalDraft = {
-        title: translate(locale, selectedType.label),
+        title: quickRecordTitle(note, locale),
         sourceLanguage: journal?.sourceLanguage ?? locale,
         eventType,
         ...occurrence,
@@ -294,8 +256,8 @@ export function QuickEventForm({
       if (!validation.valid) {
         setPublicationError(
           locale === "ja"
-            ? "公開範囲と写真の確認状態を見直してください。"
-            : "Check the audience and photo confirmation.",
+            ? "記録内容を確認してください。"
+            : "Check the record details.",
         );
         return;
       }
@@ -312,10 +274,10 @@ export function QuickEventForm({
         setSaving(false);
         setCompletion(savedJournal);
       }
-    } catch {
+    } catch (caught) {
       if (slowSaveTimer !== undefined) window.clearTimeout(slowSaveTimer);
       setSaveTakingLong(false);
-      setError("momentSaveError");
+      setPublicationError(journalSaveErrorMessage(caught, locale === "ja"));
       setSaving(false);
     }
   }
@@ -325,12 +287,27 @@ export function QuickEventForm({
     : undefined;
 
   if (completion) {
-    return <JournalCompletion journal={completion} vehicle={vehicle} locale={locale} mode="quick" />;
+    return (
+      <QuickRecordCompletionSheet
+        journal={completion}
+        locale={locale}
+        onClose={() => router.push(`/journal/${completion.id}`)}
+        onSaveEnrichment={async (draft) => {
+          const updated = await updateJournal(completion.id, draft);
+          setCompletion(updated);
+          return updated;
+        }}
+      />
+    );
   }
 
   return (
     <div className="page-stack narrow-page quick-event-page">
-      <header className="page-header"><div><span className="eyebrow">{editing ? "EDIT A MOMENT" : "ADD A MOMENT"}</span><h1>{editing ? (locale === "ja" ? "短い記録を編集" : "Edit quick record") : translate(locale, "momentWithVehicle", { vehicle: vehicleModel })}</h1><p>{locale === "ja" ? "写真と一言で残す、短い愛車記録です。日付や内容はあとから直せます。" : "A quick vehicle record with a photo and a short note. You can edit it later."}</p></div></header>
+      <header className="quick-composer-header">
+        <p className="quick-composer-kicker">{locale === "ja" ? "愛車の記録" : "Vehicle record"}</p>
+        <p className="quick-composer-vehicle">{vehicle.make} {vehicleModel}</p>
+        <h1>{editing ? (locale === "ja" ? "記録を編集" : "Edit record") : (locale === "ja" ? "記録する" : "New record")}</h1>
+      </header>
       <form className="quick-event-form" onSubmit={submit} aria-busy={saving || preparing}>
         {pendingDraft && (
           <div className="local-draft-status is-restored" role="status">
@@ -340,9 +317,9 @@ export function QuickEventForm({
               {locale === "ja" ? "前回入力していた内容を復元できます。" : "You can restore what you entered last time."}
             </span>
             <span className="local-draft-actions">
-              <button type="button" onClick={restoreDraft}>{locale === "ja" ? "下書きを復元" : "Restore draft"}</button>
-              <button type="button" onClick={() => { clearLocalDraft(localDraftKey); setPendingDraft(null); }}>{locale === "ja" ? "下書きを削除" : "Delete draft"}</button>
-              <button type="button" onClick={startNewDraft}>{locale === "ja" ? "新しく書く" : "Start new"}</button>
+              <button type="button" className="primary-action draft-restore-action" onClick={restoreDraft}>{locale === "ja" ? "下書きを復元" : "Restore draft"}</button>
+              <button type="button" className="secondary-action draft-new-action" onClick={startNewDraft}>{locale === "ja" ? "新しく書く" : "Start new"}</button>
+              <button type="button" className="draft-delete-action" onClick={() => { clearLocalDraft(localDraftKey); setPendingDraft(null); }}>{locale === "ja" ? "下書きを削除" : "Delete draft"}</button>
             </span>
           </div>
         )}
@@ -356,141 +333,43 @@ export function QuickEventForm({
                   : locale === "ja" ? "下書きを保存できません。投稿フォームはそのまま使えます。" : "The draft could not be saved. You can still post."}
               {omittedMediaCount > 0 && (locale === "ja" ? " 未送信の写真は再度選択してください。" : " Re-select the unsent photo before posting.")}
             </span>
-            <button type="button" onClick={startNewDraft}>{locale === "ja" ? "下書きを破棄" : "Discard draft"}</button>
+            <button type="button" className="draft-discard-action" onClick={startNewDraft}>{locale === "ja" ? "下書きを破棄" : "Discard draft"}</button>
           </div>
         )}
-        <section className="quick-event-photo">
-          {image ? <Image src={image.dataUrl} alt="" fill sizes="(max-width: 760px) 100vw, 680px" unoptimized /> : existingImageSource ? <Image src={existingImageSource} alt={existingAttachment?.altText ?? ""} fill sizes="(max-width: 760px) 100vw, 680px" unoptimized /> : <div><Camera size={38} /><strong>{translate(locale, "photoOptional")}</strong><span>{translate(locale, "addTodaysPhoto")}</span></div>}
-        </section>
-        <PhotoSourceActions
-          locale={locale}
-          preparing={preparing}
-          disabled={preparing || saving}
-          onChange={selectPhoto}
-        />
-        <p className="image-preparation-note">
-          <ShieldCheck size={15} />
-          {isRemoteAlpha
-            ? locale === "ja"
-              ? "写真は記録本文と同じ公開範囲で保存します。"
-              : "The photo uses the same audience as the record."
-            : translate(locale, "momentPrivateFirst")}
-        </p>
-        <fieldset className="event-type-picker"><legend>{translate(locale, "momentKindQuestion")}</legend>{eventTypes.map((item) => <button type="button" key={item.value} className={eventType === item.value ? "is-selected" : ""} aria-pressed={eventType === item.value} onClick={() => setEventType(item.value)}>{translate(locale, item.label)}</button>)}</fieldset>
-        {journalSupportsServiceAttribution(eventType) && (
-          <ServiceAttributionField
-            value={serviceAttribution}
-            onChange={setServiceAttribution}
-            locale={locale}
-            compact
+        <label className="field quick-note-field">
+          <span className="sr-only">{locale === "ja" ? "記録本文" : "Record text"}</span>
+          <textarea
+            maxLength={500}
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder={locale === "ja" ? "愛車で何をしましたか？" : "What did you do with your vehicle?"}
+            autoFocus={!editing}
           />
+        </label>
+        {(image || existingImageSource) && (
+          <section className="quick-event-photo">
+            {image
+              ? <Image src={image.dataUrl} alt="" fill sizes="(max-width: 760px) 100vw, 680px" unoptimized />
+              : <Image src={existingImageSource!} alt={existingAttachment?.altText ?? ""} fill sizes="(max-width: 760px) 100vw, 680px" unoptimized />}
+          </section>
         )}
-        <OccurrenceDateFields
-          value={occurrence}
-          locale={locale}
-          error={error === "momentDateMissing" ? translate(locale, error) : undefined}
-          onChange={(patch) => setOccurrence((current) => ({ ...current, ...patch }))}
-        />
-        <label className="field quick-note-field"><span>{translate(locale, "oneSentenceRequired")}</span><textarea maxLength={500} value={note} onChange={(event) => setNote(event.target.value)} placeholder={translate(locale, "momentPlaceholder")} /></label>
-        <section className="quick-event-audience" aria-labelledby="quick-event-audience-heading">
-          <div>
-            <strong id="quick-event-audience-heading">
-              {locale === "ja" ? "この記録を見る人" : "Who can see this record"}
-            </strong>
-            <small>
-              {isRemoteAlpha
-                ? locale === "ja"
-                  ? "初期値は『α参加者に公開』です。自分だけの記録として保存することもできます。"
-                  : "The default is shared with alpha participants. You can also save a record for yourself only."
-                : locale === "ja"
-                  ? "初期値は公開です。自分だけの記録として保存することもできます。"
-                  : "The default is public. You can also save a record for yourself only."}
-            </small>
-          </div>
-          <div className={`segmented-control ${isRemoteAlpha ? "has-two-options" : ""}`} role="group" aria-label={locale === "ja" ? "公開範囲" : "Audience"}>
-            <button
-              type="button"
-              className={visibility === "private" ? "is-selected" : ""}
-              aria-pressed={visibility === "private"}
-              onClick={() => {
-                setVisibility("private");
-                setPublicationError("");
-              }}
-            >
-              {locale === "ja" ? "自分だけ" : "Only me"}
-            </button>
-            {!isRemoteAlpha && (
-              <button
-                type="button"
-                className={visibility === "followers" ? "is-selected" : ""}
-                aria-pressed={visibility === "followers"}
-                onClick={() => {
-                  setVisibility("followers");
-                  setPublicationError("");
-                }}
-              >
-                {locale === "ja" ? "フォロワー" : "Followers"}
-              </button>
-            )}
-            <button
-              type="button"
-              className={visibility === "public" ? "is-selected" : ""}
-              aria-pressed={visibility === "public"}
-              disabled={isRemoteAlpha && !alphaJournalSharingAvailable}
-              onClick={() => {
-                setVisibility("public");
-                setPublicationError("");
-              }}
-            >
-              {isRemoteAlpha
-                ? locale === "ja" ? "α参加者に公開" : "Alpha participants"
-                : locale === "ja" ? "公開" : "Public"}
-            </button>
-          </div>
-          {isRemoteAlpha && visibility === "public" && (
-            <p className="settings-help">
-              {locale === "ja"
-                ? "ログイン済みのP0・α参加者に、本文、写真、表示用車名を共有します。"
-                : "The text, photo, and vehicle label are shared with signed-in P0 and alpha participants."}
-            </p>
-          )}
-          {visibility === "public" && hasLegacyPrivatePhoto && !image && (
-            <p className="settings-help">
-              {locale === "ja"
-                ? "以前の設定で非公開にした写真は、この編集だけで公開へ変更しません。"
-                : "The photo kept private under the previous setting will not be published by this edit."}
-            </p>
-          )}
-          {isRemoteAlpha &&
-            alphaJournalMediaSharingAvailable &&
-            visibility === "public" &&
-            (image || existingAttachment?.kind === "image") && (
-            <p className="settings-help">
-              {locale === "ja"
-                ? "写真は記録本文と同じ範囲で公開します。ナンバー、人物、住所が分かる背景を保存前に確認してください。"
-                : "The photo uses the same audience as the record. Check plates, people, and address-revealing backgrounds before saving."}
-            </p>
-          )}
-          {isRemoteAlpha &&
-            !alphaJournalMediaSharingAvailable &&
-            visibility === "public" &&
-            (image || existingAttachment?.kind === "image") && (
-            <p className="media-publication-gate">
-              <ShieldAlert size={18} aria-hidden="true" />
-              {locale === "ja"
-                ? "写真共有の準備中です。本文と写真の公開範囲を一致させるため、今回は自分だけに保存してください。"
-                : "Photo sharing is still being prepared. Save this for yourself so the text and photo audience remain consistent."}
-            </p>
-          )}
-          {isRemoteAlpha && !alphaJournalSharingAvailable && (
-            <p className="media-publication-gate">
-              <ShieldAlert size={18} aria-hidden="true" />
-              {locale === "ja"
-                ? "共有機能の準備が完了するまでは、自分だけに保存できます。"
-                : "Until sharing setup is complete, records can be saved only for you."}
-            </p>
-          )}
-        </section>
+        <div className="quick-composer-photo-row">
+          <PhotoSourceActions
+            locale={locale}
+            preparing={preparing}
+            disabled={preparing || saving}
+            variant="single"
+            onChange={selectPhoto}
+          />
+          <p className="image-preparation-note">
+            <ShieldCheck size={15} />
+            {isRemoteAlpha
+              ? locale === "ja"
+                ? "写真は記録本文と同じ公開範囲で保存します。"
+                : "The photo uses the same audience as the record."
+              : translate(locale, "momentPrivateFirst")}
+          </p>
+        </div>
         {error && <p className="form-error-summary" role="alert">{translate(locale, error)}</p>}
         {publicationError && <p className="form-error-summary" role="alert">{publicationError}</p>}
         {saveTakingLong && (
@@ -503,7 +382,32 @@ export function QuickEventForm({
             </span>
           </div>
         )}
-        <div className="form-actions"><Link href={journal ? `/journal/${journal.id}` : "/garage"} className="secondary-action">{translate(locale, "later")}</Link><button className="primary-action" type="submit" disabled={saving || preparing}>{saving ? <LoaderCircle className="spin" size={17} aria-hidden="true" /> : <Save size={17} aria-hidden="true" />}{translate(locale, saving ? "addingMoment" : "saveMoment")}</button></div>
+        <div className="quick-composer-submit">
+          <button className="primary-action" type="submit" disabled={saving || preparing}>
+            {saving ? <LoaderCircle className="spin" size={17} aria-hidden="true" /> : <Save size={17} aria-hidden="true" />}
+            {locale === "ja" ? (saving ? "記録中" : "記録する") : (saving ? "Saving" : "Save record")}
+          </button>
+        </div>
+        {editing && <details className="quick-composer-details">
+          <summary>{locale === "ja" ? "追加情報を編集" : "Edit additional details"}</summary>
+          <div className="quick-composer-details-body">
+            <fieldset className="event-type-picker"><legend>{translate(locale, "momentKindQuestion")}</legend>{eventTypes.map((item) => <button type="button" key={item.value} className={eventType === item.value ? "is-selected" : ""} aria-pressed={eventType === item.value} onClick={() => setEventType(item.value)}>{translate(locale, item.label)}</button>)}</fieldset>
+            {journalSupportsServiceAttribution(eventType) && (
+              <ServiceAttributionField
+                value={serviceAttribution}
+                onChange={setServiceAttribution}
+                locale={locale}
+                compact
+              />
+            )}
+            <OccurrenceDateFields
+              value={occurrence}
+              locale={locale}
+              error={error === "momentDateMissing" ? translate(locale, error) : undefined}
+              onChange={(patch) => setOccurrence((current) => ({ ...current, ...patch }))}
+            />
+          </div>
+        </details>}
       </form>
     </div>
   );

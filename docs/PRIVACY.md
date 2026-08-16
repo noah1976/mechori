@@ -71,6 +71,14 @@
 
 ## 将来拡張
 
+## Vehicle continuityとidentifier
+
+- VIN、車台番号、engine number、registration number等から、Vehicleの存在、過去Owner、過去Evidenceを第三者へ返すPublic Searchは提供しない。identifierは認証済みUserから受けたRecovery Claimのserver-side照合材料としてだけ扱う。
+- Transfer token / QRを将来導入しても、Vehicle ID、Owner情報、Evidenceをtokenへ埋め込まない。漏えい、誤送信、売却中止に対応できるrevocationと有効期限を持つopaque tokenを前提とする。
+- Vehicleに残せるtransfer-safe Evidenceと、Owner-private、Shop-private、Mechanic portfolio向け、Public Knowledge向けのprojectionを分離する。visibilityとtransferabilityは別の判断軸とする。
+- Vehicleがunclaimedになったことだけを理由にEvidenceを自動削除しない。Vehicle EvidenceとOwner private dataは、consent、withdrawal、privacy、legal retentionに基づく別のretention policyを持つ。
+- account deletion時は、private dataを原則削除し、Vehicle Evidenceを残す場合もauthorの識別・rights basis・source・anonymization可否を別途確認する。具体的な適用条件は実装・法務レビュー前に決めない。
+
 - 顔、住所、書類上の個人情報等の検出・マスキング精度向上
 - セルフサービスのデータ出力・訂正・削除・同意撤回画面
 - 削除申請と法的保全を管理する運営画面

@@ -15,6 +15,10 @@ UI、検索、データモデル、安全表示で使う日本語と英語を統
 | Exact specification | 同一仕様 | Exact specification | 完全適合を保証しない |
 | Same model, other year | 同車種・別年式 | Same model, other year | 年式差を明示する |
 | Shared engine/component | 共通エンジン・部品 | Shared engine or component | 別車種を含むことを明示する |
+| PhysicalVehicle | 車両個体 | Physical vehicle | Ownerや外部identifierから独立した内部参照。法的所有権を表さない |
+| VehicleRelationship | 車両との関係 | Vehicle relationship | User / Organizationが期間付きでclaimする関係。法的Ownershipの証明ではない |
+| EvidenceAccessGrant | Evidence閲覧許可 | Evidence access grant | 過去Evidenceのauthor変更ではなく、許可されたprojectionへのAccess |
+| Recovery matching | 継承照合 | Recovery matching | identifierをPublic Searchにせずserver-sideで候補照合する |
 
 ## 整備記録
 
@@ -81,8 +85,8 @@ UI、検索、データモデル、安全表示で使う日本語と英語を統
 
 | 日本語・表示名 | 英語 | 使用上の注意 |
 | --- | --- | --- |
-| Free | Free | 2台と登録車両検索は初期仮説 |
-| Owner Plus | Owner Plus | 複数台・未登録車種検索の個人向け仮説 |
+| Free | Free | 基本記録・Evidence supply。愛車登録の台数上限なし |
+| Owner Plus | Owner Plus | 高度管理・処理量・未登録車種検索等の個人向け補助収益仮説 |
 | Professional | Professional | Web業務検索。契約を技量認証にしない |
 
 ## 未確定

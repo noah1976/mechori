@@ -2,6 +2,21 @@ import { sanitizeLocalReturnPath } from "@mechori/core";
 import { translate } from "@mechori/i18n";
 
 export const alphaInviteCookieName = "mechori_alpha_invite";
+const productionOrigin = "https://mechori-alpha.netlify.app";
+const deployPreviewHostPattern = /^deploy-preview-\d+--mechori-alpha\.netlify\.app$/;
+
+export function isAllowedMechoriAuthOrigin(value: string | null | undefined): boolean {
+  if (!value) return false;
+
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:"
+      && url.port === ""
+      && (url.origin === productionOrigin || deployPreviewHostPattern.test(url.hostname));
+  } catch {
+    return false;
+  }
+}
 
 export function resolvePublicOrigin({
   fallbackOrigin,
@@ -24,16 +39,13 @@ export function resolvePublicOrigin({
     ? `${protocol}://${firstForwardedValue(host)}`
     : undefined;
 
-  for (const candidate of [configuredOrigin, forwardedOrigin, hostOrigin, fallbackOrigin]) {
-    if (!candidate) continue;
-    try {
-      const parsed = new URL(candidate);
-      if (parsed.protocol === "https:" || parsed.protocol === "http:") return parsed.origin;
-    } catch {
-      // Ignore malformed proxy headers and fall back to the request URL.
-    }
+  // Only a known MECHORI origin may become an OAuth callback origin. Preview hosts
+  // are accepted only when they match Netlify's numeric deploy-preview convention.
+  for (const candidate of [forwardedOrigin, hostOrigin, fallbackOrigin, configuredOrigin]) {
+    if (candidate && isAllowedMechoriAuthOrigin(candidate)) return new URL(candidate).origin;
   }
-  return new URL(fallbackOrigin).origin;
+
+  return productionOrigin;
 }
 
 export function authContinuationUrl(

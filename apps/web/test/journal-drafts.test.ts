@@ -41,12 +41,12 @@ test("successful new posts clear drafts and show completion actions", () => {
   assert.match(completion, /ホームへ戻る/);
 });
 
-test("new records default to the alpha audience while edits keep saved visibility", () => {
+test("new Quick Records use the alpha audience without adding a visibility choice", () => {
   assert.match(detailed, /visibility: "public"/);
   assert.match(quick, /journal\?\.visibility \?\? "public"/);
-  assert.match(quick, /setVisibility\("public"\)/);
   assert.match(detailed, /初期値は『α参加者に公開』です/);
-  assert.match(quick, /初期値は『α参加者に公開』です/);
   assert.match(detailed, /journal\s*\?\s*journalToDraft\(journal\)/);
-  assert.match(quick, /journal\?\.visibility === "followers"/);
+  assert.doesNotMatch(quick, /setVisibility/);
+  assert.doesNotMatch(quick, /quick-event-audience/);
+  assert.match(quick, /visibility: "public"/);
 });

@@ -85,6 +85,7 @@
 - 背景: Free、Owner Plus、Professionalの差を画面や決済サービスへ直接埋め込まず、検証後に変更可能にするため。
 - 決定: Freeは車種を問わず所有車両2台と登録車両の検索、Owner Plusは複数台と未登録車種検索、ProfessionalはWebで全車種を対象とする業務検索を初期仮説とする。Freeの広告は将来仮説でありMVPには導入しない。
 - 影響: 価格、Owner Plusの台数、OCR・AI枠、広告方式は未確定の設定値として扱う。
+- 2026-08-16改定: この台数差の仮説はsuperseded。Freeの2台上限を廃止し、愛車登録台数をOwner Plusの課金軸にしない。複数台ContributorのEvidence supplyを止めないためであり、EntitlementSetの処理量・高度機能等の境界は維持する。下記「Consumer Evidence supplyと長期B2B収益を同じ循環へ統合する」を参照。
 
 ### 決定: 貢献評価と情報の正確性を分離する
 
@@ -560,7 +561,7 @@
 - 料金モデル
 - 本番実装時のリポジトリ構成の最終確定
 - FIAT Barchettaの仕様分類粒度
-- Owner Plusの登録台数と各プランの価格・利用枠
+- Owner Plusの高度管理価値と各プランの価格・利用枠
 - 貢献バッジの名称、基準、表示範囲
 - Professionalの工場間相談料金、知識還元方式、最初の帳票、最初の対象地域
 
@@ -570,3 +571,141 @@
 - 状態: 運用方針
 - 決定: 地域別の法令・規制要求を、一次資料、Product Impact、既存設計、必要変更、実装参照、検証、専門家確認へ追跡する`docs/GLOBAL_COMPLIANCE.md`を正本の索引レイヤーとして追加する。Japan、EU / EEA、United Kingdom、United States、Australia、Canadaを初期対象とし、具体的な法的結論は調査後に決定する。より広い国際公開、Native Drive Log、広告、Professional課金の前にReview Gateを通す。
 - 影響: 現行のPrivacy、Trust、Safety、AI、Moderation、Professional、Data Model文書は各領域の正本として維持する。今回、Web検索、法律調査、法的助言、年齢制限、DB、コード、実装を変更しない。αは停止扱いにしない。
+
+### 決定: 知見を無料の中心価値とし、収益化と機能評価を分離する
+
+- 日付: 2026-08-15
+- 状態: 運用方針
+- 決定: MECHORIでは、知見を提供するユーザーを重要な資産と考え、知見の投稿・蓄積をPaywallで阻害しない。AI利用は無料枠と超過課金を候補とするが、主目的は大きな利益ではなくAPI原価回収であり、利用量・原価・安全性を確認してから正式化する。Professional／B2Bは将来候補として検証するが、初期収益を営業型B2Bに依存しない。
+- 決定: パーツ購入導線のアフィリエイトは初期収益候補の一つとする。MECHORI側の部品・メーカー・品番・OEM番号・使用実績と、国別に交換可能な購入先／affiliate URLを分離し、特定merchantへ依存しない。報酬額によって検索順位、AI回答、推奨内容を歪めない。
+- 決定: AIメカニックのcharacter UX／cosmeticsはアイデアとして保持するが後回しとし、中心価値は蓄積された知見を必要なときに使えることとする。機能案はCORE、ENGAGEMENT、MONETIZATION、単なる肥大化の観点で評価する。
+- 決定: Drive Recordはナビゲーション・ルート探索サービスへ拡張せず、MAU、愛車との記憶、Vehicle Timelineを厚くするENGAGEMENT機能として扱う。
+- 正本: 料金・無料枠・AI原価・広告・アフィリエイトの詳細は`docs/MONETIZATION.md`と`docs/BUSINESS_MODEL.md`、機能評価とDriveのロードマップは`docs/ROADMAP.md`と`docs/SOCIAL_LAYER.md`、AIの境界は`docs/AI_POLICY.md`に置く。
+- 影響: この判断は新しい課金、広告、merchant接続、AI処理、Drive Log実装を開始するものではない。各機能は既存の承認・法務・安全・原価ゲートを通す。
+
+### 決定: main・Preview・人間QAを分離したリリースcheckpointを維持する
+
+- 日付: 2026-08-15
+- 状態: 運用方針
+- 決定: `main`をProduction基準とし、feature branch → Pull Request → Netlify Deploy Preview → 人間QA → `main`の順で扱う。Preview確認のためにProduction deployを繰り返さず、コード実装、checks、Preview反映、実機QA、mergeを別状態として記録する。
+- 影響: PR #2のGarage Vehicle Identity改善はopen・未merge、PR #3のDeploy Preview OAuth origin許可とsession cookie修正は実装・Preview反映済みだが、iPhone Safari実機QA待ちである。Garage timelineの「端末内メディアが見つかりません」再発はP1調査項目とし、原因未確認のまま完了扱いにしない。
+
+### 決定: 記録入力は「まず書ける。整理はあと。」を原則にする
+
+- 日付: 2026-08-15
+- 状態: 実装・人間QA待ち
+- 背景: αテスター3名が、記録開始時に並ぶ分類・整備項目・公開設定によって短い出来事さえ残しにくいと報告した。MECHORIでは知見を残す行為そのものが重要な価値であり、構造化の都合で最初の投稿を止めない。
+- 決定: Universal Composerの最小入力はVehicle、本文、任意の写真、保存とする。通常の記録は既存`GarageJournalPost`へ、本文先頭行から生成した内部title、`other` event type、当日の発生日、既存公開範囲の既定値で保存する。日付、公開範囲、種別、DIY／お店・工場、その他の詳細はProgressive Disclosureで任意に追加できる。詳しいJournal、構造化整備記録、AI構造化は別の明示導線または将来機能として維持する。
+- 影響: Workspace JSON、DB、RLS、RPC、既存Journal／Maintenanceのdata contractは変更しない。AIによる本文解析・部品抽出は今回実装せず、将来はユーザー確認を伴う構造化候補として検討する。
+
+### 決定: Quick Record後のα改善は実機QAとDesign統一を一つのフェーズで行う
+
+- 日付: 2026-08-15
+- 状態: 次フェーズ方針
+- 背景: Quick Recordで投稿開始の入力負荷は下げたが、実際の使いやすさはiPhone Safariの操作で確認する必要がある。またGarageと他画面の印象差が、MECHORIを別サービスの集合に見せる要因になっている。
+- 決定: 次のαテスター再テストまでは、Quick Record実機UX QA、既知のGarage Timeline media問題とHeader／Navigation問題の調査、GarageをDesign North Starとした主要journeyのDesign Unification Pass、αテスター3名の再テストの順に進める。実機QA中の不満は個別に即修正せず、まとめて優先順位を判断する。
+- 決定: Garageの見た目を全画面へコピーするのではなく、Header、Typography hierarchy、spacing、card／border／radius、button、icon、accent color、image presentation、section hierarchy、Mobile layoutの共通Design Languageを抽出して主要導線へ適用する。prototype、admin、professionalは同じ優先度で全面改修しない。
+- 再テストの評価軸: 「投稿できる」だけでなく、説明なしで記録できる、画面移動後も同じサービスに見える、また愛車の記録を残したいと思える、を確認する。知見投稿を阻害しないことを機能追加より優先する。
+- 影響: P-086は実装済み・iPhone Safari実機QA待ちとして維持する。Garage Timeline mediaの「端末内メディアが見つかりません」は独立したP1として原因確定まで未解決とする。PR #5はPR #3のPreview OAuth修正を取り込んだが、PR #3自体はmergeしない。
+
+### 決定: α再テスト前の改善は投稿開始と主要journeyの連続性へ絞る
+
+- 日付: 2026-08-15
+- 状態: 実装・Human QA待ち
+- 決定: Quick Recordでは初期表示をVehicle、本文、任意写真、保存に留め、本文・写真・保存の関係を近づける。日付、公開範囲、種別、整備情報などの既存詳細はProgressive Disclosureに残し、初回投稿を止めない。
+- 決定: GarageのQuiet Machineryを共通Design Languageとして、共有Header、authenticated Home、Garage、Quick Record、Journal detailへ限定適用する。白地、短い事実的copy、余白、内容主体、明確な一つの主要CTAを優先し、Search、Profile、Notifications、Admin、Professionalの全面改修は後続とする。
+- 決定: 旧`local_blob`写真が端末・originごとのIndexedDBを参照する制約は、消えた写真を共有済みと誤認させない小さな縮退表示で扱う。共有済み写真の取得失敗と混同せず、legacy media移行・回復は別課題に残す。
+- 影響: Workspace、DB、RLS、RPC、Journal／Maintenanceのdata contract、公開範囲、Follow、Notificationの挙動は変更しない。未ログインLandingの大きな余白はコードだけで原因を断定せず、iPhone Safariで再確認する。
+
+### 決定: 写真付きQuick Recordも本文と同じ公開範囲で共有する
+
+- 日付: 2026-08-15
+- 状態: 実装・Human QA待ち
+- 背景: iPhone Safari QAで、写真付きQuick Recordだけが共有readyの一時的なclient判定によって公開保存を止められ、「自分だけ」への切替を促していた。これは写真・愛車記録を参加者同士で見るENGAGEMENTの目的と、本文と写真の公開範囲を一致させる既存方針に反する。
+- 決定: 新規Quick Recordと詳細Journalは、公開写真を既存の認証済みshared Storage／shared Journal publish経路で実際に処理し、その成否で判定する。投稿前のlazy hydrationの能力値で写真付き公開を拒否しない。写真だけを強制privateにせず、本文の「α参加者に公開」またはユーザーが選んだ「自分だけ」を同じく適用する。
+- 影響: `alpha_inline`は保存時にshared Storageの`alpha_shared`参照へ変換され、別origin・別deviceでも取得可能な共有データとなる。共有処理に失敗した場合は記録を公開済み・写真なしとして残さず、既存のrollbackと入力保持を使う。旧`local_blob`写真のorigin限定の回復は別P1のままとする。
+
+### 決定: Quick Recordの詳細入力は保存後の任意enrichmentへ統合する
+
+- 日付: 2026-08-15
+- 状態: Product decision・2026-08-16 PR #5実装、Human QA pending
+- 背景: Quick Recordと投稿前の「詳しく記録する」を並べると、どちらが本当の記録入口か迷い、投稿前に走行距離、費用、部品、DIY／店舗、症状、原因、作業内容などを要求する構造化フォームになりやすい。これは「まず書ける。整理はあと。」とKnowledge contributionを優先する方針に反する。
+- 決定: Quick Recordは`Vehicle → 本文 → 写真（任意）→ 記録する`で保存を先に完了する。投稿前の「詳しく記録する」別入口は廃止するが、詳細情報そのものは維持する。保存成功後に軽量な「整備情報を追加／閉じる」導線を任意表示し、追加しない、スキップする、Bottom Sheetを閉じる、途中で離れる場合も保存済み投稿を失敗扱い・削除扱いにしない。後から記録詳細で追加・編集できる方向とする。
+- 実装境界: 追加候補は走行距離、費用、部品、部品番号、DIY／店舗、Provider、症状、原因、作業内容、結果などだが、今回これらを全確定しない。既存Journal／Maintenance data modelを再利用し、Quick Record専用の巨大data modelを作らない。「あとで」の既存項目は、投稿前必須・保存後移行・廃止可能へ実装時に整理する。
+- 将来: 内容に応じて追加項目を変えるUXやAIによる候補提案は検討可能だが、αではAI動的質問を必須にしない。正式保存時の「α参加者に公開」固定、下書きの公開前private状態、詳細記録の既存Visibility仕様とは整合させる。
+- 実装更新: Quick Recordの新規保存を先に確定し、成功後に既存Journal updateを使うBottom Sheetを表示する。今回の任意入力は記録種別、発生時期、DIY／お店・工場のattributionに限定する。Skip、Close、追加入力失敗は初期投稿をrollbackしない。部品、費用、走行距離等の拡張は別の実利用確認後に扱う。
+
+### 決定: Quick Recordの正式保存は「α参加者に公開」に固定する
+
+- 日付: 2026-08-15
+- 状態: Product decision・2026-08-16 PR #5実装、Human QA pending
+- 背景: 従来のQuick Recordで「自分だけ／α参加者に公開」を毎回選ばせると、「まず書ける。整理はあと。」という入力原則に反し、投稿前の判断を一つ増やしていた。共有された愛車記録・写真・整備経験がTimelineとKnowledge accumulationを育てるため、現αでは標準共有を優先する。
+- 決定: Quick Record / Universal Composerの正式保存は「α参加者に公開」を固定とし、入力画面から公開範囲の2択UIを削除する。最小UXはVehicle、本文、写真（任意）、記録するを維持する。作業途中や確認前の内容は下書きとしてprivateに保持し、正式保存前には公開しない。
+- 判断理由: 作業途中は下書き、公開したくない情報を含む写真は投稿前の確認、個人的な詳細は詳しい記録UXで扱えるため、現時点でQuick Recordへprivate選択を常設する実ユーザー需要は確認されていない。仮説だけで入力UIを増やさず、Knowledge contributionを阻害しない。
+- 実装更新: 新規Quick Recordの入力画面からVisibility 2択と関連copyを外し、`public`で保存して既存alpha shared publish経路へ渡す。下書きは端末内の公開前状態に留まり、写真バイナリを永続化しない。
+- 将来: 正式公開後など、Public／Followers only／Privateの3段階Visibilityを再検討する余地は残す。「自分だけ」という概念をMECHORY全体から削除する判断ではない。Maintenance Record、詳しいJournal、その他の記録種別の既存Visibility仕様は今回変更しない。
+
+### 決定: 新規Quick Recordの共有写真はStorageの新規insertとしてpublishする
+
+- 日付: 2026-08-15
+- 状態: 実装・Human QA待ち
+- 背景: 写真付きQuick Recordの共有copyは、新しいjournal revisionごとに一意なobject pathを生成する。それにもかかわらず`upsert`を使うと、insertだけで済む投稿にもStorageのupdate／conflict権限経路を要求し、operation別に絞ったshared bucket RLSと不要に干渉する。また、事前に正規化した`alpha_inline`画像をdata URLから再fetch・再encodeすることはiPhone Safariで余分な失敗点になる。
+- 決定: 新規共有copyは`upsert: false`のinsertで保存する。Quick Recordが既に画像形式・寸法・460KB上限へ正規化した`alpha_inline`は直接Blob化してuploadし、再変換しない。Storage uploadとshared Journal RPCがともに成功した場合だけshared payloadへ`alpha_shared`参照を入れる。
+- 影響: 写真付き投稿をprivateへ強制しない。公開copyはorigin-local IndexedDBではなくshared Storageとshared Journal payloadで参照される。旧`local_blob`を暗黙に移行しない。失敗時は入力と既存記録を保持し、技術詳細をUIへ出さず、安全なoperation／status／codeだけを診断する。
+
+## 2026-08-16
+
+### 決定: MECHORIの事業中核を整備EvidenceとEvidence Loopとして整理する
+
+- 状態: Product / Business strategy
+- 背景: MECHORIにはConsumer履歴、Journal、検索、Affiliate、Professional等の複数レイヤーがある。これらを個別事業として並べると、何がProduct valueと企業価値を生むか不明瞭になるため。
+- 決定: 車両個体、車両仕様、症状・出来事、作業、使用部品、結果、再発・解決、出典・実例の関係を、確認状態と公開範囲を保って結ぶ整備Evidenceを戦略中核に置く。この内部関係モデルを`Evidence Graph`と呼ぶが、現時点で一般向けMarketing用語にはしない。
+- 決定: `記録 -> 整理・Evidence化 -> 検索・閲覧・再利用 -> 対応・作業 -> 結果追記 -> 次の再利用`を`Evidence Loop`とする。Quick RecordはEvidence intakeであり、post-save enrichmentとresult follow-upが投稿をMECHORI固有のEvidenceへ変える橋である。投稿前の大量入力へ戻さない。
+- 影響: 今後の機能はEvidence supply、Evidence化、Evidence Loop、Owner・Professional間の循環のどれを強くするかで評価する。ただし現αでは「簡単に記録できる」「もう一度使いたくなる」Owner UXを優先し、Evidence量だけを目的に入力負荷を増やさない。
+
+### 決定: Consumer Evidence supplyと長期B2B収益を同じ循環へ統合する
+
+- 状態: Monetization role definition
+- 決定: Owner FreeはEvidence supply、愛車履歴、user acquisition、network形成を担い、Consumer ARPU最大化を最優先にしない。知見投稿・結果追記・本人データ権利をPaywallで阻害しない。
+- 改定: 2026-07-13のFree 2台仮説はsupersededとし、Freeの登録台数上限を廃止する。複数台所有者はEvidenceを多く供給し得る重要Contributorであり、愛車を登録する行為をOwner PlusのPaywallにしない。Owner Plusは台数解放ではなく、高度な整理、比較、出力、処理量等の追加価値で別途検証する。未接続の`maxOwnedVehicles`権限プロトタイプはProduct方針として利用せず、後続のcode cleanup対象とする。
+- 決定: Affiliateは部品購入意図が自然に存在する場所でConsumer基盤のStorage、配信、AI、infrastructure等の原価を補填する初期収益候補とし、最終的な巨大利益エンジンにはしない。報酬額でSearch順位、AI回答、Parts recommendation、Evidence評価を歪めない。
+- 決定: AI超過課金は無料枠を超えるAPI原価回収を主目的とし、Owner PlusはEvidence supplyを阻害しないConsumer側の補助収益とする。
+- 決定: 長期的な主要利益基盤はProfessional / B2Bとし、Professional SaaS、Professional Network、Knowledge Infrastructureの三層を段階検証する。Networkの取引・成約手数料、Evidence API、部品適合・症例data、業務system integrationは将来仮説であり現αでは実装しない。
+- 整理: 「初期収益を営業型B2Bへ依存しない」は現在のGTMを指し、「長期的な主収益はProfessional / B2B」は到達を目指すBusiness Modelを指す。初期から営業、導入支援、個別Customizationへ大量時間を使わないため、両者は矛盾しない。
+
+### 決定: Product Universal / GTM Clusteredと段階的なEvidence指標を採用する
+
+- 状態: Growth / Measurement / Professional validation policy
+- 決定: Productは希少車、並行輸入車、限定車、グレード不明、catalog未登録を含め登録可能なUniversal設計を維持する。GTMはKnowledge密度とMeaningful Reuseを観察するため、2〜3程度の車種・近接車種・利用目的・community clusterへ獲得を集中させる実験を行える。これは対応車種制限ではない。
+- 決定: `Monthly Completed Evidence Loops`を長期North Star候補とするが、現α3〜5人では唯一の経営KPIにしない。Quick Record成功、再投稿・再訪、post-save enrichment、Evidence化、他者記録閲覧、Meaningful Reuse、結果追記、投稿後削除・後悔をLeading Indicatorとして観察し、複数Loopを継続集計できる段階で昇格を再検討する。
+- 決定: Professionalの初期validationはKnowledge Search単体ではなく、`Owner履歴受領 -> 案件記録 -> 写真・部品・結果 -> 顧客報告 -> Owner履歴返却`のEvidence workflowを有力仮説とする。3工場程度の数件の実業務を観察し、時間、手戻り、説明、履歴引き継ぎの改善を確認するまで大型SaaSを作らない。
+- 決定: Professionalを会計、請求、在庫、予約、CRM、汎用ERP、工場別個別受託へ無制限に広げない。複数工場で同じ反復課題が確認された機能だけを共通Product候補にする。
+- 決定: αのQuick Record共有固定は入力負荷、共有、Evidence supplyを検証する現在フェーズのexperimentである。下書きは公開前private状態とし、正式公開後はPublic / Followers only / Private等のUser Controlを再検討できる。投稿後削除、公開範囲変更希望、写真公開への不安・後悔も、Privacyを守れる範囲で観察する。
+- 決定: Native着手はcalendarだけで決めず、Webのretention、repeated recording、mobile UX、camera・notification等の実機限界、Evidence Loopへの寄与をGateにする。
+
+### 決定: αテスター由来の二つの価値表現を検証仮説として保持する
+
+- 日付: 2026-08-16
+- 状態: Qualitative product signal / validation pending
+- 観測: α版テストユーザーから「整備士にとってのGitHub（ポートフォリオ）」と「クルマのカルテ（オーナーが変わっても残る整備記録）」という表現が出た。
+- 決定: 前者をProfessionalの技術実績・相談・協業へつながる価値仮説、後者を所有者を越えて許諾済みEvidenceがVehicleへ継続する価値仮説として保持する。ConsumerとB2Bを別事業にせず、Vehicleへ残る履歴とProfessionalへ返る実績を同じEvidence Loopの両面として扱う。
+- 境界: 「クルマのカルテ」は個人情報、非公開記録、請求書、位置情報、写真等の自動移管を意味しない。所有者変更時も同意、公開範囲、出典、削除・訂正権を維持し、車両状態や整備品質を保証しない。「整備士のGitHub」は人気、投稿数、Professional契約だけで技術力・資格・安全性を保証しない。
+- 検証: 同じ言葉をMarketingで先行反復するのではなく、Ownerの履歴引き継ぎ行動とProfessionalの実案件・ポートフォリオ利用が発生するかを確認する。共感コメントだけで需要・支払意思の検証完了としない。
+
+### 決定: 「クルマのカルテ」はVehicle Succession Contractを前提にする
+
+- 日付: 2026-08-16
+- 状態: Architecture principle / implementation deferred
+- 背景: 中古車流通では前Ownerと次Ownerが直接会わないケースが標準であり、`Vehicle.ownerId`を書き換えるだけでは、個人情報を守りながら車両に残るEvidenceを継承できない。
+- 決定: β正規化前に、Owner・外部identifierから独立したstable internal IDを持つ`PhysicalVehicle`、User / Organizationとの期間付き`VehicleRelationship`、過去Evidenceを読む権利を表す`EvidenceAccessGrant`を別概念として扱う。VehicleRelationshipはMECHORI上の関係claimであり、法的Ownershipを保証しない。次Ownerは過去Evidenceのauthorにならず、transfer-safeなEvidenceへのGrantを得て、訂正request、反証、現在状態、結果追記をappend-orientedに追加する。
+- 決定: 継承には、協力可能な前OwnerのTransfer Routeと、前Owner不在でも成立するRecovery Routeを将来用意する。Transfer tokenはPhysicalVehicle ID、Owner情報、Evidenceを含めないopaque server-side tokenとし、scoped、revocable、expiring、single-useを基本とする。token利用は認証済みUserのclaim開始であり、即Access Grantではない。Recoveryではidentifierをserver-side matching signalとして使い、Public Vehicle Searchを提供せず、grant前にVehicle ID、identifier全文、過去Owner、Evidenceを返さない。
+- Minimum Vehicle Succession Contract: 1) PhysicalVehicleはstable internal IDを持つ。2) Relationshipは期間付きで分離する。3) legal Ownershipを保証しない。4) RelationshipとAccess Grantを分離する。5) VIN / chassisを必須・主キー・ownership proofにしない。6) identifierはsource付きで訂正可能なassertionとして扱う。7) identifierのPublic Searchを作らない。8) tokenはopaque / scoped / revocable / expiring / single-use。9) tokenはclaim開始に留める。10) Recovery Claimを可能にする。11) transferable EvidenceとOwner-private dataを分離する。12) 新Ownerに過去Evidenceのauthorshipを移さない。13) Evidenceはrevisionedで訂正・反証・結果を追加する。14) Identity / Relationship / Provenance / Accessのtrustを分離する。15) Duplicate PhysicalVehicleを自動mergeしない。
+- 影響: VIN / chassisは強いidentity assertion候補だが必須化せず、engine numberはPhysicalVehicle IDに使わない。engine swapはVehicleに起きたEvidenceとして扱う。Transfer UI、QR、Recovery Claim、identifier保存・matching、Access Grant、DB migrationは今回実装しない。
+
+### 決定: Authenticated HomeはFollowing Feed-firstをα仮説として検証する
+
+- 日付: 2026-08-16
+- 状態: 2026-08-16 PR #5実装 / Human QA pending
+- 背景: 記録や整備の用事がない日にもMECHORIを開く理由を作るには、Dashboardより先に、フォローしているOwner / Vehicleの新しいEvidenceへ触れられる必要がある。
+- 決定: Authenticated Homeのmain surfaceをFollowing Feedに置く。Followingの数件previewではなく、取得済みのFeedをHome内で連続して読む。投稿はowner、Vehicle、date、本文、任意写真、最小metadataの順に読み、重いcard、decorative English eyebrow、上端accent、強いshadowを使わない。自分の履歴、Search、月次summaryは導線を維持したままsecondaryへ下げる。
+- 検証: Feed-firstがrevisit、WAU / MAU、Meaningful Reuse、Evidence discoveryを改善するかは未検証であり、αでHome visit、Feed閲覧・詳細遷移、Garage visit、Quick Record開始、2回目session / recordとの関係を確認する。Likeやフォロー数の競争を目的にしない。

@@ -23,6 +23,16 @@
 
 ## READY
 
+### MECH-044 Vehicle Successionのβ正規化契約
+
+- 優先度: P1
+- 状態: READY
+- 目的: 「クルマのカルテ」を将来実現できるよう、現在のOwnerに埋め込まれたVehicle表現から、PhysicalVehicle、VehicleRelationship、EvidenceAccessGrant、identifier assertion、rights projectionへ安全に移行できる正規化境界を設計する。
+- 成果物: `docs/DATA_MODEL.md`、migration / backfill plan、既存Vehicle / Journal / Maintenance attributionの互換方針、Recovery / Transferのthreat model。
+- 完了条件: legal Ownershipを保証しない語彙、identifierの非公開照合、transfer-safe EvidenceとOwner-private dataの分離、revision / provenance、duplicateの手動review方針、account deletion / withdrawalの処理境界を定義する。UI、QR、Recovery Claim、VIN収集、物理DB migrationは所有者承認とβ Gateまで実施しない。
+- 依存タスク: MECH-003、MECH-038、`TRUST_AND_VERIFICATION.md`、`PRIVACY.md`
+- 所有者確認の要否: 必要。実identifier、実車両、実Accountの取り扱い、DB migration、外部照合、法務確認は別途承認する。
+
 ### MECH-038 遠隔α用Supabase Adapter・RLS・招待API
 
 - 優先度: P0
@@ -124,6 +134,12 @@
 ## BLOCKED
 
 以下は実装タスクではなく、所有者承認と前提資料が揃うまで開始しない外部ゲートです。
+
+### 2026-08-15 checkpointによる再評価メモ
+
+- `MECH-201`／`MECH-202`は、Supabase、Netlify、Production相当α、Deploy Previewがすでに実運用されているため、「外部基盤やデプロイが存在しない」という意味では古い。既存の`BLOCKED`状態は削除・DONE化せず、接続済みであることと、正式公開前の承認・法務・復旧・環境分離ゲートが残ることを分離して、次回owner確認で再評価する。
+- PR #3のDeploy Preview OAuth対応は実装済みだが、iPhone Safariの実機QAは未完了である。これは`MECH-101`の認証運用確認へ追記すべき事項であり、今回DONEへ移さない。
+- Garage timelineの「端末内メディアが見つかりません」再発は、原因・影響範囲が未確定のP1として`PROJECT_STATE.md`で追跡する。新しいMECH番号の採番と完了条件は、再現確認後にowner判断とする。
 
 | タスクID | 優先度 | 状態 | 目的 | 成果物 | 完了条件 | 依存タスク | 所有者確認の要否 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -453,7 +469,8 @@
 - 状態: DONE
 - 目的: Free、Owner Plus、Professionalの検索範囲と提供クライアントを、決済・画面から独立して管理する。
 - 成果物: `docs/PLAN_ENTITLEMENTS.md`、`packages/core/src/entitlements.ts`
-- 完了条件: Free 2台、所有車両検索、未登録車種検索、Professional Web業務検索を設定可能な権限として定義し、テストがある。
+- 完了条件: Free 2台という当時の仮説、所有車両検索、未登録車種検索、Professional Web業務検索を設定可能な権限として定義し、テストがある。
+- 2026-08-16再評価: Entitlement境界の実装完了は維持するが、Free 2台のProduct仮説はEvidence supplyを阻害するためsupersededとし、登録台数によるPaywallを廃止した。DONEは権限設計に対する状態であり、2台制限のProduct採用を意味しない。未接続の`maxOwnedVehicles` prototypeと対応testは後続のcode cleanup対象。
 - 依存タスク: MECH-003
 - 所有者確認の要否: 必要。価格と利用枠は未確定。
 

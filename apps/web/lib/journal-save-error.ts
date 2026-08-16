@@ -26,6 +26,7 @@ export function journalSaveErrorCode(error: unknown): JournalSaveErrorCode {
     value === "media_storage_key_required" ||
     value === "shared_image_not_found" ||
     value === "invalid_shared_image" ||
+    value === "shared_image_prepare_failed" ||
     value === "alpha_shared_image_upload_failed" ||
     value === "alpha_shared_image_sync_failed"
   ) {

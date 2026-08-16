@@ -1,14 +1,14 @@
 # MECHORI Project State
 
-- 更新日時: 2026-08-12
-- 対象ブランチ: `codex/remote-alpha-foundation`
+- 更新日時: 2026-08-16
+- 対象ブランチ: `codex/quick-record-composer`
 - HEAD基準: 本書を含む現在ブランチの`git log -1`を正とする
 - 本番URL: `https://mechori-alpha.netlify.app`
 - 状態文書のルール: 実装、テスト、本番反映、人間QAを別々に判定する。コード、テスト、Git履歴、既存の運用記録を照合し、根拠のない項目は完了にしない。本書を現在の実装状態の正本とする。
 
 ## 1. 現在テスターが利用できる主要フロー
 
-招待URLからGoogleログインし、クルマまたはバイクを登録する。車種マスタにない車両、写真のない車両、過去に所有していた車両も登録を開始できる。Garageから、さっと記録、Journal形式の詳しい記録、整備記録を選び、写真・本文・時期・公開範囲を入力して保存できる。
+招待URLからGoogleログインし、クルマまたはバイクを登録する。車種マスタにない車両、写真のない車両、過去に所有していた車両も登録を開始できる。記録開始時はVehicle、本文、任意の写真だけで保存でき、Quick Recordは現αでは「α参加者に公開」を既定かつ固定とする。日付、種別、整備情報は必要なときに追加する。詳しいJournal形式と構造化整備記録は明示的な詳細導線として維持する。
 
 保存後は車両の時間軸、Garage、フィードで履歴を振り返り、投稿へのいいね、投稿者プロフィール、車両プロフィール、人・クルマ検索、ユーザー／車両フォローを試せる。プロフィール設定、ログアウト、フィードバック、管理者向け運用画面も実装されている。下書きはブラウザ内に保存され、保存成功後に完了画面からGarage、投稿詳細、次の記録、ホームへ進める。
 
@@ -28,6 +28,7 @@
 
 ### 投稿・記録
 
+- **P-086 Quick Record / Universal Composer MVP**: αテスターが従来の記録フォームを面倒と感じ、知見の投稿自体を止めていたP1に対し、入力原則を「まず書ける。整理はあと。」へ更新した。`/journal/new`と車両文脈の記録入口は、Vehicle、本文、任意の写真、「記録する」を最初に示すComposerを既定とする。本文の先頭行を既存`GarageJournalPost`の内部titleへ安全に反映し、event typeは`other`、発生日は当日、公開範囲は既存の既定値で保存する。日付、公開範囲、種別、DIY／お店・工場は折りたたんだ詳細設定へ置き、既存の詳しいJournal、構造化整備記録、写真保存、公開範囲、下書き、完了導線、Garage Timelineのdata contractを変更しない。AI構造化は将来候補で今回未実装。実装・自動検証後、iPhone Safariで本文のみ、本文＋写真、複数台選択、詳細設定、保存後のTimeline反映、保存失敗・下書き復元を確認するまでSHIPPED_NEEDS_QAとする。
 - **P-077 投稿詳細の断続的404**: 投稿一覧の詳細リンクを同じエンコード済みURLへ統一し、Next.jsの推測的な事前遷移を使わないようにした。共有記録のバックグラウンド取得中と取得失敗を、記録不存在と分離して待機・再読み込みできる。実装・回帰テスト・本番反映済みで、人間QAではホーム、フォロー中、Garage、愛車ページからの初回タップと直接URLを確認する。
 - **写真公開範囲の統一**: 写真単独の公開切り替えUIを撤去し、記録本文の公開範囲から写真の共有可否を導出する実装・テストがある。人間QAでは非公開、α参加者向け、公開停止後の写真アクセスを確認する。
 - **P-071 下書き**: 既存フォームの入力をユーザー・入口・編集状態ごとにlocalStorageへdebounce保存し、復元・破棄・期限切れ・破損JSONをテスト済み。人間QAでは再読込、別ユーザー、写真再選択案内を確認する。
@@ -95,11 +96,11 @@
 
 ## 6. 次の優先順位
 
-1. P-081／P-081Bの本番実機QA（未ログインの5秒理解、招待Landing、Google認証後の表示名設定、既存`MECHORI User`救済、チェックリスト進捗）。
-2. P-079の本番実機QA（検索フォーム末尾ボタン、FAB非表示、Enter、0件・エラー表示）。
-3. P-084Bの本番実機QA（`FIAT`／`Barchetta`／`カブ`でα限定Vehicleを検索し、検索結果からVehicle Follow／解除、Connections反映、owner Followとの独立、外部共有状態が変わらないことを確認）。`バルケッタ`の日本語aliasは別課題。
-4. P-074の本番実機UX確認（4項目ナビ、メニュー、FAB、safe area）。
-5. P-077の本番実機QA（各投稿一覧からの初回タップ、直接URL、再遷移）。
+1. P-086のiPhone Safari QA（Vehicle、本文のみ、本文＋写真、複数台選択、詳細設定、保存後のTimeline、下書き・失敗時の維持）。
+2. P-081／P-081Bの本番実機QA（未ログインの5秒理解、招待Landing、Google認証後の表示名設定、既存`MECHORI User`救済、チェックリスト進捗）。
+3. P-079の本番実機QA（検索フォーム末尾ボタン、FAB非表示、Enter、0件・エラー表示）。
+4. P-084Bの本番実機QA（`FIAT`／`Barchetta`／`カブ`でα限定Vehicleを検索し、検索結果からVehicle Follow／解除、Connections反映、owner Followとの独立、外部共有状態が変わらないことを確認）。`バルケッタ`の日本語aliasは別課題。
+5. P-074の本番実機UX確認（4項目ナビ、メニュー、FAB、safe area）。
 
 ## 7. 最近の主要コミット
 
@@ -130,3 +131,110 @@
 ## 9. Global Compliance Review
 
 `docs/GLOBAL_COMPLIANCE.md`に、Japan、EU / EEA、United Kingdom、United States、Australia、Canadaを初期対象とするGlobal Legal / Safety Compliance Reviewの追跡基盤を追加した。これは法令調査や法的結論ではなく、一次資料から地域別要求をProduct Requirement、設計、実装、検証、専門家レビューへ接続するための文書フレームワークである。より広い国際公開、Native Drive Log、広告、Professional課金の前にReview Gateを通す将来必須項目として扱う。具体的な年齢制限、地域別要件、法的適用可否は未確定であり、現在のαを停止扱いにしない。
+
+## 10. 2026-08-15 Documentation Checkpoint
+
+- **基準とリリース運用**: `main`をProduction基準とし、feature branch → Pull Request → Netlify Deploy Preview → 人間QA → `main`の順で確認する。確認目的のProduction deployは繰り返さない。今回のcheckpointは`origin/main`（`a01eb18`）を基準にした文書専用branchであり、コードは変更していない。
+- **PR #2**: `codex/garage-vehicle-identity`のGarage Vehicle Identity改善はopenのままで、`main`へ未merge。人間QA待ちとして扱う。
+- **PR #3**: `codex/deploy-preview-auth`はopen。`0928fb3`のDeploy Preview origin許可と、`f982c7a`のOAuth callback session cookie保存を含む。最新Deploy Preview `https://deploy-preview-3--mechori-alpha.netlify.app`はNetlify checkが成功しHTTP 200を返すが、iPhone SafariのGoogleログイン実機QAは未完了である。
+- **新たに判明したP1**: Garage timelineの一部で「端末内メディアが見つかりません」が再発している。Storage、端末内メディア、再読込・logout・別端末時の境界を調査し、原因を特定するまで解決済みと扱わない。現時点ではデータ損失や全利用者への影響範囲は要確認である。
+- **P0/P1/P2**: 新規P0は確認されていない。P1は上記のGarage media再発、PR #3のiPhone Safari OAuth QA、既存α機能の本番実機QAである。P2はP-075B/C、Native、AI本格提供、Professional課金等の既存Deferred項目で、今回変更しない。
+- **次の確認**: まずGarage media再発の再現条件と影響範囲を記録し、並行してPR #2／#3の人間QA結果をチェックリストへ反映する。原因不明のまま項目をDONEへ移さない。
+
+## 11. 2026-08-15 Quick Record Checkpoint
+
+- **優先理由**: αテスター3名が現在の記録入力を面倒と感じており、MECHORIの重要資産である知見・愛車の記録の流入を妨げている。P-086はGarage Visual展開より先に、投稿開始の認知負荷を下げる。
+- **決定済みの最小入力**: Vehicle、本文、任意の写真、記録する。分類、タイトル、走行距離、部品、費用、Providerなどは初回に必須にしない。保存後または詳細設定で追加するProgressive Disclosureを基本とする。
+- **実装状態**: `codex/quick-record-composer`は`origin/main`を基準に、PR #4の文書commit `e8af299`をcherry-pick（`b6c4112`）して開始した。Quick Record実装commitは`9f6f5fe`で、PR #5としてopen・未merge。PR #2とPR #3のコードは取り込まず変更していない。Deploy PreviewとiPhone Safari実機QAは未完了である。
+- **既知P1**: Garage timelineの「端末内メディアが見つかりません」再発はQuick Recordとは別のP1として残す。今回の写真経路で明確な原因が見つかった場合だけ関連を追記する。
+
+## 12. 2026-08-15 次のα改善フェーズ
+
+- **現在状態**: PR #5 `codex/quick-record-composer`はopen・未merge。Quick Record実装、PR #4相当のdocumentation checkpoint、PR #3のDeploy Preview OAuth／callback session cookie修正を同じbranchへ取り込んだ。統合後の最新commitは`0bf985d`。PR #3自体はopenのままで、`main`へは未merge。
+- **Preview確認**: `https://deploy-preview-5--mechori-alpha.netlify.app`は表示可能。Supabase AuthenticationのRedirect URLsへDeploy Preview callback wildcardを追加済みで、iPhone SafariからGoogleログインを開始し、Preview #5へ戻ることを確認した。秘密情報や認証値は記録しない。
+- **フェーズ目的**: 新機能を大量追加するのではなく、「記録が面倒で分かりにくい」「画面ごとに別サービスのように見える」というα体験を、既存αテスター3名の再テストまでに改善する。知見投稿を促すため、入力しやすさと主要導線の一貫性を優先する。
+- **実施順序**: 1) Quick RecordのiPhone Safari実機UX QA、2) Garage Timeline media再発とHeader／Navigationの既知UI問題をまとめて調査・修正、3) GarageをDesign North StarとしてHome、Quick Record、Vehicle Timeline／Record、Journal、Search、Profile／Notificationsの主要journeyへ共通Design Languageを適用、4) αテスター3名へ再テストを依頼する。実機QA中の不満はその場で個別修正せず、一旦収集してまとめて判断する。
+- **P1**: Garage Timelineの「端末内メディアが見つかりません」再発は継続。IndexedDB、local Blob、legacy media reference、Supabase media、旧新保存方式の差を候補として、再現条件と影響範囲を確定するまで解決済みと扱わない。未ログインLandingのheader余白、ログイン後headerの中央ずれ、画面間のheader／title／navigation不統一も次のUI修正対象とする。
+- **再テスト条件**: Quick Recordの本文のみ／写真付き入力、Vehicle選択、30秒程度の投稿、保存後Timeline反映、迷いの有無を確認できること。主要記録flowが実機で動き、media問題の原因・影響範囲が明確または解決し、Headerの目立つ崩れと主要画面のVisual inconsistencyが改善されていることを最低条件とする。
+- **次の状態**: 自動検証済み・実機QA待ちの機能を完了扱いにしない。人間QA後に、既存αテスターが「また記録したい」と感じるかを最重要の評価軸として記録する。
+
+## 13. 2026-08-15 α再テスト前 UX Improvement Pass（PR #5継続）
+
+- **対象と状態**: PR #5 `codex/quick-record-composer`で、Quick Record、共通Header、Garage／Journalの表示をα再テスト前に整える。PR #2、PR #3はopen・未mergeのまま変更しない。今回のコードは自動検証後にHuman QAへ回す。
+- **Quick Record**: 最小入力（Vehicle、本文、任意写真、記録する）は維持し、本文・写真・保存操作を近づけ、詳細設定を初期表示から外す。`alpha_inline`の新規Quick Record写真はworkspaceに保存する既存経路を使い、端末ローカルBlob依存を新たに増やさない。
+- **Header**: モバイルHeaderを左右固定slotと中央titleの共有構造にし、左右action数に影響されずtitle／brandがviewport中央に来るようにする。未ログインLandingの大きな上部余白はコード上で原因を断定できておらず、safe area・Netlify Drawer等を含めてiPhone QAで再確認する。
+- **Garage media P1の原因**: 旧詳細Journalの`local_blob`写真はIndexedDBのoriginごとの端末内参照であるため、別端末・別browser・ProductionとPreviewの別originでは復元できない。新規Quick Recordの`alpha_inline`写真と、既存`alpha_shared`の共有写真は別経路である。今回、復元不能な旧local mediaは本文を妨げない小さな縮退表示にし、共有写真の取得失敗は既存の再試行／診断対象として維持する。legacy写真の移行・回復は未実装。
+- **Design Language適用範囲**: 共通Header、authenticated Home、Garage、Quick Record、Journal detailを、白地・短い事実的copy・余白・内容主体・一つの主要CTAというGarage由来の文脈へ寄せた。Search、Profile、Notificationsは優先度Bとして今回未統一。Admin／Professional／prototypeは対象外。
+- **再テスト前の人間確認**: iPhone Safariで、未ログインLanding上部、Header中央、Quick Record本文のみ／写真付き保存、Garage timelineの旧／新写真、Home → Garage → Record → Timelineの連続性を確認する。コード上の状態はHuman QA ready候補であり、実機確認前に完了扱いにはしない。
+
+## 14. 2026-08-15 Quick Record iPhone Safari QA修正（PR #5継続）
+
+- **写真付き保存の原因と修正**: 本文保存とは別に、Quick Record／詳細Journalがlazy social hydration由来の共有ready判定を投稿前に使っていた。その一時状態がfalseの間は、既存の共有アップロードを試さず「共有機能の準備が完了していないため、自分だけに保存」と止めていた。公開写真は既存の`alpha_inline` → 認証済み`alpha-journal-media` Storage → `alpha_shared` payload → shared Journal RPC経路を実行して結果で判定するよう戻した。失敗時はprivate化せず、workspace rollbackと入力保持を行い、安全な再試行メッセージを返す。
+- **公開範囲**: 新規Quick Recordの写真は本文と同じ公開範囲を使う。αでの通常値「α参加者に公開」を写真だけprivateへ落とさず、`自分だけ`は明示的なprivacy選択として維持する。新規の共有写真はorigin単位のIndexedDBではなく、認証済みshared Storageを読む設計である。
+- **QA polish**: 本文placeholderを「愛車で何をしましたか？」へ変更し、Quick Recordの写真操作をOS標準file picker一つの「写真を追加」へ統合した。下書き操作、詳細設定のgrouping、日付fieldのmin-inline-size、保存CTAのbottom safe area、Home／Journalのmedia containerを整えた。旧`local_blob`のTimeline fallbackは本文より目立たない68px最小高へ縮小した。
+- **未解決P1／要確認**: legacy `local_blob`写真の別端末・別originでの回復／migrationは未実装。未ログインLanding上部の大きな余白はコード上で原因を確定できていない。iPhone Safariでは本文のみ、写真付きの「α参加者に公開」と「自分だけ」、保存直後のTimeline、別session／別deviceでの共有写真、日付field、下書き、bottom navigationとの距離を確認する。
+- **状態**: 自動検証完了後もPR #5はopen・未merge、Human QA ready。PR #2／PR #3、`main`、Netlify／Supabase設定は変更しない。
+
+## 15. 2026-08-15 Quick Record公開範囲方針
+
+- **現在のProduct decision**: Quick Record / Universal Composerでは、保存時の公開範囲を毎回選ばせず、「α参加者に公開」を固定のdefaultとして扱う。入力画面から「自分だけ／α参加者に公開」の2択UIを削除する実装を次のUI polishで反映する。
+- **理由**: Quick Recordの「まず書ける。整理はあと。」に対し、投稿ごとのVisibility判断は不要な認知負荷になる。共有された愛車記録がTimeline、他ownerの経験、Knowledge accumulation、再訪理由を育てるため、通常投稿は共有を中心にする。
+- **下書きとの境界**: 入力途中のprivate状態は下書きで扱う。下書きは公開せず、正式保存時にα参加者へ公開する。「自分だけ」をQuick Recordの正式保存後に常設する需要は未確認であり、仮説だけで入力UIを増やさない。
+- **将来と範囲**: 正式公開後などにPublic／Followers only／Privateの3段階を再検討する余地は残す。この判断はQuick Recordだけを対象とし、Maintenance Recordや詳しいJournal等の既存Visibility仕様は変更しない。
+
+## 16. 2026-08-15 Quick Recordの保存後enrichment方針
+
+- **次回実装方針**: Quick Record画面の投稿前「詳しく記録する」別入口を廃止し、`Vehicle → 本文 → 写真（任意）→ 記録する`で正式保存を先に完了する。保存後に必要なユーザーだけが任意の構造化情報追加へ進む。
+- **保存契約**: 保存後のBottom Sheet等で「整備情報を追加／閉じる」を提示する。追加をしない、スキップする、閉じる、途中で離れる場合も、直前に保存した投稿は失われず、保存失敗扱いにしない。後から記録詳細で追加・編集できる方向とする。
+- **「あとで」の再整理**: 現在の投稿前詳細項目を、投稿前に本当に必要なもの、保存後へ移せるもの、廃止可能なものへ実装時に分類する。今回、既存項目を機械的に削除したり、Quick Record専用の巨大data modelを決めたりしない。
+- **状態**: これはQuick Record / Universal Composerだけの次回UI・実装方針であり、Maintenance Record、詳しいJournalの既存data model・Visibilityは変更しない。αではAIによる動的質問を必須にしない。Human QA前は未実装方針として扱う。
+
+## 17. 2026-08-15 P-086 共有写真保存経路の修正（PR #5継続）
+
+- **再現範囲**: iPhone Safariで本文＋写真の「α参加者に公開」だけが、記録本体の保存後にshared photo copyの更新で失敗した。本文のみ、写真選択・preview、private写真の各経路とは分離して扱う。
+- **原因（code／RLS contract）**: 新規共有画像はjournal ID・更新時刻・media IDを含む一意のobject pathを生成するにもかかわらず、Storage uploadを`upsert: true`で実行していた。`alpha-journal-media`の現行RLSはoperationごとのreadを絞っており、新規画像にも不要なupdate／conflict経路を通す設計だった。また`alpha_inline`のdata URLを`fetch`してから再度canvas変換しており、iPhone Safariで余分な失敗点になっていた。
+- **修正と境界**: Quick Recordで既に460KB以下へ正規化済みの`alpha_inline`画像を直接Blobへ戻し、再fetch・再encodeせず、shared bucketへ新規insert（`upsert: false`）する。shared Journal RPC成功後にだけ`alpha_shared`参照をpublishするため、新規公開写真は別origin・別deviceでもshared Storage＋shared dataから取得できる。旧`local_blob`写真は移行せず、origin限定のlegacy P1として残す。
+- **観測性と次のQA**: 失敗時はuser、journal ID、object path、画像内容を含めず、operation・HTTP status・safe Storage error codeだけをbrowser diagnosticへ記録する。iPhone Safariで小さい写真、通常のiPhone写真、private写真を各1件保存し、公開写真のTimeline・別session／別device表示を確認する。実機前はSHIPPED_NEEDS_QAを維持する。
+
+## 18. 2026-08-15 Authenticated Home Feed Design Unification（PR #5継続）
+
+- **実装状態**: Authenticated Homeの投稿一覧を、2列の大きなSurface cardではなく、owner・Vehicle・date、本文、任意写真、最小のsocial metadataを順に読む単列Feedへ変更した。既存のJournal data、Like、投稿詳細、owner／Vehicle link、visibility、写真取得経路は変更していない。
+- **表示方針**: `JournalCard`は共通して過剰なborder、上端accent、shadow、固定高本文、重いfooterを外し、余白とdividerを中心に分離する。titleと本文が実質同じ場合は表示上だけtitleを省き、投稿内容は改変しない。Homeでは通常のα参加者公開labelと独立した「読む」CTAを省き、例外Visibility、Like、既存の投稿タップ導線を維持する。
+- **Home上部**: 月次の4件KPI tileを、同じ導線を保った低優先度のinline summaryへ縮小した。Homeのrecord FABはmobileでサイズとshadowを抑え、bottom navigationのsafe areaを維持する。Hero内の同一record CTAは置かず、主要actionを重複させない。
+- **状態**: 自動テスト後もSHIPPED_NEEDS_QA。iPhone SafariとPCで、複数投稿の読みやすさ、長文、写真の収まり、owner／Vehicle／date、Like、投稿詳細、例外Visibility、FABとbottom navigationの距離を確認する。Search、Profile、NotificationsのDesign統一は今回対象外。
+
+## 19. 2026-08-16 Product / Business Strategy Checkpoint（PR #5継続）
+
+- **戦略中核**: 車両個体、仕様、症状・出来事、作業、部品、結果、再発・解決、出典を結ぶ整備Evidenceを中核にし、記録から再利用・対応・結果追記へ戻る循環をEvidence Loopとして扱う。Evidence Graphは内部戦略概念であり、一般向けMarketing用語にはまだしない。
+- **現在のProduct優先**: Quick RecordはEvidence intakeであり、現αでは簡単な記録と再利用意欲を最優先にする。次の重要stepは投稿前の詳細入力ではなくpost-save enrichmentとresult follow-upである。
+- **Consumer / B2B**: Owner FreeはEvidence supply、愛車履歴、獲得、network形成を担う。現αを営業型B2Bへ依存させず、Professionalは3工場程度の実業務でEvidence workflowを観察してから大型実装を判断する。長期的な主利益基盤はProfessional / B2Bである。
+- **Monetization**: AffiliateはConsumer基盤原価の補填、AI超過枠はAPI原価回収、Owner Plusは補助収益として役割を分ける。Free 2台の旧仮説はsupersededとし、愛車登録台数をPaywallにしない。未接続の`maxOwnedVehicles` prototypeとtestは後続のcode cleanup対象。
+- **Growth / Measurement**: ProductはUniversalな登録を維持し、GTMでは2〜3 clusterへ獲得を寄せる実験を検討する。Monthly Completed Evidence Loopsは長期North Star候補であり、現αではQuick Record成功、再訪、enrichment、Meaningful Reuse、結果追記、共有後の後悔等のLeading Indicatorを優先する。
+- **αテスターの定性シグナル**: 「整備士にとってのGitHub（ポートフォリオ）」と「クルマのカルテ（オーナーが変わっても残る整備記録）」という表現が得られた。前者はProfessionalへ返る技術実績、後者はVehicleへ継続する許諾済み履歴の仮説として保持する。需要・支払意思・実利用は未検証であり、Marketing claimや品質保証として先行利用しない。
+- **未実装・仮説**: Professional Network、Knowledge Infrastructure、Evidence API、AI-driven enrichment、正式公開後のPublic / Followers only / Private、Nativeは将来仮説またはGate後の対象であり、今回implementation scopeへ追加しない。
+
+## 20. 2026-08-16 Vehicle Succession ContractとHome Feed-first（PR #5継続）
+
+- **Vehicle continuity**: 「クルマのカルテ」を、PhysicalVehicleに紐づく許諾済みEvidenceを、前Ownerと次Ownerが会わない流通でも安全に再利用できるようにする仮説として整理した。β正規化前にPhysicalVehicle、VehicleRelationship、EvidenceAccessGrantを分離し、Identity / Relationship / Provenance / Accessのtrustも分離するconceptual contractを確定した。Transfer QR / token、Recovery Claim、identifier保存・matching、Access Grant、DB migrationはDeferredであり、今回実装していない。
+- **Rights / privacy**: identifierのPublic Searchは行わず、private memo、個人費用、位置、private photo、invoice原本、communicationを自動移管しない。Vehicle EvidenceとOwner private dataは別のretention policyを持ち、新Ownerは過去Evidenceのauthorではなく、許可されたprojectionへのAccessを得て追記・訂正request・反証を行う。
+- **Home implementation**: Authenticated HomeはFollowing Feedをfirst surfaceに移し、特集Journal、decorative English label、重いcardを撤去した。JournalCardは本文を先に読み、任意写真を後に続ける共通presentationにし、Home画像containerはinline sizeとmin/max widthを明示してviewport外へのはみ出しを防ぐ。自分の履歴、Search、月次summary、Activationはsecondaryに保つ。
+- **α仮説とQA**: Feed-firstは、記録のない日にも再訪理由、Evidence discovery、Meaningful Reuseを生むかを確認する未検証仮説である。WAU / MAU改善を断定しない。iPhone SafariとPCで、複数投稿、長文、写真あり／なし、owner / Vehicle / date、Like、投稿詳細、例外Visibility、Search、FABとbottom navigation、画像の横はみ出しを確認する。
+- **P1 / 次の作業**: legacy `local_blob`写真の別端末・別originでの回復は未解決P1、未ログインLanding上部余白は要確認のまま。Quick Record実機QAとHomeの人間QAを終えた後、αテスター再テストへ進む。PR #5はopen・未merge。PR #2、PR #3、`main`、Netlify / Supabase設定は変更しない。
+
+## 21. 2026-08-16 Home = Following Feed / Quick Record保存契約の実装（PR #5継続）
+
+- **Home**: Authenticated HomeをFollowingの数件previewではなく、取得済みFollowing Feedを連続して読むmain surfaceへ変更した。`すべて見る`で別Feedへ送る導線は外し、自分の履歴、Garage、Knowledge Search、月次summary、ActivationはFeed後方のsecondary moduleとして維持する。mobileでは既存FABを唯一のprimary Quick Record entryとし、desktopだけに控えめなtext entryを残す。α noticeはFeedより後方のcompact noteへ下げた。Feed-firstによるrevisit、WAU / MAU、Meaningful Reuseの改善は未検証のα仮説である。
+- **Quick Record**: 新規保存時のVisibility 2択と投稿前の「詳しく記録する」入口を削除した。新規Quick Recordは`public`として保存され、現αのshared publish経路によりα参加者へ共有される。下書きは端末内の公開前private状態であり、写真バイナリは保持しない。既存詳細Journal / MaintenanceのVisibility仕様は変更していない。
+- **保存後optional enrichment**: 初期記録を`Vehicle → 本文 → 任意写真 → 記録する`で先に保存し、成功後だけ「整備情報を追加／閉じる」のBottom Sheetを表示する。今回の安全な最小再利用は記録種別、発生時期、DIY／お店・工場のattributionであり、既存Journal updateを使う。Skip、Close、browser離脱、追加入力の保存失敗では初期投稿を削除・失敗扱いにしない。後日の詳細追加は既存record edit導線で引き続き可能だが、部品・費用・走行距離等のpost-save入力の拡張は別P2とする。
+- **mobile P1修正とQA**: iPhone Safariの再現を受け、保存後enrichment form内のfieldsetが`max-inline-size`だけでauto幅になっていた点に加え、iOS native date controlの外観がCSS boxより右へ描画される余地を修正した。fieldsetをgrid track幅の`inline-size: 100%`かつ`border-box`にし、form childの`min-inline-size: 0`を明示する。date inputはnative pickerを維持したまま`appearance: none`とblock sizingで通常のform-control幅へ正規化し、他inputと同じ44px高・垂直中央のline-heightへ揃えた。コード・自動検証後も、320 / 375 / 390 / 430pxでの日付、Bottom Sheetとkeyboard / bottom navigation、本文のみ・共有写真付き保存、enrichmentのSkip / Close / failure、下書きを人間QAするまでSHIPPED_NEEDS_QAとする。
+
+## 22. 2026-08-16 main merge前の統合checkpoint（PR #5継続）
+
+- **PR #3 Auth監査**: `f982c7a`は現PR #5のancestorであり、現行`auth-flow`、callback、Supabase route cookie bridge、関連testを比較してDeploy Preview OAuth修正がFully incorporatedであることを確認した。Productionと`deploy-preview-<digits>--mechori-alpha.netlify.app`だけをHTTPS・portなしで許可し、類似hostを拒否する。callbackはsession cookie mutationをrequestと最終redirect responseへ適用し、no-store headerを維持する。PR #3自体はopen・未mergeのまま。
+- **PR #2 Vehicle Identity移植**: PR #2のVehicle Identity hierarchyと、車齢・所有期間・走行距離の純粋な整形意図を、現PR #5のGarage Heroへ移植した。メーカー、車名＋trim、型式・年式、事実情報、Ownerの順に表示し、欠損値はplaceholderを出さず省略する。PR #2の古いcard／CSS／spacingは取り込んでいない。長い車名はwrapし、320 / 375 / 390 / 430pxのiPhone Safari実機確認は未実施。
+- **状態**: PR #5は自動検証・Deploy Preview反映後、mainへmergeせずHuman QAで止める候補である。iPhone SafariではPreview login、Home Following Feed、GarageのVehicle Identity（長い値・欠損値を含む）、Quick Record本文のみ／写真付き、post-save enrichment、Timeline / detail、Logout → Loginを確認する。legacy `local_blob` media recoveryは未解決P1、Landing上部余白は要確認のままとする。
+
+## 23. 2026-08-16 Garage Timeline shared photo representation fix（PR #5継続）
+
+- **原因と修正**: Garage Timelineだけがworkspace内の`journal.media[0]`をそのまま表示し、さらに共有Journalをhydrateしていなかったため、同じ公開済み記録に対応する`alpha_shared` Storage参照があっても、端末依存`local_blob`を読もうとして縮退表示になっていた。Journal detail／Feedと同じsocial hydrationと`preferSharedJournalMediaForDisplay`をGarageにも適用し、`public_ready`の写真はshared Journalの`alpha_shared`参照を優先する。これにより、detailで表示できる共有写真をTimelineでも同じ経路で表示する。
+- **境界**: private写真と、shared copyが存在しない真のlegacy `local_blob`は置き換えず、本文を残す既存fallbackを維持する。legacy写真の別origin／別device回復そのものは未解決P1で、人間QAでTimelineとdetailの表示一致を再確認する。
