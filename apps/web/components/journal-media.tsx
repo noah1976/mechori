@@ -25,14 +25,16 @@ export function JournalMedia({
   compact = false,
   body = false,
   priority = false,
-  vehicleHref,
+  linkHref,
+  linkAriaLabel,
 }: {
   attachments: JournalMediaAttachment[];
   locale: Locale;
   compact?: boolean;
   body?: boolean;
   priority?: boolean;
-  vehicleHref?: string;
+  linkHref?: string;
+  linkAriaLabel?: string;
 }) {
   if (attachments.length === 0) return null;
   const visibleAttachments = compact ? attachments.slice(0, 1) : attachments;
@@ -45,7 +47,8 @@ export function JournalMedia({
           body={body}
           locale={locale}
           priority={priority && index === 0}
-          vehicleHref={vehicleHref}
+          linkHref={linkHref}
+          linkAriaLabel={linkAriaLabel}
           key={`${attachment.id}:${attachment.source}:${attachment.assetPath ?? attachment.storageKey ?? ""}`}
         />
       ))}
@@ -61,13 +64,15 @@ function JournalMediaItem({
   body,
   locale,
   priority,
-  vehicleHref,
+  linkHref,
+  linkAriaLabel,
 }: {
   attachment: JournalMediaAttachment;
   body: boolean;
   locale: Locale;
   priority: boolean;
-  vehicleHref?: string;
+  linkHref?: string;
+  linkAriaLabel?: string;
 }) {
   const [source, setSource] = useState<string | null>(
     attachment.source === "demo_asset" || attachment.source === "alpha_inline"
@@ -189,7 +194,7 @@ function JournalMediaItem({
   return (
     <figure className={`journal-media-item${body ? ` body-${aspectClass}` : ""}`}>
       {image ? (
-        vehicleHref ? <Link href={vehicleHref} aria-label={locale === "ja" ? "車両プロフィールを開く" : "Open vehicle profile"}>{image}</Link> : image
+        linkHref ? <Link href={linkHref} aria-label={linkAriaLabel}>{image}</Link> : image
       ) : (
         <video controls preload="metadata" aria-label={attachment.altText}>
           <source src={source} type={attachment.mimeType} />

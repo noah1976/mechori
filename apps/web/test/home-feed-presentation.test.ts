@@ -6,6 +6,7 @@ import { hasDistinctJournalTitle } from "../lib/journal-feed-presentation.ts";
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 const home = read("../app/page.tsx");
 const card = read("../components/journal-card.tsx");
+const media = read("../components/journal-media.tsx");
 const css = read("../app/globals.css");
 
 test("feed presentation suppresses only title and body duplicates", () => {
@@ -49,5 +50,15 @@ test("journal cards use a shared content-first presentation and the home FAB is 
 });
 
 test("journal card keeps the record text before its optional feed photo", () => {
-  assert.ok(card.indexOf("<p>{display.body}</p>") < card.indexOf("<JournalMedia attachments={visibleMedia}"));
+  assert.ok(card.indexOf("<p>{display.body}</p>") < card.indexOf("<JournalMedia"));
+});
+
+test("feed photos use the same canonical detail route as the card hit area", () => {
+  assert.match(card, /const detailHref = journalDetailHref\(displayJournal\.id\)/);
+  assert.match(card, /className="journal-card-hit-area"/);
+  assert.match(card, /href=\{detailHref\}/);
+  assert.match(card, /linkHref=\{detailHref\}/);
+  assert.doesNotMatch(card, /<JournalMedia[\s\S]*vehicleHref=\{vehicleHref\}/);
+  assert.match(media, /linkHref \? <Link href=\{linkHref\} aria-label=\{linkAriaLabel\}>\{image\}<\/Link> : image/);
+  assert.doesNotMatch(media, /vehicleHref/);
 });

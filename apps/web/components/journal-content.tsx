@@ -29,7 +29,8 @@ export function JournalContent({
               body
               locale={locale}
               priority={block.id === firstMediaBlockId}
-              vehicleHref={vehicleHref}
+              linkHref={vehicleHref}
+              linkAriaLabel={locale === "ja" ? "車両プロフィールを開く" : "Open vehicle profile"}
               key={block.id}
             />
           );

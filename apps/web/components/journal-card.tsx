@@ -155,7 +155,14 @@ export function JournalCard({
           <strong>{record.summary}</strong>
         </div>
       )}
-      <JournalMedia attachments={visibleMedia} locale={locale} compact priority={mediaPriority} vehicleHref={vehicleHref} />
+      <JournalMedia
+        attachments={visibleMedia}
+        locale={locale}
+        compact
+        priority={mediaPriority}
+        linkHref={detailHref}
+        linkAriaLabel={ja ? `${display.title}の詳細を読む` : `Read ${display.title}`}
+      />
       <footer>
         {showVisibility && <span>
           {displayJournal.visibility === "private" ? (
