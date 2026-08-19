@@ -290,6 +290,7 @@ export function QuickEventForm({
     return (
       <QuickRecordCompletionSheet
         journal={completion}
+        vehicle={vehicle}
         locale={locale}
         onClose={() => router.push(`/journal/${completion.id}`)}
         onSaveEnrichment={async (draft) => {

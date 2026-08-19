@@ -274,3 +274,11 @@ Following FeedをAuthenticated Homeのfirst surfaceに置くのは、記録や�
 - 既存の`feed_viewed`、Journal detail open、Like、`garage_viewed`、Quick Record start / save、2回目session / recordの時系列を、個人本文・Vehicle identifierを増やさず確認する。
 - Feed閲覧が増えても、detail open、Garage visit、記録、結果追記、Meaningful Reuseへつながらなければ、単なる消費時間を成功扱いにしない。
 - αの少人数では数値を一般化せず、再訪理由と「他Owner / Vehicleの記録から役立ったこと」を短いinterviewで補完する。
+
+## α Signature Experienceの仮説
+
+Quick Record保存後の履歴previewとReference Garageは、投稿数を増やすためのgamificationではなく、記録がVehicle Evidenceへ育つ価値を理解できるかを確認する実験である。Evidence GraphやAI extractionの実装・効果を意味しない。
+
+- 既存の`journal_saved`、`garage_viewed`、`history_reused`だけを継続して扱い、新しい外部分析serviceは導入しない。
+- Human QAでは「保存直後に何が残ったと理解したか」「Reference Garageを見て自分も記録を続けたいと思ったか」「説明なしで次の行動が分かったか」を尋ねる。
+- 数値が少ないαでは、Reference Garageの閲覧数だけを成功とせず、2件目の記録、任意enrichment、後日のGarage再訪と定性回答を合わせて判断する。

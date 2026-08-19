@@ -238,3 +238,9 @@
 
 - **原因と修正**: Garage Timelineだけがworkspace内の`journal.media[0]`をそのまま表示し、さらに共有Journalをhydrateしていなかったため、同じ公開済み記録に対応する`alpha_shared` Storage参照があっても、端末依存`local_blob`を読もうとして縮退表示になっていた。Journal detail／Feedと同じsocial hydrationと`preferSharedJournalMediaForDisplay`をGarageにも適用し、`public_ready`の写真はshared Journalの`alpha_shared`参照を優先する。これにより、detailで表示できる共有写真をTimelineでも同じ経路で表示する。
 - **境界**: private写真と、shared copyが存在しない真のlegacy `local_blob`は置き換えず、本文を残す既存fallbackを維持する。legacy写真の別origin／別device回復そのものは未解決P1で、人間QAでTimelineとdetailの表示一致を再確認する。
+
+## 24. 2026-08-19 α Signature Experience experiment
+
+- **Quick Record → Evidence Intake可視化**: 保存後Sheetは、実際に保存されたVehicle、本文、記録日時、写真有無だけを「このクルマの履歴に残った記録」として表示する。任意の整備情報追加と後日の結果追記は、保存済み投稿をblockしない次の段階として示す。AI抽出、原因推定、完成度scoreは導入していない。
+- **Garage / Reference Garage**: Garageには選択Vehicleに実在するJournal・Maintenance・部品entry数だけを静かに表示する。`/reference-garage`は既存`demoData`だけを読む明示的なDEMO車両で、出来事 → 作業 → 部品（ある場合）→ 結果を一つのflowとして示す。実ユーザーdata、Production DB、Evidence Graph本体は使わない。
+- **検証状態**: αユーザーが「SNS投稿ではなく愛車履歴の入口」と理解するか、Reference Garageで「自分もこう残したい」と感じるかをHuman QAと短いinterviewで検証する。実装・自動検証後もHuman QA pending。

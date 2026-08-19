@@ -171,3 +171,10 @@ P-069のように本番で再現した不具合は、テスト成功だけを根
 - `[~]` 月次summaryがFeedより目立たず、各既存導線が動くこと、Homeの「記録する」FABがbottom navigation・safe area・Feed本文を妨げないことを確認する。
 - `[~]` Following FeedがAuthenticated Homeそのものであり、数件previewの「すべて見る」へ依存せず続きをscrollできることを確認する。特集Journal、`FROM ALPHA GARAGES`等のdecorative English label、上端accent付きの大きな投稿cardがないことを確認する。Feed-firstが再訪理由になるかは、実機操作とαヒアリングで検証し、実測前にWAU / MAU改善と扱わない。
 - `[~]` Home Feedの写真が320px、375px、390px、430px前後のiPhone Safari幅でcontainer・viewportから横にはみ出さず、本文、写真、Like、detail linkがそれぞれ操作できることを確認する。
+
+## 14. 2026-08-19 α Signature Experience
+
+- `[~]` Quick Recordを本文のみ・写真付きで保存し、保存後Sheetに実際のVehicle、本文、記録日時、写真有無だけが表示されることを確認する。整備情報を追加しなくても投稿が残り、Close後に投稿詳細へ戻れることを確認する。
+- `[~]` 保存後Sheetの「整備情報を追加」と、後日結果を追記できる旨の説明が、保存必須・診断結果・完成度scoreに見えないことをiPhone Safariで確認する。
+- `[~]` Homeの「記録がつながった例を見る」からReference Garageを開き、DEMO表記、Vehicle、出来事 → 作業 → 部品（ある場合）→ 結果の順序を確認する。実ユーザーdataや実在の整備結果に見えないことを確認する。
+- `[ ]` αテスターへ、保存後に「単なるSNS投稿ではなく愛車履歴になった」と感じたか、Reference Garageを見て継続記録の価値が分かったかを自由に聞く。

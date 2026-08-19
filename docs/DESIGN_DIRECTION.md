@@ -131,6 +131,12 @@ Garage由来のDesign Languageを、αテスターが頻繁に通る範囲へ限
 - Homeの月次情報は行動を妨げない低優先度のsummaryとし、Feedをfirst-class contentにする。mobileのrecord FABは内容を覆わず、bottom navigationとsafe areaから十分離す。
 - Journal CardはHomeだけの特別な装飾にせず、Garage由来のwhite base、読みやすい本文、写真の収まり、控えめなsocial metadataを各投稿一覧へ共通適用する。写真はcontainerとviewportからはみ出さず、本文の後に自然に続く。Human QAでHome、Feed、公開Profileの読みやすさを確認する。
 
+## α Signature Experience
+
+- Quick Record保存後は、入力欄を増やさず、保存されたVehicle・本文・日時・写真有無を短く見せて「このクルマの履歴に残った」ことを伝える。完成度score、badge、AI推定は使わない。
+- Evidenceの流れは、番号と細いlineだけで出来事・作業・部品・結果をつなぐ。大きなdashboard card、gradient、装飾的な英語labelを増やさず、Garageの白地・事実的copy・控えめなborderに従う。
+- Reference GarageはDEMOであることを常に明示し、実ユーザーの記録量を水増ししたように見せない。
+
 ## 未確定
 
 - ロゴ

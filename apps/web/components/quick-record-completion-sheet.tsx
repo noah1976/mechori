@@ -1,8 +1,11 @@
 "use client";
 
 import { OccurrenceDateFields } from "@/components/occurrence-date-fields";
+import { EvidenceFlowStrip } from "@/components/evidence-flow-strip";
 import { ServiceAttributionField } from "@/components/service-attribution-field";
 import {
+  displayVehicleModel,
+  journalOccurrenceLabel,
   journalSupportsServiceAttribution,
   journalToDraft,
   normalizeServiceAttribution,
@@ -11,6 +14,7 @@ import {
   type JournalEventType,
   type MaintenanceServiceAttributionV1,
   type Locale,
+  type Vehicle,
 } from "@mechori/core";
 import { CheckCircle2, LoaderCircle, Wrench, X } from "lucide-react";
 import { useState, type FormEvent } from "react";
@@ -31,16 +35,20 @@ type OccurrenceDraft = Pick<
 
 export function QuickRecordCompletionSheet({
   journal,
+  vehicle,
   locale,
   onClose,
   onSaveEnrichment,
 }: {
   journal: GarageJournalPost;
+  vehicle?: Vehicle;
   locale: Locale;
   onClose(): void;
   onSaveEnrichment(draft: JournalDraft): Promise<GarageJournalPost>;
 }) {
   const ja = locale === "ja";
+  const vehicleLabel = vehicle ? `${vehicle.make} ${displayVehicleModel(vehicle, locale)}` : journal.vehicleLabel;
+  const photoCount = journal.media.filter((item) => item.kind === "image").length;
   const stored = journalToDraft(journal);
   const [mode, setMode] = useState<"prompt" | "form" | "saved">("prompt");
   const [eventType, setEventType] = useState<JournalEventType>(journal.eventType ?? "other");
@@ -93,7 +101,24 @@ export function QuickRecordCompletionSheet({
         {mode === "prompt" && <>
           <CheckCircle2 className="quick-record-sheet-icon" size={30} aria-hidden="true" />
           <h1 id="quick-record-sheet-title">{ja ? "記録しました" : "Record saved"}</h1>
-          <p>{ja ? "整備情報も追加しますか？" : "Would you like to add maintenance details?"}</p>
+          <section className="quick-record-evidence-preview" aria-label={ja ? "保存した記録" : "Saved record"}>
+            <p>{ja ? `この記録は、${vehicleLabel}の履歴に残りました。` : `This record is now part of ${vehicleLabel}'s history.`}</p>
+            <blockquote>{journal.bodyOriginal}</blockquote>
+            <dl>
+              <div><dt>{ja ? "記録日時" : "Recorded"}</dt><dd>{journalOccurrenceLabel(journal, locale)}</dd></div>
+              <div><dt>{ja ? "本文" : "Text"}</dt><dd>{ja ? "保存済み" : "Saved"}</dd></div>
+              {photoCount > 0 && <div><dt>{ja ? "写真" : "Photos"}</dt><dd>{ja ? `${photoCount}枚` : `${photoCount}`}</dd></div>}
+            </dl>
+            <EvidenceFlowStrip
+              label={ja ? "記録が育つ流れ" : "How this record can grow"}
+              steps={[
+                { label: ja ? "記録済み" : "Recorded", detail: ja ? "車両・日時・本文" : "Vehicle, date, and text" },
+                { label: ja ? "整備情報を追加可能" : "Details can be added" },
+                { label: ja ? "後から結果を追記可能" : "Results can be added later" },
+              ]}
+            />
+          </section>
+          <p>{ja ? "整備情報も追加すると、あとから探したり比較しやすくなります。" : "Maintenance details make this record easier to find and compare later."}</p>
           <div className="quick-record-sheet-actions">
             <button type="button" className="primary-action" onClick={() => setMode("form")}>
               <Wrench size={17} aria-hidden="true" />

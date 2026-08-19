@@ -259,6 +259,10 @@ export default function HomePage() {
             <CarFront size={16} aria-hidden="true" />
             {ja ? "自分のガレージ" : "My Garage"}
           </Link>
+          <Link href="/reference-garage" className="text-link home-reference-link">
+            <BookOpenText size={16} aria-hidden="true" />
+            {ja ? "記録がつながった例を見る" : "See a connected record example"}
+          </Link>
         </div>
         <DemoNotice compact />
       </section>}

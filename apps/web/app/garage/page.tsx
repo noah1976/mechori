@@ -161,6 +161,10 @@ function GarageContent() {
       serviceAttribution: record.serviceAttribution,
     })),
   ].sort((left, right) => right.date.localeCompare(left.date));
+  const partCount = records.reduce(
+    (total, record) => total + record.parts.length + record.actions.reduce((count, action) => count + action.parts.length, 0),
+    0,
+  );
 
   return (
     <div className="page-stack garage-v2">
@@ -202,6 +206,18 @@ function GarageContent() {
             <Link href={`/garage/${encodeURIComponent(vehicle.id)}/share`}><Share2 size={16} />{ja ? "見せる・共有" : "Show & share"}</Link>
           </div>
         </div>
+      </section>
+
+      <section className="garage-evidence-summary" aria-labelledby="garage-evidence-summary-heading">
+        <div>
+          <p className="section-label">{ja ? "このクルマの記録" : "This vehicle's records"}</p>
+          <h2 id="garage-evidence-summary-heading">{ja ? "履歴に残っていること" : "What this history contains"}</h2>
+        </div>
+        <dl>
+          <div><dt>{ja ? "記録" : "Records"}</dt><dd>{timeline.length}</dd></div>
+          <div><dt>{ja ? "整備" : "Maintenance"}</dt><dd>{records.length}</dd></div>
+          {partCount > 0 && <div><dt>{ja ? "部品情報" : "Parts"}</dt><dd>{partCount}</dd></div>}
+        </dl>
       </section>
 
       <section className="garage-v2-vehicle-selector" aria-label={ja ? "愛車を選ぶ" : "Choose a vehicle"}>
