@@ -10,11 +10,13 @@ import {
 import {
   displayVehicleModel,
   journalSupportsServiceAttribution,
+  journalOccurrenceLabel,
   journalToDraft,
   normalizeServiceAttribution,
   unknownServiceAttribution,
   validateJournalDraft,
   type GarageJournalPost,
+  type JournalCaptureIntent,
   type JournalEventType,
   type JournalDraft,
   type JournalMediaAttachment,
@@ -23,7 +25,7 @@ import {
   type Vehicle,
 } from "@mechori/core";
 import { translate, type TranslationKey } from "@mechori/i18n";
-import { ChevronDown, LoaderCircle, Save, ShieldCheck } from "lucide-react";
+import { ArrowRight, ChevronDown, CircleAlert, Ellipsis, LoaderCircle, MapPinned, Save, ShieldCheck, Wrench } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
@@ -37,7 +39,14 @@ import {
   saveLocalDraft,
 } from "@/lib/local-draft-store";
 import { ServiceAttributionField } from "@/components/service-attribution-field";
-import { quickRecordTitle } from "@/lib/quick-record";
+import {
+  captureIntentForJournal,
+  captureIntentLabel,
+  captureIntentPlaceholder,
+  defaultEventTypeForCaptureIntent,
+  isJournalCaptureIntent,
+  quickRecordTitle,
+} from "@/lib/quick-record";
 import { journalSaveErrorMessage } from "@/lib/journal-save-error";
 
 const eventTypes: Array<{ value: JournalEventType; label: TranslationKey }> = [
@@ -55,6 +64,13 @@ const eventTypes: Array<{ value: JournalEventType; label: TranslationKey }> = [
   { value: "event", label: "eventEvent" },
   { value: "memory", label: "eventMemory" },
   { value: "other", label: "eventOther" },
+];
+
+const captureIntents = [
+  { value: "issue" as const, Icon: CircleAlert },
+  { value: "service" as const, Icon: Wrench },
+  { value: "drive" as const, Icon: MapPinned },
+  { value: "other" as const, Icon: Ellipsis },
 ];
 
 type OccurrenceDraft = Pick<
@@ -77,7 +93,10 @@ export function QuickEventForm({
     isRemoteAlpha,
   } = useApp();
   const editing = Boolean(journal);
-  const [eventType, setEventType] = useState<JournalEventType>(journal?.eventType ?? "other");
+  const [captureIntent, setCaptureIntent] = useState<JournalCaptureIntent | null>(() =>
+    journal ? captureIntentForJournal(journal.captureIntent, journal.eventType) : null,
+  );
+  const [eventType, setEventType] = useState<JournalEventType | undefined>(journal?.eventType);
   const [serviceAttribution, setServiceAttribution] = useState<MaintenanceServiceAttributionV1>(
     () => normalizeServiceAttribution(journal?.serviceAttribution),
   );
@@ -130,6 +149,7 @@ export function QuickEventForm({
     const timer = window.setTimeout(() => {
       setDraftStatus(
         saveLocalDraft(localDraftKey, {
+          captureIntent: captureIntent ?? undefined,
           eventType,
           ...occurrence,
           note,
@@ -142,12 +162,18 @@ export function QuickEventForm({
       );
     }, 600);
     return () => window.clearTimeout(timer);
-  }, [draftReady, eventType, image, journal, localDraftKey, note, occurrence, omittedMediaCount, serviceAttribution]);
+  }, [captureIntent, draftReady, eventType, image, journal, localDraftKey, note, occurrence, omittedMediaCount, serviceAttribution]);
 
   function restoreDraft() {
     const stored = pendingDraft;
     if (!stored) return;
-    setEventType(stored.value.eventType as JournalEventType);
+    const restoredEventType = stored.value.eventType as JournalEventType | undefined;
+    setEventType(restoredEventType);
+    setCaptureIntent(
+      isJournalCaptureIntent(stored.value.captureIntent)
+        ? stored.value.captureIntent
+        : captureIntentForJournal(undefined, restoredEventType),
+    );
     setOccurrence({
       occurredOn: stored.value.occurredOn,
       occurredYear: stored.value.occurredYear,
@@ -165,12 +191,26 @@ export function QuickEventForm({
   function startNewDraft() {
     clearLocalDraft(localDraftKey);
     setPendingDraft(null);
-    setEventType("other");
+    setCaptureIntent(null);
+    setEventType(undefined);
     setOccurrence({ occurredOn: localDateInputValue(), occurredPrecision: "day" });
     setNote("");
+    setImage(null);
     setServiceAttribution(unknownServiceAttribution());
     setOmittedMediaCount(0);
     setDraftStatus("idle");
+  }
+
+  function chooseCaptureIntent(intent: JournalCaptureIntent) {
+    if (pendingDraft) {
+      clearLocalDraft(localDraftKey);
+      setPendingDraft(null);
+    }
+    setCaptureIntent(intent);
+    setEventType(defaultEventTypeForCaptureIntent(intent));
+    setServiceAttribution(unknownServiceAttribution());
+    setError("");
+    setPublicationError("");
   }
 
   async function selectPhoto(event: ChangeEvent<HTMLInputElement>) {
@@ -226,6 +266,7 @@ export function QuickEventForm({
       const draft: JournalDraft = {
         title: quickRecordTitle(note, locale),
         sourceLanguage: journal?.sourceLanguage ?? locale,
+        captureIntent: captureIntent ?? undefined,
         eventType,
         issueStatus: eventType === "issue" ? journal?.issueStatus ?? "open" : undefined,
         ...occurrence,
@@ -287,6 +328,18 @@ export function QuickEventForm({
   const existingImageSource = !image && existingAttachment?.kind === "image"
     ? existingAttachment.assetPath
     : undefined;
+  const intentForDisplay = captureIntent
+    ?? captureIntentForJournal(journal?.captureIntent, eventType);
+  const selectedEventType = eventTypes.find((item) => item.value === eventType);
+  const detailSummary = journal
+    ? [
+        selectedEventType
+          ? translate(locale, selectedEventType.label)
+          : captureIntentLabel(intentForDisplay, locale),
+        journalOccurrenceLabel(journal, locale),
+        eventType === "issue" ? (locale === "ja" ? "未解決" : "Unresolved") : undefined,
+      ].filter(Boolean).join(" ・ ")
+    : "";
 
   if (completion) {
     return (
@@ -301,6 +354,56 @@ export function QuickEventForm({
           return updated;
         }}
       />
+    );
+  }
+
+
+  if (!editing && !captureIntent) {
+    return (
+      <div className="page-stack narrow-page quick-event-page">
+        <header className="quick-composer-header">
+          <p className="quick-composer-kicker">{locale === "ja" ? "愛車の記録" : "Vehicle record"}</p>
+          <p className="quick-composer-vehicle">{vehicle.make} {vehicleModel}</p>
+          <h1>{locale === "ja" ? "記録する" : "New record"}</h1>
+        </header>
+        {!draftReady ? (
+          <p className="quick-capture-intent-loading" role="status">{locale === "ja" ? "下書きを確認しています…" : "Checking for a draft…"}</p>
+        ) : (
+          <section className="quick-capture-intent" aria-labelledby="quick-capture-intent-title">
+            {pendingDraft && (
+              <div className="local-draft-status is-restored" role="status">
+                <span>
+                  <strong>{locale === "ja" ? "書きかけの記録があります" : "You have an unfinished record"}</strong>
+                  <br />
+                  {locale === "ja" ? "前回入力していた内容を復元できます。" : "You can restore what you entered last time."}
+                </span>
+                <span className="local-draft-actions">
+                  <button type="button" className="primary-action draft-restore-action" onClick={restoreDraft}>{locale === "ja" ? "下書きを復元" : "Restore draft"}</button>
+                  <button type="button" className="secondary-action draft-new-action" onClick={startNewDraft}>{locale === "ja" ? "新しく書く" : "Start new"}</button>
+                  <button type="button" className="draft-delete-action" onClick={() => { clearLocalDraft(localDraftKey); setPendingDraft(null); }}>{locale === "ja" ? "下書きを削除" : "Delete draft"}</button>
+                </span>
+              </div>
+            )}
+            {!pendingDraft && (
+              <>
+                <div className="quick-capture-intent-heading">
+                  <h2 id="quick-capture-intent-title">{locale === "ja" ? "このクルマに、何を残す？" : "What do you want to keep for this vehicle?"}</h2>
+                  <p>{locale === "ja" ? "ひとつ選ぶと、すぐに書けます。" : "Choose one and start writing right away."}</p>
+                </div>
+                <div className="quick-capture-intent-options">
+                  {captureIntents.map(({ value, Icon }) => (
+                    <button type="button" key={value} onClick={() => chooseCaptureIntent(value)}>
+                      <Icon size={19} aria-hidden="true" />
+                      <span>{captureIntentLabel(value, locale)}</span>
+                      <ArrowRight size={17} aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </section>
+        )}
+      </div>
     );
   }
 
@@ -339,13 +442,19 @@ export function QuickEventForm({
             <button type="button" className="draft-discard-action" onClick={startNewDraft}>{locale === "ja" ? "下書きを破棄" : "Discard draft"}</button>
           </div>
         )}
+        {!editing && captureIntent && (
+          <div className="quick-capture-intent-current">
+            <span>{captureIntentLabel(captureIntent, locale)}</span>
+            <button type="button" className="text-action" onClick={() => setCaptureIntent(null)}>{locale === "ja" ? "変更" : "Change"}</button>
+          </div>
+        )}
         <label className="field quick-note-field">
           <span className="sr-only">{locale === "ja" ? "記録本文" : "Record text"}</span>
           <textarea
             maxLength={500}
             value={note}
             onChange={(event) => setNote(event.target.value)}
-            placeholder={locale === "ja" ? "愛車に何がありましたか？" : "What happened with your vehicle?"}
+            placeholder={captureIntentPlaceholder(intentForDisplay, locale)}
             autoFocus={!editing}
           />
         </label>
@@ -393,12 +502,15 @@ export function QuickEventForm({
         </div>
         {editing && <details className="quick-composer-details">
           <summary>
-            <span>{locale === "ja" ? "記録の詳細" : "Record details"}</span>
-            <small>{locale === "ja" ? "種類・時期・作業した人や場所" : "Type, timing, and who or where"}</small>
+            <span>
+              <strong>{locale === "ja" ? "記録の詳細" : "Record details"}</strong>
+              <small>{detailSummary || (locale === "ja" ? "種類や起きた時期などを追加できます" : "Add the type, timing, and other details")}</small>
+            </span>
+            <b>{detailSummary ? (locale === "ja" ? "変更する" : "Change") : (locale === "ja" ? "追加する" : "Add")}</b>
             <ChevronDown size={17} aria-hidden="true" />
           </summary>
           <div className="quick-composer-details-body">
-            <fieldset className="event-type-picker"><legend>{translate(locale, "momentKindQuestion")}</legend>{eventTypes.map((item) => <button type="button" key={item.value} className={eventType === item.value ? "is-selected" : ""} aria-pressed={eventType === item.value} onClick={() => setEventType(item.value)}>{translate(locale, item.label)}</button>)}</fieldset>
+            <fieldset className="event-type-picker"><legend>{translate(locale, "momentKindQuestion")}</legend>{eventTypes.map((item) => <button type="button" key={item.value} className={eventType === item.value ? "is-selected" : ""} aria-pressed={eventType === item.value} onClick={() => { setEventType(item.value); setCaptureIntent(captureIntentForJournal(undefined, item.value)); }}>{translate(locale, item.label)}</button>)}</fieldset>
             {journalSupportsServiceAttribution(eventType) && (
               <ServiceAttributionField
                 value={serviceAttribution}

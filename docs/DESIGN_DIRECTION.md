@@ -27,7 +27,7 @@ MECHORIは北海道で生まれたサービスですが、日本国内向けWeb�
 
 記録入力はフォームを埋める画面ではなく、愛車に起きたことを書き始める画面として扱う。最初に見せるのはVehicle、十分な本文入力、任意の写真、ひとつの保存操作だけにする。タイトル、分類、日付、整備・部品・費用・Providerなどは、必要な人だけが詳細設定で追加する。現αのQuick Recordは公開範囲を「α参加者に公開」に固定し、常設のprivate／public 2択を初期体験へ置かない。
 
-- 入力原則は「まず書ける。整理はあと。」とする。初見のユーザーへMaintenance、Journal、故障記録の分岐を先に強制しない。
+- 入力原則は「何を残すかだけ決めて、すぐ書ける。詳しい整理はあと。」とする。最初の判断は4つの大分類から1回だけとし、Maintenance、Journal、作業 subtype等のフォーム分岐を先に強制しない。
 - 写真は添付管理UIではなく記録の文脈として扱う。写真なしでも保存可能で、iPhoneからカメラまたは写真ライブラリを自然に選べることを優先する。
 - `Quiet Machinery`の低密度を保ち、白いcard、説明文、同格CTAを重ねない。本文と車両名の関係を最も強く見せ、日付などの詳細はsummaryを開いた時だけ表示する。
 
@@ -144,9 +144,10 @@ Garage由来のDesign Languageを、αテスターが頻繁に通る範囲へ限
 ### Vehicle Experience capture
 
 - 利用者向けには`Experience`、`Entry`、`Update`等の内部語を原則表示せず、「愛車の記録」「記録の詳細」「続きを残す」を使う。
-- 現αは保存前のIssue / Repair / Drive選択を増やさない。Vehicle、本文、任意mediaを先に保存し、必要な意味は保存後または後日の詳細で追加する。top-level intentは、実際に書き始められない問題が観察された場合のα実験とする。
+- 現αは、Vehicle確認後に「気になること・不具合」「整備・修理」「ドライブ・思い出」「その他」のtop-level intentを1 tapで選び、composerへ直ちにfocusする。これは詳細分類ではなくProduct identityを伝えるα実験であり、選択後に同じ大分類を聞き直さない。
 - 保存後の入口は、すべてを「整備情報」と呼ばず`記録を詳しくする`へ寄せる。Issue、Drive、Memoryにも成立し、追加しなくても保存済みrecordが残ることを明確にする。
 - Vehicle Continuityでは、Experience Registerと本文を既存trackで読み、mediaは狭いregister columnへ押し込まずExperience Markのcontent幅へ展開する。
+- Garageは最初の12件を段階表示単位にできるが、古いVehicle historyを件数で終端しない。自動loadと明示actionの両方で全履歴へ到達でき、追加表示で順序・scroll位置・media layoutを崩さない。
 - 一度にまとめて残す場合も後から続ける場合も、generic block editorを主画面にしない。本文とmediaを中心にし、工程・経由地・結果は必要な人だけが追加する。
 
 ## 未確定

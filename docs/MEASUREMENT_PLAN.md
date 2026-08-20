@@ -66,6 +66,7 @@ MECHORIの初期検証を、登録者数や感想だけで判断しないため�
 現αでは、既存指標を優先しながら次をLeading Indicatorとして観察します。
 
 - Quick Record保存成功とFirst Record Time
+- Capture Intent選択からcomposer開始・保存までの離脱、Intent変更、本人が選択と記録内容を自然だと感じたか。現αでは外部Analyticsを増やさずHuman QAと既存保存事実で確認する。
 - 2件目の記録、再訪、30-day Meaningful Reuse
 - post-save enrichmentまたは後日構造化追記
 - 他者の記録閲覧と、根拠付き検索・工場提示等の再利用

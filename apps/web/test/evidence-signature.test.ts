@@ -5,6 +5,7 @@ import test from "node:test";
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 const appShell = read("../components/app-shell.tsx");
 const completion = read("../components/quick-record-completion-sheet.tsx");
+const composer = read("../components/quick-event-form.tsx");
 const garage = read("../app/garage/page.tsx");
 const home = read("../app/page.tsx");
 const reference = read("../app/reference-garage/page.tsx");
@@ -15,12 +16,15 @@ const detail = read("../app/journal/[id]/page.tsx");
 const demo = read("../../../packages/core/src/demo.ts");
 const css = read("../app/globals.css");
 
-test("Quick Record completion is neutral until explicit issue enrichment succeeds", () => {
+test("explicit issue capture is open without diagnosis while other intents stay neutral", () => {
+  assert.match(composer, /defaultEventTypeForCaptureIntent\(intent\)/);
+  assert.match(composer, /issueStatus: eventType === "issue"/);
   assert.match(completion, /このクルマに、ひとつ経験が残りました/);
   assert.match(completion, /const \[savedJournal, setSavedJournal\] = useState\(journal\)/);
   assert.match(completion, /savedJournal\.eventType === "issue" && savedJournal\.issueStatus === "open"/);
   assert.match(completion, /const updated = await onSaveEnrichment\(draft\)/);
   assert.match(completion, /setSavedJournal\(updated\)/);
+  assert.match(completion, /captureIntentLabel\(captureIntent, locale\)/);
   assert.match(completion, /kind: isIssue \? "issue" : "record"/);
   assert.match(completion, /<VehicleContinuity/);
   assert.match(completion, /まだ記録はありません/);

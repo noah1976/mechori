@@ -758,3 +758,14 @@
 - Capture decision: 現αでは保存前のIntent 4択を導入せず、Vehicle、本文、任意mediaを先に保存する。「何を残すか」の選択は、α3人が書き始められないことを示した場合だけ次の実験にする。保存後の汎用語は「記録を詳しくする」、将来の継続操作は「続きを残す」とし、Issue / Drive / Memoryをすべて「整備情報」と呼ばない。
 - Media decision: Mediaは原則Entryへ属し、順序を持つ。α候補上限はEntryごとに画像6枚、Experience全体は固定上限なしとするが、Quick Recordは当面1枚を維持する。現在のprivate Workspaceは`alpha_inline` data URLをmonolithic JSON rowへ含めるため、枚数だけ増やすとpayload、再送、失敗率を増やす。private object storageとattachment正規化後に複数画像を有効化する。動画はMOV / HEVC、thumbnail、容量・帯域、再試行、privacy review、shared deliveryのGateが揃うまでDeferredする。
 - PR #8 scope: GarageのmediaをExperience Mark全幅へ展開し、既存複数画像recordのcompact表示を保持する。保存後・編集の文言を「記録の詳細」へ広げる。DB、RLS、RPC、Quick Record複数画像、動画、Experience relationship、Intent gateは変更しない。
+
+### 決定: Vehicle History全到達・Capture Intent・Media resource guardrailへ更新する
+
+- 日付: 2026-08-20
+- 状態: PR #8実装 / Human QA pending。直前のcontent model decisionにある`Intent gateは変更しない`と`Entryごとに画像6枚`というα候補、および先行する「投稿前分類を要求しない」というCapture判断を、以下の範囲でsupersedeする。VehicleExperience / ExperienceEntryの物理schema Deferredは維持する。
+- Vehicle History: 12件はperformanceのための初期表示単位に限定し、古いrecordをProduct上の件数で切り捨てない。clientに全AppDataがある現αでは12件ずつprogressive renderし、自動loadが動かない場合も「さらに過去の記録を見る」から全件へ到達できるようにする。DB pagination APIは新設しない。
+- Capture Intent: Quick Record開始時に「気になること・不具合」「整備・修理」「ドライブ・思い出」「その他」から1回だけ選び、すぐcomposerへ進むα実験を採用する。これは詳細`eventType`ではなくoptionalな`captureIntent`である。明示されたissueだけ`eventType: issue` / `issueStatus: open`とし、serviceは作業 subtypeを断定しない。選択済みの大分類を保存後に聞き直さない。
+- Capture principle: 「まず書ける。整理はあと。」を捨てず、「何を残すかだけ決めて、すぐ書ける。詳しい整理はあと。」へrefineする。1 tapを越える事前form、AI分類、診断入力は追加しない。
+- Media policy: 知見を残す量を恒久的なProduct-level画像枚数で制限しない。必要なguardrailはfile size、supported MIME、optimization、Storage / bandwidth使用量、upload batch、rate limit、abuse対策へ置く。従来の`6 images / Entry`は恒久仕様としては撤回する。
+- Technical boundary: 現行の詳細Journal / shared payloadの6ファイル制約とQuick Recordの1枚制約は、一時的なα transport guardrailとして残す。Quick Record private mediaは`alpha_inline` data URLをmonolithic Workspace JSONへ保存しており、複数画像化するとpayload、再送、部分失敗、cleanupの危険が増える。private object storageとattachment正規化なしに上限だけ外さない。
+- Infrastructure boundary: DB、RLS、RPC、Storage bucket、Netlify / Supabase設定、VehicleExperience relationship、動画uploadは変更しない。

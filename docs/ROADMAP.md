@@ -47,7 +47,7 @@ Phase 3へ進む前に、`docs/ALPHA_PLAYBOOK.md`に従って特に親しい友�
 - 整備記録ではDIY／お店・工場／不明と当時のProvider snapshotを残す。Claim、重複統合、Provider確認済み実績、公開Discoveryはβ後の検証結果で段階導入する。
 - β正規化前に、PhysicalVehicle、VehicleRelationship、EvidenceAccessGrant、identifier assertion、Evidence revision / rights projectionの境界をArchitecture Decisionとして確定する。Vehicle succession UI、Transfer QR、Recovery Claim、public identifier search、政府・オークション連携はこの段階で実装しない。
 - β正規化前に、現行Journal / Maintenance / mediaを`VehicleExperience`、append-orientedな`ExperienceEntry`、atomicなEvidence projectionへ移行するcontractを確定する。既存recordは明示的な関係がない限りsingleton Experienceとしてbackfillし、本文から関係や因果を推測しない。
-- 次のαでは、同じVehicle Experienceへ「続きを残す」行動と複数画像の実需要を先に観察する。Quick Recordの複数画像はprivate object storageとattachment正規化をGateとし、動画はiPhone MOV / HEVC、thumbnail、帯域、privacy review、shared deliveryを満たすまで実装しない。
+- 次のαでは、同じVehicle Experienceへ「続きを残す」行動と複数画像の実需要を観察する。画像は恒久枚数capではなくfile size、Storage、bandwidth、batch、rate limit等のresource guardrailで管理する。Quick Recordの複数画像はprivate object storageとattachment正規化をGateとし、動画はiPhone MOV / HEVC、thumbnail、帯域、privacy review、shared deliveryを満たすまで実装しない。
 - β中盤はオーナー向けネイティブアプリの判断候補時期とする。着手はcalendarだけで決めず、Webでretentionとrepeated recordingが確認され、camera、notification、offline、media capture等のmobile UX制約がEvidence intake・Evidence Loopを妨げていることを確認するGateを通す。WebとNativeをαから二重開発せず、通過時はWebで固めたコアユースケースを再利用する。
 - β拡大前に、`docs/GLOBAL_COMPLIANCE.md`のResearch Frameworkを使い、対象地域・機能・一次資料・Product Decision・専門家確認の要否を追跡する。これは具体的な法的結論を含むものではない。
 

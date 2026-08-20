@@ -175,8 +175,8 @@ P-069のように本番で再現した不具合は、テスト成功だけを根
 ## 14. 2026-08-19 α Signature Experience
 
 - `[~]` Homeを開き、黒いonboardingやFollowing Feedより先に「DEMO・架空例」のVehicle Continuityが最初のProduct objectとして見えること、通常Feedと構造が異なること、架空の利用数・解決率・same-model結果がないことを確認する。
-- `[~]` Quick Recordのplaceholderが「愛車に何がありましたか？」で、投稿前にcategoryを選ばず、まだ直していない異音等を本文のみ・写真付きの両方で保存できることを確認する。
-- `[~]` 保存直後はneutralなExperience Markとして表示され、保存後に本人が「不具合・気になること」を選び保存した場合だけ「未解決」になることを確認する。Continuation Slotは「まだ記録はありません」と表示し、点検・修理・結果のfake recordに見えないこと、Closeしても元recordが残ることを確認する。
+- `[~]` Quick Recordで4つのCapture Intentを1 tapで選ぶと対応するplaceholderのcomposerへ進み、まだ直していない異音等を本文のみ・写真付きの両方で保存できることを確認する。詳細categoryや診断を投稿前に要求しない。
+- `[~]` 「気になること・不具合」を選んだ記録は保存直後から未解決のExperience Markとして表示され、それ以外を未解決にしないことを確認する。Continuation Slotは「まだ記録はありません」と表示し、点検・修理・結果のfake recordに見えないこと、Closeしても元recordが残ることを確認する。
 - `[~]` Home、Quick Record保存後、Garageで同じVehicle Anchor、Experience Mark、Continuation Slotのvisual grammarを確認する。320 / 375 / 390 / 430pxで横overflowがなく、320pxのRecord CTAが本文を大きく覆わないことをiPhone Safariで再確認する。
 - `[~]` GarageのVehicle IdentityとVehicle Anchorが同じ個体を中心に見せ、実recordだけを時系列表示すること、actual relationがない記録を因果chainに見せないこと、欠損actor／resultを補完しないことを確認する。Reference Garageは架空例の前提を確認するsecondary routeとして動作することを確認する。
 - `[~]` Desktopで「記録する」がMECHORI logo直下・navigationより前に見え、Mobileでは既存FABが維持されることを確認する。
@@ -188,6 +188,9 @@ P-069のように本番で再現した不具合は、テスト成功だけを根
 
 - `[~]` Garageの写真付きExperience Markはlocal browserのdesktop／390px／320pxでMark全幅へ収まり、wrapper・figure・imageの実幅一致と横overflowなしを確認済み。iPhone Safariで、Registerと本文の横に写真が細く押し込まれないこと、既存の複数画像recordでは先頭画像と残り枚数が表示され、detailで順序どおり読めることを再確認する。
 - `[~]` Quick Record保存後と既存記録編集で、Issue / Drive / Memoryを一律に「整備情報」と呼ばず、「記録を詳しくする」「記録の詳細」が使われることを確認する。詳細を追加しなくても元recordが残る。
-- `[~]` 現αのQuick Recordは投稿前のIntent選択を増やさず、Vehicle、本文、任意写真から保存できることを確認する。4択等が必要かは、書き始める迷いと保存後分類の理解をα3人へ誘導せず質問する。
+- `[~]` Quick Recordで「このクルマに、何を残す？」から4つのCapture Intentを1 tapで選び、すぐ本文へfocusすることを確認する。戻ってIntentを変更でき、詳細formや二重分類に見えないことを320 / 375 / 390 / 430pxで確認する。
+- `[~]` 「気になること・不具合」は未解決として保存され、「整備・修理」は点検／修理／部品交換を勝手に断定せず、「ドライブ・思い出」「その他」も対応するplaceholderで保存できることを確認する。保存後の「記録を詳しくする」で選択済み大分類を聞き直さない。
+- `[~]` Capture Intentを選んだ書きかけの記録を再読込後に復元できること、復元／新しく書く／削除を選ぶ前にIntent選択で下書きを暗黙破棄できないことを確認する。
+- `[~]` Garageに13件以上の記録があるVehicleで、初期12件の後も自動または「さらに過去の記録を見る」から全履歴へ到達できることを確認する。順序、重複、scroll位置、media幅が崩れず、12件以下では追加UIが出ない。
 - `[ ]` 同じ不具合、修理、Driveについて、別recordではなく「続きを残す」ことを望むか、後日の追記と作業後の一括入力のどちらが自然かを聞く。現実装にはExperience relationshipがないため、近い記録を自動で同一Experienceとして扱わない。
-- `[ ]` Quick Recordで2枚以上の写真、動画、並べ替えが必要だった具体的場面と枚数を聞く。複数画像・動画は実装済みと扱わず、private object media storageとcost / privacy Gateの判断材料にする。
+- `[ ]` Quick Recordで2枚以上の写真、動画、並べ替えが必要だった具体的場面と枚数を聞く。恒久的なProduct-level枚数上限は設けないが、現Quick Recordは一時的に1枚であり、複数画像・動画は実装済みと扱わず、private object media storageとcost / privacy Gateの判断材料にする。

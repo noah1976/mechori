@@ -26,6 +26,9 @@ test("detailed and quick forms debounce local drafts and offer explicit restore 
   assert.match(detailed, /下書きを復元/);
   assert.match(detailed, /clearLocalDraft\(localDraftKey\)/);
   assert.match(quick, /loadQuickEventLocalDraft\(localDraftKey\)/);
+  assert.match(quick, /captureIntent: captureIntent \?\? undefined/);
+  assert.match(quick, /isJournalCaptureIntent\(stored\.value\.captureIntent\)/);
+  assert.match(quick, /!pendingDraft && \(/);
   assert.match(quick, /hasPhoto: Boolean\(image\)/);
   assert.match(quick, /未送信の写真は再度選択してください/);
 });

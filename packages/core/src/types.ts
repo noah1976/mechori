@@ -328,6 +328,7 @@ export type JournalEventType =
   | "event"
   | "memory"
   | "other";
+export type JournalCaptureIntent = "issue" | "service" | "drive" | "other";
 export type JournalIssueStatus = "open" | "resolved" | "recurred";
 
 export interface JournalTextBlock {
@@ -380,6 +381,8 @@ export interface GarageJournalPost {
   vehicleLabel: string;
   modelTargetId: string;
   title: string;
+  /** The broad purpose explicitly selected before writing; distinct from detailed eventType. */
+  captureIntent?: JournalCaptureIntent;
   eventType?: JournalEventType;
   /** Present only when the owner explicitly classifies the Journal as an issue. */
   issueStatus?: JournalIssueStatus;
@@ -474,6 +477,7 @@ export interface FollowTargetSummary {
 export interface JournalDraft {
   title: string;
   sourceLanguage?: LanguageTag;
+  captureIntent?: JournalCaptureIntent;
   eventType?: JournalEventType;
   issueStatus?: JournalIssueStatus;
   occurredOn?: string;

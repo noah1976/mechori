@@ -103,6 +103,26 @@ test("preserves a lightweight vehicle event category", () => {
   assert.equal(result.journal.visibility, "private");
 });
 
+test("keeps broad capture intent separate from detailed event classification", () => {
+  const service = addJournalToData(
+    cloneDemoData(),
+    validDraft({ captureIntent: "service", eventType: undefined, linkedRecordId: "" }),
+    "ja",
+  ).journal;
+  const issue = addJournalToData(
+    cloneDemoData(),
+    validDraft({ captureIntent: "issue", eventType: "issue", linkedRecordId: "" }),
+    "ja",
+  ).journal;
+
+  assert.equal(service.captureIntent, "service");
+  assert.equal(service.eventType, undefined);
+  assert.equal(service.issueStatus, undefined);
+  assert.equal(issue.captureIntent, "issue");
+  assert.equal(issue.eventType, "issue");
+  assert.equal(issue.issueStatus, "open");
+});
+
 test("an explicitly classified issue is valid before diagnosis, repair, or result", () => {
   const result = addJournalToData(
     cloneDemoData(),

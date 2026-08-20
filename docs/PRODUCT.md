@@ -32,9 +32,9 @@ MECHORIは、自動車SNS、整備記録アプリ、B2B SaaS、Affiliateサイ�
   -> 次のオーナー・工場・専門家が再利用
 ```
 
-Quick Recordはこの循環への軽い入口です。「まず書ける。整理はあと。」を維持し、本文と任意写真の保存を先に成立させます。保存後の任意enrichment、使用部品、走行距離、作業情報、症状、結果、再発・解決の追記が、投稿をMECHORI固有のEvidenceへ変える橋です。Evidence化を理由に、投稿前の大量入力へ戻しません。
+Quick Recordはこの循環への軽い入口です。Capture原則は「何を残すかだけ決めて、すぐ書ける。詳しい整理はあと。」とします。利用者は4つの大分類から1回だけ選び、本文と任意写真の保存へ直ちに進みます。保存後の任意enrichment、使用部品、走行距離、作業情報、症状、結果、再発・解決の追記が、投稿をMECHORI固有のEvidenceへ変える橋です。大分類を詳細formや診断へ拡張せず、Evidence化を理由に投稿前の大量入力へ戻しません。
 
-Quick Recordは「何をしたか」だけでなく、「このVehicleに何が起きたか」を受け取ります。まだ原因も対応も分からない異音、警告表示、匂い、漏れ、挙動の変化も、本文だけで正式なVehicle Eventになります。保存前に分類を要求せず、本人が保存後に「不具合・気になること」を明示した場合だけ未解決のissueとして扱います。診断や解決をEvidence Intakeの条件にしません。
+Quick Recordは「何をしたか」だけでなく、「このVehicleに何が起きたか」を受け取ります。まだ原因も対応も分からない異音、警告表示、匂い、漏れ、挙動の変化も、本文だけで正式なVehicle Eventになります。本人が入口で「気になること・不具合」を明示した場合は未解決のissueとして保存できますが、原因や診断を要求しません。「整備・修理」は詳細な作業種別を断定せず、保存後または後日の「記録の詳細」で任意に細分化します。
 
 αでは、同じVehicleについて記録が残り、後から点検、作業、結果を追加できることを`Vehicle Continuity`という共通UI vocabularyで可視化します。Vehicleを常設のanchor、実際の記録を時点・actor・状態を持つ`Experience Mark`、その出所を読む領域を`Experience Register`、まだ存在しない将来を`Continuation Slot`として表します。これはrecord間の因果関係、Vehicle Succession、same-model Knowledge reuseが実装済みであるという意味ではありません。実関係がない履歴は車両に属する時系列記録として表示し、関係modelはβ正規化で検討します。
 
@@ -44,7 +44,9 @@ MECHORIで長期的に扱う中心単位は、SNSのPostではなく、同じVeh
 
 現αのQuick Record / Journal 1件は、原則として一つの`Experience Entry`に相当します。実関係が保存されていない既存記録を推測でまとめず、β正規化時は明示的な関係がない限りsingleton Experienceとして移行します。`Experience`は経緯を残すcontainer、`Entry`は原文・日時・media・author・provenanceを持つ追記単位、`Evidence`はEntryやMaintenanceから本人確認・出典・結果等を保って正規化するatomicな再利用単位です。ExperienceそのものをEvidenceやKnowledge Caseと同一視しません。
 
-Capture UXは引き続き、Vehicle、本文、任意media、保存を先にします。現αでは投稿前にIssue / Repair / Drive等の選択を必須化せず、保存後の「記録の詳細」と将来の「続きを残す」で必要な意味を追加します。利用者が何を書けばよいか迷うことが実測された場合に限り、少数のtop-level intentを次のα実験として再検討します。
+現αのCapture UXは、Vehicleを確認した後に「気になること・不具合」「整備・修理」「ドライブ・思い出」「その他」のtop-level intentを1回だけ選び、すぐ本文と任意mediaへ進みます。これは詳細分類ではなく、Vehicle Experienceを残す入口だと伝わるかを検証するα実験です。選択済みの意味を保存後に聞き直さず、必要な詳細は「記録の詳細」と将来の「続きを残す」で追加します。
+
+Vehicle Historyは初期表示を分割しても、件数で古い記録を切り捨てません。古い未解決issue、過去作業、後日の結果へ到達できることをProduct要件とします。また、知見を残す量を恒久的な画像枚数上限で制限せず、必要な制約はfile size、MIME、Storage、bandwidth、rate limit、abuse対策等のresource guardrailで管理します。現αの保存経路に残る技術上限は一時的制約として区別します。
 
 Owner向けConsumer体験はEvidence supply、愛車履歴、獲得、network形成の入口です。Professionalは、Owner、工場、専門家の間でEvidenceを業務へ接続し、結果をOwner履歴と集合知へ返す長期の出口です。両者を別事業として分断しません。
 

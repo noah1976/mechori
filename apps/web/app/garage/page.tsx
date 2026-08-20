@@ -3,10 +3,17 @@
 import { DemoNotice } from "@/components/demo-notice";
 import { GarageVehicleIdentity } from "@/components/garage-vehicle-identity";
 import { JournalMedia } from "@/components/journal-media";
-import { VehicleContinuity, type VehicleExperienceMark } from "@/components/vehicle-continuity";
+import {
+  VehicleContinuity,
+  type VehicleContinuationSlot,
+  type VehicleContinuityIdentity,
+  type VehicleExperienceMark,
+} from "@/components/vehicle-continuity";
 import { useApp } from "@/lib/app-context";
+import { garageHistoryBatchSize, nextGarageHistoryCount, visibleGarageHistory } from "@/lib/garage-history";
 import { garageServiceAttributionLabel } from "@/lib/garage-pilot";
 import { buildGarageVehicleIdentity } from "@/lib/garage-vehicle-identity";
+import { captureIntentLabel } from "@/lib/quick-record";
 import {
   formatOwnershipPeriod,
   displayVehicleModel,
@@ -19,6 +26,7 @@ import {
   preferSharedJournalMediaForDisplay,
   resolveJournalDisplayContent,
   type JournalEventType,
+  type JournalCaptureIntent,
   type JournalIssueStatus,
   type JournalMediaAttachment,
   type MaintenanceServiceAttributionV1,
@@ -30,7 +38,7 @@ import { ArrowLeftRight, Bike, Camera, CarFront, CheckCircle2, History, Pencil, 
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState, useTransition } from "react";
 
 export default function GaragePage() {
   return <Suspense fallback={null}><GarageContent /></Suspense>;
@@ -149,6 +157,7 @@ function GarageContent() {
         dateLabel: journalOccurrenceLabel(journal, locale),
         title: display.title,
         body: display.body,
+        captureIntent: journal.captureIntent,
         eventType: journal.eventType,
         issueStatus: journal.issueStatus,
         href: `/journal/${journal.id}`,
@@ -168,7 +177,7 @@ function GarageContent() {
       serviceAttribution: record.serviceAttribution,
     })),
   ].sort((left, right) => right.date.localeCompare(left.date));
-  const historyItems: VehicleExperienceMark[] = timeline.slice(0, 12).map((item, index) => {
+  const historyItems: VehicleExperienceMark[] = timeline.map((item, index) => {
     const isIssue = item.kind === "journal" && item.eventType === "issue";
     const isUnresolved = isIssue
       ? item.issueStatus === "open"
@@ -178,7 +187,11 @@ function GarageContent() {
       id: `${item.kind}-${item.id}`,
       dateLabel: item.dateLabel,
       dateTime: item.date,
-      label: item.kind === "record" ? (ja ? "整備" : "Maintenance") : eventTypeLabel(item.eventType, ja),
+      label: item.kind === "record"
+        ? (ja ? "整備" : "Maintenance")
+        : item.captureIntent
+          ? captureIntentLabel(item.captureIntent, locale)
+          : eventTypeLabel(item.eventType, ja),
       title: item.title || item.body || (ja ? "記録" : "Record"),
       detail: item.body && item.body !== item.title ? item.body : undefined,
       actor: attribution
@@ -256,7 +269,8 @@ function GarageContent() {
         </div>
         {timeline.length ? (
           <div className="garage-v2-timeline">
-            <VehicleContinuity
+            <ProgressiveVehicleContinuity
+              key={vehicle.id}
               label={ja ? `${vehicleLabel}に残った経験` : `Experience kept with ${vehicleLabel}`}
               ledgerLabel={ja ? "この個体の記録" : "Records for this individual vehicle"}
               identity={{
@@ -272,8 +286,8 @@ function GarageContent() {
                 title: ja ? "次の経験をここへ続けられます" : "The next experience can continue here",
                 description: ja ? "まだ記録はありません。" : "Nothing has been recorded here yet.",
               }}
+              ja={ja}
             />
-            {timeline.length > 12 && <p className="garage-v2-timeline-note">{ja ? `最近の12件を表示しています。` : "Showing the most recent 12 moments."}</p>}
           </div>
         ) : (
           <div className="garage-v2-empty-history">
@@ -292,6 +306,7 @@ type GarageTimelineItem = {
   dateLabel: string;
   title: string;
   body?: string;
+  captureIntent?: JournalCaptureIntent;
   eventType?: JournalEventType;
   issueStatus?: JournalIssueStatus;
   resolutionStatus?: ResolutionStatus;
@@ -299,6 +314,71 @@ type GarageTimelineItem = {
   media?: JournalMediaAttachment[];
   serviceAttribution?: MaintenanceServiceAttributionV1;
 };
+
+function ProgressiveVehicleContinuity({
+  identity,
+  experiences,
+  label,
+  ledgerLabel,
+  continuation,
+  ja,
+}: {
+  identity: VehicleContinuityIdentity;
+  experiences: VehicleExperienceMark[];
+  label: string;
+  ledgerLabel: string;
+  continuation: VehicleContinuationSlot;
+  ja: boolean;
+}) {
+  const [visibleCount, setVisibleCount] = useState(garageHistoryBatchSize);
+  const [isPending, startTransition] = useTransition();
+  const loadTriggerRef = useRef<HTMLDivElement>(null);
+  const visibleExperiences = visibleGarageHistory(experiences, visibleCount);
+  const hasMore = visibleExperiences.length < experiences.length;
+  const loadMore = useCallback(() => {
+    if (!hasMore) return;
+    startTransition(() => {
+      setVisibleCount((current) => nextGarageHistoryCount(current, experiences.length));
+    });
+  }, [experiences.length, hasMore]);
+
+  useEffect(() => {
+    const trigger = loadTriggerRef.current;
+    if (!hasMore || !trigger || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) loadMore();
+      },
+      { rootMargin: "240px 0px" },
+    );
+    observer.observe(trigger);
+    return () => observer.disconnect();
+  }, [hasMore, loadMore]);
+
+  return (
+    <>
+      <VehicleContinuity
+        identity={identity}
+        experiences={visibleExperiences}
+        label={label}
+        ledgerLabel={ledgerLabel}
+        continuation={hasMore ? undefined : continuation}
+      />
+      {hasMore && (
+        <div className="garage-v2-history-more" ref={loadTriggerRef}>
+          <button type="button" className="text-action" onClick={loadMore} disabled={isPending}>
+            {isPending
+              ? (ja ? "読み込み中…" : "Loading…")
+              : (ja ? "さらに過去の記録を見る" : "View earlier records")}
+          </button>
+        </div>
+      )}
+      {!hasMore && experiences.length > garageHistoryBatchSize && (
+        <p className="garage-v2-history-end">{ja ? "このクルマのすべての記録を表示しました。" : "All records for this vehicle are shown."}</p>
+      )}
+    </>
+  );
+}
 
 function VehicleFallback({
   vehicle,

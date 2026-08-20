@@ -3,6 +3,7 @@
 import { OccurrenceDateFields } from "@/components/occurrence-date-fields";
 import { ServiceAttributionField } from "@/components/service-attribution-field";
 import { VehicleContinuity, type VehicleExperienceMark } from "@/components/vehicle-continuity";
+import { captureIntentForJournal, captureIntentLabel } from "@/lib/quick-record";
 import {
   displayVehicleModel,
   journalOccurrenceLabel,
@@ -29,6 +30,10 @@ const eventTypes: Array<{ value: JournalEventType; ja: string; en: string }> = [
   { value: "memory", ja: "思い出", en: "Memory" },
 ];
 
+const serviceDetailTypes = eventTypes.filter((item) =>
+  ["inspection", "repair", "part"].includes(item.value),
+);
+
 type OccurrenceDraft = Pick<
   JournalDraft,
   "occurredOn" | "occurredYear" | "occurredMonth" | "occurredPrecision" | "occurredPeriodNote"
@@ -51,8 +56,9 @@ export function QuickRecordCompletionSheet({
   const vehicleLabel = vehicle ? `${vehicle.make} ${displayVehicleModel(vehicle, locale)}` : journal.vehicleLabel;
   const photoCount = journal.media.filter((item) => item.kind === "image").length;
   const stored = journalToDraft(journal);
+  const captureIntent = captureIntentForJournal(journal.captureIntent, journal.eventType);
   const [mode, setMode] = useState<"prompt" | "form" | "saved">("prompt");
-  const [eventType, setEventType] = useState<JournalEventType>(journal.eventType ?? "other");
+  const [eventType, setEventType] = useState<JournalEventType | undefined>(journal.eventType);
   const [occurrence, setOccurrence] = useState<OccurrenceDraft>({
     occurredOn: stored.occurredOn,
     occurredYear: stored.occurredYear,
@@ -71,7 +77,7 @@ export function QuickRecordCompletionSheet({
       id: savedJournal.id,
       dateLabel: journalOccurrenceLabel(savedJournal, locale),
       dateTime: savedJournal.occurredOn ?? savedJournal.createdAt,
-      label: isIssue ? (ja ? "気になること" : "Something noticed") : (ja ? "記録" : "Record"),
+      label: captureIntentLabel(captureIntent, locale),
       title: savedJournal.bodyOriginal,
       actor: { role: ja ? "記録" : "Recorded by", name: ja ? "自分" : "You" },
       status: isIssue ? (ja ? "未解決" : "Unresolved") : undefined,
@@ -83,6 +89,7 @@ export function QuickRecordCompletionSheet({
     if (saving) return;
     const draft: JournalDraft = {
       ...journalToDraft(journal),
+      captureIntent,
       eventType,
       issueStatus: eventType === "issue" ? "open" : undefined,
       ...occurrence,
@@ -163,20 +170,27 @@ export function QuickRecordCompletionSheet({
             </button>
           </div>
           <form className="quick-record-enrichment-form" onSubmit={saveEnrichment}>
-            <fieldset className="event-type-picker">
-              <legend>{ja ? "記録の種類" : "Record type"}</legend>
-              {eventTypes.map((item) => (
-                <button
-                  type="button"
-                  key={item.value}
-                  className={eventType === item.value ? "is-selected" : ""}
-                  aria-pressed={eventType === item.value}
-                  onClick={() => setEventType(item.value)}
-                >
-                  {ja ? item.ja : item.en}
-                </button>
-              ))}
-            </fieldset>
+            <div className="quick-record-known-detail">
+              <span>{ja ? "残した内容" : "Capture intent"}</span>
+              <strong>{captureIntentLabel(captureIntent, locale)}</strong>
+              {captureIntent === "issue" && <small>{ja ? "未解決として保存済み" : "Saved as unresolved"}</small>}
+            </div>
+            {(captureIntent === "service" || captureIntent === "other") && (
+              <fieldset className="event-type-picker">
+                <legend>{ja ? "細かい種類（任意）" : "More specific type (optional)"}</legend>
+                {(captureIntent === "service" ? serviceDetailTypes : eventTypes).map((item) => (
+                  <button
+                    type="button"
+                    key={item.value}
+                    className={eventType === item.value ? "is-selected" : ""}
+                    aria-pressed={eventType === item.value}
+                    onClick={() => setEventType(item.value)}
+                  >
+                    {ja ? item.ja : item.en}
+                  </button>
+                ))}
+              </fieldset>
+            )}
             <OccurrenceDateFields
               value={occurrence}
               locale={locale}

@@ -60,7 +60,8 @@ import {
 } from "@/lib/local-draft-store";
 import { translate } from "@mechori/i18n";
 
-const maxMediaCount = 6;
+// Temporary alpha transport guardrail; this is not a permanent product-level photo cap.
+const alphaMediaTechnicalLimit = 6;
 const maxVideoBytes = 100 * 1024 * 1024;
 const maxPreparedJournalImageBytes = 460 * 1024;
 
@@ -411,11 +412,11 @@ export function JournalForm({
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
     setMediaError("");
-    if (draft.media.length + files.length > maxMediaCount) {
+    if (draft.media.length + files.length > alphaMediaTechnicalLimit) {
       setMediaError(
         ja
-          ? `1投稿につき${maxMediaCount}ファイルまで追加できます。`
-          : `You can attach up to ${maxMediaCount} files per post.`,
+          ? `現在のα版の保存上限（${alphaMediaTechnicalLimit}ファイル）に達しました。`
+          : `The current alpha storage limit is ${alphaMediaTechnicalLimit} files.`,
       );
       return;
     }
@@ -691,7 +692,7 @@ export function JournalForm({
                   ja={ja}
                   onText={(style) => addText(block.id, style)}
                   onMedia={() => openMediaPicker(block.id)}
-                  mediaDisabled={draft.media.length >= maxMediaCount || preparingMedia || saving}
+                  mediaDisabled={draft.media.length >= alphaMediaTechnicalLimit || preparingMedia || saving}
                 />
               </div>
             );

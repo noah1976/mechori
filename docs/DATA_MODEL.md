@@ -55,9 +55,11 @@ GarageJournalPost
 
 現αのQuick Record / `GarageJournalPost`は一つのExperience Entryとして読み替えられる。既存record間に関係がなければ、migration時に内容から因果を推測せずsingleton Experienceへbackfillする。`linkedRecordId` / `JournalMaintenanceLink`は現在の任意リンクであり、Experience membership、Entry順序、因果関係を意味しない。
 
+現αの`JournalCaptureIntent`は`issue | service | drive | other`のoptionalな大分類で、利用者が入口で明示した意図を保持する。詳細な`eventType`とは別であり、`service`は点検・修理・部品交換を断定せず`eventType`未設定のまま保存できる。`issue`を明示した場合だけ、現行互換modelで`eventType: issue`、`issueStatus: open`を設定する。このoptional fieldはβのExperience subtypeを確定するものではない。
+
 修理、Issue、Drive、Ownership memoryは共通のExperience / Entry envelopeを使える。ただし、修理の症状・作業・部品・結果、Driveのroute・stop・観察等はsubtype固有のoptional relationとして扱い、generic block editorや一つの巨大schemaへ統合しない。一括入力と後日の追記は、どちらも順序付きEntryを作る同じmodelで表現できる。
 
-MediaはExperience全体ではなく原則としてEntryへ属し、順序、MIME、寸法、容量、caption、Storage object参照を保持する。media固有の発生時刻はEntry時刻と異なる場合だけoptionalにする。αの暫定上限候補はEntryごとに画像6枚、Experience全体は固定上限を持たず、長い工程はEntry追加で表現する。Quick Recordの複数画像を有効化する前に、private Workspace JSONへdata URLを埋め込む暫定経路を、private object storageと正規化attachmentへ移す。動画はthumbnail、MOV / HEVC互換、帯域、再試行、privacy review、shared projectionが揃うまでArchitecture onlyとする。
+MediaはExperience全体ではなく原則としてEntryへ属し、順序、MIME、寸法、容量、caption、Storage object参照を保持する。media固有の発生時刻はEntry時刻と異なる場合だけoptionalにする。Product-levelの恒久画像枚数上限は設けず、file size、MIME、Storage使用量、bandwidth、upload batch、rate limit、abuse対策でresourceを管理する。現αの詳細Journal / shared payloadに残る6ファイル制約とQuick Recordの1枚制約は、既存transportを守る一時的な技術上限である。Quick Recordの複数画像を有効化する前に、private Workspace JSONへdata URLを埋め込む暫定経路を、private object storageと正規化attachmentへ移す。動画はthumbnail、MOV / HEVC互換、帯域、再試行、privacy review、shared projectionが揃うまでArchitecture onlyとする。
 
 ## 共通規則
 

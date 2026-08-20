@@ -17,6 +17,7 @@ function journal(): GarageJournalPost {
     vehicleLabel: "FIAT Barchetta",
     modelTargetId: "fiat-barchetta",
     title: "雪でバンパーを傷めた",
+    captureIntent: "service",
     eventType: "breakdown",
     bodyOriginal: "雪の塊に当たり、後日工場で確認してもらった。",
     sourceLanguage: "ja",
@@ -67,6 +68,7 @@ test("shared journal projection omits private identifiers and linked maintenance
   assert.equal("displayFields" in payload, false);
   assert.equal("knowledgeExtractionConsent" in payload, false);
   assert.equal("serviceAttribution" in payload, false);
+  assert.equal(payload.captureIntent, "service");
   assert.deepEqual(payload.media, []);
   assert.deepEqual(
     payload.contentBlocks.map((block) => block.type),
@@ -190,6 +192,7 @@ test("shared row becomes a non-searchable public journal with a synthetic author
   assert.ok(shared);
   assert.equal(shared.journal.authorProfileId, "alpha-shared-author-share-1");
   assert.equal(shared.journal.knowledgeExtractionConsent, false);
+  assert.equal(shared.journal.captureIntent, "service");
   assert.equal(shared.author.displayName, "Noah");
   assert.equal(shared.journal.media[0]?.source, "alpha_shared");
 });

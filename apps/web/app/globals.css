@@ -373,7 +373,10 @@ button { cursor: pointer; }
 .garage-v2-history-heading { max-width: 620px; }
 .garage-v2-history-heading p { margin: 11px 0 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
 .garage-v2-timeline { display: grid; min-width: 0; border-top: 1px solid var(--line); }
-.garage-v2-timeline-note { margin: 16px 0 0 188px; color: var(--muted); font-size: 12px; }
+.garage-v2-history-more, .garage-v2-history-end { margin: 0 0 0 min(188px, 26%); padding: 15px 20px; border-bottom: 1px solid var(--line); }
+.garage-v2-history-more { display: flex; justify-content: flex-start; }
+.garage-v2-history-more .text-action { min-height: 44px; padding-inline: 0; }
+.garage-v2-history-end { color: var(--muted); font-size: 12px; }
 .garage-v2-empty-history { max-width: 670px; padding: 46px 0 12px 67px; border-top: 1px solid var(--line); }
 .garage-v2-empty-history > div { padding-left: 24px; border-left: 2px solid var(--accent); }
 .garage-v2-empty-history p { margin: 0; color: var(--muted); font-size: 13px; }
@@ -698,6 +701,19 @@ button { cursor: pointer; }
 .quick-composer-header h1 { margin: 0; font-size: clamp(29px, 5vw, 38px); line-height: 1.15; }
 .quick-composer-kicker { margin: 0; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
 .quick-composer-vehicle { margin: 0; color: var(--brand); font-size: 14px; font-weight: 800; overflow-wrap: anywhere; }
+.quick-capture-intent { display: grid; gap: 22px; padding-top: 8px; }
+.quick-capture-intent-loading { margin: 0; padding: 24px 0; color: var(--muted); }
+.quick-capture-intent-heading h2 { margin: 0; font-size: 25px; line-height: 1.25; }
+.quick-capture-intent-heading p { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+.quick-capture-intent-options { border-block: 1px solid var(--line); }
+.quick-capture-intent-options button { width: 100%; min-width: 0; min-height: 62px; display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 9px 4px; color: var(--ink); background: transparent; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; font: inherit; font-weight: 750; text-align: left; cursor: pointer; }
+.quick-capture-intent-options button:last-child { border-bottom: 0; }
+.quick-capture-intent-options button > svg:first-child { color: var(--brand); }
+.quick-capture-intent-options button > svg:last-child { color: var(--muted); }
+.quick-capture-intent-options button:hover { background: var(--surface-soft); }
+.quick-capture-intent-options button:focus-visible { outline: 3px solid rgba(45, 97, 119, 0.25); outline-offset: 2px; }
+.quick-capture-intent-current { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.quick-capture-intent-current > span { min-width: 0; color: var(--brand-strong); font-size: 13px; font-weight: 800; overflow-wrap: anywhere; }
 .quick-event-form { display: grid; gap: 17px; padding: 0; background: transparent; border: 0; }
 .quick-note-field textarea { min-height: 208px; padding: 20px 0; border-width: 0; border-radius: 0; background: transparent; font-size: 18px; line-height: 1.7; }
 .quick-note-field textarea:focus { border-color: var(--brand); box-shadow: 0 2px 0 rgba(45, 97, 119, 0.14); }
@@ -710,9 +726,12 @@ button { cursor: pointer; }
 .quick-composer-submit { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 10px 12px; }
 .quick-composer-submit .primary-action { min-height: 52px; padding-inline: 21px; }
 .quick-composer-details { border-top: 1px solid var(--line); }
-.quick-composer-details summary { min-height: 52px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 5px 10px; color: var(--muted); font-size: 13px; font-weight: 750; list-style: none; cursor: pointer; }
+.quick-composer-details summary { min-height: 60px; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 6px 10px; color: var(--muted); font-size: 13px; font-weight: 750; list-style: none; cursor: pointer; }
 .quick-composer-details summary::-webkit-details-marker { display: none; }
+.quick-composer-details summary > span { min-width: 0; display: grid; gap: 3px; }
+.quick-composer-details summary strong { color: var(--ink); font-size: 13px; }
 .quick-composer-details summary small { min-width: 0; color: var(--muted); font-size: 11px; font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; }
+.quick-composer-details summary > b { color: var(--brand); font-size: 12px; white-space: nowrap; }
 .quick-composer-details summary svg { transition: transform 160ms ease; }
 .quick-composer-details[open] summary { color: var(--ink); }
 .quick-composer-details[open] summary svg { transform: rotate(180deg); }
@@ -835,6 +854,9 @@ button { cursor: pointer; }
 .quick-record-sheet-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 20px; }
 .quick-record-sheet-actions .primary-action, .quick-record-sheet-actions .secondary-action { min-height: 44px; }
 .quick-record-sheet > .vehicle-continuity { margin-top: 15px; }
+.quick-record-known-detail { display: grid; gap: 3px; padding: 12px 0 15px; border-bottom: 1px solid var(--line); }
+.quick-record-known-detail span, .quick-record-known-detail small { color: var(--muted); font-size: 11px; }
+.quick-record-known-detail strong { color: var(--ink); font-size: 14px; }
 .selected-provider-change { min-width: 44px; min-height: 44px; justify-content: flex-end; padding: 0; color: var(--brand); background: transparent; border: 0; font-size: 13px; }
 .selected-provider-change:hover { color: var(--brand-strong); text-decoration: underline; text-underline-offset: 3px; }
 .occurrence-period-note { margin-top: 1px; }
@@ -1948,7 +1970,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .garage-v2-selector-heading h2, .garage-v2-history-heading h2 { font-size: 25px; }
   .garage-v2-vehicle-switch { flex-basis: min(210px, 68vw); }
   .garage-v2-history { gap: 20px; padding-top: 4px; }
-  .garage-v2-timeline-note { margin-left: 42px; }
+  .garage-v2-history-more, .garage-v2-history-end { margin-left: 0; padding-inline: 4px; }
   .garage-v2-empty-history { padding: 32px 0 10px 14px; }
   .garage-v2-empty-history > div { padding-left: 19px; }
   .garage-v2-first-vehicle { grid-template-columns: 1fr; gap: 24px; min-height: 0; padding: 20px 0; }
