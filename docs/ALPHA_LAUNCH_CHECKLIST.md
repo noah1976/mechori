@@ -194,3 +194,8 @@ P-069のように本番で再現した不具合は、テスト成功だけを根
 - `[~]` Garageに13件以上の記録があるVehicleで、初期12件の後も自動または「さらに過去の記録を見る」から全履歴へ到達できることを確認する。順序、重複、scroll位置、media幅が崩れず、12件以下では追加UIが出ない。
 - `[ ]` 同じ不具合、修理、Driveについて、別recordではなく「続きを残す」ことを望むか、後日の追記と作業後の一括入力のどちらが自然かを聞く。現実装にはExperience relationshipがないため、近い記録を自動で同一Experienceとして扱わない。
 - `[ ]` Quick Recordで2枚以上の写真、動画、並べ替えが必要だった具体的場面と枚数を聞く。恒久的なProduct-level枚数上限は設けないが、現Quick Recordは一時的に1枚であり、複数画像・動画は実装済みと扱わず、private object media storageとcost / privacy Gateの判断材料にする。
+
+## 16. 2026-08-20 PR #8 release checkpoint
+
+- `[ ]` PR #8をmainへmergeする前に、CEOがDeploy Preview上でVehicle-centered Signature Experience、Capture Intent、Garage全履歴、写真表示、保存後詳細、Feed detail navigationを確認する。PR #8は現α baseline候補であり、実機QA未完了をもって「完成」と扱わない。
+- `[ ]` Home Information Architecture、DEMO・重複要素、最近の整備記録、月次summary、重複navigationの整理後に、αユーザー3名へ再テストを依頼する。

@@ -769,3 +769,11 @@
 - Media policy: 知見を残す量を恒久的なProduct-level画像枚数で制限しない。必要なguardrailはfile size、supported MIME、optimization、Storage / bandwidth使用量、upload batch、rate limit、abuse対策へ置く。従来の`6 images / Entry`は恒久仕様としては撤回する。
 - Technical boundary: 現行の詳細Journal / shared payloadの6ファイル制約とQuick Recordの1枚制約は、一時的なα transport guardrailとして残す。Quick Record private mediaは`alpha_inline` data URLをmonolithic Workspace JSONへ保存しており、複数画像化するとpayload、再送、部分失敗、cleanupの危険が増える。private object storageとattachment正規化なしに上限だけ外さない。
 - Infrastructure boundary: DB、RLS、RPC、Storage bucket、Netlify / Supabase設定、VehicleExperience relationship、動画uploadは変更しない。
+
+### 決定: PR #8を現α baselineとしてmain投入候補にする
+
+- 日付: 2026-08-20
+- 状態: Human manual merge ready。mainへのmergeはCEOがGitHub UIで判断・実行し、Codexは実行しない。
+- 今回のbaseline: Vehicle-centered Signature Experience、Capture Intent 4択、明示issueの`issue/open`、保存後の「記録を詳しくする」、Garage Vehicle Continuity、Garage media全幅化、Vehicle History全件到達、Desktop Record CTA、Feed text / image canonical navigation、`VehicleExperience` + `ExperienceEntry`の将来Architecture decision、Product-level photo count capを設けない方針を含める。
+- Deferred: Home Information Architecture整理、HomeのDEMO・重複要素・最近の整備記録・月次summary・重複navigationの再評価、Quick Record複数画像、Media normalization、Experienceへの「続きを残す」、動画、same-model Knowledge、Vehicle Succession。
+- QA境界: legacy `local_blob`、Quick Record temporary single-image、iPhone Safari実機QAは既知のP1候補として残す。αユーザー3名の再テストはHome整理後まで開始しない。merge、Production反映、人間QAは別々の状態として追跡する。

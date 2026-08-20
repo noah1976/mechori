@@ -278,3 +278,10 @@
 - **Deferred / safety**: private object media storage、attachment正規化、partial upload recovery、動画、Experience relationship、`続きを残す`保存処理、filter / searchは次αまたはβへ残す。Production DB、migration、RLS、RPC、Netlify / Supabase設定、AI APIは変更していない。
 - **Verification**: 全workspace test、lint、typecheck、Production build、`git diff --check`は成功した。local browserのdesktop / 390px / 320pxでCapture Intent、1 tap後のtextarea focus、intent別placeholder、issue保存後の未解決表示、保存後の二重分類なし、date field、既存record editの「記録の詳細／変更する」、Garageを確認し、各幅でhorizontal overflowとconsole errorがない。local fixtureは5件のため、13件以上のprogressive renderingは29件のlogic / source regression testで確認し、iPhone実データQAへ残す。
 - **状態**: branch `codex/alpha-evidence-signature`／PR #8。Deploy Preview確認後も、iPhone SafariでCapture Intent、下書き、本文／写真保存、保存後詳細、13件以上のGarage履歴、media、edit actionを確認するまでHuman QA pendingとする。
+
+## 29. 2026-08-20 PR #8 release checkpoint
+
+- **α baseline判断**: PR #8は、Vehicle-centered Signature Experience、Capture Intent 4択、issue/open、保存後の「記録を詳しくする」、Garage Vehicle Continuity、Garage media改善、全履歴到達、Desktop Record CTA、Feedのtext/image canonical navigation、`VehicleExperience` + `ExperienceEntry`の将来Architecture decision、Product-level photo count capを設けない方針を含む、現αのbaselineとしてmainへ投入する候補とする。mergeはCEOがGitHub UIで行い、Codexは実行しない。
+- **既知のP1候補**: Quick Recordのtemporary single-image、private object media storageとMedia normalization未実施、legacy `local_blob`、iPhone Safari実機QAを残す。これらを今回の「完成」とは扱わない。
+- **次iterationへDeferred**: HomeのInformation Architecture整理、HomeのDEMO・重複要素・「最近の整備記録」・月次愛車summary・重複navigationの再評価、Experienceへの「続きを残す」、動画、same-model Knowledge、Vehicle Succession、Quick Record複数画像を残す。
+- **次の停止点**: Home整理が完了するまでαユーザー3名への再テストは開始しない。現時点ではPR #8をHuman manual merge readyとして扱い、merge後の実ユーザーQAと本番反映は別状態で記録する。
