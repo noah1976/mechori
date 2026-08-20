@@ -268,6 +268,9 @@ export default function JournalDetailPage() {
           </div>
           <h1>{display.title}</h1>
           <div className="journal-detail-meta">
+            {journal.eventType === "issue" && journal.issueStatus === "open" && (
+              <span className="journal-issue-state">{ja ? "未解決" : "Unresolved"}</span>
+            )}
             <span>
               <CalendarDays size={16} aria-hidden="true" />
               {journalOccurrenceLabel(journal, locale)}
@@ -393,16 +396,20 @@ export default function JournalDetailPage() {
           <strong>
             {knowledgeClass === "related_owner_record"
               ? ja
-                ? "関連するオーナー記録としてのみ参照可能"
-                : "May be referenced only as a related owner record"
+                ? "車両履歴に残るオーナー記録です"
+                : "This owner record remains in the vehicle history"
               : ja
-                ? "ナレッジ検索には使用されません"
-                : "Not available to knowledge search"}
+                ? "この記録は、まだ確認済みナレッジではありません"
+                : "This record is not yet verified knowledge"}
           </strong>
           <p>
-            {ja
-              ? "記録の人気やAI抽出だけで、確認済みナレッジや原因候補へ昇格することはありません。"
-              : "Popularity or AI extraction alone can never promote a record to verified knowledge or a confirmed cause."}
+            {knowledgeClass === "related_owner_record"
+              ? ja
+                ? "経験として参照できますが、根拠が揃うまで原因候補や確認済みナレッジにはしません。"
+                : "It can be referenced as experience, but it is not promoted to a cause candidate or verified knowledge without supporting evidence."
+              : ja
+                ? "車両履歴として残り、根拠や確認が揃うまで原因候補や確認済みナレッジとして検索へ出しません。"
+                : "It remains in the vehicle history and is not surfaced as a cause candidate or verified knowledge until supporting evidence and review are available."}
           </p>
         </div>
       </section>

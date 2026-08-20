@@ -323,7 +323,9 @@ test("migrates legacy local data into actions and an odometer episode", () => {
   assert.equal(migrated?.schemaVersion, 14);
   assert.deepEqual(migrated?.records[0]?.serviceAttribution, {
     version: 1,
-    performedByType: "unknown",
+    performedByType: "service_provider",
+    serviceProviderId: "provider-demo-officina-verde",
+    providerDisplayNameSnapshot: "Officina Verde / DEMO",
   });
   assert.deepEqual(migrated?.contentReports, []);
   assert.equal(
@@ -346,4 +348,23 @@ test("migrates legacy local data into actions and an odometer episode", () => {
   assert.equal(migrated?.journals[1]?.media[0]?.source, "demo_asset");
   assert.deepEqual(migrated?.profileSafetyRelations, []);
   assert.ok(migrated?.contentTranslations.length);
+});
+
+test("migration defaults only issue journals to an open state", () => {
+  const legacy = cloneDemoData();
+  legacy.journals[0] = {
+    ...legacy.journals[0]!,
+    eventType: "issue",
+    issueStatus: undefined,
+  };
+  legacy.journals[1] = {
+    ...legacy.journals[1]!,
+    eventType: "drive",
+    issueStatus: "open",
+  };
+
+  const migrated = migrateAppData(legacy);
+
+  assert.equal(migrated?.journals[0]?.issueStatus, "open");
+  assert.equal(migrated?.journals[1]?.issueStatus, undefined);
 });

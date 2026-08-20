@@ -27,7 +27,7 @@ MECHORIは北海道で生まれたサービスですが、日本国内向けWeb�
 
 記録入力はフォームを埋める画面ではなく、愛車に起きたことを書き始める画面として扱う。最初に見せるのはVehicle、十分な本文入力、任意の写真、ひとつの保存操作だけにする。タイトル、分類、日付、整備・部品・費用・Providerなどは、必要な人だけが詳細設定で追加する。現αのQuick Recordは公開範囲を「α参加者に公開」に固定し、常設のprivate／public 2択を初期体験へ置かない。
 
-- 入力原則は「まず書ける。整理はあと。」とする。初見のユーザーへMaintenance、Journal、故障記録の分岐を先に強制しない。
+- 入力原則は「何を残すかだけ決めて、すぐ書ける。詳しい整理はあと。」とする。最初の判断は4つの大分類から1回だけとし、Maintenance、Journal、作業 subtype等のフォーム分岐を先に強制しない。
 - 写真は添付管理UIではなく記録の文脈として扱う。写真なしでも保存可能で、iPhoneからカメラまたは写真ライブラリを自然に選べることを優先する。
 - `Quiet Machinery`の低密度を保ち、白いcard、説明文、同格CTAを重ねない。本文と車両名の関係を最も強く見せ、日付などの詳細はsummaryを開いた時だけ表示する。
 
@@ -130,6 +130,25 @@ Garage由来のDesign Languageを、αテスターが頻繁に通る範囲へ限
 - 投稿は重いwhite surface、上端accent line、強いshadow、同じvisibility label、独立した重複CTAで囲わない。投稿間は余白と必要最小限のdividerで区切る。titleと本文が同じ内容なら、内容を改変せず表示上の重複だけを避ける。
 - Homeの月次情報は行動を妨げない低優先度のsummaryとし、Feedをfirst-class contentにする。mobileのrecord FABは内容を覆わず、bottom navigationとsafe areaから十分離す。
 - Journal CardはHomeだけの特別な装飾にせず、Garage由来のwhite base、読みやすい本文、写真の収まり、控えめなsocial metadataを各投稿一覧へ共通適用する。写真はcontainerとviewportからはみ出さず、本文の後に自然に続く。Human QAでHome、Feed、公開Profileの読みやすさを確認する。
+
+## α Signature Experience
+
+- `Vehicle Continuity`を、Home、Quick Record保存後、Garageで共用するMECHORIのSignature vocabularyとする。`Vehicle Anchor`が同じ個体を継続して示し、実recordは`Experience Mark`、日付・種別・actor／sourceは`Experience Register`、まだ存在しない将来は`Continuation Slot`として構成する。未実装のsame-model接続は`Knowledge Outlet`として境界だけを示す。細いlineとcircleを中心とするgeneric vertical timelineへ戻さない。
+- Vehicleは常に構造の中心に置く。Owner / Mechanicは、その時点で記録・作業・参照したactorとしてExperience Mark内に表示し、avatar、Like、投稿者を中心軸にしない。将来のOwner変更はVehicle Anchorを維持したままactor／eraを追加できる構造にする。
+- Quick Record保存直後はneutralな一つのExperience Markを表示する。本人が保存後に「不具合・気になること」を保存した場合だけ`未解決`を静かに示す。Continuation Slotは「まだ記録はありません」と明示し、未来の点検・修理・結果をfake recordとして描かない。
+- Home first-viewは説明panelではなく、明示的な「DEMO・架空例」のVehicle Continuityを最初のProduct objectとする。黒いactivation onboardingはSignatureの後へ下げ、white baseのcompact utilityへ変更する。DEMOには実在人物、技術的因果、fake metricを使わない。
+- GarageはVehicle Identityを維持し、選択車両のactual recordだけをExperience Markとして表示する。件数を価値の主役にせず、欠損actor／resultを補完せず、actual relationがないrecordを一つのcaseに見せない。
+- DesktopのPrimary Capture ActionはMECHORI logo直下、navigationより前へ置く。Mobileは既存FABを維持する。Reference GarageはHome理解の必須routeにせず、架空DEMOの前提を確認するsecondary routeとする。
+- 320px以下でもVehicle Anchorを上部band、Experience MarkをExperience Register + contentの2 trackへ再配置し、long text、actor、status、mediaへ`min-width: 0`とwrapを適用する。Chromium幅確認とiPhone Safari実機QAを別状態として扱う。
+
+### Vehicle Experience capture
+
+- 利用者向けには`Experience`、`Entry`、`Update`等の内部語を原則表示せず、「愛車の記録」「記録の詳細」「続きを残す」を使う。
+- 現αは、Vehicle確認後に「気になること・不具合」「整備・修理」「ドライブ・思い出」「その他」のtop-level intentを1 tapで選び、composerへ直ちにfocusする。これは詳細分類ではなくProduct identityを伝えるα実験であり、選択後に同じ大分類を聞き直さない。
+- 保存後の入口は、すべてを「整備情報」と呼ばず`記録を詳しくする`へ寄せる。Issue、Drive、Memoryにも成立し、追加しなくても保存済みrecordが残ることを明確にする。
+- Vehicle Continuityでは、Experience Registerと本文を既存trackで読み、mediaは狭いregister columnへ押し込まずExperience Markのcontent幅へ展開する。
+- Garageは最初の12件を段階表示単位にできるが、古いVehicle historyを件数で終端しない。自動loadと明示actionの両方で全履歴へ到達でき、追加表示で順序・scroll位置・media layoutを崩さない。
+- 一度にまとめて残す場合も後から続ける場合も、generic block editorを主画面にしない。本文とmediaを中心にし、工程・経由地・結果は必要な人だけが追加する。
 
 ## 未確定
 

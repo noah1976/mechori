@@ -557,6 +557,16 @@ export function migrateAppData(input: unknown): AppData | null {
             ...journal,
             modelTargetId: canonicalizeLegacyModelTargetId(journal.modelTargetId),
             moderationState: journal.moderationState ?? "visible",
+            captureIntent:
+              ["issue", "service", "drive", "other"].includes(String(journal.captureIntent))
+                ? journal.captureIntent
+                : undefined,
+            issueStatus:
+              journal.eventType === "issue"
+                ? ["open", "resolved", "recurred"].includes(String(journal.issueStatus))
+                  ? journal.issueStatus
+                  : "open"
+                : undefined,
             occurredOn:
               typeof journal.occurredOn === "string" && isValidDateOnly(journal.occurredOn)
                 ? journal.occurredOn

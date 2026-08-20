@@ -1,14 +1,14 @@
 # MECHORI Project State
 
-- 更新日時: 2026-08-16
-- 対象ブランチ: `codex/quick-record-composer`
+- 更新日時: 2026-08-20
+- 対象ブランチ: `codex/alpha-evidence-signature`
 - HEAD基準: 本書を含む現在ブランチの`git log -1`を正とする
 - 本番URL: `https://mechori-alpha.netlify.app`
 - 状態文書のルール: 実装、テスト、本番反映、人間QAを別々に判定する。コード、テスト、Git履歴、既存の運用記録を照合し、根拠のない項目は完了にしない。本書を現在の実装状態の正本とする。
 
 ## 1. 現在テスターが利用できる主要フロー
 
-招待URLからGoogleログインし、クルマまたはバイクを登録する。車種マスタにない車両、写真のない車両、過去に所有していた車両も登録を開始できる。記録開始時はVehicle、本文、任意の写真だけで保存でき、Quick Recordは現αでは「α参加者に公開」を既定かつ固定とする。日付、種別、整備情報は必要なときに追加する。詳しいJournal形式と構造化整備記録は明示的な詳細導線として維持する。
+招待URLからGoogleログインし、クルマまたはバイクを登録する。車種マスタにない車両、写真のない車両、過去に所有していた車両も登録を開始できる。Quick RecordはVehicle確認後、「気になること・不具合」「整備・修理」「ドライブ・思い出」「その他」から1回だけ選び、本文と任意写真へ進む。現αでは「α参加者に公開」を既定かつ固定とし、日付や細かな種別等は保存後または編集時に追加する。詳しいJournal形式と構造化整備記録は既存データ互換のため維持する。
 
 保存後は車両の時間軸、Garage、フィードで履歴を振り返り、投稿へのいいね、投稿者プロフィール、車両プロフィール、人・クルマ検索、ユーザー／車両フォローを試せる。プロフィール設定、ログアウト、フィードバック、管理者向け運用画面も実装されている。下書きはブラウザ内に保存され、保存成功後に完了画面からGarage、投稿詳細、次の記録、ホームへ進める。
 
@@ -28,7 +28,7 @@
 
 ### 投稿・記録
 
-- **P-086 Quick Record / Universal Composer MVP**: αテスターが従来の記録フォームを面倒と感じ、知見の投稿自体を止めていたP1に対し、入力原則を「まず書ける。整理はあと。」へ更新した。`/journal/new`と車両文脈の記録入口は、Vehicle、本文、任意の写真、「記録する」を最初に示すComposerを既定とする。本文の先頭行を既存`GarageJournalPost`の内部titleへ安全に反映し、event typeは`other`、発生日は当日、公開範囲は既存の既定値で保存する。日付、公開範囲、種別、DIY／お店・工場は折りたたんだ詳細設定へ置き、既存の詳しいJournal、構造化整備記録、写真保存、公開範囲、下書き、完了導線、Garage Timelineのdata contractを変更しない。AI構造化は将来候補で今回未実装。実装・自動検証後、iPhone Safariで本文のみ、本文＋写真、複数台選択、詳細設定、保存後のTimeline反映、保存失敗・下書き復元を確認するまでSHIPPED_NEEDS_QAとする。
+- **P-086 Quick Record / Universal Composer MVP**: 入力原則を「何を残すかだけ決めて、すぐ書ける。詳しい整理はあと。」へrefineした。`/journal/new`と車両文脈の入口は4つのCapture Intentを1 tapで選ぶとcomposerへfocusし、本文、任意写真、「記録する」を主役にする。Intentは詳細`eventType`と分離し、明示されたissueだけ`issue/open`、serviceは細分類未確定のまま保存できる。公開範囲はα参加者共有に固定し、日付、細分類、作業した人・場所は保存後または編集時に追加する。AI分類は未実装。iPhone Safariで4 Intent、本文のみ、写真付き、保存後詳細、下書き復元を確認するまでSHIPPED_NEEDS_QAとする。
 - **P-077 投稿詳細の断続的404**: 投稿一覧の詳細リンクを同じエンコード済みURLへ統一し、Next.jsの推測的な事前遷移を使わないようにした。共有記録のバックグラウンド取得中と取得失敗を、記録不存在と分離して待機・再読み込みできる。実装・回帰テスト・本番反映済みで、人間QAではホーム、フォロー中、Garage、愛車ページからの初回タップと直接URLを確認する。
 - **写真公開範囲の統一**: 写真単独の公開切り替えUIを撤去し、記録本文の公開範囲から写真の共有可否を導出する実装・テストがある。人間QAでは非公開、α参加者向け、公開停止後の写真アクセスを確認する。
 - **P-071 下書き**: 既存フォームの入力をユーザー・入口・編集状態ごとにlocalStorageへdebounce保存し、復元・破棄・期限切れ・破損JSONをテスト済み。人間QAでは再読込、別ユーザー、写真再選択案内を確認する。
@@ -238,3 +238,50 @@
 
 - **原因と修正**: Garage Timelineだけがworkspace内の`journal.media[0]`をそのまま表示し、さらに共有Journalをhydrateしていなかったため、同じ公開済み記録に対応する`alpha_shared` Storage参照があっても、端末依存`local_blob`を読もうとして縮退表示になっていた。Journal detail／Feedと同じsocial hydrationと`preferSharedJournalMediaForDisplay`をGarageにも適用し、`public_ready`の写真はshared Journalの`alpha_shared`参照を優先する。これにより、detailで表示できる共有写真をTimelineでも同じ経路で表示する。
 - **境界**: private写真と、shared copyが存在しない真のlegacy `local_blob`は置き換えず、本文を残す既存fallbackを維持する。legacy写真の別origin／別device回復そのものは未解決P1で、人間QAでTimelineとdetailの表示一致を再確認する。
+
+## 24. 2026-08-19 α Signature Experience experiment
+
+- **Quick Record → Evidence Intake可視化**: 保存後Sheetは、実際に保存されたVehicle、本文、記録日時、写真有無だけを「このクルマの履歴に残った記録」として表示する。任意の整備情報追加と後日の結果追記は、保存済み投稿をblockしない次の段階として示す。AI抽出、原因推定、完成度scoreは導入していない。
+- **Garage / Reference Garage**: Garageには選択Vehicleに実在するJournal・Maintenance・部品entry数だけを静かに表示する。`/reference-garage`は既存`demoData`だけを読む明示的なDEMO車両で、出来事 → 作業 → 部品（ある場合）→ 結果を一つのflowとして示す。実ユーザーdata、Production DB、Evidence Graph本体は使わない。
+- **検証状態**: αユーザーが「SNS投稿ではなく愛車履歴の入口」と理解するか、Reference Garageで「自分もこう残したい」と感じるかをHuman QAと短いinterviewで検証する。実装・自動検証後もHuman QA pending。
+
+## 25. 2026-08-20 Signature Experience統合（PR #8継続）
+
+- **Quick Record / Capture Intent semantics**: 入口で4つの大分類から「気になること・不具合」を明示した場合だけ`eventType: issue`と`issueStatus: open`を保持する。`captureIntent`は既存Journal／Workspace JSON／shared projectionへ後方互換なoptional fieldとして追加し、serviceは細かな作業種別を捏造しない。診断、修理、結果が未入力でもvalidなVehicle Eventである。DB、RLS、RPC migrationはない。
+- **Signature UI**: `VehicleHistorySpine`をHome inline DEMO、Quick Record保存後、Garageの実Vehicle history、Reference Garageで共用する。Garageの件数dashboardと旧`EvidenceFlowStrip`は撤去し、日付、事実的な種別、本文、実在するattribution、状態を一本の時間軸で読む。Homeで価値例を直接見せ、Reference GarageはDEMO詳細のsecondary routeへ下げた。
+- **Honesty boundary**: 実record間にcase／episode relationshipがないため、αの実データを因果chainとして捏造しない。Garageはchronological Vehicle history、保存直後はsingle node＋将来の追記余地、Home／Referenceは既存DEMO fixture由来の例として区別する。same-model reuse、actorを越えたcase linkage、AI classification、PhysicalVehicle正規化はβ ArchitectureまでDeferredする。
+- **既知P1監査**: Home Feedの本文と写真は現行`JournalCard`の同一canonical detail hrefを使い、写真からmedia URLへ遷移しない既存修正と回帰testが残っていることを確認した。二重実装はしていない。
+- **状態**: branch `codex/alpha-evidence-signature`／PR #8で実装中。自動検証とDeploy Preview確認後も、iPhone SafariでHome、本文のみ／写真付きQuick Record、保存後分類、Close時の保持、Garage／detail、320〜430pxを確認するまでHuman QA pendingとする。α3ユーザーには説明で答えを与えず、「普通のSNSと何が違うか」「履歴が残ったと感じたか」「続きも残したいか」を本人の言葉で確認する。
+
+## 26. 2026-08-20 Signature Experience根本再設計（PR #8継続）
+
+- **Concept選定**: Vehicle Rings、Evidence Branch、Continuity Ledgerの3案を比較した。1件目と疎なαdata、`issue/open`、mobile、現行modelへのcompatibility、data honestyを優先し、Vehicleを継続anchor、実recordをExperience Mark、日付・種別・actorをExperience Register、未記録の未来をContinuation Slotとして扱う`Vehicle Continuity`を採用した。旧`VehicleHistorySpine`は一般的vertical timelineに見えるHuman QA結果を受けて削除し、連続線とnodeを使わないVehicle帰属の台帳へ置き換えた。
+- **Home**: 明示的な「DEMO・架空例」のVehicle ContinuityをFollowing Feedとactivation onboardingより前へ移した。DEMOは実在人物・技術的因果・fake metricを含まない専用fixtureで、succession／same-model比較が未実装であることを明記する。black onboardingはHome内のcompact white-base utilityへdemoteした。
+- **Garage / Quick Record**: GarageはVehicle Identityを維持し、実在するJournal／MaintenanceだけをVehicle Anchorへ接続する。件数summaryを価値の主役から外した。Quick Record保存直後はneutralな一つのExperience Markを表示し、保存後enrichmentで本人がissueを保存した後だけ`未解決`へ更新する。Continuation Slotはfake recordではなく「まだ記録はありません」とする。
+- **Navigation / Knowledge**: DesktopのPrimary Record CTAをlogo直下・navigation前へ移動し、Mobile FABは維持した。Journal detailは「まだ確認済みナレッジではない」と表現しつつ、Vehicle historyとして残る価値と、根拠・確認なしに原因候補へ昇格しない境界を併記する。
+- **境界と状態**: DB、RLS、RPC、case／episode relationship、Vehicle Succession、same-model matchingは追加していない。Reference Garageは架空例の前提を確認するsecondary routeとして維持する。branch `codex/alpha-evidence-signature`／PR #8で自動検証・Deploy Preview・Chromium visual QA後も、iPhone Safariとα3ユーザーのfirst-impression確認まではHuman QA pending。
+
+## 27. 2026-08-20 Vehicle Experience content model checkpoint（PR #8継続）
+
+- **Architecture decision**: 長期のcontent unitを`VehicleExperience` + append-orientedな`ExperienceEntry`とし、EvidenceはEntry / Maintenanceから後で正規化するatomic projectionとして分離した。現αのQuick Record / Journalは1 Entryに相当し、明示的な関係がない既存recordはsingleton Experienceとして扱う。修理とDriveは同じenvelopeを使うが、症状・部品・結果とroute・stop等のdomain semanticsは別relationにする。
+- **Current audit**: `GarageJournalPost`は既に`media[]`と順序付き`contentBlocks`を持ち、詳細Journalとshared payloadは画像6枚まで扱える。一方Quick Recordは`PreparedImage | null`と先頭fileだけを使う1枚経路である。private workspaceは全AppDataを一つのSupabase JSON rowへ保存し、`alpha_inline` data URLを含むため、Quick Recordの複数画像化はpayload・再送・失敗率を増やす。動画は詳細Journalの端末内private pathだけで、shared delivery、MOV / HEVC、thumbnail、privacy reviewが未整備である。
+- **PR #8 implementation**: GarageのExperience MarkでmediaをRegister右columnから外し、Mark全幅へ表示する。既存複数画像recordは画像配列を`JournalMedia`へ渡し、compact表示で先頭画像と残り枚数を示す。保存後と既存記録編集の表現を「記録を詳しくする」「記録の詳細」へ広げ、Issue / Drive / Memoryを整備情報と誤称しない。保存・共有・media persistenceは変更していない。
+- **Deferred（当checkpoint時点）**: Quick Record複数画像、reorder、video upload、Experience / Entry DB、relation UI、`続きを残す`保存処理、Intent 4択、rights / multi-actor revision、Evidence normalizationは未実装だった。Intent 4択のみ、後続のsection 28でα実験として実装へ変更した。その他は引き続きDeferredである。
+- **状態**: Web 198件とi18n 5件の全test、lint、typecheck、buildは成功した。local browserのdesktop / 390px / 320pxではGarage mediaのwrapper・figure・image実幅が一致し、横overflowがないことを確認済み。Deploy Preview確認後も、iPhone Safariとα3人のHuman QAまではSHIPPED_NEEDS_QAとする。`main`、PR #6、Production DB、RLS / RPC、Netlify / Supabase設定は変更しない。
+
+## 28. 2026-08-20 PR #8 finalization checkpoint
+
+- **Garage full history**: 旧実装の`timeline.slice(0, 12)`と「最近の12件を表示しています」を撤去した。現αは全AppDataをclientへ取得済みのため、新しいDB cursor APIは作らず、12件を初期単位に12件ずつprefix表示する。下端の`IntersectionObserver`と明示的な「さらに過去の記録を見る」を併用し、順序・重複・scroll位置を保って全件へ到達できる。12件以下では追加UIを出さない。
+- **Capture Intent**: Quick Record開始時の4択をα Product Experimentとして実装した。選択後はtextareaへfocusし、intent別placeholderを使う。Intentは詳細`eventType`と分離してdraft、Journal、α shared projectionへoptionalに保持し、issueだけ`open`、serviceは未分類を許容する。保存後は既知Intentを表示し、同じ大分類を再選択させない。
+- **Record detail**: 既存編集の「記録の詳細」に、現在の種類・時期・未解決状態と「変更する／追加する」を表示し、補助actionであることを保ちながらclickableだと分かる構造へ更新した。
+- **Media policy / audit**: 恒久的なProduct-level画像枚数上限を撤回し、resource guardrailで管理するDecisionへ更新した。一方、Quick Recordは`PreparedImage | null`とprivate Workspace内`alpha_inline` data URLの1枚経路であり、shared側だけ複数uploadへ広げるとprivate draft、部分失敗、cleanupが不整合になる。今回の複数画像化はDeferredし、詳細Journal / shared payloadの6ファイル制約も一時的なα transport guardrailとして維持する。
+- **Deferred / safety**: private object media storage、attachment正規化、partial upload recovery、動画、Experience relationship、`続きを残す`保存処理、filter / searchは次αまたはβへ残す。Production DB、migration、RLS、RPC、Netlify / Supabase設定、AI APIは変更していない。
+- **Verification**: 全workspace test、lint、typecheck、Production build、`git diff --check`は成功した。local browserのdesktop / 390px / 320pxでCapture Intent、1 tap後のtextarea focus、intent別placeholder、issue保存後の未解決表示、保存後の二重分類なし、date field、既存record editの「記録の詳細／変更する」、Garageを確認し、各幅でhorizontal overflowとconsole errorがない。local fixtureは5件のため、13件以上のprogressive renderingは29件のlogic / source regression testで確認し、iPhone実データQAへ残す。
+- **状態**: branch `codex/alpha-evidence-signature`／PR #8。Deploy Preview確認後も、iPhone SafariでCapture Intent、下書き、本文／写真保存、保存後詳細、13件以上のGarage履歴、media、edit actionを確認するまでHuman QA pendingとする。
+
+## 29. 2026-08-20 PR #8 release checkpoint
+
+- **α baseline判断**: PR #8は、Vehicle-centered Signature Experience、Capture Intent 4択、issue/open、保存後の「記録を詳しくする」、Garage Vehicle Continuity、Garage media改善、全履歴到達、Desktop Record CTA、Feedのtext/image canonical navigation、`VehicleExperience` + `ExperienceEntry`の将来Architecture decision、Product-level photo count capを設けない方針を含む、現αのbaselineとしてmainへ投入する候補とする。mergeはCEOがGitHub UIで行い、Codexは実行しない。
+- **既知のP1候補**: Quick Recordのtemporary single-image、private object media storageとMedia normalization未実施、legacy `local_blob`、iPhone Safari実機QAを残す。これらを今回の「完成」とは扱わない。
+- **次iterationへDeferred**: HomeのInformation Architecture整理、HomeのDEMO・重複要素・「最近の整備記録」・月次愛車summary・重複navigationの再評価、Experienceへの「続きを残す」、動画、same-model Knowledge、Vehicle Succession、Quick Record複数画像を残す。
+- **次の停止点**: Home整理が完了するまでαユーザー3名への再テストは開始しない。現時点ではPR #8をHuman manual merge readyとして扱い、merge後の実ユーザーQAと本番反映は別状態で記録する。

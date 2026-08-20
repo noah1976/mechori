@@ -1,5 +1,131 @@
 import type { AppData } from "./types.ts";
 
+export type SignatureDemoExperience = {
+  id: string;
+  occurredAt: string;
+  dateJa: string;
+  dateEn: string;
+  kind: "record" | "observation" | "work" | "result" | "transition" | "reuse";
+  labelJa: string;
+  labelEn: string;
+  titleJa: string;
+  titleEn: string;
+  detailJa?: string;
+  detailEn?: string;
+  actorName?: string;
+  actorRoleJa?: string;
+  actorRoleEn?: string;
+};
+
+/**
+ * A deliberately fictional, non-technical story used only to explain the
+ * vehicle-continuity experience. It does not represent implemented succession
+ * or same-model matching behavior.
+ */
+export const signatureDemoStory = {
+  vehicle: {
+    make: "FIAT",
+    model: "Barchetta",
+    contextJa: "1997年 / デモ車両",
+    contextEn: "1997 / demo vehicle",
+  },
+  experiences: [
+    {
+      id: "signature-demo-2008-observation",
+      occurredAt: "2008-06-01",
+      dateJa: "2008年",
+      dateEn: "2008",
+      kind: "observation",
+      labelJa: "気づき",
+      labelEn: "Observation",
+      titleJa: "走行中の違和感を記録",
+      titleEn: "An unusual feeling while driving was recorded",
+      detailJa: "原因を決めず、その時に分かった事実だけを残した架空例です。",
+      detailEn: "A fictional example that keeps only what was known at the time, without assigning a cause.",
+      actorName: "Owner A / DEMO",
+      actorRoleJa: "記録",
+      actorRoleEn: "Recorded by",
+    },
+    {
+      id: "signature-demo-2010-work",
+      occurredAt: "2010-03-01",
+      dateJa: "2010年",
+      dateEn: "2010",
+      kind: "work",
+      labelJa: "点検・対応",
+      labelEn: "Inspection / work",
+      titleJa: "確認した内容と行った対応を記録",
+      titleEn: "The checks and work performed were recorded",
+      detailJa: "具体的な診断や作業手順を示さない、デモ用の架空記録です。",
+      detailEn: "A fictional demo record with no diagnosis or technical procedure.",
+      actorName: "Mechanic A / DEMO",
+      actorRoleJa: "作業記録",
+      actorRoleEn: "Work recorded by",
+    },
+    {
+      id: "signature-demo-2013-result",
+      occurredAt: "2013-09-01",
+      dateJa: "2013年",
+      dateEn: "2013",
+      kind: "result",
+      labelJa: "その後",
+      labelEn: "Later result",
+      titleJa: "その後の状態を追記",
+      titleEn: "The later condition was added",
+      detailJa: "当時のOwnerが、後から分かった状態を追記した架空例です。",
+      detailEn: "A fictional example of the owner adding what was learned later.",
+      actorName: "Owner A / DEMO",
+      actorRoleJa: "結果追記",
+      actorRoleEn: "Follow-up by",
+    },
+    {
+      id: "signature-demo-2022-transition",
+      occurredAt: "2022-04-01",
+      dateJa: "2022年",
+      dateEn: "2022",
+      kind: "transition",
+      labelJa: "将来の引き継ぎ例",
+      labelEn: "Future succession example",
+      titleJa: "記録する人がOwner Bへ変わる",
+      titleEn: "The person recording changes to Owner B",
+      detailJa: "許諾された車両履歴だけが次のOwnerへ続く、未実装の将来像です。",
+      detailEn: "An unimplemented future concept where only permitted vehicle history continues to the next owner.",
+    },
+    {
+      id: "signature-demo-2024-observation",
+      occurredAt: "2024-02-01",
+      dateJa: "2024年",
+      dateEn: "2024",
+      kind: "observation",
+      labelJa: "新しい気づき",
+      labelEn: "New observation",
+      titleJa: "似た違和感を新しい事実として記録",
+      titleEn: "A similar feeling was recorded as a new fact",
+      detailJa: "過去記録と同じ原因だとは判断していません。",
+      detailEn: "It does not claim the same cause as the earlier record.",
+      actorName: "Owner B / DEMO",
+      actorRoleJa: "記録",
+      actorRoleEn: "Recorded by",
+    },
+    {
+      id: "signature-demo-2024-reuse",
+      occurredAt: "2024-05-01",
+      dateJa: "2024年",
+      dateEn: "2024",
+      kind: "reuse",
+      labelJa: "履歴参照",
+      labelEn: "History referenced",
+      titleJa: "過去の履歴を参照した事実を記録",
+      titleEn: "The use of prior history was recorded",
+      detailJa: "履歴を見た事実だけを示し、整備の正しさは保証しません。",
+      detailEn: "It records only that the history was reviewed and does not guarantee the work.",
+      actorName: "Mechanic B / DEMO",
+      actorRoleJa: "参照記録",
+      actorRoleEn: "Referenced by",
+    },
+  ] satisfies SignatureDemoExperience[],
+} as const;
+
 export const demoData: AppData = {
   schemaVersion: 14,
   vehicles: [
@@ -96,7 +222,12 @@ export const demoData: AppData = {
           hazardLevel: "LOW",
         },
       ],
-      serviceAttribution: { version: 1, performedByType: "unknown" },
+      serviceAttribution: {
+        version: 1,
+        performedByType: "service_provider",
+        serviceProviderId: "provider-demo-officina-verde",
+        providerDisplayNameSnapshot: "Officina Verde / DEMO",
+      },
       createdAt: "2026-04-12T09:00:00.000Z",
       updatedAt: "2026-04-12T09:00:00.000Z",
       isDemo: true,

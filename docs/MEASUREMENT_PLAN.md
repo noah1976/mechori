@@ -61,13 +61,17 @@ MECHORIの初期検証を、登録者数や感想だけで判断しないため�
 
 `Monthly Completed Evidence Loops`は長期North Star候補です。現αでは母数とKnowledge密度が小さいため唯一のKPIにせず、実際に複数のLoopを継続観測でき、入力元・再利用・結果追記を重複なく集計できる段階で主要経営指標への昇格を検討します。
 
+β候補のcontent modelでは、初回保存を`Experience Entry created`、同じ経緯への観察・作業・結果の追記を`Experience continued`として区別します。現αにはExperience relationshipがないため、近い日時や本文だけで複数recordを自動的に同一Experienceと数えません。新しいAnalytics基盤は今回追加せず、Human QAでは「同じ件の続きを残したかったか」「別の新しい記録として扱いたかったか」を確認します。
+
 現αでは、既存指標を優先しながら次をLeading Indicatorとして観察します。
 
 - Quick Record保存成功とFirst Record Time
+- Capture Intent選択からcomposer開始・保存までの離脱、Intent変更、本人が選択と記録内容を自然だと感じたか。現αでは外部Analyticsを増やさずHuman QAと既存保存事実で確認する。
 - 2件目の記録、再訪、30-day Meaningful Reuse
 - post-save enrichmentまたは後日構造化追記
 - 他者の記録閲覧と、根拠付き検索・工場提示等の再利用
 - 結果・再発・未解決の追記
+- 同じVehicleの出来事へ観察・作業・結果を続けて残したい意向と、実際の後日追記
 - α共有投稿の削除、公開範囲変更希望、写真公開への不安・後悔の定性Feedback
 
 投稿後の後悔等は、現時点で新しいAnalytics基盤や自由本文収集を決定しません。削除・設定変更等の既存事実と人間QA・Feedbackで確認し、必要性とPrivacyを確認してから計測方法を決めます。
@@ -274,3 +278,12 @@ Following FeedをAuthenticated Homeのfirst surfaceに置くのは、記録や�
 - 既存の`feed_viewed`、Journal detail open、Like、`garage_viewed`、Quick Record start / save、2回目session / recordの時系列を、個人本文・Vehicle identifierを増やさず確認する。
 - Feed閲覧が増えても、detail open、Garage visit、記録、結果追記、Meaningful Reuseへつながらなければ、単なる消費時間を成功扱いにしない。
 - αの少人数では数値を一般化せず、再訪理由と「他Owner / Vehicleの記録から役立ったこと」を短いinterviewで補完する。
+
+## α Signature Experienceの仮説
+
+Home、Quick Record保存後、Garageで繰り返す`Vehicle Continuity`は、投稿数を増やすためのgamificationではなく、Vehicleを中心に経験が残り続ける価値を説明なしで理解できるかを確認する実験である。Vehicle Anchor、Experience Mark、Continuation Slotの理解を測るもので、Evidence Graph、record relationship、Vehicle Succession、same-model reuse、AI extractionの実装・効果を意味しない。
+
+- 既存の`journal_saved`、`garage_viewed`、`history_reused`だけを継続して扱い、新しい外部分析serviceは導入しない。
+- Human QAではHomeを5秒見せて答えを先に説明せず、「何のサービスだと思ったか」「普通のクルマSNSと何が違うと思ったか」「保存直後に何が残ったと理解したか」「未対応の不具合も書けると思ったか」「点検・結果を続けて残したいか」を尋ねる。
+- α3ユーザーには、前Ownerや昔の整備士の経験が残っていたら使いたいか、同じ車種の別個体で起きたことが見られたら役立つかも尋ねる。ただし肯定回答だけでSuccession／same-model需要を検証済みにしない。
+- 数値が少ないαでは、Home／Reference閲覧数だけを成功とせず、本文だけのissue保存、任意enrichment、2件目の記録、後日のGarage再訪・結果追記と定性回答を合わせて判断する。

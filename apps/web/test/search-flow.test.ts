@@ -27,7 +27,8 @@ test("search separates empty results from retryable errors", () => {
   assert.match(source, /もう一度試す/);
   assert.match(source, /条件に合う公開事例は見つかりませんでした/);
   assert.match(source, /この内容を記録する/);
-  assert.match(source, /hasSubmitted && searchError/);
+  assert.match(source, /hasSubmitted && <section ref=\{resultsAnchorRef\}/);
+  assert.match(source, /\{searchError \? \(/);
   assert.match(source, /!hasResults/);
 });
 

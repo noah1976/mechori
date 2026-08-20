@@ -171,3 +171,31 @@ P-069のように本番で再現した不具合は、テスト成功だけを根
 - `[~]` 月次summaryがFeedより目立たず、各既存導線が動くこと、Homeの「記録する」FABがbottom navigation・safe area・Feed本文を妨げないことを確認する。
 - `[~]` Following FeedがAuthenticated Homeそのものであり、数件previewの「すべて見る」へ依存せず続きをscrollできることを確認する。特集Journal、`FROM ALPHA GARAGES`等のdecorative English label、上端accent付きの大きな投稿cardがないことを確認する。Feed-firstが再訪理由になるかは、実機操作とαヒアリングで検証し、実測前にWAU / MAU改善と扱わない。
 - `[~]` Home Feedの写真が320px、375px、390px、430px前後のiPhone Safari幅でcontainer・viewportから横にはみ出さず、本文、写真、Like、detail linkがそれぞれ操作できることを確認する。
+
+## 14. 2026-08-19 α Signature Experience
+
+- `[~]` Homeを開き、黒いonboardingやFollowing Feedより先に「DEMO・架空例」のVehicle Continuityが最初のProduct objectとして見えること、通常Feedと構造が異なること、架空の利用数・解決率・same-model結果がないことを確認する。
+- `[~]` Quick Recordで4つのCapture Intentを1 tapで選ぶと対応するplaceholderのcomposerへ進み、まだ直していない異音等を本文のみ・写真付きの両方で保存できることを確認する。詳細categoryや診断を投稿前に要求しない。
+- `[~]` 「気になること・不具合」を選んだ記録は保存直後から未解決のExperience Markとして表示され、それ以外を未解決にしないことを確認する。Continuation Slotは「まだ記録はありません」と表示し、点検・修理・結果のfake recordに見えないこと、Closeしても元recordが残ることを確認する。
+- `[~]` Home、Quick Record保存後、Garageで同じVehicle Anchor、Experience Mark、Continuation Slotのvisual grammarを確認する。320 / 375 / 390 / 430pxで横overflowがなく、320pxのRecord CTAが本文を大きく覆わないことをiPhone Safariで再確認する。
+- `[~]` GarageのVehicle IdentityとVehicle Anchorが同じ個体を中心に見せ、実recordだけを時系列表示すること、actual relationがない記録を因果chainに見せないこと、欠損actor／resultを補完しないことを確認する。Reference Garageは架空例の前提を確認するsecondary routeとして動作することを確認する。
+- `[~]` Desktopで「記録する」がMECHORI logo直下・navigationより前に見え、Mobileでは既存FABが維持されることを確認する。
+- `[~]` Journal detailのKnowledge noteが「車両履歴として残る価値」を伝えつつ、根拠・確認が揃うまで原因候補や確認済みナレッジとして検索へ出さない境界を維持することを確認する。
+- `[~]` Home Feedの本文と写真が同じcanonical Journal detailへ遷移し、写真からmedia URLや404へ移動しないことをdesktop／iPhone Safariで確認する。
+- `[ ]` αテスターへ答えを説明せず、Homeを5秒見た第一印象、普通のクルマSNSとの違い、保存後に履歴が残った感覚、未対応issueを書けるか、点検・結果も続けて残したいか、Owner／Mechanicを越えて経験が残る価値を自由回答で聞く。
+
+## 15. 2026-08-20 Vehicle Experience content model確認
+
+- `[~]` Garageの写真付きExperience Markはlocal browserのdesktop／390px／320pxでMark全幅へ収まり、wrapper・figure・imageの実幅一致と横overflowなしを確認済み。iPhone Safariで、Registerと本文の横に写真が細く押し込まれないこと、既存の複数画像recordでは先頭画像と残り枚数が表示され、detailで順序どおり読めることを再確認する。
+- `[~]` Quick Record保存後と既存記録編集で、Issue / Drive / Memoryを一律に「整備情報」と呼ばず、「記録を詳しくする」「記録の詳細」が使われることを確認する。詳細を追加しなくても元recordが残る。
+- `[~]` Quick Recordで「このクルマに、何を残す？」から4つのCapture Intentを1 tapで選び、すぐ本文へfocusすることを確認する。戻ってIntentを変更でき、詳細formや二重分類に見えないことを320 / 375 / 390 / 430pxで確認する。
+- `[~]` 「気になること・不具合」は未解決として保存され、「整備・修理」は点検／修理／部品交換を勝手に断定せず、「ドライブ・思い出」「その他」も対応するplaceholderで保存できることを確認する。保存後の「記録を詳しくする」で選択済み大分類を聞き直さない。
+- `[~]` Capture Intentを選んだ書きかけの記録を再読込後に復元できること、復元／新しく書く／削除を選ぶ前にIntent選択で下書きを暗黙破棄できないことを確認する。
+- `[~]` Garageに13件以上の記録があるVehicleで、初期12件の後も自動または「さらに過去の記録を見る」から全履歴へ到達できることを確認する。順序、重複、scroll位置、media幅が崩れず、12件以下では追加UIが出ない。
+- `[ ]` 同じ不具合、修理、Driveについて、別recordではなく「続きを残す」ことを望むか、後日の追記と作業後の一括入力のどちらが自然かを聞く。現実装にはExperience relationshipがないため、近い記録を自動で同一Experienceとして扱わない。
+- `[ ]` Quick Recordで2枚以上の写真、動画、並べ替えが必要だった具体的場面と枚数を聞く。恒久的なProduct-level枚数上限は設けないが、現Quick Recordは一時的に1枚であり、複数画像・動画は実装済みと扱わず、private object media storageとcost / privacy Gateの判断材料にする。
+
+## 16. 2026-08-20 PR #8 release checkpoint
+
+- `[ ]` PR #8をmainへmergeする前に、CEOがDeploy Preview上でVehicle-centered Signature Experience、Capture Intent、Garage全履歴、写真表示、保存後詳細、Feed detail navigationを確認する。PR #8は現α baseline候補であり、実機QA未完了をもって「完成」と扱わない。
+- `[ ]` Home Information Architecture、DEMO・重複要素、最近の整備記録、月次summary、重複navigationの整理後に、αユーザー3名へ再テストを依頼する。

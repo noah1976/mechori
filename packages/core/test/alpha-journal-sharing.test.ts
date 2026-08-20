@@ -17,6 +17,7 @@ function journal(): GarageJournalPost {
     vehicleLabel: "FIAT Barchetta",
     modelTargetId: "fiat-barchetta",
     title: "雪でバンパーを傷めた",
+    captureIntent: "service",
     eventType: "breakdown",
     bodyOriginal: "雪の塊に当たり、後日工場で確認してもらった。",
     sourceLanguage: "ja",
@@ -67,6 +68,7 @@ test("shared journal projection omits private identifiers and linked maintenance
   assert.equal("displayFields" in payload, false);
   assert.equal("knowledgeExtractionConsent" in payload, false);
   assert.equal("serviceAttribution" in payload, false);
+  assert.equal(payload.captureIntent, "service");
   assert.deepEqual(payload.media, []);
   assert.deepEqual(
     payload.contentBlocks.map((block) => block.type),
@@ -190,8 +192,27 @@ test("shared row becomes a non-searchable public journal with a synthetic author
   assert.ok(shared);
   assert.equal(shared.journal.authorProfileId, "alpha-shared-author-share-1");
   assert.equal(shared.journal.knowledgeExtractionConsent, false);
+  assert.equal(shared.journal.captureIntent, "service");
   assert.equal(shared.author.displayName, "Noah");
   assert.equal(shared.journal.media[0]?.source, "alpha_shared");
+});
+
+test("an open issue keeps its explicit state in the shared projection", () => {
+  const source = { ...journal(), eventType: "issue" as const, issueStatus: "open" as const };
+  const payload = createAlphaSharedJournalPayload(source);
+  const shared = parseAlphaSharedJournalRow({
+    share_id: "share-open-issue",
+    journal_id: source.id,
+    author_display_name: "Noah",
+    payload,
+    published_at: payload.publishedAt,
+    updated_at: payload.updatedAt,
+  });
+
+  assert.equal(payload.eventType, "issue");
+  assert.equal(payload.issueStatus, "open");
+  assert.equal(shared?.journal.eventType, "issue");
+  assert.equal(shared?.journal.issueStatus, "open");
 });
 
 test("shared rows use stable public profile and vehicle identifiers when available", () => {

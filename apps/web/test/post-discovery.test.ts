@@ -21,7 +21,9 @@ test("post authors and vehicles have separate public destinations", () => {
   assert.match(card, /vehicleHref/);
   assert.match(detail, /publicProfileHref/);
   assert.match(detail, /vehicleHref/);
-  assert.match(media, /Open vehicle profile/);
+  assert.match(media, /linkHref \? <Link href=\{linkHref\} aria-label=\{linkAriaLabel\}>\{image\}<\/Link> : image/);
+  assert.match(card, /linkHref=\{detailHref\}/);
+  assert.match(card, /linkAriaLabel=\{ja \? `\$\{display\.title\}の詳細を読む` : `Read \$\{display\.title\}`\}/);
   assert.doesNotMatch(card, /href=\{`\/profile\/\$\{author\.id\}`\}/);
   assert.doesNotMatch(detail, /href=\{`\/profile\/\$\{author\.id\}`\}/);
 });

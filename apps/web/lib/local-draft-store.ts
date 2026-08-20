@@ -15,7 +15,8 @@ const quickEventDraftPrefix = "mechori.prototype.draft.quick-event.";
 const localDraftMaxAgeMs = 30 * 24 * 60 * 60 * 1000;
 
 export interface QuickEventLocalDraft {
-  eventType: string;
+  captureIntent?: string;
+  eventType?: string;
   occurredOn?: string;
   occurredYear?: number;
   occurredMonth?: number;
@@ -119,7 +120,6 @@ function parseQuickEventDraft(raw: string | null): LocalDraftEnvelope<QuickEvent
       typeof envelope.savedAt !== "string" ||
       !Number.isFinite(Date.parse(envelope.savedAt)) ||
       !value ||
-      typeof value.eventType !== "string" ||
       typeof value.note !== "string" ||
       typeof value.visibility !== "string" ||
       typeof value.hasPhoto !== "boolean"
@@ -130,7 +130,8 @@ function parseQuickEventDraft(raw: string | null): LocalDraftEnvelope<QuickEvent
       version: 1,
       savedAt: envelope.savedAt,
       value: {
-        eventType: value.eventType,
+        captureIntent: typeof value.captureIntent === "string" ? value.captureIntent : undefined,
+        eventType: typeof value.eventType === "string" ? value.eventType : undefined,
         occurredOn: typeof value.occurredOn === "string" ? value.occurredOn : undefined,
         occurredYear: typeof value.occurredYear === "number" ? value.occurredYear : undefined,
         occurredMonth: typeof value.occurredMonth === "number" ? value.occurredMonth : undefined,

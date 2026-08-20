@@ -131,7 +131,11 @@ export function createJournalPost(
     vehicleLabel: `${vehicle.make} ${vehicle.model}`,
     modelTargetId: canonicalModelTargetId(vehicle),
     title: draft.title.trim(),
+    captureIntent: draft.captureIntent,
     eventType: draft.eventType,
+    ...(draft.eventType === "issue"
+      ? { issueStatus: draft.issueStatus ?? "open" }
+      : {}),
     bodyOriginal,
     sourceLanguage: detectedSourceLanguage,
     visibility: draft.visibility,
@@ -283,7 +287,9 @@ export function journalToDraft(journal: GarageJournalPost): JournalDraft {
   return {
     title: journal.title,
     sourceLanguage: journal.sourceLanguage,
+    captureIntent: journal.captureIntent,
     eventType: journal.eventType,
+    issueStatus: journal.eventType === "issue" ? journal.issueStatus ?? "open" : undefined,
     occurredOn: journal.occurredOn,
     occurredYear: journal.occurredYear,
     occurredMonth: journal.occurredMonth,

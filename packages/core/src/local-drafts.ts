@@ -2,6 +2,7 @@ import type {
   HazardLevel,
   JournalDisplayField,
   JournalDraft,
+  JournalIssueStatus,
   JournalTextBlock,
   JournalVisibility,
   MaintenanceOccurrencePrecision,
@@ -154,6 +155,7 @@ function isJournalDraft(value: unknown): value is JournalDraft {
     (value.occurredMonth === undefined || typeof value.occurredMonth === "number") &&
     (value.occurredPeriodNote === undefined || typeof value.occurredPeriodNote === "string") &&
     (value.sourceLanguage === undefined || typeof value.sourceLanguage === "string") &&
+    (value.issueStatus === undefined || isJournalIssueStatus(value.issueStatus)) &&
     Array.isArray(value.displayFields) &&
     value.displayFields.every(isJournalDisplayField) &&
     Array.isArray(value.media) &&
@@ -221,6 +223,10 @@ function isHazardLevel(value: unknown): value is HazardLevel {
 
 function isJournalVisibility(value: unknown): value is JournalVisibility {
   return ["private", "followers", "public"].includes(String(value));
+}
+
+function isJournalIssueStatus(value: unknown): value is JournalIssueStatus {
+  return ["open", "resolved", "recurred"].includes(String(value));
 }
 
 function isJournalDisplayField(value: unknown): value is JournalDisplayField {

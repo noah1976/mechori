@@ -25,7 +25,9 @@ export default function JournalEditPage() {
     );
   }
 
-  if (journal.eventType) return <QuickEventForm vehicle={vehicle} journal={journal} />;
+  if (journal.captureIntent || journal.eventType) {
+    return <QuickEventForm vehicle={vehicle} journal={journal} />;
+  }
 
   return (
     <div className="page-stack journal-editor-page">

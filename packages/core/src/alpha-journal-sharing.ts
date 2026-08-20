@@ -1,7 +1,9 @@
 import type {
   GarageJournalPost,
   JournalContentBlock,
+  JournalCaptureIntent,
   JournalEventType,
+  JournalIssueStatus,
   JournalMediaAttachment,
   JournalMediaBlock,
   JournalOccurrencePrecision,
@@ -10,6 +12,7 @@ import type {
 import type { LanguageTag } from "./language.ts";
 
 export const alphaSharedJournalSchemaVersion = 1;
+// Temporary shared-payload safety guardrail, not a permanent product photo limit.
 export const alphaSharedJournalMaxMediaCount = 6;
 export const alphaSharedJournalMaxMediaBytes = 512 * 1024;
 
@@ -22,7 +25,9 @@ export interface AlphaSharedJournalPayload {
   vehicleLabel: string;
   modelTargetId: string;
   title: string;
+  captureIntent?: JournalCaptureIntent;
   eventType?: JournalEventType;
+  issueStatus?: JournalIssueStatus;
   bodyOriginal: string;
   sourceLanguage: LanguageTag;
   media: JournalMediaAttachment[];
@@ -130,7 +135,9 @@ export function createAlphaSharedJournalPayload(
     vehicleLabel: bounded(journal.vehicleLabel, 160),
     modelTargetId: bounded(journal.modelTargetId, 160),
     title: bounded(journal.title, 180),
+    captureIntent: journal.captureIntent,
     eventType: journal.eventType,
+    issueStatus: journal.eventType === "issue" ? journal.issueStatus ?? "open" : undefined,
     bodyOriginal: bounded(journal.bodyOriginal, 10000),
     sourceLanguage: journal.sourceLanguage,
     media: publicMedia,
@@ -177,7 +184,9 @@ export function parseAlphaSharedJournalRow(
       vehicleLabel: payload.vehicleLabel,
       modelTargetId: payload.modelTargetId,
       title: payload.title,
+      captureIntent: payload.captureIntent,
       eventType: payload.eventType,
+      issueStatus: payload.issueStatus,
       bodyOriginal: payload.bodyOriginal,
       sourceLanguage: payload.sourceLanguage,
       visibility: "public",
@@ -230,12 +239,23 @@ function parsePayload(value: unknown): AlphaSharedJournalPayload | null {
   });
   if (contentBlocks.length !== value.contentBlocks.length) return null;
 
+  const eventType = isJournalEventType(value.eventType) ? value.eventType : undefined;
+  const captureIntent = isJournalCaptureIntent(value.captureIntent)
+    ? value.captureIntent
+    : undefined;
+  if (value.issueStatus !== undefined && !isJournalIssueStatus(value.issueStatus)) return null;
+
   return {
     schemaVersion: alphaSharedJournalSchemaVersion,
     vehicleLabel: bounded(value.vehicleLabel, 160),
     modelTargetId: bounded(value.modelTargetId, 160),
     title: bounded(value.title, 180),
-    eventType: isJournalEventType(value.eventType) ? value.eventType : undefined,
+    captureIntent,
+    eventType,
+    issueStatus:
+      eventType === "issue"
+        ? isJournalIssueStatus(value.issueStatus) ? value.issueStatus : "open"
+        : undefined,
     bodyOriginal: bounded(value.bodyOriginal, 10000),
     sourceLanguage: value.sourceLanguage,
     media,
@@ -332,6 +352,7 @@ function isJournalEventType(value: unknown): value is JournalEventType {
     "delivery",
     "photo",
     "drive",
+    "issue",
     "inspection",
     "tire",
     "oil",
@@ -343,6 +364,14 @@ function isJournalEventType(value: unknown): value is JournalEventType {
     "memory",
     "other",
   ].includes(String(value));
+}
+
+function isJournalCaptureIntent(value: unknown): value is JournalCaptureIntent {
+  return ["issue", "service", "drive", "other"].includes(String(value));
+}
+
+function isJournalIssueStatus(value: unknown): value is JournalIssueStatus {
+  return ["open", "resolved", "recurred"].includes(String(value));
 }
 
 function isOccurrencePrecision(value: unknown): value is JournalOccurrencePrecision {

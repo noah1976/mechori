@@ -103,6 +103,68 @@ test("preserves a lightweight vehicle event category", () => {
   assert.equal(result.journal.visibility, "private");
 });
 
+test("keeps broad capture intent separate from detailed event classification", () => {
+  const service = addJournalToData(
+    cloneDemoData(),
+    validDraft({ captureIntent: "service", eventType: undefined, linkedRecordId: "" }),
+    "ja",
+  ).journal;
+  const issue = addJournalToData(
+    cloneDemoData(),
+    validDraft({ captureIntent: "issue", eventType: "issue", linkedRecordId: "" }),
+    "ja",
+  ).journal;
+
+  assert.equal(service.captureIntent, "service");
+  assert.equal(service.eventType, undefined);
+  assert.equal(service.issueStatus, undefined);
+  assert.equal(issue.captureIntent, "issue");
+  assert.equal(issue.eventType, "issue");
+  assert.equal(issue.issueStatus, "open");
+});
+
+test("an explicitly classified issue is valid before diagnosis, repair, or result", () => {
+  const result = addJournalToData(
+    cloneDemoData(),
+    validDraft({
+      eventType: "issue",
+      issueStatus: undefined,
+      linkedRecordId: "",
+      title: "段差で後ろから音がする",
+      bodyOriginal: "段差を越えると、右後ろからコトコト音がする。",
+      contentBlocks: [{
+        id: "journal-block-open-issue",
+        type: "text",
+        style: "paragraph",
+        text: "段差を越えると、右後ろからコトコト音がする。",
+      }],
+    }),
+    "ja",
+  );
+
+  assert.equal(result.journal.eventType, "issue");
+  assert.equal(result.journal.issueStatus, "open");
+  assert.equal(result.journal.linkedRecordId, undefined);
+  assert.equal(result.journal.serviceAttribution, undefined);
+  assert.equal(result.journal.bodyOriginal, "段差を越えると、右後ろからコトコト音がする。");
+});
+
+test("changing an issue to another type clears issue-only state", () => {
+  const created = addJournalToData(
+    cloneDemoData(),
+    validDraft({ eventType: "issue", linkedRecordId: "" }),
+    "ja",
+  );
+  const updated = updateJournalInData(
+    created.data,
+    created.journal.id,
+    { ...journalToDraft(created.journal), eventType: "drive", issueStatus: undefined },
+  );
+
+  assert.equal(updated.journal.eventType, "drive");
+  assert.equal(updated.journal.issueStatus, undefined);
+});
+
 test("stores service attribution only for maintenance-like quick records", () => {
   const attribution = {
     version: 1 as const,
