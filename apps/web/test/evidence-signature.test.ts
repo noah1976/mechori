@@ -97,6 +97,14 @@ test("onboarding is demoted below the signature and no longer uses the black pan
   assert.match(css, /\.activation-onboarding \{[^}]*background: transparent;/);
 });
 
+test("Home renders its Signature surface before the optional username setup notice", () => {
+  const appMain = appShell.lastIndexOf("<main");
+  const homeUsernameNotice = appShell.indexOf('{pathname === "/" && usernameSetupNotice}');
+  assert.ok(appMain >= 0);
+  assert.ok(homeUsernameNotice > appMain);
+  assert.match(appShell, /pathname !== "\/" && usernameSetupNotice/);
+});
+
 test("Vehicle Continuity is narrow-screen safe and does not hide overflow", () => {
   assert.match(css, /\.vehicle-continuity \{[^}]*grid-template-columns: minmax\(180px, 0\.32fr\) minmax\(0, 1fr\)/);
   assert.match(css, /\.vehicle-experience-body \{ min-width: 0;/);

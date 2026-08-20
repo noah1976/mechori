@@ -172,6 +172,27 @@ export function AppShell({ children }: { children: ReactNode }) {
     pushAnalyticsEvent("page_view", { page_path: pathname });
   }, [hydrated, pathname]);
 
+  const usernameSetupNotice = authenticated
+    && workspaceReady
+    && contentPolicyAccepted
+    && !currentProfile?.publicUsername ? (
+      <section className="content-policy-notice" aria-labelledby="username-setup-title">
+        <div>
+          <strong id="username-setup-title">
+            {locale === "ja" ? "公開ユーザー名を設定しましょう" : "Choose your public username"}
+          </strong>
+          <p>
+            {locale === "ja"
+              ? "友人が表示名や@usernameからあなたを見つけやすくなります。閲覧はこのまま続けられます。"
+              : "This helps friends find you by display name or @username. You can keep browsing without setting it now."}
+          </p>
+        </div>
+        <Link href="/settings/profile" className="primary-action">
+          {locale === "ja" ? "プロフィールを設定" : "Set up profile"}
+        </Link>
+      </section>
+    ) : null;
+
   if (pathname === "/professional") {
     return (
       <div className="professional-frame" data-clarity-mask="true">
@@ -395,23 +416,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </button>
           </section>
         )}
-        {authenticated && workspaceReady && contentPolicyAccepted && !currentProfile?.publicUsername && (
-          <section className="content-policy-notice" aria-labelledby="username-setup-title">
-            <div>
-              <strong id="username-setup-title">
-                {locale === "ja" ? "公開ユーザー名を設定しましょう" : "Choose your public username"}
-              </strong>
-              <p>
-                {locale === "ja"
-                  ? "友人が表示名や@usernameからあなたを見つけやすくなります。閲覧はこのまま続けられます。"
-                  : "This helps friends find you by display name or @username. You can keep browsing without setting it now."}
-              </p>
-            </div>
-            <Link href="/settings/profile" className="primary-action">
-              {locale === "ja" ? "プロフィールを設定" : "Set up profile"}
-            </Link>
-          </section>
-        )}
+        {pathname !== "/" && usernameSetupNotice}
         <main className={showRecordFab ? "has-record-fab" : undefined}>
           {hydrated && (signedIn || publicPath) ? <>
             {authenticated && pathname !== "/auth" && <FirstProfileSetup />}
@@ -429,6 +434,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           )}
         </main>
+        {pathname === "/" && usernameSetupNotice}
         <footer className="site-policy-footer">
           <Link href="/privacy">
             {locale === "ja" ? "プライバシーポリシー" : "Privacy policy"}
