@@ -133,9 +133,11 @@ Garage由来のDesign Languageを、αテスターが頻繁に通る範囲へ限
 
 ## α Signature Experience
 
-- Quick Record保存後は、入力欄を増やさず、保存されたVehicle・本文・日時・写真有無を短く見せて「このクルマの履歴に残った」ことを伝える。完成度score、badge、AI推定は使わない。
-- Evidenceの流れは、番号と細いlineだけで出来事・作業・部品・結果をつなぐ。大きなdashboard card、gradient、装飾的な英語labelを増やさず、Garageの白地・事実的copy・控えめなborderに従う。
-- Reference GarageはDEMOであることを常に明示し、実ユーザーの記録量を水増ししたように見せない。
+- `History Spine`は、細いline、状態を区別するnode、日付、事実的な種別、本文、確認できるactor／sourceを一つの文法で読むMECHORIのSignature component候補とする。Home、Quick Record保存後、Garageで同じcomponentを再利用し、画面別の模倣実装を作らない。
+- Quick Record保存直後はneutralなsingle nodeと「この先」を示す。本人が保存後に「不具合・気になること」を明示した場合だけ「未解決」を静かに表示し、赤い警告、巨大badge、AI推定を使わない。
+- HomeのFollowing Feedより前にcompactなDEMO履歴をinline表示し、通常のSNS投稿とは異なるVehicle-firstの時間軸を直接見せる。大きなpromo card、gradient、黒いeditorial surface、装飾的英語、意味のないstatsは使わない。
+- Garageはactual recordをchronological Vehicle historyとして表示する。実relationがないrecordを因果chainに見せず、欠損actorやresultを捏造しない。Reference GarageはDEMO詳細のsecondary routeとし、実ユーザーdataや実装済みnetwork effectに見せない。
+- 320px以下では固定Record CTAを48pxの＋icon actionへ縮め、履歴本文との重なりを減らす。long text、actor、status、date、mediaは`min-width: 0`とwrap可能なcontent trackで収める。Chromium幅確認とiPhone Safari実機QAを別状態として扱う。
 
 ## 未確定
 

@@ -370,34 +370,9 @@ button { cursor: pointer; }
 .garage-v2-add-previous:hover { color: var(--brand); }
 .garage-v2-reset { justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 0; color: var(--muted); background: transparent; border: 0; font-size: 11px; text-decoration: underline; text-underline-offset: 3px; }
 .garage-v2-history { display: grid; gap: 27px; padding-top: clamp(16px, 4vw, 50px); }
-.garage-evidence-summary { display: flex; align-items: end; justify-content: space-between; gap: 22px; padding: 22px 0; border-block: 1px solid var(--line); }
-.garage-evidence-summary h2 { margin: 0; font-size: 21px; line-height: 1.35; }
-.garage-evidence-summary dl { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0; margin: 0; }
-.garage-evidence-summary dl > div { min-width: 68px; padding-inline: 14px; border-left: 1px solid var(--line); text-align: right; }
-.garage-evidence-summary dl > div:first-child { border-left: 0; }
-.garage-evidence-summary dt, .garage-evidence-summary dd { margin: 0; }
-.garage-evidence-summary dt { color: var(--muted); font-size: 11px; font-weight: 750; }
-.garage-evidence-summary dd { margin-top: 3px; color: var(--ink); font-size: 20px; font-weight: 800; }
 .garage-v2-history-heading { max-width: 620px; }
 .garage-v2-history-heading p { margin: 11px 0 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
-.garage-v2-timeline { position: relative; display: grid; border-top: 1px solid var(--line); }
-.garage-v2-timeline::before { position: absolute; top: 0; bottom: 0; left: 148px; width: 1px; background: #c9d0cc; content: ""; }
-.garage-v2-timeline-item { position: relative; min-width: 0; display: grid; grid-template-columns: 122px 52px minmax(0, 1fr) minmax(0, 230px); gap: 0 14px; align-items: start; padding: 28px 0; color: inherit; border-bottom: 1px solid var(--line); text-decoration: none; }
-.garage-v2-timeline-item.is-featured { grid-template-columns: 122px 52px minmax(0, 1fr) minmax(0, 310px); padding-block: 38px; }
-.garage-v2-timeline-date { padding-top: 5px; color: var(--muted); font-size: 11px; line-height: 1.4; }
-.garage-v2-timeline-mark { z-index: 1; width: 30px; height: 30px; display: grid; place-items: center; color: var(--brand); background: var(--bg); border: 1px solid #aabcb3; border-radius: 50%; }
-.garage-v2-timeline-mark.is-record { color: #665310; border-radius: 2px; border-color: #c5a848; }
-.garage-v2-timeline-copy { min-width: 0; padding-right: 10px; }
-.garage-v2-timeline-copy small, .garage-v2-timeline-copy strong { display: block; }
-.garage-v2-timeline-copy small { color: var(--brand); font-size: 11px; font-weight: 700; }
-.garage-v2-timeline-copy strong { margin-top: 6px; font-size: 18px; line-height: 1.35; overflow-wrap: anywhere; }
-.garage-v2-timeline-item.is-featured .garage-v2-timeline-copy strong { font-size: clamp(24px, 2.5vw, 34px); line-height: 1.18; }
-.garage-v2-timeline-copy p { display: -webkit-box; max-width: 650px; margin: 9px 0 0; overflow: hidden; color: var(--muted); font-size: 13px; line-height: 1.65; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.garage-v2-attribution { display: inline-block; margin-top: 10px; color: #5a645e; font-size: 11px; }
-.garage-v2-timeline-media { position: relative; align-self: stretch; min-height: 122px; overflow: hidden; background: var(--surface-soft); border-radius: 0; }
-.garage-v2-timeline-item.is-featured .garage-v2-timeline-media { min-height: 210px; }
-.garage-v2-timeline-media .journal-media.compact, .garage-v2-timeline-media .journal-media-item { min-height: 100%; height: 100%; }
-.garage-v2-timeline-media .journal-media-item img { object-fit: cover; }
+.garage-v2-timeline { display: grid; min-width: 0; border-top: 1px solid var(--line); }
 .garage-v2-timeline-note { margin: 16px 0 0 188px; color: var(--muted); font-size: 12px; }
 .garage-v2-empty-history { max-width: 670px; padding: 46px 0 12px 67px; border-top: 1px solid var(--line); }
 .garage-v2-empty-history > div { padding-left: 24px; border-left: 2px solid var(--accent); }
@@ -412,8 +387,8 @@ button { cursor: pointer; }
 .garage-v2-first-vehicle p { max-width: 530px; margin: 18px 0 26px; color: var(--muted); font-size: 16px; line-height: 1.75; }
 .garage-v2-first-vehicle .text-link { display: inline-block; margin: 18px 0 0 18px; font-size: 13px; }
 @media (prefers-reduced-motion: no-preference) {
-  .garage-v2-timeline-item, .garage-v2-vehicle-switch { transition: background-color 160ms ease, color 160ms ease, transform 160ms ease; }
-  .garage-v2-timeline-item:hover { background: rgba(227, 236, 231, 0.62); transform: translateX(4px); }
+  .vehicle-history-spine-entry, .garage-v2-vehicle-switch { transition: background-color 160ms ease, color 160ms ease; }
+  .vehicle-history-spine-entry[href]:hover { background: rgba(227, 236, 231, 0.5); }
   .garage-v2-vehicle-switch:hover { background: #edf1ee; }
 }
 
@@ -790,19 +765,48 @@ button { cursor: pointer; }
 .quick-record-evidence-preview dl > div { display: inline-flex; gap: 5px; color: var(--muted); font-size: 11px; }
 .quick-record-evidence-preview dt, .quick-record-evidence-preview dd { margin: 0; }
 .quick-record-evidence-preview dd { color: var(--ink); font-weight: 750; }
-.evidence-flow-strip { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
-.evidence-flow-strip li { display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: center; gap: 9px; min-height: 38px; }
-.evidence-flow-strip li + li { position: relative; }
-.evidence-flow-strip li + li::before { position: absolute; top: -9px; bottom: 28px; left: 13px; width: 1px; background: var(--line); content: ""; }
-.evidence-flow-marker { z-index: 1; width: 27px; height: 27px; display: grid; place-items: center; color: var(--brand); background: var(--surface-soft); border: 1px solid var(--line); border-radius: 50%; font-size: 11px; font-weight: 800; }
-.evidence-flow-strip small, .evidence-flow-strip strong { display: block; }
-.evidence-flow-strip small { color: var(--muted); font-size: 11px; font-weight: 750; }
-.evidence-flow-strip strong { margin-top: 1px; font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }
+.vehicle-history-spine { --history-date-column: 112px; --history-column-gap: 12px; display: grid; min-width: 0; margin: 0; padding: 0; list-style: none; }
+.vehicle-history-spine > li { position: relative; min-width: 0; }
+.vehicle-history-spine > li:not(:last-child)::after { position: absolute; z-index: 0; top: 38px; bottom: -38px; left: calc(var(--history-date-column) + var(--history-column-gap) + 14px); width: 1px; background: #c5cfca; content: ""; }
+.vehicle-history-spine-entry { display: grid; grid-template-columns: var(--history-date-column) 30px minmax(0, 1fr); gap: 0 var(--history-column-gap); min-width: 0; padding: 24px 0; color: inherit; border-bottom: 1px solid var(--line); text-decoration: none; }
+.vehicle-history-spine-entry.has-media { grid-template-columns: var(--history-date-column) 30px minmax(0, 1fr) minmax(0, 240px); }
+.vehicle-history-spine-entry:focus-visible { outline: 3px solid rgba(45, 97, 119, 0.3); outline-offset: 3px; }
+.vehicle-history-spine-date { min-width: 0; padding-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+.vehicle-history-spine-marker { position: relative; z-index: 1; width: 28px; height: 28px; display: block; background: var(--bg); border: 1px solid #9fb3a9; border-radius: 50%; }
+.vehicle-history-spine-marker::after { position: absolute; inset: 9px; background: var(--brand); border-radius: 50%; content: ""; }
+.vehicle-history-spine-marker.is-work { border-color: #b49a45; border-radius: 3px; }
+.vehicle-history-spine-marker.is-work::after { background: #8c7426; border-radius: 1px; }
+.vehicle-history-spine-marker.is-issue { border-width: 2px; border-color: var(--brand); }
+.vehicle-history-spine-marker.is-issue::after { inset: 8px; background: transparent; border: 1px solid var(--brand); }
+.vehicle-history-spine-marker.is-result::after { background: #42705b; }
+.vehicle-history-spine-marker.is-continuation { background: transparent; border-style: dashed; border-color: #9ca9a2; }
+.vehicle-history-spine-marker.is-continuation::after { display: none; }
+.vehicle-history-spine-copy { min-width: 0; padding-right: 8px; }
+.vehicle-history-spine-label { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 9px; }
+.vehicle-history-spine-label small { color: var(--brand); font-size: 11px; font-weight: 750; line-height: 1.4; }
+.vehicle-history-spine-label > span { padding-left: 9px; color: #52615a; border-left: 1px solid var(--line); font-size: 11px; font-weight: 750; }
+.vehicle-history-spine-copy > strong { display: block; margin-top: 6px; font-size: 18px; line-height: 1.35; overflow-wrap: anywhere; }
+.vehicle-history-spine-copy > p { display: -webkit-box; max-width: 650px; margin: 8px 0 0; overflow: hidden; color: var(--muted); font-size: 13px; line-height: 1.65; overflow-wrap: anywhere; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.vehicle-history-spine-actor { display: block; margin-top: 9px; color: #5d6862; font-size: 11px; line-height: 1.45; overflow-wrap: anywhere; }
+.vehicle-history-spine-media { min-width: 0; min-height: 132px; overflow: hidden; background: var(--surface-soft); }
+.vehicle-history-spine-media .journal-media.compact, .vehicle-history-spine-media .journal-media-item { min-width: 0; min-height: 100%; height: 100%; }
+.vehicle-history-spine-media .journal-media-item img { object-fit: cover; }
+.vehicle-history-spine > li.is-featured .vehicle-history-spine-copy > strong { font-size: clamp(24px, 2.5vw, 34px); line-height: 1.18; }
+.vehicle-history-spine > li.is-featured .vehicle-history-spine-media { min-height: 210px; }
+.vehicle-history-spine.is-compact { --history-date-column: 76px; --history-column-gap: 9px; }
+.vehicle-history-spine.is-compact > li:not(:last-child)::after { top: 26px; bottom: -26px; }
+.vehicle-history-spine.is-compact .vehicle-history-spine-entry { grid-template-columns: var(--history-date-column) 26px minmax(0, 1fr); padding: 13px 0; }
+.vehicle-history-spine.is-compact .vehicle-history-spine-marker { width: 24px; height: 24px; }
+.vehicle-history-spine.is-compact .vehicle-history-spine-marker::after { inset: 8px; }
+.vehicle-history-spine.is-compact .vehicle-history-spine-copy > strong { margin-top: 4px; font-size: 14px; line-height: 1.45; }
+.vehicle-history-spine.is-compact .vehicle-history-spine-copy > p { margin-top: 5px; font-size: 12px; -webkit-line-clamp: 2; }
+.vehicle-history-spine.is-compact .vehicle-history-spine-actor { margin-top: 5px; }
 .quick-record-sheet-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
 .quick-record-sheet-heading .icon-action { flex: none; }
 .quick-record-enrichment-form { display: grid; min-inline-size: 0; gap: 17px; margin-top: 20px; }
 .quick-record-sheet-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 20px; }
 .quick-record-sheet-actions .primary-action, .quick-record-sheet-actions .secondary-action { min-height: 44px; }
+.quick-record-sheet > .vehicle-history-spine { margin-top: 15px; border-top: 1px solid var(--line); }
 .selected-provider-change { min-width: 44px; min-height: 44px; justify-content: flex-end; padding: 0; color: var(--brand); background: transparent; border: 0; font-size: 13px; }
 .selected-provider-change:hover { color: var(--brand-strong); text-decoration: underline; text-underline-offset: 3px; }
 .occurrence-period-note { margin-top: 1px; }
@@ -1227,6 +1231,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .journal-card .journal-media-item video { position: relative; z-index: 2; }
 .journal-card footer > span { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-size: 11px; }
 .journal-like, .journal-like-status { display: inline-flex; align-items: center; gap: 5px; padding: 3px; color: var(--muted); background: transparent; border: 0; font-size: 11px; }
+.journal-issue-state { color: #465b51; font-weight: 750; }
 .journal-like:not(:disabled):hover, .journal-like.is-liked { color: var(--danger); }
 .journal-like.is-liked svg { fill: currentColor; }
 .journal-like:disabled { cursor: default; opacity: 0.75; }
@@ -1250,7 +1255,6 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .home-journal-feed .journal-media, .home-journal-feed .journal-media-item { min-width: 0; max-width: 100%; }
 .home-journal-feed .journal-media-item { inline-size: 100%; }
 .home-following-actions { display: flex; align-items: center; gap: 14px; padding-top: 4px; }
-.home-reference-link { margin-left: auto; }
 .home-record-link-desktop { display: inline-flex; }
 .home-feed-empty { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 10px 12px; padding: 20px 0; color: var(--muted); border-block: 1px solid var(--line); }
 .home-feed-empty > svg { margin-top: 2px; color: var(--brand); }
@@ -1261,20 +1265,21 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .home-knowledge-section { display: grid; grid-template-columns: minmax(0, 0.55fr) minmax(0, 1fr); align-items: end; gap: 24px; padding: 20px 0; border-top: 1px solid var(--line); }
 .home-knowledge-section h2 { margin: 0; font-size: 19px; line-height: 1.35; }
 .home-knowledge-section .home-knowledge-prompt { margin: 0; }
-.reference-garage { width: min(100%, 760px); margin-inline: auto; }
+.alpha-history-signature { display: grid; grid-template-columns: minmax(190px, 0.42fr) minmax(0, 1fr); gap: 20px 28px; min-width: 0; padding: 24px 0; border-block: 1px solid var(--line); }
+.alpha-history-signature-heading { min-width: 0; }
+.alpha-history-signature-heading > div { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.alpha-history-signature-heading > div p { margin: 0; color: #425149; font-size: 12px; font-weight: 800; overflow-wrap: anywhere; }
+.alpha-history-signature-heading h2 { margin: 13px 0 0; font-size: 21px; line-height: 1.35; }
+.alpha-history-signature-heading > small { display: block; margin-top: 9px; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.alpha-history-signature > .vehicle-history-spine { min-width: 0; }
+.alpha-history-signature-link, .alpha-history-signature-future { grid-column: 2; justify-self: start; }
+.alpha-history-signature-future { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.alpha-history-signature.is-compact { padding: 20px 0; }
+.alpha-history-signature.is-compact .alpha-history-signature-heading h2 { font-size: 19px; }
+.reference-garage { width: min(100%, 820px); margin-inline: auto; }
 .reference-garage-heading { max-width: 620px; }
 .reference-garage-heading h1 { margin: 0; font-size: clamp(32px, 5vw, 46px); line-height: 1.16; }
 .reference-garage-heading > p:last-child { margin: 12px 0 0; color: var(--muted); line-height: 1.7; }
-.reference-garage-vehicle { display: flex; align-items: center; gap: 12px; padding: 18px 0; border-block: 1px solid var(--line); }
-.reference-garage-vehicle > svg { color: var(--brand); }
-.reference-garage-vehicle small, .reference-garage-vehicle strong, .reference-garage-vehicle span { display: block; }
-.reference-garage-vehicle small { color: var(--muted); font-size: 11px; font-weight: 750; }
-.reference-garage-vehicle strong { margin-top: 2px; font-size: 18px; }
-.reference-garage-vehicle span { margin-top: 2px; color: var(--muted); font-size: 12px; }
-.reference-garage-flow { display: grid; gap: 18px; }
-.reference-garage-flow h2 { margin: 0; font-size: 24px; line-height: 1.3; }
-.reference-garage-flow .evidence-flow-strip { padding: 4px 0; }
-.reference-garage-flow .evidence-flow-strip li { min-height: 62px; }
 .reference-garage-note { margin: 0; padding-top: 18px; color: var(--muted); border-top: 1px solid var(--line); font-size: 12px; line-height: 1.65; }
 
 .feed-layout { display: grid; grid-template-columns: minmax(0, 1fr) 330px; align-items: start; gap: 24px; }
@@ -1919,17 +1924,6 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .garage-v2-selector-heading h2, .garage-v2-history-heading h2 { font-size: 25px; }
   .garage-v2-vehicle-switch { flex-basis: min(210px, 68vw); }
   .garage-v2-history { gap: 20px; padding-top: 4px; }
-  .garage-evidence-summary { align-items: flex-start; flex-direction: column; gap: 15px; padding: 18px 0; }
-  .garage-evidence-summary dl { justify-content: flex-start; width: 100%; }
-  .garage-evidence-summary dl > div { flex: 1 1 0; min-width: 0; padding-inline: 10px; text-align: left; }
-  .garage-v2-timeline::before { left: 15px; }
-  .garage-v2-timeline-item, .garage-v2-timeline-item.is-featured { grid-template-columns: 30px minmax(0, 1fr); gap: 0 12px; padding-block: 22px; }
-  .garage-v2-timeline-date { grid-column: 2; grid-row: 1; padding: 0; }
-  .garage-v2-timeline-mark { grid-row: 1 / span 3; width: 30px; height: 30px; }
-  .garage-v2-timeline-copy { grid-column: 2; margin-top: 8px; padding-right: 0; }
-  .garage-v2-timeline-item.is-featured .garage-v2-timeline-copy strong { font-size: 25px; }
-  .garage-v2-timeline-media { grid-column: 2; min-height: 164px; margin-top: 15px; }
-  .garage-v2-timeline-item.is-featured .garage-v2-timeline-media { min-height: 210px; }
   .garage-v2-timeline-note { margin-left: 42px; }
   .garage-v2-empty-history { padding: 32px 0 10px 14px; }
   .garage-v2-empty-history > div { padding-left: 19px; }
@@ -2074,7 +2068,19 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .home-feed-heading h1, .home-feed-heading h2 { font-size: 24px; }
   .home-following-actions { gap: 12px; }
   .home-following-actions { flex-wrap: wrap; }
-  .home-reference-link { width: 100%; margin-left: 0; }
+  .alpha-history-signature { grid-template-columns: minmax(0, 1fr); gap: 17px; }
+  .alpha-history-signature > *, .alpha-history-signature-link, .alpha-history-signature-future { grid-column: 1; min-width: 0; }
+  .alpha-history-signature-heading h2 { max-width: 20ch; }
+  .vehicle-history-spine, .vehicle-history-spine.is-compact { --history-date-column: 0px; --history-column-gap: 10px; }
+  .vehicle-history-spine > li:not(:last-child)::after, .vehicle-history-spine.is-compact > li:not(:last-child)::after { top: 29px; bottom: -29px; left: 14px; }
+  .vehicle-history-spine .vehicle-history-spine-entry, .vehicle-history-spine .vehicle-history-spine-entry.has-media, .vehicle-history-spine.is-compact .vehicle-history-spine-entry { grid-template-columns: 30px minmax(0, 1fr); gap: 0 10px; padding: 17px 0; }
+  .vehicle-history-spine-date { grid-column: 2; grid-row: 1; padding: 0; }
+  .vehicle-history-spine-marker, .vehicle-history-spine.is-compact .vehicle-history-spine-marker { grid-column: 1; grid-row: 1 / span 4; width: 28px; height: 28px; }
+  .vehicle-history-spine-copy { grid-column: 2; margin-top: 6px; padding-right: 0; }
+  .vehicle-history-spine.is-compact .vehicle-history-spine-copy > strong { font-size: 14px; }
+  .vehicle-history-spine > li.is-featured .vehicle-history-spine-copy > strong { font-size: 24px; }
+  .vehicle-history-spine-media { grid-column: 2; min-height: 164px; margin-top: 14px; }
+  .vehicle-history-spine > li.is-featured .vehicle-history-spine-media { min-height: 210px; }
   .home-knowledge-section { grid-template-columns: 1fr; gap: 14px; }
   .home-knowledge-section .home-knowledge-prompt { margin-top: 0; }
   .home-monthly-summary { gap: 10px; padding-block: 16px; }
@@ -2172,6 +2178,19 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .catalog-review-facts div:nth-child(even) { padding-left: 0; border-left: 0; }
   .catalog-contribution-path { grid-template-columns: 1fr; }
   .catalog-contribution-path > div + div { border-left: 0; border-top: 1px solid var(--line); }
+}
+
+@media (max-width: 340px) {
+  .record-fab,
+  .record-fab-home {
+    width: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    justify-content: center;
+    padding: 0;
+    border-radius: 50%;
+  }
+  .record-fab > span { display: none; }
 }
 
 @media (max-width: 760px) {

@@ -268,6 +268,9 @@ export default function JournalDetailPage() {
           </div>
           <h1>{display.title}</h1>
           <div className="journal-detail-meta">
+            {journal.eventType === "issue" && journal.issueStatus === "open" && (
+              <span className="journal-issue-state">{ja ? "未解決" : "Unresolved"}</span>
+            )}
             <span>
               <CalendarDays size={16} aria-hidden="true" />
               {journalOccurrenceLabel(journal, locale)}

@@ -3,6 +3,7 @@
 import { DemoNotice } from "@/components/demo-notice";
 import { GarageVehicleIdentity } from "@/components/garage-vehicle-identity";
 import { JournalMedia } from "@/components/journal-media";
+import { VehicleHistorySpine, type VehicleHistorySpineItem } from "@/components/vehicle-history-spine";
 import { useApp } from "@/lib/app-context";
 import { garageServiceAttributionLabel } from "@/lib/garage-pilot";
 import {
@@ -17,12 +18,14 @@ import {
   preferSharedJournalMediaForDisplay,
   resolveJournalDisplayContent,
   type JournalEventType,
+  type JournalIssueStatus,
   type JournalMediaAttachment,
   type MaintenanceServiceAttributionV1,
+  type ResolutionStatus,
   type Vehicle,
 } from "@mechori/core";
 import { translate } from "@mechori/i18n";
-import { ArrowLeftRight, Bike, Camera, CarFront, CheckCircle2, History, Pencil, Plus, RotateCcw, Share2, Wrench } from "lucide-react";
+import { ArrowLeftRight, Bike, Camera, CarFront, CheckCircle2, History, Pencil, Plus, RotateCcw, Share2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -145,6 +148,7 @@ function GarageContent() {
       title: display.title,
       body: display.body,
       eventType: journal.eventType,
+      issueStatus: journal.issueStatus,
       href: `/journal/${journal.id}`,
       media: displayJournal.media[0],
       serviceAttribution: journal.serviceAttribution,
@@ -158,13 +162,33 @@ function GarageContent() {
       title: record.summary,
       body: record.result || record.workPerformed,
       href: `/records/${record.id}`,
+      resolutionStatus: record.resolutionStatus,
       serviceAttribution: record.serviceAttribution,
     })),
   ].sort((left, right) => right.date.localeCompare(left.date));
-  const partCount = records.reduce(
-    (total, record) => total + record.parts.length + record.actions.reduce((count, action) => count + action.parts.length, 0),
-    0,
-  );
+  const historyItems: VehicleHistorySpineItem[] = timeline.slice(0, 12).map((item, index) => {
+    const isIssue = item.kind === "journal" && item.eventType === "issue";
+    const isUnresolved = isIssue
+      ? item.issueStatus === "open"
+      : item.kind === "record" && item.resolutionStatus === "unresolved";
+    const attribution = garageServiceAttributionLabel(item.serviceAttribution, locale);
+    return {
+      id: `${item.kind}-${item.id}`,
+      dateLabel: item.dateLabel,
+      dateTime: item.date,
+      label: item.kind === "record" ? (ja ? "整備" : "Maintenance") : eventTypeLabel(item.eventType, ja),
+      title: item.title || item.body || (ja ? "記録" : "Record"),
+      detail: item.body && item.body !== item.title ? item.body : undefined,
+      actor: attribution ? `${ja ? "作業" : "Work"}: ${attribution}` : undefined,
+      status: isUnresolved ? (ja ? "未解決" : "Unresolved") : undefined,
+      kind: isIssue ? "issue" : item.kind === "record" ? "work" : "record",
+      href: item.href,
+      media: item.kind === "journal" && item.media?.kind === "image"
+        ? <JournalMedia attachments={[item.media]} locale={locale} compact />
+        : undefined,
+      featured: index === 0,
+    };
+  });
 
   return (
     <div className="page-stack garage-v2">
@@ -208,18 +232,6 @@ function GarageContent() {
         </div>
       </section>
 
-      <section className="garage-evidence-summary" aria-labelledby="garage-evidence-summary-heading">
-        <div>
-          <p className="section-label">{ja ? "このクルマの記録" : "This vehicle's records"}</p>
-          <h2 id="garage-evidence-summary-heading">{ja ? "履歴に残っていること" : "What this history contains"}</h2>
-        </div>
-        <dl>
-          <div><dt>{ja ? "記録" : "Records"}</dt><dd>{timeline.length}</dd></div>
-          <div><dt>{ja ? "整備" : "Maintenance"}</dt><dd>{records.length}</dd></div>
-          {partCount > 0 && <div><dt>{ja ? "部品情報" : "Parts"}</dt><dd>{partCount}</dd></div>}
-        </dl>
-      </section>
-
       <section className="garage-v2-vehicle-selector" aria-label={ja ? "愛車を選ぶ" : "Choose a vehicle"}>
         <div className="garage-v2-selector-heading"><h2>{ja ? "このGarageの愛車" : "Vehicles in this garage"}</h2><Link href="/garage/new" className="text-link"><Plus size={16} />{ja ? "愛車を追加" : "Add vehicle"}</Link></div>
         <div className="garage-v2-vehicle-rail">
@@ -238,7 +250,10 @@ function GarageContent() {
         </div>
         {timeline.length ? (
           <div className="garage-v2-timeline">
-            {timeline.slice(0, 12).map((item, index) => <GarageTimelineItem item={item} locale={locale} featured={index === 0} key={`${item.kind}-${item.id}`} />)}
+            <VehicleHistorySpine
+              label={ja ? `${vehicleLabel}の時系列` : `${vehicleLabel} chronology`}
+              items={historyItems}
+            />
             {timeline.length > 12 && <p className="garage-v2-timeline-note">{ja ? `最近の12件を表示しています。` : "Showing the most recent 12 moments."}</p>}
           </div>
         ) : (
@@ -259,6 +274,8 @@ type GarageTimelineItem = {
   title: string;
   body?: string;
   eventType?: JournalEventType;
+  issueStatus?: JournalIssueStatus;
+  resolutionStatus?: ResolutionStatus;
   href: string;
   media?: JournalMediaAttachment;
   serviceAttribution?: MaintenanceServiceAttributionV1;
@@ -280,43 +297,6 @@ function VehicleFallback({
       <span>{vehicle.nickname || displayVehicleModel(vehicle, locale)}</span>
       <span>{ownershipPeriod}</span>
     </div>
-  );
-}
-
-function GarageTimelineItem({
-  item,
-  locale,
-  featured,
-}: {
-  item: GarageTimelineItem;
-  locale: "ja" | "en";
-  featured: boolean;
-}) {
-  const ja = locale === "ja";
-  const isMaintenance = item.kind === "record";
-  const label = isMaintenance ? (ja ? "整備" : "Maintenance") : eventTypeLabel(item.eventType, ja);
-  const attribution = garageServiceAttributionLabel(item.serviceAttribution, locale);
-  const title = item.title || item.body || (ja ? "記録" : "Record");
-  const body = item.body && item.body !== title ? item.body : undefined;
-
-  return (
-    <Link href={item.href} className={`garage-v2-timeline-item is-${item.kind}${featured ? " is-featured" : ""}`}>
-      <time className="garage-v2-timeline-date" dateTime={item.date}>{item.dateLabel}</time>
-      <span className={`garage-v2-timeline-mark is-${item.kind}`} aria-hidden="true">
-        {isMaintenance ? <Wrench size={16} /> : <Camera size={16} />}
-      </span>
-      <div className="garage-v2-timeline-copy">
-        <small>{label}</small>
-        <strong>{title}</strong>
-        {body && <p>{body}</p>}
-        {attribution && <span className="garage-v2-attribution">{attribution}</span>}
-      </div>
-      {item.kind === "journal" && item.media?.kind === "image" && (
-        <div className="garage-v2-timeline-media">
-          <JournalMedia attachments={[item.media]} locale={locale} compact />
-        </div>
-      )}
-    </Link>
   );
 }
 
@@ -345,7 +325,7 @@ function VehicleSwitchButton({
 
 function eventTypeLabel(value: JournalEventType | undefined, ja: boolean): string {
   const labels: Record<JournalEventType, [string, string]> = {
-    delivery: ["納車・購入", "Delivery / purchase"], photo: ["今日の一枚", "Photo of the day"], drive: ["ドライブ", "Drive"], inspection: ["車検・点検", "Inspection"], tire: ["タイヤ交換", "Tires"], oil: ["オイル交換", "Oil change"], breakdown: ["故障", "Breakdown"], repair: ["修理", "Repair"], part: ["部品交換", "Parts"], custom: ["カスタム", "Custom"], event: ["イベント参加", "Event"], memory: ["思い出", "Memory"], other: ["出来事", "Moment"],
+    delivery: ["納車・購入", "Delivery / purchase"], photo: ["今日の一枚", "Photo of the day"], drive: ["ドライブ", "Drive"], issue: ["不具合・気になること", "Issue / something noticed"], inspection: ["車検・点検", "Inspection"], tire: ["タイヤ交換", "Tires"], oil: ["オイル交換", "Oil change"], breakdown: ["故障", "Breakdown"], repair: ["修理", "Repair"], part: ["部品交換", "Parts"], custom: ["カスタム", "Custom"], event: ["イベント参加", "Event"], memory: ["思い出", "Memory"], other: ["出来事", "Moment"],
   };
   const label = labels[value ?? "other"];
   return ja ? label[0] : label[1];

@@ -132,6 +132,9 @@ export function createJournalPost(
     modelTargetId: canonicalModelTargetId(vehicle),
     title: draft.title.trim(),
     eventType: draft.eventType,
+    ...(draft.eventType === "issue"
+      ? { issueStatus: draft.issueStatus ?? "open" }
+      : {}),
     bodyOriginal,
     sourceLanguage: detectedSourceLanguage,
     visibility: draft.visibility,
@@ -284,6 +287,7 @@ export function journalToDraft(journal: GarageJournalPost): JournalDraft {
     title: journal.title,
     sourceLanguage: journal.sourceLanguage,
     eventType: journal.eventType,
+    issueStatus: journal.eventType === "issue" ? journal.issueStatus ?? "open" : undefined,
     occurredOn: journal.occurredOn,
     occurredYear: journal.occurredYear,
     occurredMonth: journal.occurredMonth,

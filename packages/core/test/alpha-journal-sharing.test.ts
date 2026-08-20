@@ -194,6 +194,24 @@ test("shared row becomes a non-searchable public journal with a synthetic author
   assert.equal(shared.journal.media[0]?.source, "alpha_shared");
 });
 
+test("an open issue keeps its explicit state in the shared projection", () => {
+  const source = { ...journal(), eventType: "issue" as const, issueStatus: "open" as const };
+  const payload = createAlphaSharedJournalPayload(source);
+  const shared = parseAlphaSharedJournalRow({
+    share_id: "share-open-issue",
+    journal_id: source.id,
+    author_display_name: "Noah",
+    payload,
+    published_at: payload.publishedAt,
+    updated_at: payload.updatedAt,
+  });
+
+  assert.equal(payload.eventType, "issue");
+  assert.equal(payload.issueStatus, "open");
+  assert.equal(shared?.journal.eventType, "issue");
+  assert.equal(shared?.journal.issueStatus, "open");
+});
+
 test("shared rows use stable public profile and vehicle identifiers when available", () => {
   const payload = createAlphaSharedJournalPayload(journal());
   const shared = parseAlphaSharedJournalRow({

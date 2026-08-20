@@ -44,6 +44,7 @@ const eventTypes: Array<{ value: JournalEventType; label: TranslationKey }> = [
   { value: "delivery", label: "eventDelivery" },
   { value: "photo", label: "eventPhoto" },
   { value: "drive", label: "eventDrive" },
+  { value: "issue", label: "eventIssue" },
   { value: "inspection", label: "eventInspection" },
   { value: "tire", label: "eventTire" },
   { value: "oil", label: "eventOil" },
@@ -226,6 +227,7 @@ export function QuickEventForm({
         title: quickRecordTitle(note, locale),
         sourceLanguage: journal?.sourceLanguage ?? locale,
         eventType,
+        issueStatus: eventType === "issue" ? journal?.issueStatus ?? "open" : undefined,
         ...occurrence,
         bodyOriginal: note.trim(),
         vehicleId: vehicle.id,
@@ -343,7 +345,7 @@ export function QuickEventForm({
             maxLength={500}
             value={note}
             onChange={(event) => setNote(event.target.value)}
-            placeholder={locale === "ja" ? "愛車で何をしましたか？" : "What did you do with your vehicle?"}
+            placeholder={locale === "ja" ? "愛車に何がありましたか？" : "What happened with your vehicle?"}
             autoFocus={!editing}
           />
         </label>

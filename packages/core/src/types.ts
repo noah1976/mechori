@@ -317,6 +317,7 @@ export type JournalEventType =
   | "delivery"
   | "photo"
   | "drive"
+  | "issue"
   | "inspection"
   | "tire"
   | "oil"
@@ -327,6 +328,7 @@ export type JournalEventType =
   | "event"
   | "memory"
   | "other";
+export type JournalIssueStatus = "open" | "resolved" | "recurred";
 
 export interface JournalTextBlock {
   id: string;
@@ -379,6 +381,8 @@ export interface GarageJournalPost {
   modelTargetId: string;
   title: string;
   eventType?: JournalEventType;
+  /** Present only when the owner explicitly classifies the Journal as an issue. */
+  issueStatus?: JournalIssueStatus;
   bodyOriginal: string;
   sourceLanguage: LanguageTag;
   visibility: JournalVisibility;
@@ -471,6 +475,7 @@ export interface JournalDraft {
   title: string;
   sourceLanguage?: LanguageTag;
   eventType?: JournalEventType;
+  issueStatus?: JournalIssueStatus;
   occurredOn?: string;
   occurredYear?: number;
   occurredMonth?: number;

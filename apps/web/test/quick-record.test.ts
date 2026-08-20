@@ -42,7 +42,7 @@ test("keeps the composer focused on vehicle, body, optional photo, and save", ()
   const composer = read("../components/quick-event-form.tsx");
   const photoActions = read("../components/photo-source-actions.tsx");
   assert.match(composer, /eventType.*"other"/);
-  assert.match(composer, /愛車で何をしましたか？/);
+  assert.match(composer, /愛車に何がありましたか？/);
   assert.match(composer, /PhotoSourceActions/);
   assert.equal(composer.match(/<PhotoSourceActions/g)?.length, 1);
   assert.match(composer, /variant="single"/);
@@ -56,6 +56,7 @@ test("keeps the composer focused on vehicle, body, optional photo, and save", ()
   assert.match(composer, /\{editing && <details className="quick-composer-details">/);
   assert.doesNotMatch(composer, /quick-event-audience/);
   assert.doesNotMatch(composer, /詳しく記録する/);
+  assert.doesNotMatch(composer, /投稿タイプを選択/);
 });
 
 test("composer styles keep the mobile writing surface and save action prominent", () => {
@@ -80,12 +81,16 @@ test("post-save enrichment is optional and cannot replace the saved record", () 
   const sheet = read("../components/quick-record-completion-sheet.tsx");
   const context = read("../lib/app-context.tsx");
   const composer = read("../components/quick-event-form.tsx");
-  assert.match(sheet, /記録しました/);
-  assert.match(sheet, /整備情報も追加しますか？/);
+  assert.match(sheet, /このクルマに、ひとつ経験が残りました/);
+  assert.match(sheet, /整備情報も追加すると、あとから探したり比較しやすくなります/);
   assert.match(sheet, /onClose/);
   assert.match(sheet, /onSaveEnrichment/);
   assert.match(sheet, /元の記録は残っています/);
   assert.match(sheet, /journalToDraft\(journal\)/);
+  assert.match(sheet, /value: "issue", ja: "不具合・気になること"/);
+  assert.match(sheet, /issueStatus: eventType === "issue" \? "open" : undefined/);
+  assert.match(sheet, /この後の点検や結果を記録できます/);
+  assert.match(sheet, /journal\.eventType === "issue" && journal\.issueStatus === "open"/);
   assert.match(composer, /const savedJournal = journal \? await updateJournal\(journal\.id, draft\) : await addJournal\(draft\)/);
   assert.match(composer, /setCompletion\(savedJournal\)/);
   assert.match(context, /await saveAlphaWorkspace\(data\);[\s\S]*?setData\(data\);/);

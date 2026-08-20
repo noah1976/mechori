@@ -709,3 +709,13 @@
 - 背景: 記録や整備の用事がない日にもMECHORIを開く理由を作るには、Dashboardより先に、フォローしているOwner / Vehicleの新しいEvidenceへ触れられる必要がある。
 - 決定: Authenticated Homeのmain surfaceをFollowing Feedに置く。Followingの数件previewではなく、取得済みのFeedをHome内で連続して読む。投稿はowner、Vehicle、date、本文、任意写真、最小metadataの順に読み、重いcard、decorative English eyebrow、上端accent、強いshadowを使わない。自分の履歴、Search、月次summaryは導線を維持したままsecondaryへ下げる。
 - 検証: Feed-firstがrevisit、WAU / MAU、Meaningful Reuse、Evidence discoveryを改善するかは未検証であり、αでHome visit、Feed閲覧・詳細遷移、Garage visit、Quick Record開始、2回目session / recordとの関係を確認する。Likeやフォロー数の競争を目的にしない。
+
+### 決定: Vehicle Event intakeとHistory Spineをα Signature Experienceとして検証する
+
+- 日付: 2026-08-20
+- 状態: PR #8実装 / Human QA pending
+- 背景: 「愛車で何をしましたか？」は対応済みの行為には合うが、まだ何もしていない異音、警告表示、漏れ等を書きにくい。また、別Reference画面や件数dashboardだけでは、MECHORIがVehicleの経験を継続して残すProductであることがHomeと保存直後に伝わりにくい。
+- 決定: Quick Recordは行為に限らずVehicle Eventを受け、投稿前分類を要求しない。保存後に本人が「不具合・気になること」を明示した場合だけ`issue`として扱い、初期状態を`open`とする。診断、修理、結果がなくてもvalidなEvidence Intakeであり、UIは「未解決」と事実的に表示する。AI分類、診断、原因生成は導入しない。
+- 決定: 日付、Vehicle Event、状態、本文、実在するactor／sourceを時間軸で読む`History Spine`をHome、Quick Record保存後、Garageで共用する。HomeにDEMO例をinline表示し、Reference Garageはsecondary deep diveとする。旧件数dashboardと説明用flowはSignature UIの主役から外す。
+- 実装境界: 現αのrecord間にcase／episode relationshipがないため、無関係なrecordを因果chainとして結ばない。実Garageはchronological history、保存直後はsingle node＋continuation、DEMOはfixtureに存在するrecordとattributionだけで構成する。case／thread／follow-up relation、same-model applicability、PhysicalVehicle正規化はβ ArchitectureへDeferredする。
+- 検証: このUIが独自価値を証明したとは扱わない。α3ユーザーへ事前説明せず、普通のSNSとの差、履歴が残った感覚、未対応issueを書けるか、点検・結果を続けて残したいかを定性観察する。

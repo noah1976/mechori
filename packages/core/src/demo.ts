@@ -96,7 +96,12 @@ export const demoData: AppData = {
           hazardLevel: "LOW",
         },
       ],
-      serviceAttribution: { version: 1, performedByType: "unknown" },
+      serviceAttribution: {
+        version: 1,
+        performedByType: "service_provider",
+        serviceProviderId: "provider-demo-officina-verde",
+        providerDisplayNameSnapshot: "Officina Verde / DEMO",
+      },
       createdAt: "2026-04-12T09:00:00.000Z",
       updatedAt: "2026-04-12T09:00:00.000Z",
       isDemo: true,

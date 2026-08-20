@@ -164,6 +164,9 @@ export function JournalCard({
         linkAriaLabel={ja ? `${display.title}の詳細を読む` : `Read ${display.title}`}
       />
       <footer>
+        {displayJournal.eventType === "issue" && displayJournal.issueStatus === "open" && (
+          <span className="journal-issue-state">{ja ? "未解決" : "Unresolved"}</span>
+        )}
         {showVisibility && <span>
           {displayJournal.visibility === "private" ? (
             <Lock size={15} aria-hidden="true" />

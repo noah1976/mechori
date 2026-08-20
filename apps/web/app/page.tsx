@@ -2,6 +2,7 @@
 
 import { DemoNotice } from "@/components/demo-notice";
 import { ActivationChecklist } from "@/components/activation-checklist";
+import { AlphaHistorySignature } from "@/components/alpha-history-signature";
 import { JournalCard } from "@/components/journal-card";
 import { RecordCard } from "@/components/record-card";
 import { useApp } from "@/lib/app-context";
@@ -209,6 +210,7 @@ export default function HomePage() {
             <p>{ja ? "フォローしている人とクルマの新しい記録です。" : "Recent records from people and vehicles you follow."}</p>
           </div>
         </div>
+        <AlphaHistorySignature locale={locale} compact />
         {feed.length ? <div className="home-journal-feed">
           {feed.map((journal) => (
             <JournalCard
@@ -258,10 +260,6 @@ export default function HomePage() {
           <Link href="/garage" className="text-link">
             <CarFront size={16} aria-hidden="true" />
             {ja ? "自分のガレージ" : "My Garage"}
-          </Link>
-          <Link href="/reference-garage" className="text-link home-reference-link">
-            <BookOpenText size={16} aria-hidden="true" />
-            {ja ? "記録がつながった例を見る" : "See a connected record example"}
           </Link>
         </div>
         <DemoNotice compact />

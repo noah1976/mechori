@@ -244,3 +244,11 @@
 - **Quick Record → Evidence Intake可視化**: 保存後Sheetは、実際に保存されたVehicle、本文、記録日時、写真有無だけを「このクルマの履歴に残った記録」として表示する。任意の整備情報追加と後日の結果追記は、保存済み投稿をblockしない次の段階として示す。AI抽出、原因推定、完成度scoreは導入していない。
 - **Garage / Reference Garage**: Garageには選択Vehicleに実在するJournal・Maintenance・部品entry数だけを静かに表示する。`/reference-garage`は既存`demoData`だけを読む明示的なDEMO車両で、出来事 → 作業 → 部品（ある場合）→ 結果を一つのflowとして示す。実ユーザーdata、Production DB、Evidence Graph本体は使わない。
 - **検証状態**: αユーザーが「SNS投稿ではなく愛車履歴の入口」と理解するか、Reference Garageで「自分もこう残したい」と感じるかをHuman QAと短いinterviewで検証する。実装・自動検証後もHuman QA pending。
+
+## 25. 2026-08-20 Signature Experience統合（PR #8継続）
+
+- **Quick Record / Issue semantics**: 入口のcopyを「愛車に何がありましたか？」へ広げ、未対応の異音や警告表示も本文だけで保存できるようにした。投稿前分類は増やさず、保存後に本人が「不具合・気になること」を選んだ場合だけ`eventType: issue`と`issueStatus: open`を保持する。診断、修理、結果が未入力でもvalidなVehicle Eventであり、既存Journal／workspace JSON／shared projectionへ後方互換なoptional fieldとして追加した。DB、RLS、RPC migrationはない。
+- **Signature UI**: `VehicleHistorySpine`をHome inline DEMO、Quick Record保存後、Garageの実Vehicle history、Reference Garageで共用する。Garageの件数dashboardと旧`EvidenceFlowStrip`は撤去し、日付、事実的な種別、本文、実在するattribution、状態を一本の時間軸で読む。Homeで価値例を直接見せ、Reference GarageはDEMO詳細のsecondary routeへ下げた。
+- **Honesty boundary**: 実record間にcase／episode relationshipがないため、αの実データを因果chainとして捏造しない。Garageはchronological Vehicle history、保存直後はsingle node＋将来の追記余地、Home／Referenceは既存DEMO fixture由来の例として区別する。same-model reuse、actorを越えたcase linkage、AI classification、PhysicalVehicle正規化はβ ArchitectureまでDeferredする。
+- **既知P1監査**: Home Feedの本文と写真は現行`JournalCard`の同一canonical detail hrefを使い、写真からmedia URLへ遷移しない既存修正と回帰testが残っていることを確認した。二重実装はしていない。
+- **状態**: branch `codex/alpha-evidence-signature`／PR #8で実装中。自動検証とDeploy Preview確認後も、iPhone SafariでHome、本文のみ／写真付きQuick Record、保存後分類、Close時の保持、Garage／detail、320〜430pxを確認するまでHuman QA pendingとする。α3ユーザーには説明で答えを与えず、「普通のSNSと何が違うか」「履歴が残ったと感じたか」「続きも残したいか」を本人の言葉で確認する。

@@ -277,8 +277,8 @@ Following FeedをAuthenticated Homeのfirst surfaceに置くのは、記録や�
 
 ## α Signature Experienceの仮説
 
-Quick Record保存後の履歴previewとReference Garageは、投稿数を増やすためのgamificationではなく、記録がVehicle Evidenceへ育つ価値を理解できるかを確認する実験である。Evidence GraphやAI extractionの実装・効果を意味しない。
+Home inline History Spine、Quick Record保存後、Garageで繰り返す同じ履歴表現は、投稿数を増やすためのgamificationではなく、記録がVehicle Evidenceへ育つ価値を説明なしで理解できるかを確認する実験である。Evidence Graph、record relationship、same-model reuse、AI extractionの実装・効果を意味しない。
 
 - 既存の`journal_saved`、`garage_viewed`、`history_reused`だけを継続して扱い、新しい外部分析serviceは導入しない。
-- Human QAでは「保存直後に何が残ったと理解したか」「Reference Garageを見て自分も記録を続けたいと思ったか」「説明なしで次の行動が分かったか」を尋ねる。
-- 数値が少ないαでは、Reference Garageの閲覧数だけを成功とせず、2件目の記録、任意enrichment、後日のGarage再訪と定性回答を合わせて判断する。
+- Human QAでは答えを先に説明せず、「普通のクルマSNSと何が違うと思ったか」「保存直後に何が残ったと理解したか」「未対応の不具合も書けると思ったか」「点検・結果を続けて残したいか」を尋ねる。
+- 数値が少ないαでは、Home／Reference閲覧数だけを成功とせず、本文だけのissue保存、任意enrichment、2件目の記録、後日のGarage再訪・結果追記と定性回答を合わせて判断する。

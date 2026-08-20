@@ -34,6 +34,10 @@ MECHORIは、自動車SNS、整備記録アプリ、B2B SaaS、Affiliateサイ�
 
 Quick Recordはこの循環への軽い入口です。「まず書ける。整理はあと。」を維持し、本文と任意写真の保存を先に成立させます。保存後の任意enrichment、使用部品、走行距離、作業情報、症状、結果、再発・解決の追記が、投稿をMECHORI固有のEvidenceへ変える橋です。Evidence化を理由に、投稿前の大量入力へ戻しません。
 
+Quick Recordは「何をしたか」だけでなく、「このVehicleに何が起きたか」を受け取ります。まだ原因も対応も分からない異音、警告表示、匂い、漏れ、挙動の変化も、本文だけで正式なVehicle Eventになります。保存前に分類を要求せず、本人が保存後に「不具合・気になること」を明示した場合だけ未解決のissueとして扱います。診断や解決をEvidence Intakeの条件にしません。
+
+αでは、同じVehicleについて記録が時間順に残り、後から点検、作業、結果を追加できることを`History Spine`という共通UIで可視化します。これはrecord間の因果関係やsame-model Knowledge reuseが実装済みであるという意味ではありません。実関係がない履歴はchronological historyとして表示し、関係modelはβ正規化で検討します。
+
 Owner向けConsumer体験はEvidence supply、愛車履歴、獲得、network形成の入口です。Professionalは、Owner、工場、専門家の間でEvidenceを業務へ接続し、結果をOwner履歴と集合知へ返す長期の出口です。両者を別事業として分断しません。
 
 ## αテスターから得た価値表現
