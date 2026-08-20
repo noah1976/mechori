@@ -143,17 +143,17 @@ function GarageContent() {
       );
       const display = resolveJournalDisplayContent(data, displayJournal, locale);
       return ({
-      id: journal.id,
-      kind: "journal" as const,
-      date: journalOccurrenceDate(journal),
-      dateLabel: journalOccurrenceLabel(journal, locale),
-      title: display.title,
-      body: display.body,
-      eventType: journal.eventType,
-      issueStatus: journal.issueStatus,
-      href: `/journal/${journal.id}`,
-      media: displayJournal.media[0],
-      serviceAttribution: journal.serviceAttribution,
+        id: journal.id,
+        kind: "journal" as const,
+        date: journalOccurrenceDate(journal),
+        dateLabel: journalOccurrenceLabel(journal, locale),
+        title: display.title,
+        body: display.body,
+        eventType: journal.eventType,
+        issueStatus: journal.issueStatus,
+        href: `/journal/${journal.id}`,
+        media: displayJournal.media.filter((attachment) => attachment.kind === "image"),
+        serviceAttribution: journal.serviceAttribution,
       });
     }),
     ...records.map((record) => ({
@@ -189,8 +189,8 @@ function GarageContent() {
       status: isUnresolved ? (ja ? "未解決" : "Unresolved") : undefined,
       kind: isIssue ? "issue" : item.kind === "record" ? "work" : "record",
       href: item.href,
-      media: item.kind === "journal" && item.media?.kind === "image"
-        ? <JournalMedia attachments={[item.media]} locale={locale} compact />
+      media: item.kind === "journal" && item.media?.some((attachment) => attachment.kind === "image")
+        ? <JournalMedia attachments={item.media} locale={locale} compact />
         : undefined,
       featured: index === 0,
     };
@@ -296,7 +296,7 @@ type GarageTimelineItem = {
   issueStatus?: JournalIssueStatus;
   resolutionStatus?: ResolutionStatus;
   href: string;
-  media?: JournalMediaAttachment;
+  media?: JournalMediaAttachment[];
   serviceAttribution?: MaintenanceServiceAttributionV1;
 };
 

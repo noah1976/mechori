@@ -33,6 +33,16 @@
 - 依存タスク: MECH-003、MECH-038、`TRUST_AND_VERIFICATION.md`、`PRIVACY.md`
 - 所有者確認の要否: 必要。実identifier、実車両、実Accountの取り扱い、DB migration、外部照合、法務確認は別途承認する。
 
+### MECH-045 Vehicle Experience / Entryのβ正規化
+
+- 優先度: P1
+- 状態: READY
+- 目的: SNS的な1 Postを最上位単位にせず、同じVehicleに関する観察、作業、写真、結果、再発、Drive等を、時間と意味のつながるExperienceへappendできるcontent modelへ移行する。
+- 成果物: `VehicleExperience` / `ExperienceEntry` / Evidence projectionの物理model、Journal / Maintenance / mediaのmigration・backfill計画、private object media storage、Entry単位rights / revision / provenance、shared projection contract。
+- 完了条件: 既存Journalは関係を推測せずsingleton Experienceへ移行できる。Quick Recordの保存frictionを増やさず、一括入力と後日追記、Entry単位の複数画像、Maintenanceへの明示link、same-model Evidence正規化、Vehicle Succession時のtransfer-safe projectionを表現できる。動画は互換・cost・privacy Gateを別に通す。
+- 依存タスク: MECH-023、MECH-038、MECH-044、実αでの「続きを残す」需要確認
+- 所有者確認の要否: 必要。DB migration、Storage移行、retention / rights、media上限、既存recordのbackfillは別途承認する。
+
 ### MECH-038 遠隔α用Supabase Adapter・RLS・招待API
 
 - 優先度: P0

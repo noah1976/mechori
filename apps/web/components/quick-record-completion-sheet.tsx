@@ -16,7 +16,7 @@ import {
   type Locale,
   type Vehicle,
 } from "@mechori/core";
-import { CheckCircle2, LoaderCircle, Wrench, X } from "lucide-react";
+import { CheckCircle2, ListPlus, LoaderCircle, X } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 const eventTypes: Array<{ value: JournalEventType; ja: string; en: string }> = [
@@ -102,8 +102,8 @@ export function QuickRecordCompletionSheet({
     } catch {
       setError(
         ja
-          ? "追加情報を保存できませんでした。元の記録は残っています。"
-          : "Additional details could not be saved. Your original record is still saved.",
+          ? "記録の詳細を保存できませんでした。元の記録は残っています。"
+          : "Record details could not be saved. Your original record is still saved.",
       );
     } finally {
       setSaving(false);
@@ -142,11 +142,11 @@ export function QuickRecordCompletionSheet({
               {photoCount > 0 && <div><dt>{ja ? "写真" : "Photos"}</dt><dd>{ja ? `${photoCount}枚` : `${photoCount}`}</dd></div>}
             </dl>
           </section>
-          <p>{ja ? "整備情報も追加すると、あとから探したり比較しやすくなります。" : "Maintenance details make this record easier to find and compare later."}</p>
+          <p>{ja ? "種類や時期など、分かる範囲で詳しくすると、あとから探しやすくなります。" : "Adding the type or timing you know can make this record easier to find later."}</p>
           <div className="quick-record-sheet-actions">
             <button type="button" className="primary-action" onClick={() => setMode("form")}>
-              <Wrench size={17} aria-hidden="true" />
-              {ja ? "整備情報を追加" : "Add maintenance details"}
+              <ListPlus size={17} aria-hidden="true" />
+              {ja ? "記録を詳しくする" : "Add record details"}
             </button>
             <button type="button" className="secondary-action" onClick={onClose}>{ja ? "閉じる" : "Close"}</button>
           </div>
@@ -155,7 +155,7 @@ export function QuickRecordCompletionSheet({
         {mode === "form" && <>
           <div className="quick-record-sheet-heading">
             <div>
-              <h1 id="quick-record-sheet-title">{ja ? "整備情報を追加" : "Add maintenance details"}</h1>
+              <h1 id="quick-record-sheet-title">{ja ? "記録の詳細" : "Record details"}</h1>
               <p>{ja ? "分かる項目だけ追加できます。" : "Add only the details you know."}</p>
             </div>
             <button type="button" className="icon-action" onClick={onClose} aria-label={ja ? "閉じる" : "Close"}>
@@ -194,7 +194,7 @@ export function QuickRecordCompletionSheet({
             <div className="quick-record-sheet-actions">
               <button type="submit" className="primary-action" disabled={saving}>
                 {saving && <LoaderCircle className="spin" size={17} aria-hidden="true" />}
-                {ja ? "追加を保存" : "Save details"}
+                {ja ? "詳細を保存" : "Save details"}
               </button>
               <button type="button" className="secondary-action" onClick={onClose}>{ja ? "閉じる" : "Close"}</button>
             </div>
@@ -203,7 +203,7 @@ export function QuickRecordCompletionSheet({
 
         {mode === "saved" && <>
           <CheckCircle2 className="quick-record-sheet-icon" size={30} aria-hidden="true" />
-          <h1 id="quick-record-sheet-title">{ja ? "追加情報を保存しました" : "Additional details saved"}</h1>
+          <h1 id="quick-record-sheet-title">{ja ? "記録の詳細を保存しました" : "Record details saved"}</h1>
           <p>
             {isIssue
               ? ja ? "気になることとして、未解決のまま車両履歴に残っています。" : "It remains in the vehicle history as an unresolved issue."

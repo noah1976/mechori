@@ -23,7 +23,7 @@ import {
   type Vehicle,
 } from "@mechori/core";
 import { translate, type TranslationKey } from "@mechori/i18n";
-import { LoaderCircle, Save, ShieldCheck } from "lucide-react";
+import { ChevronDown, LoaderCircle, Save, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
@@ -392,7 +392,11 @@ export function QuickEventForm({
           </button>
         </div>
         {editing && <details className="quick-composer-details">
-          <summary>{locale === "ja" ? "追加情報を編集" : "Edit additional details"}</summary>
+          <summary>
+            <span>{locale === "ja" ? "記録の詳細" : "Record details"}</span>
+            <small>{locale === "ja" ? "種類・時期・作業した人や場所" : "Type, timing, and who or where"}</small>
+            <ChevronDown size={17} aria-hidden="true" />
+          </summary>
           <div className="quick-composer-details-body">
             <fieldset className="event-type-picker"><legend>{translate(locale, "momentKindQuestion")}</legend>{eventTypes.map((item) => <button type="button" key={item.value} className={eventType === item.value ? "is-selected" : ""} aria-pressed={eventType === item.value} onClick={() => setEventType(item.value)}>{translate(locale, item.label)}</button>)}</fieldset>
             {journalSupportsServiceAttribution(eventType) && (

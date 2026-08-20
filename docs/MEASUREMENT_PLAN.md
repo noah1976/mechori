@@ -61,6 +61,8 @@ MECHORIの初期検証を、登録者数や感想だけで判断しないため�
 
 `Monthly Completed Evidence Loops`は長期North Star候補です。現αでは母数とKnowledge密度が小さいため唯一のKPIにせず、実際に複数のLoopを継続観測でき、入力元・再利用・結果追記を重複なく集計できる段階で主要経営指標への昇格を検討します。
 
+β候補のcontent modelでは、初回保存を`Experience Entry created`、同じ経緯への観察・作業・結果の追記を`Experience continued`として区別します。現αにはExperience relationshipがないため、近い日時や本文だけで複数recordを自動的に同一Experienceと数えません。新しいAnalytics基盤は今回追加せず、Human QAでは「同じ件の続きを残したかったか」「別の新しい記録として扱いたかったか」を確認します。
+
 現αでは、既存指標を優先しながら次をLeading Indicatorとして観察します。
 
 - Quick Record保存成功とFirst Record Time
@@ -68,6 +70,7 @@ MECHORIの初期検証を、登録者数や感想だけで判断しないため�
 - post-save enrichmentまたは後日構造化追記
 - 他者の記録閲覧と、根拠付き検索・工場提示等の再利用
 - 結果・再発・未解決の追記
+- 同じVehicleの出来事へ観察・作業・結果を続けて残したい意向と、実際の後日追記
 - α共有投稿の削除、公開範囲変更希望、写真公開への不安・後悔の定性Feedback
 
 投稿後の後悔等は、現時点で新しいAnalytics基盤や自由本文収集を決定しません。削除・設定変更等の既存事実と人間QA・Feedbackで確認し、必要性とPrivacyを確認してから計測方法を決めます。

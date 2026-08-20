@@ -44,6 +44,21 @@ GarageJournalPost
 
 個人の`MaintenanceEvent`を公開データへ直接変更しません。共有時は`KnowledgeSubmission`を作り、運営確認後に別の`KnowledgeCase`として公開します。
 
+### β候補: VehicleExperience / ExperienceEntry
+
+現行の`GarageJournalPost`を永続的な最上位単位とはせず、β正規化では次の境界を候補とします。これは概念契約であり、現αの物理schema、Workspace JSON、RLS、RPCを変更するものではありません。
+
+- `VehicleExperience`: 一つのVehicleに起きた、時間的・意味的につながる経緯のcontainer。種別、現在状態、開始・終了時刻、参加者等は必要な場合だけ持つ。
+- `ExperienceEntry`: Experienceへappendする時点単位。原文、発生時刻、author / actor、media、provenance、visibility / rights、revisionを持つ。
+- `MaintenanceEvent`: 入庫・整備機会と構造化されたObservation / Action / PartUsage / Resultの正本。ExperienceまたはEntryから明示的に関連付けるが、Journalへ吸収しない。
+- `EvidenceClaim`: EntryやMaintenanceEventから、適用対象、出典、確認、結果、訂正履歴を保って正規化するatomicな再利用候補。Experience全体を一つのEvidenceとして扱わない。
+
+現αのQuick Record / `GarageJournalPost`は一つのExperience Entryとして読み替えられる。既存record間に関係がなければ、migration時に内容から因果を推測せずsingleton Experienceへbackfillする。`linkedRecordId` / `JournalMaintenanceLink`は現在の任意リンクであり、Experience membership、Entry順序、因果関係を意味しない。
+
+修理、Issue、Drive、Ownership memoryは共通のExperience / Entry envelopeを使える。ただし、修理の症状・作業・部品・結果、Driveのroute・stop・観察等はsubtype固有のoptional relationとして扱い、generic block editorや一つの巨大schemaへ統合しない。一括入力と後日の追記は、どちらも順序付きEntryを作る同じmodelで表現できる。
+
+MediaはExperience全体ではなく原則としてEntryへ属し、順序、MIME、寸法、容量、caption、Storage object参照を保持する。media固有の発生時刻はEntry時刻と異なる場合だけoptionalにする。αの暫定上限候補はEntryごとに画像6枚、Experience全体は固定上限を持たず、長い工程はEntry追加で表現する。Quick Recordの複数画像を有効化する前に、private Workspace JSONへdata URLを埋め込む暫定経路を、private object storageと正規化attachmentへ移す。動画はthumbnail、MOV / HEVC互換、帯域、再試行、privacy review、shared projectionが揃うまでArchitecture onlyとする。
+
 ## 共通規則
 
 - すべての主要概念に、推測可能な連番ではない安定した内部IDを持たせる。

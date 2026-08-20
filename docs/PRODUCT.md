@@ -38,6 +38,14 @@ Quick Recordは「何をしたか」だけでなく、「このVehicleに何が�
 
 αでは、同じVehicleについて記録が残り、後から点検、作業、結果を追加できることを`Vehicle Continuity`という共通UI vocabularyで可視化します。Vehicleを常設のanchor、実際の記録を時点・actor・状態を持つ`Experience Mark`、その出所を読む領域を`Experience Register`、まだ存在しない将来を`Continuation Slot`として表します。これはrecord間の因果関係、Vehicle Succession、same-model Knowledge reuseが実装済みであるという意味ではありません。実関係がない履歴は車両に属する時系列記録として表示し、関係modelはβ正規化で検討します。
 
+### 1件の記録とVehicle Experience
+
+MECHORIで長期的に扱う中心単位は、SNSのPostではなく、同じVehicleについて時間的・意味的につながる`Vehicle Experience`です。Experienceには、観察、作業、写真、経由地、結果、再発等を時点ごとに残す`Experience Entry`を追加できます。修理とドライブは同じEntry envelopeを使えますが、症状、部品、作業、経路等のdomain semanticsまで一つの汎用schemaへ押し込みません。
+
+現αのQuick Record / Journal 1件は、原則として一つの`Experience Entry`に相当します。実関係が保存されていない既存記録を推測でまとめず、β正規化時は明示的な関係がない限りsingleton Experienceとして移行します。`Experience`は経緯を残すcontainer、`Entry`は原文・日時・media・author・provenanceを持つ追記単位、`Evidence`はEntryやMaintenanceから本人確認・出典・結果等を保って正規化するatomicな再利用単位です。ExperienceそのものをEvidenceやKnowledge Caseと同一視しません。
+
+Capture UXは引き続き、Vehicle、本文、任意media、保存を先にします。現αでは投稿前にIssue / Repair / Drive等の選択を必須化せず、保存後の「記録の詳細」と将来の「続きを残す」で必要な意味を追加します。利用者が何を書けばよいか迷うことが実測された場合に限り、少数のtop-level intentを次のα実験として再検討します。
+
 Owner向けConsumer体験はEvidence supply、愛車履歴、獲得、network形成の入口です。Professionalは、Owner、工場、専門家の間でEvidenceを業務へ接続し、結果をOwner履歴と集合知へ返す長期の出口です。両者を別事業として分断しません。
 
 ## αテスターから得た価値表現

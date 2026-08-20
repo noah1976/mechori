@@ -737,3 +737,24 @@
 - Composition: Homeは明示的な「DEMO・架空例」をfirst product objectとして表示し、Following Feedをその後へ置く。Garageは実recordだけでVehicle Continuityを構成する。Quick Record保存直後はneutralな一つのExperience MarkとContinuation Slotを表示し、保存後に本人がissueを選択して保存した後だけ`未解決`へ変える。
 - 既存UIの扱い: black onboarding=`Demote + Modify`、Home DEMO=`Modify`、旧VehicleHistorySpine=`Remove`、Garage件数summary=`Demote`、post-save modal=`Modify`、Reference Garage CTA / route=`Demote / Keep`、Knowledge warning=`Modify`、Desktop Record CTA=`Modifyしてlogo直下へ移動`。
 - Honesty boundary: DEMO storyはcoreの明示的fictional fixtureとし、実在人物、技術的因果、解決率、reuse数を作らない。Vehicle Succession、same-model matching、case／episode relationshipは未実装と明示し、UIのためのtemporary relationship schemaは追加しない。
+
+### 決定: MECHORIのcontent unitをVehicle Experience + Experience Entryとしてβ正規化する
+
+- 日付: 2026-08-20
+- 状態: Product / Content Architecture decision。PR #8は語彙と表示の低リスク部分のみ実装し、物理schemaはDeferred。
+- 背景: 現行のQuick Record / JournalはSNS的な`1 Post = text + media`を主単位とするが、不具合の観察から点検・修理・結果・再発まで、修理工程、Driveの経由地、Ownership memory等は複数時点に育つ。単純なmedia枚数拡張だけでは、経緯、actor、結果、provenance、Vehicle Successionを表現できない。
+- 検討案:
+
+| 案 | 概要 | 評価 |
+| --- | --- | --- |
+| Post + Attachments | 現行recordへ複数mediaだけ追加 | α互換性は高いが、経過・結果・複数actor・successionをPostへ閉じ込めるため不採用 |
+| Experience + Entries | Vehicleに関する経緯をcontainerとし、時点ごとのEntryをappend | Capture friction、継続性、移行可能性の均衡が最も良く採用 |
+| Episode + atomic Evidence Events | Observation / Work / Part / Resultを最初から独立event化 | Evidenceには強いがα入力負荷とmigrationが大きく、β Evidence normalizationへDeferred |
+| Linked-record graph | containerを持たずrecord同士を任意link | 柔軟だがmembership、順序、rights、削除境界が曖昧になるため主modelとして不採用 |
+
+- 決定: `VehicleExperience`は同じVehicleに関する時間的・意味的に連続する経緯のcontainer、`ExperienceEntry`は原文、発生時刻、media、author / actor、provenance、rights、revisionを持つappend単位とする。`MaintenanceEvent`は構造化整備の正本として維持し、Experience / Entryへ明示的に関連付ける。`Evidence`はEntryまたはMaintenanceから正規化するatomicな再利用単位であり、Experienceと同義にしない。
+- Migration boundary: 現αのQuick Record / Journal 1件は一つのEntryとして扱う。既存record間の因果を本文や近接日時から推測せず、明示的なrelationがなければsingleton Experienceへbackfillする。`Episode`は既存`OdometerEpisode`と衝突し、利用者向けにも抽象的なため、このcontent modelの中心語にしない。
+- Domain boundary: Issue、Repair、Drive、Memoryは共通のExperience / Entry envelopeを使うが、症状・作業・部品・結果、route・stop等の意味はsubtype固有のoptional relationとして分ける。一括記録と後日追記は同じEntry modelで扱い、Notion型のgeneric block editorは作らない。
+- Capture decision: 現αでは保存前のIntent 4択を導入せず、Vehicle、本文、任意mediaを先に保存する。「何を残すか」の選択は、α3人が書き始められないことを示した場合だけ次の実験にする。保存後の汎用語は「記録を詳しくする」、将来の継続操作は「続きを残す」とし、Issue / Drive / Memoryをすべて「整備情報」と呼ばない。
+- Media decision: Mediaは原則Entryへ属し、順序を持つ。α候補上限はEntryごとに画像6枚、Experience全体は固定上限なしとするが、Quick Recordは当面1枚を維持する。現在のprivate Workspaceは`alpha_inline` data URLをmonolithic JSON rowへ含めるため、枚数だけ増やすとpayload、再送、失敗率を増やす。private object storageとattachment正規化後に複数画像を有効化する。動画はMOV / HEVC、thumbnail、容量・帯域、再試行、privacy review、shared deliveryのGateが揃うまでDeferredする。
+- PR #8 scope: GarageのmediaをExperience Mark全幅へ展開し、既存複数画像recordのcompact表示を保持する。保存後・編集の文言を「記録の詳細」へ広げる。DB、RLS、RPC、Quick Record複数画像、動画、Experience relationship、Intent gateは変更しない。

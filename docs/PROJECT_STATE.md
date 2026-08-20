@@ -260,3 +260,11 @@
 - **Garage / Quick Record**: GarageはVehicle Identityを維持し、実在するJournal／MaintenanceだけをVehicle Anchorへ接続する。件数summaryを価値の主役から外した。Quick Record保存直後はneutralな一つのExperience Markを表示し、保存後enrichmentで本人がissueを保存した後だけ`未解決`へ更新する。Continuation Slotはfake recordではなく「まだ記録はありません」とする。
 - **Navigation / Knowledge**: DesktopのPrimary Record CTAをlogo直下・navigation前へ移動し、Mobile FABは維持した。Journal detailは「まだ確認済みナレッジではない」と表現しつつ、Vehicle historyとして残る価値と、根拠・確認なしに原因候補へ昇格しない境界を併記する。
 - **境界と状態**: DB、RLS、RPC、case／episode relationship、Vehicle Succession、same-model matchingは追加していない。Reference Garageは架空例の前提を確認するsecondary routeとして維持する。branch `codex/alpha-evidence-signature`／PR #8で自動検証・Deploy Preview・Chromium visual QA後も、iPhone Safariとα3ユーザーのfirst-impression確認まではHuman QA pending。
+
+## 27. 2026-08-20 Vehicle Experience content model checkpoint（PR #8継続）
+
+- **Architecture decision**: 長期のcontent unitを`VehicleExperience` + append-orientedな`ExperienceEntry`とし、EvidenceはEntry / Maintenanceから後で正規化するatomic projectionとして分離した。現αのQuick Record / Journalは1 Entryに相当し、明示的な関係がない既存recordはsingleton Experienceとして扱う。修理とDriveは同じenvelopeを使うが、症状・部品・結果とroute・stop等のdomain semanticsは別relationにする。
+- **Current audit**: `GarageJournalPost`は既に`media[]`と順序付き`contentBlocks`を持ち、詳細Journalとshared payloadは画像6枚まで扱える。一方Quick Recordは`PreparedImage | null`と先頭fileだけを使う1枚経路である。private workspaceは全AppDataを一つのSupabase JSON rowへ保存し、`alpha_inline` data URLを含むため、Quick Recordの複数画像化はpayload・再送・失敗率を増やす。動画は詳細Journalの端末内private pathだけで、shared delivery、MOV / HEVC、thumbnail、privacy reviewが未整備である。
+- **PR #8 implementation**: GarageのExperience MarkでmediaをRegister右columnから外し、Mark全幅へ表示する。既存複数画像recordは画像配列を`JournalMedia`へ渡し、compact表示で先頭画像と残り枚数を示す。保存後と既存記録編集の表現を「記録を詳しくする」「記録の詳細」へ広げ、Issue / Drive / Memoryを整備情報と誤称しない。保存・共有・media persistenceは変更していない。
+- **Deferred**: Quick Record複数画像、reorder、video upload、Experience / Entry DB、relation UI、`続きを残す`保存処理、Intent 4択、rights / multi-actor revision、Evidence normalizationは未実装。次αでは続きを残したい行動と必要写真枚数を先に確認し、βではprivate object media storage、attachment rows、singleton backfill、Vehicle Successionとのrights境界を設計する。
+- **状態**: Web 198件とi18n 5件の全test、lint、typecheck、buildは成功した。local browserのdesktop / 390px / 320pxではGarage mediaのwrapper・figure・image実幅が一致し、横overflowがないことを確認済み。Deploy Preview確認後も、iPhone Safariとα3人のHuman QAまではSHIPPED_NEEDS_QAとする。`main`、PR #6、Production DB、RLS / RPC、Netlify / Supabase設定は変更しない。

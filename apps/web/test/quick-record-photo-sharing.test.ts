@@ -57,6 +57,59 @@ test("a public quick record can promote its prepared image to a shared media pay
   assert.doesNotMatch(payload.media[0]?.assetPath ?? "", /^data:/);
 });
 
+test("the shared Journal projection preserves multiple image order without inline data", () => {
+  const data = cloneDemoData();
+  const vehicle = data.vehicles[0]!;
+  const inlineMedia: JournalMediaAttachment[] = ["before", "after"].map((name, index) => ({
+    id: `quick-photo-${name}`,
+    kind: "image",
+    source: "alpha_inline",
+    assetPath: `data:image/webp;base64,${name}`,
+    mimeType: "image/webp",
+    sizeBytes: 1200 + index,
+    altText: name,
+    privacyState: "public_ready",
+    createdAt: `2026-08-15T00:00:0${index}.000Z`,
+    isDemo: false,
+  }));
+  const result = addJournalToData(data, {
+    title: "Repair sequence",
+    eventType: "repair",
+    occurredOn: "2026-08-15",
+    occurredPrecision: "day",
+    bodyOriginal: "Before and after.",
+    vehicleId: vehicle.id,
+    linkedRecordId: "",
+    displayFields: [],
+    media: inlineMedia,
+    contentBlocks: [
+      { id: "quick-media-before", type: "media", mediaId: inlineMedia[0]!.id },
+      { id: "quick-text", type: "text", style: "paragraph", text: "Before and after." },
+      { id: "quick-media-after", type: "media", mediaId: inlineMedia[1]!.id },
+    ],
+    visibility: "public",
+    knowledgeExtractionConsent: false,
+  }, "en", "2026-08-15T00:00:00.000Z");
+  const sharedMedia = inlineMedia.map((attachment) => ({
+    ...attachment,
+    source: "alpha_shared" as const,
+    assetPath: `owner/journal/${attachment.id}.webp`,
+  }));
+
+  const payload = createAlphaSharedJournalPayload(result.journal, { sharedMedia });
+
+  assert.deepEqual(payload.media.map((attachment) => attachment.id), [
+    "quick-photo-before",
+    "quick-photo-after",
+  ]);
+  assert.deepEqual(payload.contentBlocks.map((block) => block.id), [
+    "quick-media-before",
+    "quick-text",
+    "quick-media-after",
+  ]);
+  assert.ok(payload.media.every((attachment) => !attachment.assetPath?.startsWith("data:")));
+});
+
 test("forms do not preflight-block public photo sharing before the shared upload runs", () => {
   const quick = read("../components/quick-event-form.tsx");
   const detailed = read("../components/journal-form.tsx");

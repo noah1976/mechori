@@ -141,6 +141,14 @@ Garage由来のDesign Languageを、αテスターが頻繁に通る範囲へ限
 - DesktopのPrimary Capture ActionはMECHORI logo直下、navigationより前へ置く。Mobileは既存FABを維持する。Reference GarageはHome理解の必須routeにせず、架空DEMOの前提を確認するsecondary routeとする。
 - 320px以下でもVehicle Anchorを上部band、Experience MarkをExperience Register + contentの2 trackへ再配置し、long text、actor、status、mediaへ`min-width: 0`とwrapを適用する。Chromium幅確認とiPhone Safari実機QAを別状態として扱う。
 
+### Vehicle Experience capture
+
+- 利用者向けには`Experience`、`Entry`、`Update`等の内部語を原則表示せず、「愛車の記録」「記録の詳細」「続きを残す」を使う。
+- 現αは保存前のIssue / Repair / Drive選択を増やさない。Vehicle、本文、任意mediaを先に保存し、必要な意味は保存後または後日の詳細で追加する。top-level intentは、実際に書き始められない問題が観察された場合のα実験とする。
+- 保存後の入口は、すべてを「整備情報」と呼ばず`記録を詳しくする`へ寄せる。Issue、Drive、Memoryにも成立し、追加しなくても保存済みrecordが残ることを明確にする。
+- Vehicle Continuityでは、Experience Registerと本文を既存trackで読み、mediaは狭いregister columnへ押し込まずExperience Markのcontent幅へ展開する。
+- 一度にまとめて残す場合も後から続ける場合も、generic block editorを主画面にしない。本文とmediaを中心にし、工程・経由地・結果は必要な人だけが追加する。
+
 ## 未確定
 
 - ロゴ

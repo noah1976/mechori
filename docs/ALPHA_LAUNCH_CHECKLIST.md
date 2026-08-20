@@ -183,3 +183,11 @@ P-069のように本番で再現した不具合は、テスト成功だけを根
 - `[~]` Journal detailのKnowledge noteが「車両履歴として残る価値」を伝えつつ、根拠・確認が揃うまで原因候補や確認済みナレッジとして検索へ出さない境界を維持することを確認する。
 - `[~]` Home Feedの本文と写真が同じcanonical Journal detailへ遷移し、写真からmedia URLや404へ移動しないことをdesktop／iPhone Safariで確認する。
 - `[ ]` αテスターへ答えを説明せず、Homeを5秒見た第一印象、普通のクルマSNSとの違い、保存後に履歴が残った感覚、未対応issueを書けるか、点検・結果も続けて残したいか、Owner／Mechanicを越えて経験が残る価値を自由回答で聞く。
+
+## 15. 2026-08-20 Vehicle Experience content model確認
+
+- `[~]` Garageの写真付きExperience Markはlocal browserのdesktop／390px／320pxでMark全幅へ収まり、wrapper・figure・imageの実幅一致と横overflowなしを確認済み。iPhone Safariで、Registerと本文の横に写真が細く押し込まれないこと、既存の複数画像recordでは先頭画像と残り枚数が表示され、detailで順序どおり読めることを再確認する。
+- `[~]` Quick Record保存後と既存記録編集で、Issue / Drive / Memoryを一律に「整備情報」と呼ばず、「記録を詳しくする」「記録の詳細」が使われることを確認する。詳細を追加しなくても元recordが残る。
+- `[~]` 現αのQuick Recordは投稿前のIntent選択を増やさず、Vehicle、本文、任意写真から保存できることを確認する。4択等が必要かは、書き始める迷いと保存後分類の理解をα3人へ誘導せず質問する。
+- `[ ]` 同じ不具合、修理、Driveについて、別recordではなく「続きを残す」ことを望むか、後日の追記と作業後の一括入力のどちらが自然かを聞く。現実装にはExperience relationshipがないため、近い記録を自動で同一Experienceとして扱わない。
+- `[ ]` Quick Recordで2枚以上の写真、動画、並べ替えが必要だった具体的場面と枚数を聞く。複数画像・動画は実装済みと扱わず、private object media storageとcost / privacy Gateの判断材料にする。

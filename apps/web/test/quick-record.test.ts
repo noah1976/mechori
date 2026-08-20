@@ -82,7 +82,9 @@ test("post-save enrichment is optional and cannot replace the saved record", () 
   const context = read("../lib/app-context.tsx");
   const composer = read("../components/quick-event-form.tsx");
   assert.match(sheet, /このクルマに、ひとつ経験が残りました/);
-  assert.match(sheet, /整備情報も追加すると、あとから探したり比較しやすくなります/);
+  assert.match(sheet, /記録を詳しくする/);
+  assert.match(sheet, /記録の詳細/);
+  assert.doesNotMatch(sheet, /整備情報を追加/);
   assert.match(sheet, /onClose/);
   assert.match(sheet, /onSaveEnrichment/);
   assert.match(sheet, /元の記録は残っています/);
@@ -94,6 +96,17 @@ test("post-save enrichment is optional and cannot replace the saved record", () 
   assert.match(composer, /const savedJournal = journal \? await updateJournal\(journal\.id, draft\) : await addJournal\(draft\)/);
   assert.match(composer, /setCompletion\(savedJournal\)/);
   assert.match(context, /await saveAlphaWorkspace\(data\);[\s\S]*?setData\(data\);/);
+});
+
+test("record detail disclosure is visibly interactive without narrowing every experience to maintenance", () => {
+  const composer = read("../components/quick-event-form.tsx");
+  const css = read("../app/globals.css");
+
+  assert.match(composer, /<span>\{locale === "ja" \? "記録の詳細"/);
+  assert.match(composer, /種類・時期・作業した人や場所/);
+  assert.match(composer, /<ChevronDown size=\{17\}/);
+  assert.doesNotMatch(composer, /追加情報を編集/);
+  assert.match(css, /\.quick-composer-details summary \{[^}]*grid-template-columns: auto minmax\(0, 1fr\) auto;/);
 });
 
 test("the vehicle context route does not make users choose a prompt before writing", () => {

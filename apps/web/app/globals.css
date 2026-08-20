@@ -710,8 +710,12 @@ button { cursor: pointer; }
 .quick-composer-submit { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 10px 12px; }
 .quick-composer-submit .primary-action { min-height: 52px; padding-inline: 21px; }
 .quick-composer-details { border-top: 1px solid var(--line); }
-.quick-composer-details summary { min-height: 48px; display: flex; align-items: center; color: var(--muted); font-size: 13px; font-weight: 750; cursor: pointer; }
+.quick-composer-details summary { min-height: 52px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 5px 10px; color: var(--muted); font-size: 13px; font-weight: 750; list-style: none; cursor: pointer; }
+.quick-composer-details summary::-webkit-details-marker { display: none; }
+.quick-composer-details summary small { min-width: 0; color: var(--muted); font-size: 11px; font-weight: 500; line-height: 1.4; overflow-wrap: anywhere; }
+.quick-composer-details summary svg { transition: transform 160ms ease; }
 .quick-composer-details[open] summary { color: var(--ink); }
+.quick-composer-details[open] summary svg { transform: rotate(180deg); }
 .quick-composer-details-body { display: grid; min-width: 0; gap: 20px; padding: 8px 0 6px; }
 .quick-composer-details-body > .event-type-picker, .quick-composer-details-body > .occurrence-date-fields { margin: 0; padding: 0 0 20px; border: 0; border-bottom: 1px solid var(--line); }
 .quick-composer-details-body > .event-type-picker legend, .quick-composer-details-body > .occurrence-date-fields legend { padding: 0 0 9px; }
@@ -777,7 +781,7 @@ button { cursor: pointer; }
 .vehicle-experience-list { min-width: 0; margin: 0; padding: 0; list-style: none; }
 .vehicle-experience-list > li { min-width: 0; }
 .vehicle-experience-mark { display: grid; grid-template-columns: minmax(132px, 0.25fr) minmax(0, 1fr); min-width: 0; color: inherit; border-bottom: 1px solid var(--line); text-decoration: none; }
-.vehicle-experience-mark.has-media { grid-template-columns: minmax(132px, 0.25fr) minmax(0, 1fr) minmax(0, 220px); }
+.vehicle-experience-mark.has-media { grid-template-columns: minmax(132px, 0.25fr) minmax(0, 1fr); }
 .vehicle-experience-mark[href]:hover { background: #f6f8f6; }
 .vehicle-experience-mark:focus-visible { outline: 3px solid rgba(45, 97, 119, 0.3); outline-offset: -3px; }
 .vehicle-experience-register { min-width: 0; padding: 17px 15px 16px 18px; background: #f7f8f7; border-left: 3px solid var(--brand); }
@@ -792,11 +796,11 @@ button { cursor: pointer; }
 .vehicle-experience-actor > div { display: grid; gap: 1px; color: #5d6862; font-size: 10px; line-height: 1.45; }
 .vehicle-experience-actor dt, .vehicle-experience-actor dd { margin: 0; }
 .vehicle-experience-actor dt { font-weight: 800; }
-.vehicle-experience-media { min-width: 0; min-height: 126px; overflow: hidden; background: var(--surface-soft); border-left: 1px solid var(--line); }
-.vehicle-experience-media .journal-media.compact, .vehicle-experience-media .journal-media-item { min-width: 0; min-height: 100%; height: 100%; }
+.vehicle-experience-media { grid-column: 1 / -1; min-width: 0; overflow: hidden; background: var(--surface-soft); border-top: 1px solid var(--line); }
+.vehicle-experience-media .journal-media.compact, .vehicle-experience-media .journal-media-item { width: 100%; min-width: 0; max-width: 100%; }
+.vehicle-experience-media .journal-media-item { min-height: 0; height: auto; }
 .vehicle-experience-media .journal-media-item img { object-fit: cover; }
 .vehicle-experience-list > li.is-featured .vehicle-experience-body h3 { font-size: clamp(22px, 2.2vw, 30px); line-height: 1.2; }
-.vehicle-experience-list > li.is-featured .vehicle-experience-media { min-height: 194px; }
 .vehicle-experience-list > li.is-issue .vehicle-experience-register,
 .vehicle-experience-list > li.is-work .vehicle-experience-register { border-left-color: #8c7426; }
 .vehicle-experience-list > li.is-result .vehicle-experience-register { border-left-color: #42705b; }
@@ -2098,8 +2102,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .vehicle-experience-register, .vehicle-continuity.is-compact .vehicle-experience-register { padding: 13px 9px 12px 12px; }
   .vehicle-experience-body, .vehicle-continuity.is-compact .vehicle-experience-body { padding: 15px 14px; }
   .vehicle-experience-list > li.is-featured .vehicle-experience-body h3 { font-size: 21px; }
-  .vehicle-experience-media { grid-column: 2; min-height: 164px; border-top: 1px solid var(--line); border-left: 1px solid #e4e7e5; }
-  .vehicle-experience-list > li.is-featured .vehicle-experience-media { min-height: 200px; }
+  .vehicle-experience-media { grid-column: 1 / -1; }
   .vehicle-continuation-slot, .vehicle-continuity.is-compact .vehicle-continuation-slot { grid-template-columns: 66px minmax(0, 1fr); }
   .vehicle-continuation-slot > span, .vehicle-continuity.is-compact .vehicle-continuation-slot > span { padding: 17px 6px 16px 13px; }
   .vehicle-knowledge-outlet { grid-template-columns: 92px minmax(0, 1fr); }

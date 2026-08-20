@@ -116,6 +116,17 @@ test("Vehicle Continuity is narrow-screen safe and does not hide overflow", () =
   assert.doesNotMatch(css, /\.vehicle-continuity \{[^}]*overflow: hidden/);
 });
 
+test("Garage media spans the Experience Mark instead of becoming a narrow side column", () => {
+  assert.match(garage, /media: displayJournal\.media\.filter\(\(attachment\) => attachment\.kind === "image"\)/);
+  assert.match(garage, /<JournalMedia attachments=\{item\.media\} locale=\{locale\} compact \/>/);
+  assert.match(css, /\.vehicle-experience-mark\.has-media \{ grid-template-columns: minmax\(132px, 0\.25fr\) minmax\(0, 1fr\); \}/);
+  assert.match(css, /\.vehicle-experience-media \{ grid-column: 1 \/ -1;/);
+  assert.match(css, /\.vehicle-experience-media \.journal-media\.compact, \.vehicle-experience-media \.journal-media-item \{ width: 100%; min-width: 0; max-width: 100%; \}/);
+  assert.match(css, /\.vehicle-experience-media \.journal-media-item \{ min-height: 0; height: auto; \}/);
+  assert.doesNotMatch(css, /\.vehicle-experience-mark\.has-media \{[^}]*minmax\(0, 220px\)/);
+  assert.doesNotMatch(css, /\.vehicle-experience-media \.journal-media-item \{[^}]*height: 100%/);
+});
+
 test("feed text and image still use the same canonical journal detail href", () => {
   assert.match(card, /href=\{detailHref\}/);
   assert.match(card, /linkHref=\{detailHref\}/);
