@@ -2,7 +2,7 @@
 
 import { OccurrenceDateFields } from "@/components/occurrence-date-fields";
 import { ServiceAttributionField } from "@/components/service-attribution-field";
-import { VehicleHistorySpine, type VehicleHistorySpineItem } from "@/components/vehicle-history-spine";
+import { VehicleContinuity, type VehicleExperienceMark } from "@/components/vehicle-continuity";
 import {
   displayVehicleModel,
   journalOccurrenceLabel,
@@ -65,27 +65,18 @@ export function QuickRecordCompletionSheet({
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const isIssue = journal.eventType === "issue" && journal.issueStatus === "open";
-  const historyItems: VehicleHistorySpineItem[] = [
-    {
-      id: journal.id,
-      dateLabel: journalOccurrenceLabel(journal, locale),
-      dateTime: journal.occurredOn ?? journal.createdAt,
+  const [savedJournal, setSavedJournal] = useState(journal);
+  const isIssue = savedJournal.eventType === "issue" && savedJournal.issueStatus === "open";
+  const experience: VehicleExperienceMark = {
+      id: savedJournal.id,
+      dateLabel: journalOccurrenceLabel(savedJournal, locale),
+      dateTime: savedJournal.occurredOn ?? savedJournal.createdAt,
       label: isIssue ? (ja ? "気になること" : "Something noticed") : (ja ? "記録" : "Record"),
-      title: journal.bodyOriginal,
+      title: savedJournal.bodyOriginal,
+      actor: { role: ja ? "記録" : "Recorded by", name: ja ? "自分" : "You" },
       status: isIssue ? (ja ? "未解決" : "Unresolved") : undefined,
       kind: isIssue ? "issue" : "record",
-    },
-    {
-      id: `${journal.id}-continuation`,
-      dateLabel: ja ? "この先" : "Next",
-      label: ja ? "続きの記録" : "Continue the history",
-      title: isIssue
-        ? (ja ? "この後の点検や結果を記録できます" : "Inspection and results can be added later")
-        : (ja ? "点検・整備・その後の状態を記録できます" : "Inspection, work, and later outcomes can be added"),
-      kind: "continuation",
-    },
-  ];
+  };
 
   async function saveEnrichment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -105,7 +96,8 @@ export function QuickRecordCompletionSheet({
     setSaving(true);
     setError("");
     try {
-      await onSaveEnrichment(draft);
+      const updated = await onSaveEnrichment(draft);
+      setSavedJournal(updated);
       setMode("saved");
     } catch {
       setError(
@@ -125,17 +117,30 @@ export function QuickRecordCompletionSheet({
           <CheckCircle2 className="quick-record-sheet-icon" size={30} aria-hidden="true" />
           <h1 id="quick-record-sheet-title">{ja ? "このクルマに、ひとつ経験が残りました。" : "One more experience is now part of this vehicle."}</h1>
           <section className="quick-record-evidence-preview" aria-label={ja ? "保存した記録" : "Saved record"}>
-            <p>{vehicleLabel}</p>
+            <VehicleContinuity
+              label={ja ? "このクルマに残った経験" : "Experience added to this vehicle"}
+              ledgerLabel={ja ? "保存した経験" : "Saved experience"}
+              density="compact"
+              identity={{
+                make: vehicle?.make ?? vehicleLabel,
+                model: vehicle ? displayVehicleModel(vehicle, locale) : undefined,
+                badge: ja ? "車両" : "Vehicle",
+                objectLabel: ja ? "この個体" : "This individual vehicle",
+              }}
+              experiences={[experience]}
+              continuation={{
+                label: ja ? "この先" : "What comes next",
+                title: isIssue
+                  ? (ja ? "点検・対応・結果を続けられます" : "Inspection, work, and results can follow")
+                  : (ja ? "次の経験をここへ続けられます" : "The next experience can continue here"),
+                description: ja ? "まだ記録はありません。" : "Nothing has been recorded here yet.",
+              }}
+            />
             <dl>
               <div><dt>{ja ? "記録日時" : "Recorded"}</dt><dd>{journalOccurrenceLabel(journal, locale)}</dd></div>
               <div><dt>{ja ? "本文" : "Text"}</dt><dd>{ja ? "保存済み" : "Saved"}</dd></div>
               {photoCount > 0 && <div><dt>{ja ? "写真" : "Photos"}</dt><dd>{ja ? `${photoCount}枚` : `${photoCount}`}</dd></div>}
             </dl>
-            <VehicleHistorySpine
-              label={ja ? "このクルマに残った記録" : "Record added to this vehicle"}
-              density="compact"
-              items={historyItems}
-            />
           </section>
           <p>{ja ? "整備情報も追加すると、あとから探したり比較しやすくなります。" : "Maintenance details make this record easier to find and compare later."}</p>
           <div className="quick-record-sheet-actions">
@@ -204,10 +209,24 @@ export function QuickRecordCompletionSheet({
               ? ja ? "気になることとして、未解決のまま車両履歴に残っています。" : "It remains in the vehicle history as an unresolved issue."
               : ja ? "元の記録にも反映されています。" : "The original record has been updated."}
           </p>
-          <VehicleHistorySpine
+          <VehicleContinuity
             label={ja ? "更新した車両履歴" : "Updated vehicle history"}
+            ledgerLabel={ja ? "このクルマに残った経験" : "Experience kept with this vehicle"}
             density="compact"
-            items={historyItems}
+            identity={{
+              make: vehicle?.make ?? vehicleLabel,
+              model: vehicle ? displayVehicleModel(vehicle, locale) : undefined,
+              badge: ja ? "車両" : "Vehicle",
+              objectLabel: ja ? "この個体" : "This individual vehicle",
+            }}
+            experiences={[experience]}
+            continuation={{
+              label: ja ? "この先" : "What comes next",
+              title: isIssue
+                ? (ja ? "点検・対応・結果を続けられます" : "Inspection, work, and results can follow")
+                : (ja ? "次の経験をここへ続けられます" : "The next experience can continue here"),
+              description: ja ? "まだ記録はありません。" : "Nothing has been recorded here yet.",
+            }}
           />
           <div className="quick-record-sheet-actions">
             <button type="button" className="primary-action" onClick={onClose}>{ja ? "投稿を見る" : "View record"}</button>

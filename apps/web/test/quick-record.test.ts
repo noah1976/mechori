@@ -89,8 +89,8 @@ test("post-save enrichment is optional and cannot replace the saved record", () 
   assert.match(sheet, /journalToDraft\(journal\)/);
   assert.match(sheet, /value: "issue", ja: "不具合・気になること"/);
   assert.match(sheet, /issueStatus: eventType === "issue" \? "open" : undefined/);
-  assert.match(sheet, /この後の点検や結果を記録できます/);
-  assert.match(sheet, /journal\.eventType === "issue" && journal\.issueStatus === "open"/);
+  assert.match(sheet, /点検・対応・結果を続けられます/);
+  assert.match(sheet, /savedJournal\.eventType === "issue" && savedJournal\.issueStatus === "open"/);
   assert.match(composer, /const savedJournal = journal \? await updateJournal\(journal\.id, draft\) : await addJournal\(draft\)/);
   assert.match(composer, /setCompletion\(savedJournal\)/);
   assert.match(context, /await saveAlphaWorkspace\(data\);[\s\S]*?setData\(data\);/);

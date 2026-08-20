@@ -719,3 +719,21 @@
 - 決定: 日付、Vehicle Event、状態、本文、実在するactor／sourceを時間軸で読む`History Spine`をHome、Quick Record保存後、Garageで共用する。HomeにDEMO例をinline表示し、Reference Garageはsecondary deep diveとする。旧件数dashboardと説明用flowはSignature UIの主役から外す。
 - 実装境界: 現αのrecord間にcase／episode relationshipがないため、無関係なrecordを因果chainとして結ばない。実Garageはchronological history、保存直後はsingle node＋continuation、DEMOはfixtureに存在するrecordとattributionだけで構成する。case／thread／follow-up relation、same-model applicability、PhysicalVehicle正規化はβ ArchitectureへDeferredする。
 - 検証: このUIが独自価値を証明したとは扱わない。α3ユーザーへ事前説明せず、普通のSNSとの差、履歴が残った感覚、未対応issueを書けるか、点検・結果を続けて残したいかを定性観察する。
+
+### 決定: History SpineをVehicle Continuity Ledgerへ置き換える
+
+- 日付: 2026-08-20
+- 状態: PR #8実装 / Human QA pending。上記History SpineのUI判断をsupersedeするが、Vehicle Event intake、`issue/open`、data honestyの境界は維持する。
+- 背景: Human visual reviewで、細いlineとnodeを使うHistory SpineはProduct semanticsが正しくても一般的なSNS／整備記録timelineの延長に見え、MECHORI固有のVehicle中心性がfirst-viewから伝わらなかった。
+- 検討案:
+
+| 案 | Core metaphor | 強み | 不採用／採用理由 |
+| --- | --- | --- | --- |
+| Vehicle Rings | 一台の車両へ年輪状に経験が蓄積する | 新規性、時間継続、successionとの相性 | 1件目と320pxで意味が弱く、読み上げ順・操作対象が分かりにくいため不採用 |
+| Evidence Branch | 一つのEventから個体履歴、結果、将来の同型車知見へ枝が伸びる | Episode、reuse、same-model拡張が明快 | 現αにないrelationを実在するように見せる危険が高く、疎なdataでは空枝が主役になるため不採用 |
+| Continuity Ledger | Vehicleを継続するanchor、記録をExperience Mark、未記録の未来をContinuation Slotとして積む | 1件目、疎なα、issue/open、mobile、現行dataで成立し、actor変更後もVehicleを中心に保てる | 採用 |
+
+- 決定: `Vehicle Continuity`をSignature objectとする。Vehicle identityを全記録に共通する`Vehicle Anchor`として固定し、各実recordを`Experience Mark`として登録する。Mark内では日付・種別・actor／sourceを`Experience Register`、本文・写真をrecord contentとして分ける。連続線やnodeで因果を示さず、同じVehicle objectに帰属する台帳として読む。未来の点検・対応・結果はfake recordを作らず、空の`Continuation Slot`として表す。未実装のsame-model接続は`Knowledge Outlet`で境界だけ示し、matchが存在するようには見せない。
+- Composition: Homeは明示的な「DEMO・架空例」をfirst product objectとして表示し、Following Feedをその後へ置く。Garageは実recordだけでVehicle Continuityを構成する。Quick Record保存直後はneutralな一つのExperience MarkとContinuation Slotを表示し、保存後に本人がissueを選択して保存した後だけ`未解決`へ変える。
+- 既存UIの扱い: black onboarding=`Demote + Modify`、Home DEMO=`Modify`、旧VehicleHistorySpine=`Remove`、Garage件数summary=`Demote`、post-save modal=`Modify`、Reference Garage CTA / route=`Demote / Keep`、Knowledge warning=`Modify`、Desktop Record CTA=`Modifyしてlogo直下へ移動`。
+- Honesty boundary: DEMO storyはcoreの明示的fictional fixtureとし、実在人物、技術的因果、解決率、reuse数を作らない。Vehicle Succession、same-model matching、case／episode relationshipは未実装と明示し、UIのためのtemporary relationship schemaは追加しない。

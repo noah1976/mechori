@@ -277,8 +277,9 @@ Following FeedをAuthenticated Homeのfirst surfaceに置くのは、記録や�
 
 ## α Signature Experienceの仮説
 
-Home inline History Spine、Quick Record保存後、Garageで繰り返す同じ履歴表現は、投稿数を増やすためのgamificationではなく、記録がVehicle Evidenceへ育つ価値を説明なしで理解できるかを確認する実験である。Evidence Graph、record relationship、same-model reuse、AI extractionの実装・効果を意味しない。
+Home、Quick Record保存後、Garageで繰り返す`Vehicle Continuity`は、投稿数を増やすためのgamificationではなく、Vehicleを中心に経験が残り続ける価値を説明なしで理解できるかを確認する実験である。Vehicle Anchor、Experience Mark、Continuation Slotの理解を測るもので、Evidence Graph、record relationship、Vehicle Succession、same-model reuse、AI extractionの実装・効果を意味しない。
 
 - 既存の`journal_saved`、`garage_viewed`、`history_reused`だけを継続して扱い、新しい外部分析serviceは導入しない。
-- Human QAでは答えを先に説明せず、「普通のクルマSNSと何が違うと思ったか」「保存直後に何が残ったと理解したか」「未対応の不具合も書けると思ったか」「点検・結果を続けて残したいか」を尋ねる。
+- Human QAではHomeを5秒見せて答えを先に説明せず、「何のサービスだと思ったか」「普通のクルマSNSと何が違うと思ったか」「保存直後に何が残ったと理解したか」「未対応の不具合も書けると思ったか」「点検・結果を続けて残したいか」を尋ねる。
+- α3ユーザーには、前Ownerや昔の整備士の経験が残っていたら使いたいか、同じ車種の別個体で起きたことが見られたら役立つかも尋ねる。ただし肯定回答だけでSuccession／same-model需要を検証済みにしない。
 - 数値が少ないαでは、Home／Reference閲覧数だけを成功とせず、本文だけのissue保存、任意enrichment、2件目の記録、後日のGarage再訪・結果追記と定性回答を合わせて判断する。

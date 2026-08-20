@@ -174,10 +174,12 @@ P-069のように本番で再現した不具合は、テスト成功だけを根
 
 ## 14. 2026-08-19 α Signature Experience
 
-- `[~]` Homeを開き、Reference Garageへ移動せずにDEMO表記付きのcompact History Spineが早い位置で見えること、通常Feedと構造が異なること、架空の利用数・解決率・same-model結果がないことを確認する。
+- `[~]` Homeを開き、黒いonboardingやFollowing Feedより先に「DEMO・架空例」のVehicle Continuityが最初のProduct objectとして見えること、通常Feedと構造が異なること、架空の利用数・解決率・same-model結果がないことを確認する。
 - `[~]` Quick Recordのplaceholderが「愛車に何がありましたか？」で、投稿前にcategoryを選ばず、まだ直していない異音等を本文のみ・写真付きの両方で保存できることを確認する。
-- `[~]` 保存直後はneutralなsingle nodeとして表示され、保存後に本人が「不具合・気になること」を選んだ場合だけ「未解決」になることを確認する。診断、修理、結果がなくても保存でき、Closeしても元recordが残ることを確認する。
-- `[~]` Home、Quick Record保存後、Garageで同じHistory Spineのline、node、date、type、status、本文のvisual grammarを確認する。320 / 375 / 390 / 430pxで横overflowがなく、320pxのRecord CTAが本文を大きく覆わないことをiPhone Safariで再確認する。
-- `[~]` Garageの実recordはchronological historyとして表示され、actual relationがない記録を因果chainに見せないこと、欠損actor／resultを補完しないことを確認する。Reference GarageはDEMO詳細のsecondary routeとして動作することを確認する。
+- `[~]` 保存直後はneutralなExperience Markとして表示され、保存後に本人が「不具合・気になること」を選び保存した場合だけ「未解決」になることを確認する。Continuation Slotは「まだ記録はありません」と表示し、点検・修理・結果のfake recordに見えないこと、Closeしても元recordが残ることを確認する。
+- `[~]` Home、Quick Record保存後、Garageで同じVehicle Anchor、Experience Mark、Continuation Slotのvisual grammarを確認する。320 / 375 / 390 / 430pxで横overflowがなく、320pxのRecord CTAが本文を大きく覆わないことをiPhone Safariで再確認する。
+- `[~]` GarageのVehicle IdentityとVehicle Anchorが同じ個体を中心に見せ、実recordだけを時系列表示すること、actual relationがない記録を因果chainに見せないこと、欠損actor／resultを補完しないことを確認する。Reference Garageは架空例の前提を確認するsecondary routeとして動作することを確認する。
+- `[~]` Desktopで「記録する」がMECHORI logo直下・navigationより前に見え、Mobileでは既存FABが維持されることを確認する。
+- `[~]` Journal detailのKnowledge noteが「車両履歴として残る価値」を伝えつつ、根拠・確認が揃うまで原因候補や確認済みナレッジとして検索へ出さない境界を維持することを確認する。
 - `[~]` Home Feedの本文と写真が同じcanonical Journal detailへ遷移し、写真からmedia URLや404へ移動しないことをdesktop／iPhone Safariで確認する。
-- `[ ]` αテスターへ答えを説明せず、普通のクルマSNSとの違い、保存後に履歴が残った感覚、未対応issueを書けるか、点検・結果も続けて残したいか、Owner／Mechanicを越えて経験が残る価値を自由回答で聞く。
+- `[ ]` αテスターへ答えを説明せず、Homeを5秒見た第一印象、普通のクルマSNSとの違い、保存後に履歴が残った感覚、未対応issueを書けるか、点検・結果も続けて残したいか、Owner／Mechanicを越えて経験が残る価値を自由回答で聞く。

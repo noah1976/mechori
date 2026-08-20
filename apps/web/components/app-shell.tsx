@@ -19,7 +19,6 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useApp } from "@/lib/app-context";
 import { pushAnalyticsEvent } from "@/lib/analytics";
 import { ProfileAvatar } from "@/components/profile-avatar";
-import { ActivationOnboarding } from "@/components/activation-onboarding";
 import { FirstProfileSetup } from "@/components/first-profile-setup";
 import { useNotifications } from "@/components/notification-provider";
 import { loadAlphaAdminDashboard } from "@/lib/alpha-operations";
@@ -224,6 +223,26 @@ export function AppShell({ children }: { children: ReactNode }) {
             <small>{translate(locale, "tagline")}</small>
           </span>
         </Link>
+        {authenticated && workspaceReady ? (
+          <Link
+            href={preferredVehicle
+              ? `/garage/${encodeURIComponent(preferredVehicle.id)}/event/new`
+              : "/garage/new"}
+            className="primary-action nav-add"
+          >
+            {preferredVehicle
+              ? <Camera size={18} aria-hidden="true" />
+              : <Plus size={18} aria-hidden="true" />}
+            {preferredVehicle
+              ? locale === "ja" ? "記録する" : "Record"
+              : locale === "ja" ? "愛車を登録" : "Add vehicle"}
+          </Link>
+        ) : loggedOut ? (
+          <Link href="/auth" className="primary-action nav-add">
+            <LogIn size={18} aria-hidden="true" />
+            {translate(locale, "signIn")}
+          </Link>
+        ) : null}
         {navigationReady && <>
           <nav className="side-nav-links side-nav-primary">
           {desktopPrimaryItems.map((item) => {
@@ -277,26 +296,6 @@ export function AppShell({ children }: { children: ReactNode }) {
             </select>
           </label>
         )}
-        {authenticated && workspaceReady ? (
-          <Link
-            href={preferredVehicle
-              ? `/garage/${encodeURIComponent(preferredVehicle.id)}/event/new`
-              : "/garage/new"}
-            className="primary-action nav-add"
-          >
-            {preferredVehicle
-              ? <Camera size={18} aria-hidden="true" />
-              : <Plus size={18} aria-hidden="true" />}
-            {preferredVehicle
-              ? locale === "ja" ? "記録する" : "Record"
-              : locale === "ja" ? "愛車を登録" : "Add vehicle"}
-          </Link>
-        ) : loggedOut ? (
-          <Link href="/auth" className="primary-action nav-add">
-            <LogIn size={18} aria-hidden="true" />
-            {translate(locale, "signIn")}
-          </Link>
-        ) : null}
         {navigationReady && authenticated && (
           <button type="button" className="side-nav-logout" onClick={() => void handleSignOut()}>
             <LogOut size={18} aria-hidden="true" />
@@ -416,7 +415,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main className={showRecordFab ? "has-record-fab" : undefined}>
           {hydrated && (signedIn || publicPath) ? <>
             {authenticated && pathname !== "/auth" && <FirstProfileSetup />}
-            {authenticated && pathname !== "/auth" && <ActivationOnboarding />}
             {children}
           </> : (
             <div className="app-loading" role="status" aria-live="polite">

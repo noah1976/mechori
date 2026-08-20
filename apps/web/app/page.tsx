@@ -2,6 +2,7 @@
 
 import { DemoNotice } from "@/components/demo-notice";
 import { ActivationChecklist } from "@/components/activation-checklist";
+import { ActivationOnboarding } from "@/components/activation-onboarding";
 import { AlphaHistorySignature } from "@/components/alpha-history-signature";
 import { JournalCard } from "@/components/journal-card";
 import { RecordCard } from "@/components/record-card";
@@ -203,14 +204,15 @@ export default function HomePage() {
       {!signedIn && <DemoNotice />}
 
       {signedIn && <section className="home-feed-section home-following-section" aria-labelledby="following-feed-heading">
+        <AlphaHistorySignature locale={locale} compact headingLevel="h1" />
+        <ActivationOnboarding />
         <div className="home-feed-heading">
           <div>
             <p className="home-section-label">{ja ? "フォロー中" : "Following"}</p>
-            <h1 id="following-feed-heading">{ja ? "フォロー中の記録" : "Following feed"}</h1>
+            <h2 id="following-feed-heading">{ja ? "フォロー中の記録" : "Following feed"}</h2>
             <p>{ja ? "フォローしている人とクルマの新しい記録です。" : "Recent records from people and vehicles you follow."}</p>
           </div>
         </div>
-        <AlphaHistorySignature locale={locale} compact />
         {feed.length ? <div className="home-journal-feed">
           {feed.map((journal) => (
             <JournalCard

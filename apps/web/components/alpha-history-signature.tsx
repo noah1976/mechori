@@ -1,67 +1,42 @@
-import { VehicleHistorySpine, type VehicleHistorySpineItem } from "@/components/vehicle-history-spine";
 import {
-  demoData,
-  displayVehicleModel,
-  journalOccurrenceLabel,
-  maintenanceRecordDateLabel,
-  type Locale,
-} from "@mechori/core";
+  VehicleContinuity,
+  type VehicleExperienceMark,
+} from "@/components/vehicle-continuity";
+import { signatureDemoStory, type Locale } from "@mechori/core";
 import Link from "next/link";
 
-function demoHistoryItems(locale: Locale): VehicleHistorySpineItem[] {
+function demoExperiences(locale: Locale): VehicleExperienceMark[] {
   const ja = locale === "ja";
-  const workshopRecord = demoData.records.find((item) => item.id === "record-demo-oil")!;
-  const issueRecord = demoData.records.find((item) => item.id === "record-demo-warning")!;
-  const ownerJournal = demoData.journals.find((item) => item.id === "journal-demo-owner-private")!;
-  const owner = demoData.profiles.find((item) => item.id === ownerJournal.authorProfileId)!;
-  const workshop = workshopRecord.serviceAttribution.providerDisplayNameSnapshot;
 
-  return [
-    {
-      id: workshopRecord.id,
-      dateLabel: maintenanceRecordDateLabel(workshopRecord, locale),
-      dateTime: workshopRecord.serviceDate,
-      label: ja ? "整備記録" : "Maintenance record",
-      title: workshopRecord.summary.replace("DEMO: ", ""),
-      detail: workshopRecord.workPerformed,
-      actor: workshop
-        ? ja ? `作業: ${workshop}` : `Work: ${workshop}`
-        : undefined,
-      kind: "work",
-    },
-    {
-      id: issueRecord.id,
-      dateLabel: maintenanceRecordDateLabel(issueRecord, locale),
-      dateTime: issueRecord.serviceDate,
-      label: ja ? "気になること" : "Something noticed",
-      title: issueRecord.summary.replace("DEMO: ", ""),
-      detail: issueRecord.symptoms,
-      status: issueRecord.resolutionStatus === "unresolved"
-        ? ja ? "未解決" : "Unresolved"
-        : undefined,
-      kind: "issue",
-    },
-    {
-      id: ownerJournal.id,
-      dateLabel: journalOccurrenceLabel(ownerJournal, locale),
-      dateTime: ownerJournal.occurredOn ?? ownerJournal.createdAt,
-      label: ja ? "オーナー記録" : "Owner record",
-      title: ownerJournal.title.replace("DEMO: ", ""),
-      actor: ja ? `記録: ${owner.displayName}` : `Recorded by ${owner.displayName}`,
-      kind: "record",
-    },
-  ];
+  return signatureDemoStory.experiences.map((experience) => ({
+    id: experience.id,
+    dateLabel: ja ? experience.dateJa : experience.dateEn,
+    dateTime: experience.occurredAt,
+    label: ja ? experience.labelJa : experience.labelEn,
+    title: ja ? experience.titleJa : experience.titleEn,
+    detail: ja ? experience.detailJa : experience.detailEn,
+    actor: experience.actorName && experience.actorRoleJa && experience.actorRoleEn
+      ? {
+          role: ja ? experience.actorRoleJa : experience.actorRoleEn,
+          name: experience.actorName,
+        }
+      : undefined,
+    kind: experience.kind,
+  }));
 }
 
 export function AlphaHistorySignature({
   locale,
   compact = false,
+  headingLevel = "h2",
 }: {
   locale: Locale;
   compact?: boolean;
+  headingLevel?: "h1" | "h2";
 }) {
   const ja = locale === "ja";
-  const vehicle = demoData.vehicles[0]!;
+  const { vehicle } = signatureDemoStory;
+  const Heading = headingLevel;
 
   return (
     <section
@@ -69,35 +44,43 @@ export function AlphaHistorySignature({
       aria-labelledby={compact ? "home-history-signature-heading" : "reference-history-signature-heading"}
     >
       <header className="alpha-history-signature-heading">
-        <div>
-          <span className="demo-label">DEMO</span>
-          <p>{vehicle.make} {displayVehicleModel(vehicle, locale)}</p>
-        </div>
-        <h2 id={compact ? "home-history-signature-heading" : "reference-history-signature-heading"}>
-          {ja ? "人が変わっても、クルマの時間は続く。" : "A vehicle's history continues as people change."}
-        </h2>
-        <small>
-          {ja
-            ? "実ユーザーの記録ではありません。既存のDEMOデータによる履歴例です。"
-            : "This is a clearly labeled example built from demo data, not real user history."}
-        </small>
+        <span className="demo-label">DEMO・{ja ? "架空例" : "FICTIONAL"}</span>
+        <Heading id={compact ? "home-history-signature-heading" : "reference-history-signature-heading"}>
+          {ja ? "一台のクルマに残る経験" : "Experience that stays with one vehicle"}
+        </Heading>
       </header>
-      <VehicleHistorySpine
-        label={ja ? "DEMO車両の履歴" : "Demo vehicle history"}
+      <VehicleContinuity
+        label={ja ? "デモ車両の経験の継続" : "Demo vehicle experience continuity"}
+        ledgerLabel={ja ? "このクルマに残った経験" : "Experience kept with this vehicle"}
         density={compact ? "compact" : "standard"}
-        items={demoHistoryItems(locale)}
+        identity={{
+          make: vehicle.make,
+          model: vehicle.model,
+          context: ja ? vehicle.contextJa : vehicle.contextEn,
+          badge: ja ? "車両" : "Vehicle",
+          objectLabel: ja ? "この個体" : "This individual vehicle",
+        }}
+        experiences={demoExperiences(locale)}
+        knowledgeOutlet={{
+          label: ja ? "将来の接続" : "Future connection",
+          title: ja ? "同型車の経験へ" : "Toward experience from similar vehicles",
+          description: ja
+            ? "同型車との照合・比較は未実装です。"
+            : "Matching and comparison with similar vehicles are not implemented.",
+        }}
       />
-      {compact ? (
-        <Link href="/reference-garage" className="text-link alpha-history-signature-link">
-          {ja ? "DEMO履歴を詳しく見る" : "View the demo history"}
-        </Link>
-      ) : (
-        <p className="alpha-history-signature-future">
+      <footer className="alpha-history-signature-footer">
+        <p>
           {ja
-            ? "現在表示できるのは一台の車両履歴です。同じ車種の別個体との比較は将来構想で、現在利用できる機能ではありません。"
-            : "This currently demonstrates one vehicle history. Cross-vehicle comparison is a future direction, not an available feature."}
+            ? "実在の車両・人物・整備結果ではありません。引き継ぎと同型車比較も現在利用できる機能ではありません。"
+            : "This does not depict real vehicles, people, or maintenance results. Succession and cross-vehicle comparison are not currently available."}
         </p>
-      )}
+        {compact && (
+          <Link href="/reference-garage" className="alpha-history-signature-link">
+            {ja ? "架空例の前提を見る" : "About this fictional example"}
+          </Link>
+        )}
+      </footer>
     </section>
   );
 }

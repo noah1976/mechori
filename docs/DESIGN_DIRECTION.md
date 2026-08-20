@@ -133,11 +133,13 @@ Garage由来のDesign Languageを、αテスターが頻繁に通る範囲へ限
 
 ## α Signature Experience
 
-- `History Spine`は、細いline、状態を区別するnode、日付、事実的な種別、本文、確認できるactor／sourceを一つの文法で読むMECHORIのSignature component候補とする。Home、Quick Record保存後、Garageで同じcomponentを再利用し、画面別の模倣実装を作らない。
-- Quick Record保存直後はneutralなsingle nodeと「この先」を示す。本人が保存後に「不具合・気になること」を明示した場合だけ「未解決」を静かに表示し、赤い警告、巨大badge、AI推定を使わない。
-- HomeのFollowing Feedより前にcompactなDEMO履歴をinline表示し、通常のSNS投稿とは異なるVehicle-firstの時間軸を直接見せる。大きなpromo card、gradient、黒いeditorial surface、装飾的英語、意味のないstatsは使わない。
-- Garageはactual recordをchronological Vehicle historyとして表示する。実relationがないrecordを因果chainに見せず、欠損actorやresultを捏造しない。Reference GarageはDEMO詳細のsecondary routeとし、実ユーザーdataや実装済みnetwork effectに見せない。
-- 320px以下では固定Record CTAを48pxの＋icon actionへ縮め、履歴本文との重なりを減らす。long text、actor、status、date、mediaは`min-width: 0`とwrap可能なcontent trackで収める。Chromium幅確認とiPhone Safari実機QAを別状態として扱う。
+- `Vehicle Continuity`を、Home、Quick Record保存後、Garageで共用するMECHORIのSignature vocabularyとする。`Vehicle Anchor`が同じ個体を継続して示し、実recordは`Experience Mark`、日付・種別・actor／sourceは`Experience Register`、まだ存在しない将来は`Continuation Slot`として構成する。未実装のsame-model接続は`Knowledge Outlet`として境界だけを示す。細いlineとcircleを中心とするgeneric vertical timelineへ戻さない。
+- Vehicleは常に構造の中心に置く。Owner / Mechanicは、その時点で記録・作業・参照したactorとしてExperience Mark内に表示し、avatar、Like、投稿者を中心軸にしない。将来のOwner変更はVehicle Anchorを維持したままactor／eraを追加できる構造にする。
+- Quick Record保存直後はneutralな一つのExperience Markを表示する。本人が保存後に「不具合・気になること」を保存した場合だけ`未解決`を静かに示す。Continuation Slotは「まだ記録はありません」と明示し、未来の点検・修理・結果をfake recordとして描かない。
+- Home first-viewは説明panelではなく、明示的な「DEMO・架空例」のVehicle Continuityを最初のProduct objectとする。黒いactivation onboardingはSignatureの後へ下げ、white baseのcompact utilityへ変更する。DEMOには実在人物、技術的因果、fake metricを使わない。
+- GarageはVehicle Identityを維持し、選択車両のactual recordだけをExperience Markとして表示する。件数を価値の主役にせず、欠損actor／resultを補完せず、actual relationがないrecordを一つのcaseに見せない。
+- DesktopのPrimary Capture ActionはMECHORI logo直下、navigationより前へ置く。Mobileは既存FABを維持する。Reference GarageはHome理解の必須routeにせず、架空DEMOの前提を確認するsecondary routeとする。
+- 320px以下でもVehicle Anchorを上部band、Experience MarkをExperience Register + contentの2 trackへ再配置し、long text、actor、status、mediaへ`min-width: 0`とwrapを適用する。Chromium幅確認とiPhone Safari実機QAを別状態として扱う。
 
 ## 未確定
 

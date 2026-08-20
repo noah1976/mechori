@@ -252,3 +252,11 @@
 - **Honesty boundary**: 実record間にcase／episode relationshipがないため、αの実データを因果chainとして捏造しない。Garageはchronological Vehicle history、保存直後はsingle node＋将来の追記余地、Home／Referenceは既存DEMO fixture由来の例として区別する。same-model reuse、actorを越えたcase linkage、AI classification、PhysicalVehicle正規化はβ ArchitectureまでDeferredする。
 - **既知P1監査**: Home Feedの本文と写真は現行`JournalCard`の同一canonical detail hrefを使い、写真からmedia URLへ遷移しない既存修正と回帰testが残っていることを確認した。二重実装はしていない。
 - **状態**: branch `codex/alpha-evidence-signature`／PR #8で実装中。自動検証とDeploy Preview確認後も、iPhone SafariでHome、本文のみ／写真付きQuick Record、保存後分類、Close時の保持、Garage／detail、320〜430pxを確認するまでHuman QA pendingとする。α3ユーザーには説明で答えを与えず、「普通のSNSと何が違うか」「履歴が残ったと感じたか」「続きも残したいか」を本人の言葉で確認する。
+
+## 26. 2026-08-20 Signature Experience根本再設計（PR #8継続）
+
+- **Concept選定**: Vehicle Rings、Evidence Branch、Continuity Ledgerの3案を比較した。1件目と疎なαdata、`issue/open`、mobile、現行modelへのcompatibility、data honestyを優先し、Vehicleを継続anchor、実recordをExperience Mark、日付・種別・actorをExperience Register、未記録の未来をContinuation Slotとして扱う`Vehicle Continuity`を採用した。旧`VehicleHistorySpine`は一般的vertical timelineに見えるHuman QA結果を受けて削除し、連続線とnodeを使わないVehicle帰属の台帳へ置き換えた。
+- **Home**: 明示的な「DEMO・架空例」のVehicle ContinuityをFollowing Feedとactivation onboardingより前へ移した。DEMOは実在人物・技術的因果・fake metricを含まない専用fixtureで、succession／same-model比較が未実装であることを明記する。black onboardingはHome内のcompact white-base utilityへdemoteした。
+- **Garage / Quick Record**: GarageはVehicle Identityを維持し、実在するJournal／MaintenanceだけをVehicle Anchorへ接続する。件数summaryを価値の主役から外した。Quick Record保存直後はneutralな一つのExperience Markを表示し、保存後enrichmentで本人がissueを保存した後だけ`未解決`へ更新する。Continuation Slotはfake recordではなく「まだ記録はありません」とする。
+- **Navigation / Knowledge**: DesktopのPrimary Record CTAをlogo直下・navigation前へ移動し、Mobile FABは維持した。Journal detailは「まだ確認済みナレッジではない」と表現しつつ、Vehicle historyとして残る価値と、根拠・確認なしに原因候補へ昇格しない境界を併記する。
+- **境界と状態**: DB、RLS、RPC、case／episode relationship、Vehicle Succession、same-model matchingは追加していない。Reference Garageは架空例の前提を確認するsecondary routeとして維持する。branch `codex/alpha-evidence-signature`／PR #8で自動検証・Deploy Preview・Chromium visual QA後も、iPhone Safariとα3ユーザーのfirst-impression確認まではHuman QA pending。
