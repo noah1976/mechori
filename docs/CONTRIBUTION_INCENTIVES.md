@@ -203,6 +203,12 @@ MECHORI内の汎用タイムラインより先に、プライバシー確認済�
 - 共有後に結果・訂正が追記される割合
 - 却下・訂正・危険通報率
 
+## Drive Sharing and Contribution（将来仮説）
+
+Drive Recordの共有は、Likeや閲覧数の競争を目的にせず、「このVehicleでこの時間を過ごした」というExperienceを外部へ見せ、その反応や再訪をContributorへ返す入口として検討する。公開Share Pageからの閲覧、Vehicle Historyへの蓄積、後日のObservation・Issue・Result追記が、単なるSNS反応より重要なFeedbackになる。
+
+将来、共有したDriveが誰かのVehicle ExperienceやEvidence discoveryにつながったことを、privacyとrightsを守れる範囲で本人へ返す。ただし、共有数、フォロワー数、位置情報の公開量を信頼度・技術力・報酬へ直接結び付けない。公開やSNS共有は明示同意を必要とし、Raw RouteやOwner-private dataをインセンティブのために公開させない。
+
 ## NEEDS_OWNER
 
 - 最初の協力オーナーの募集方法

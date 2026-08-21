@@ -141,6 +141,16 @@ MECHORI は一般的な人気競争中心の車SNS、写真共有SNS、故障診
 - 自由に書けるGarage Journalと構造化整備記録を分離し、任意で関連付ける。
 - 投稿の公開・非公開、安全警告、管理者確認を設計に含める。
 
+## Drive Experience（将来Product Direction）
+
+Drive RecordはNavigation、route discovery、recommended route、destination recommendationを主目的とせず、そのVehicleで走っていた時間・場所・出来事をVehicle Experienceとして残すRoute Recording + Experience + Sharing + Engagementの機能候補とする。
+
+将来Native Appでは、Vehicleに紐づくDrive Sessionを検討する。start / end、route、distance、duration、写真、notes、voice annotation、vehicle observation等を持ち得るが、現時点では正式schemaを固定しない。Drive中の「写真を撮った」「異音がした」「音が消えた」等は、将来`VehicleExperience` / `ExperienceEntry`へ接続できる方向を維持する。
+
+Drive Recordは、整備のない日にもMECHORIを開くEngagementと、Public Share Page・SNS共有によるAcquisitionの入口になり得る。未ログインユーザーがVehicle、Drive title、date、routeの公開projectionを見て、愛車の記録開始へ進める方向を検討する。ただし、公開は明示同意と撤回可能性を前提とする。
+
+Raw GPS RouteとPublic Share Routeは分離する。Raw RouteはOwner-privateのlocation history、Share RouteはPrivacy Zone等でsanitizationされ、Ownerが明示的に公開したpresentationとする。Vehicleへ残るExperience EvidenceとOwnerの生活圏履歴を同一視しない。
+
 ## 将来拡張
 
 - メカニック向け有料プラン

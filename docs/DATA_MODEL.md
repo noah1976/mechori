@@ -634,6 +634,16 @@ Vehicleのprivate workspaceには`memberDiscoveryEnabled: boolean`を保持す�
 
 この差分は次の実装タスクで段階的に反映します。現行localStorageデータは検証用のため、本番移行対象にしません。
 
+### Future conceptual boundary: Drive Session and route projections
+
+将来NativeでDrive Sessionを検討する。Vehicle Experienceに紐づく走行の開始・終了、route、distance、duration、photos、notes、voice annotations、vehicle observations等を表現し得るが、現αの正式schemaやGPS point保存形式は確定しない。
+
+Drive Session中の出来事は、将来`ExperienceEntry`として追加できる方向を維持する。route上の観察、Issue、作業、Resultを別の投稿系統へ分断せず、同じVehicle Experience envelopeへ接続する。ただし、実在しない因果関係を位置や時刻だけから推測しない。
+
+`RawDriveRoute`と`PublicShareRoute`は別projectionとして考える。Raw RouteはOwner-privateのlocation history、Share RouteはPrivacy Zoneのsanitizationと明示同意を経た公開presentationであり、Public URL作成だけでRaw Routeのvisibilityやrightsを変更しない。Vehicle-transferableなObservationとOwnerの生活圏履歴も分離する。
+
+正式schema、route point retention、media association、Share Page projection、Privacy Zone radiusは、Native・Privacy・Evidence modelのvalidation後に決定する。
+
 ## NEEDS_OWNER
 
 - FIAT Barchettaの仕様分類粒度と、その信頼できる情報源

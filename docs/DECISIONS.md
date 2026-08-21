@@ -789,3 +789,17 @@
 - 今回のbaseline: Vehicle-centered Signature Experience、Capture Intent 4択、明示issueの`issue/open`、保存後の「記録を詳しくする」、Garage Vehicle Continuity、Garage media全幅化、Vehicle History全件到達、Desktop Record CTA、Feed text / image canonical navigation、`VehicleExperience` + `ExperienceEntry`の将来Architecture decision、Product-level photo count capを設けない方針を含める。
 - Deferred: Home Information Architecture整理、HomeのDEMO・重複要素・最近の整備記録・月次summary・重複navigationの再評価、Quick Record複数画像、Media normalization、Experienceへの「続きを残す」、動画、same-model Knowledge、Vehicle Succession。
 - QA境界: legacy `local_blob`、Quick Record temporary single-image、iPhone Safari実機QAは既知のP1候補として残す。αユーザー3名の再テストはHome整理後まで開始しない。merge、Production反映、人間QAは別々の状態として追跡する。
+
+### 決定: Drive RecordをNative Engagement / Acquisition方向として記録する
+
+- 日付: 2026-08-21
+- 状態: Strategic Direction / Future Product Hypothesis。GPS、地図、Drive Session、Public Share、CarPlay、Android Auto、SNS API、DB schemaは今回実装しない。
+- Product role: Drive RecordはNavigation、route discovery、recommended route、destination recommendationではなく、そのVehicleで走った時間・場所・出来事をVehicle Experienceとして残すRoute Recording + Experience + Sharing + Engagementとする。整備のない日にも再訪理由を作り、Vehicle HistoryとEvidence Intakeを増やす可能性がある。
+- Drive Session: 将来Native AppでVehicleに紐づくDrive Sessionを検討する。start / end、route、distance、duration、photos、notes、voice annotations、vehicle observations等を持ち得るが、正式schemaは未確定とする。Drive中のObservation、Issue、Repair、Resultは将来`ExperienceEntry`へ接続できる方向を維持する。
+- Public Share / Acquisition: 未ログインユーザーがVehicle、Drive title、date、sanitized route、distance、duration、写真、選択されたExperience Entryを閲覧できるPublic Share Pageを将来検討する。canonical public URL、OGP、share preview、OS Share Sheetを通じてSNS共有とsignupへ接続する。個別SNS API integrationやMarketplaceを初期前提にしない。
+- Route presentation: route animation、start / finish、photo location、Experience marker、distance / duration revealは、経験を伝えるためのVisual Experience候補とする。装飾、fake metric、Navigation service化を目的にしない。
+- Privacy: Raw Drive RouteはOwner-privateのlocation history、Public Share RouteはPrivacy Zone等でsanitizationし明示同意を得た別projectionとする。Zone内のexact start / finishやroute pointsは除外する方向を有力候補とし、半径約1kmや調整幅は未確定とする。Public URL作成はRaw Routeの公開を意味しない。
+- Succession boundary: Vehicle-transferableな「走行中の異音」等のEvidence候補と、Owner-privateな自宅・職場を含む移動履歴を分離する。Vehicle Successionが起きてもRaw GPS Routeを自動移管しない。
+- In-car voice safety: CarPlay、Android Auto、その他In-car interfaceはhands-free Observation CaptureのInteraction Surface候補であり、AI mechanicや断定診断にはしない。音声はまずObservationとして保存し、必要最小限の一般的安全行動を促し、停車後・後日のEvidence searchへつなげる。diagnosis、repair、driving safety guaranteeは行わない。
+- Native / platform boundary: CarPlay / Android Autoのeligible category、entitlement、review、background execution、location policyは実装時に最新公式資料を確認するResearch Gateとする。Native AppはCore Productそのものではなく、camera、location、audio、share sheet等を利用する将来Surfaceである。
+- Preconditions: `VehicleExperience` / `ExperienceEntry`、Media normalization、rights / provenance、Raw / Share Route privacy、Public Share architecture、Native判断、location retention、十分な再訪・共有検証を先に行う。これはRoadmap上Future Native / Engagement / Acquisitionであり、現αのKPIや実装priorityにはしない。

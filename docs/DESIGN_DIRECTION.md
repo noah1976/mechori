@@ -150,6 +150,12 @@ Garage由来のDesign Languageを、αテスターが頻繁に通る範囲へ限
 - Garageは最初の12件を段階表示単位にできるが、古いVehicle historyを件数で終端しない。自動loadと明示actionの両方で全履歴へ到達でき、追加表示で順序・scroll位置・media layoutを崩さない。
 - 一度にまとめて残す場合も後から続ける場合も、generic block editorを主画面にしない。本文とmediaを中心にし、工程・経由地・結果は必要な人だけが追加する。
 
+### Drive Share presentation（将来方向）
+
+Drive Shareは通常のGarageやHomeより少しemotionとmotionを許容できるが、装飾を主役にしない。「このクルマで、ここを走った」をVehicle identity、date、route、distance、duration、写真、選択されたExperience Entryから事実的に伝える。
+
+将来のroute animation、start / finish、photo location、Experience marker、distance / duration revealは、routeの意味を理解しやすくするための候補とする。強いdashboard、AI風の装飾、fake metric、過度な地図演出へは広げない。Share PageではVehicle名、Drive title、canonical public URL、OGP preview、明確な記録開始CTAを優先する。
+
 ## 未確定
 
 - ロゴ

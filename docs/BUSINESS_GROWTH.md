@@ -348,6 +348,14 @@ LPでは、機能一覧よりも、受付、作業、顧客報告、履歴引き
 - 公開Journalと車種別ページの検索流入改善。
 - 文脈型スポンサー・アフィリエイトの小規模試験。
 
+## Drive Engagement / Acquisition（Future Measurement Hypothesis）
+
+Drive Recordは、整備の発生頻度が低いOwnerにも再訪理由を作り、Vehicle Experienceを増やし、外部共有から新規獲得へつなげるsub-system候補として検証する。DriveをNavigationやroute recommendationの利用量で評価せず、記録されたExperienceとEvidenceへの循環で評価する。
+
+将来指標候補は、Drive Session作成数、共有数、Public Share閲覧数、未ログイン閲覧からのsignup、再度Driveを記録した割合、DriveからExperienceEntryが追加された割合、後日のIssue / Maintenance / Result linkageである。現αのKPIへは追加せず、Native・Public Shareを実装する前の仮説として扱う。
+
+SNS共有は個別SNS APIを前提にせず、Public URL、OGP、OS Share Sheet、share-friendly previewで成立するかを先に検証する。共有閲覧が増えてもVehicle Recordや再訪へつながらない場合、SNS機能を拡張する前にProduct valueとShare Pageを見直す。
+
 ## 失敗時の判断
 
 - 車両登録後の最初の記録作成が40%未満なら、集客を増やす前に初回入力と本人便益を見直す。

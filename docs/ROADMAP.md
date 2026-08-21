@@ -98,3 +98,11 @@ MECHORI EvidenceをChatGPT、Claude、その他のAI Clientや外部Systemから
 着手Gateは、Evidence modelとVehicle identity / applicabilityの成熟、Vehicle-transferable / Owner-private / Shop-private等のrights境界、provenanceとrevision、Professional workflow validation、API security、entitlement、監査、rate limit、十分なEvidence densityである。これらより前にMCP、Plugin、Connector、Marketplace連携を優先しない。
 
 外部platformのMarketplace、billing、revenue share、connector仕様は変動するため、外部AI販売やPlugin収益を事業成立の前提にしない。認証、access grant、利用量、課金、監査の中心は原則MECHORI側に置く方向を優先する。PricingとAPI仕様は将来検証まで未確定とする。
+
+## Future Native: Drive Session / Public Share
+
+Drive Recordは、Future Native / Engagement / Acquisitionとして検証する。Navigationやrecommended routeを作るのではなく、そのVehicleで走った時間・場所・出来事をVehicle Experienceとして残し、Drive中のObservation、Issue、Repair、Resultへ将来つなげる方向とする。
+
+依存候補は、`VehicleExperience` / `ExperienceEntry`の成熟、Media normalization、Raw RouteとShare Routeの分離、Privacy Zone、Public Share architecture、Native App判断、location retention / rights、OS share sheet、十分な再訪・共有検証である。これらより前にGPS、地図、Drive Session、CarPlay、Android Autoを実装しない。
+
+Native検証後の候補として、background location、camera、audio / voice capture、OS share sheet、push、CarPlay / Android Auto等を置く。Apple / Googleのcategory、entitlement、review、background execution、location policyは実装時点で公式資料を再確認するFuture Research Gateとする。
