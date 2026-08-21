@@ -139,6 +139,10 @@ MECHORI UserとGoogle / Apple等のProvider Identityは分離する。既存User
 
 TestFlight onboardingでは、既存User login、Permission、Data / Privacy、既知の問題、Feedbackを説明する。Public ShareからNative betaへ接続する場合も、未ログイン閲覧、明示同意、撤回可能性、Raw RouteとShare Projectionの分離を維持する。
 
+### OGP / Public Share privacy boundary
+
+OGPに利用できるのは、Public Shareのrights basisがあるmediaと公開projectionだけとする。Owner-private media、非公開Entry、private photo、個人情報、privacy-sensitive mediaを、OGP生成や未ログインpreviewへ流用しない。Public URLが作られてもRaw RouteやOwner-private dataの権利状態はPublicにならない。Drive ShareではRaw GPSではなくprivacy sanitization済みShare Routeだけを使う方向を維持する。
+
 ## Global Compliance Review
 
 地域別の法令・規制要求とMECHORIのPrivacy設計、実装、検証の対応付けは`docs/GLOBAL_COMPLIANCE.md`で管理する。具体的な地域要件は一次資料による調査と必要な専門家確認の後に決定し、この文書の既存方針を置き換えない。

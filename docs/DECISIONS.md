@@ -817,3 +817,14 @@
 - Beta / URL: TestFlight onboarding pageを将来のbeta onboarding / acquisition surfaceとして検討する。Public Shareのcanonical URLは、将来Universal Links / App LinksでNativeの該当Experienceへ接続できる余地を残す。
 - Offline / platform: 通信失敗で入力を失わず、durable local save、retry、重複防止、media upload retry、sync stateを考慮する。React Native + Expoは候補だが固定せず、Expo Goだけで完結する前提にしない。CarPlay / Android Autoのcategory、entitlement、review、background execution、location policyは実装時に公式資料を再確認する。
 - Roadmap: Native v0のGarage / Record / Media、v1のsharing / stronger offline、v2のDrive / background GPS、v3のVoice / audio、v4のCarPlay / Android AutoはFuture Hypothesisであり、Release commitmentではない。Native化成功はStore掲載ではなくdevice-native capabilityによるCapture / Experienceの改善で判定する。
+
+### 決定: Public Shareの初期OGPはUser contentを主役にする
+
+- 日付: 2026-08-21
+- 状態: Strategic Direction / Future Presentation Hypothesis。Public Share Page、OGP画像生成、SNS連携は今回実装しない。
+- 通常ExperienceのOGP画像候補は、1) Experience / Entryの1枚目の写真、2) 写真がなければVehicleのprimary / representative photo、3) それもなければMECHORI default OGP imageの順とする。exact title formatは未確定とする。
+- 毎回logo、frame、template、decorative backgroundを付けたbranded OGP cardを標準にしない。Brandはtitle、site name、description、canonical URL、domain、Public Share Page内のattributionで自然に示す。
+- Drive-specific OGP、sanitized route map、start / finish、distance、Vehicle identity、representative photo、route animationのrepresentative stateは将来候補であり、通常Experienceの標準仕様へ拡張しない。
+- crop、aspect-ratio、object-fit、focal point、preview確認は将来のPresentation検討事項とする。初期から高度な画像生成を必須にしない。
+- Public Share / OGPは、Vehicle / Experienceを魅力的に見せて未Userの閲覧、signup、beta invitationへつなぐAcquisition Surfaceとする。Private media、非公開Entry、privacy-sensitive media、rightsのないmediaはOGPへ使わない。DriveではRaw GPSではなくsanitized Share Routeだけを候補とする。
+- NativeのOS Share Sheetやcanonical Public URLにもこのprojectionとrights境界を適用する。Drive-specific OGP、exact crop、exact metadata、route animation imageはFuture Hypothesisであり、現αの実装priorityやKPIではない。

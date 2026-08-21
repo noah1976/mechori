@@ -168,6 +168,14 @@ MECHORI Native Appは、Web版をApp StoreやGoogle Playへ載せるためのwra
 
 Native化の成功は「App Storeに存在すること」ではなく、device-native capabilityによってCapture / ExperienceがWebより自然または強力になることで判定する。開始条件はWebの100%完成ではなく、Product / Data Contract、rights、media、同期、Public Share、認証identityが十分成熟したこととする。
 
+### Public Share / OGP presentation（将来Product Direction）
+
+Public Shareの主役はMECHORI brandではなく、UserのVehicleとExperienceとする。通常のPublic ExperienceのOGP画像は、Experience / Entryの1枚目の写真、なければVehicleのprimary / representative photo、どちらもなければMECHORI default imageの順で選ぶ初期ルール候補とする。毎回logo、frame、template、decorative backgroundを付けたbranded cardを生成することは標準にしない。
+
+Brandはpage title、site name、description、canonical URL、domain、Page内の自然なattributionで示す。Drive Experienceだけは、sanitized route、start / finish、distance、Vehicle identity、representative photoを使うDrive-specific OGPが有効な可能性があるが、これはFuture Presentation Hypothesisとする。OGP cropはaspect-ratio、object-fit、focal point、preview確認を将来検討する。
+
+OGPはAcquisition Surfaceであり、Userが自然に愛車や体験を共有した結果としてPublic Share、signup、beta invitationへつながることを目指す。公開権利のないmedia、Owner-private media、非公開Entry、privacy-sensitive dataは利用せず、DriveではRaw GPSではなくPrivacy sanitization済みShare Routeだけを候補にする。NativeのOS Share SheetやPublic URLにもこの境界を引き継ぐ。
+
 ## 公開前対応
 
 - 安全性、プライバシー、利用規約、投稿ガイドラインの確認

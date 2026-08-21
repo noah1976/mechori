@@ -367,6 +367,12 @@ SNS共有は個別SNS APIを前提にせず、Public URL、OGP、OS Share Sheet�
 - Professionalで調査時間が短縮されないなら、顧客管理等を増やす前に、検索対象・出典・車両一致の品質を見直す。
 - 有料意向が応援に偏るなら、価格や機能を確定せず反復利用される便益を探す。
 
+## Public Share / OGP Acquisition（将来仮説）
+
+Public Share / OGPは、MECHORI brandを広告するためではなく、Userが共有したVehicle / Experienceへの関心から未Userの閲覧、signup、beta invitationへつながるAcquisition Surfaceとする。将来はshare view、未ログイン閲覧、shareからのsignup interest、Public Shareからの再訪を検証候補にするが、現αのKPIには追加しない。
+
+通常ExperienceではUser contentを主役にし、branded cardの露出を強めることをGrowth施策の前提にしない。Drive-specific route imageは将来仮説であり、共有価値とPrivacyの両方を人間QAで確認する。
+
 ## 不正インセンティブを避ける
 
 - 投稿件数、閲覧数、フォロワー数へ金銭、検索順位、信頼ラベルを直接結び付けない。

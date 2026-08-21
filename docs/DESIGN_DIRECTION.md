@@ -162,6 +162,10 @@ Nativeの主要Flowはgenuine native UIとして設計し、WebのDOMやCSSを�
 
 Nativeの視覚表現もMECHORIのcalm、automotive、content-led、factualな方向を維持する。camera、voice、offline、location、share等のdevice-native capabilityが体験を強める箇所に集中し、Native化自体を装飾や画面数の増加として扱わない。
 
+### Public Share / OGP principles（将来方向）
+
+Share previewはBrand cardではなく、Vehicle identity、Experience title、date、写真などUser contentを最初に見せる。通常Experienceでは自然な写真をprimary visualとし、MECHORIはmetadataとattributionで分かる状態を目指す。Drive Shareはsanitized routeや代表写真で少しemotionを許容するが、地図装飾やfake metricを主役にしない。
+
 ## 未確定
 
 - ロゴ
