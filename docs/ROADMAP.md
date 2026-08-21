@@ -106,3 +106,20 @@ Drive Recordは、Future Native / Engagement / Acquisitionとして検証する�
 依存候補は、`VehicleExperience` / `ExperienceEntry`の成熟、Media normalization、Raw RouteとShare Routeの分離、Privacy Zone、Public Share architecture、Native App判断、location retention / rights、OS share sheet、十分な再訪・共有検証である。これらより前にGPS、地図、Drive Session、CarPlay、Android Autoを実装しない。
 
 Native検証後の候補として、background location、camera、audio / voice capture、OS share sheet、push、CarPlay / Android Auto等を置く。Apple / Googleのcategory、entitlement、review、background execution、location policyは実装時点で公式資料を再確認するFuture Research Gateとする。
+
+## Future Native App: Readiness and Vertical Slice
+
+Native開始はWeb UIの完成を待つのではなく、同じVehicle ExperienceをWebとNativeが安全に読み書きできるProduct / Data Contractの成熟をGateとする。最低限、次を確認する。
+
+- Home / Garage / Search / RecordのProduct roleが概ね安定している
+- `VehicleExperience` → `ExperienceEntry` → `Evidence`の責務と、後から続きを残す基本contractが明確である
+- Media normalizationにより複数写真や将来audio / videoをEntryへ独立して扱える
+- αの全体JSON依存から必要なdataが正規化されている
+- Owner-private、Public projection、Vehicle-transferable候補、revoke / unpublishのrights contractがある
+- Public Share、Production identity、Multi-identity Auth、Offline / Syncの基本方針がある
+
+最初のNative Vertical Sliceは、起動、MECHORI account login、Garage閲覧、Vehicle選択、Record作成、media添付、同じBackendへの保存、Webで作ったExperienceのNative閲覧、Nativeで作ったExperienceのWeb閲覧、logout / login後の同一data、failure / retryとする。CarPlay、Android Auto、Drive全体、background GPS、route animation、full offline、video、AI diagnosis、Professional、MCP、全Web画面移植は初期Scope外とする。
+
+React Native + Expo ecosystemは候補だが、technologyやversionは実装開始時に再調査する。Expo Goだけで完結することを前提にせず、development build、prebuild、custom native module、direct native codeへ拡張できる余地を残す。段階候補は、v0をGarage / Record / Media、v1をsharing / stronger offline、v2をDrive Session / background GPS、v3をVoice / audio、v4をCarPlay / Android Autoとするが、正式なRelease commitmentではない。
+
+Native beta配布前には、未ログインで読めるTestFlight onboarding pageを用意し、インストール、既存User login、権限、Privacy、試す項目、既知の問題、Feedbackを説明する。Public Drive Shareからsignup / beta invitationへ接続するAcquisition surfaceにもなり得るが、URLやPage構成は未確定とする。

@@ -160,6 +160,14 @@ Raw GPS RouteとPublic Share Routeは分離する。Raw RouteはOwner-privateの
 - ネイティブアプリ
 - 法的要請、監査、データエクスポート対応
 
+## Native App（将来Product Direction）
+
+MECHORI Native Appは、Web版をApp StoreやGoogle Playへ載せるためのwrapperではない。同じVehicle、Experience、Evidenceへアクセスする別のProduct Surfaceとして、camera / photo、audio、background location、Drive Session、offline capture、push、OS Share Sheet、Deep Link、voice等、Webでは扱いにくい「クルマと一緒にいる瞬間」のCaptureを自然にすることを目的とする。
+
+主要なUser Flowはgenuine native UIで実装する方向とし、WebのHome、Garage、Record composer全体をWebViewで表示するだけの構成は採用しない。WebViewはOAuth等の必要なbrowser flow、外部コンテンツ、明示的にweb-onlyな画面など限定用途に留める。Backend、Domain Model、API Contract、Auth identity、entitlement、Vehicle、Experience、Entry、Evidence、validation等はWebと共有し、DOM、CSS、Web固有navigation、primary UI実装は共有しない。
+
+Native化の成功は「App Storeに存在すること」ではなく、device-native capabilityによってCapture / ExperienceがWebより自然または強力になることで判定する。開始条件はWebの100%完成ではなく、Product / Data Contract、rights、media、同期、Public Share、認証identityが十分成熟したこととする。
+
 ## 公開前対応
 
 - 安全性、プライバシー、利用規約、投稿ガイドラインの確認

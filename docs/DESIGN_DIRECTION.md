@@ -156,6 +156,12 @@ Drive Shareは通常のGarageやHomeより少しemotionとmotionを許容でき�
 
 将来のroute animation、start / finish、photo location、Experience marker、distance / duration revealは、routeの意味を理解しやすくするための候補とする。強いdashboard、AI風の装飾、fake metric、過度な地図演出へは広げない。Share PageではVehicle名、Drive title、canonical public URL、OGP preview、明確な記録開始CTAを優先する。
 
+### Native surface principles（将来方向）
+
+Nativeの主要Flowはgenuine native UIとして設計し、WebのDOMやCSSを再利用するWebView wrapperにはしない。WebViewはOAuth等のbrowser flow、外部コンテンツ、明示的にweb-onlyな用途に限定する。WebとNativeは同じcontent hierarchy、用語、trust表示、Vehicle / Experience / Evidenceを共有するが、各Surfaceのnavigationとinteractionはそれぞれの環境に合わせる。
+
+Nativeの視覚表現もMECHORIのcalm、automotive、content-led、factualな方向を維持する。camera、voice、offline、location、share等のdevice-native capabilityが体験を強める箇所に集中し、Native化自体を装飾や画面数の増加として扱わない。
+
 ## 未確定
 
 - ロゴ

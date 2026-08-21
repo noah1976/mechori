@@ -803,3 +803,17 @@
 - In-car voice safety: CarPlay、Android Auto、その他In-car interfaceはhands-free Observation CaptureのInteraction Surface候補であり、AI mechanicや断定診断にはしない。音声はまずObservationとして保存し、必要最小限の一般的安全行動を促し、停車後・後日のEvidence searchへつなげる。diagnosis、repair、driving safety guaranteeは行わない。
 - Native / platform boundary: CarPlay / Android Autoのeligible category、entitlement、review、background execution、location policyは実装時に最新公式資料を確認するResearch Gateとする。Native AppはCore Productそのものではなく、camera、location、audio、share sheet等を利用する将来Surfaceである。
 - Preconditions: `VehicleExperience` / `ExperienceEntry`、Media normalization、rights / provenance、Raw / Share Route privacy、Public Share architecture、Native判断、location retention、十分な再訪・共有検証を先に行う。これはRoadmap上Future Native / Engagement / Acquisitionであり、現αのKPIや実装priorityにはしない。
+
+### 決定: Native AppをGenuine Native Product Surfaceとして将来検討する
+
+- 日付: 2026-08-21
+- 状態: Strategic Direction / Future Hypothesis。Native project、React Native / Expo導入、Apple / Google設定、Auth provider設定、DB変更は今回行わない。
+- 目的: NativeはWebの包装ではなく、camera / photo、audio、Drive Session、offline capture、push、OS Share Sheet、Deep Link、voice等を利用して、クルマと一緒にいる瞬間のExperience CaptureをWebより自然にする別Product Surfaceとする。
+- UI原則: Home、Garage、Record composer等の主要FlowをWebViewで表示するだけのwrapperは禁止方向とする。WebViewはOAuth等のbrowser flow、外部コンテンツ、明示的web-only用途に限定する。
+- 共有境界: Backend、Domain Model、API Contract、Auth identity、entitlement、Vehicle、Experience、Entry、Evidence、validationは共有する。primary UI、DOM、CSS、Web navigationは共有しない。
+- Native Readiness Gate: Product role、`VehicleExperience` → `ExperienceEntry` → `Evidence`、continuation contract、Media normalization、α JSON依存からの必要data normalization、rights / visibility、Public Share、Production identity、Multi-identity Auth、Offline / Sync原則が十分成熟してから開始する。Webの100%完成はGateにしない。
+- 初期Vertical Slice: login、Garage閲覧、Vehicle選択、Record + media作成、同じBackendへの保存、Web / Native相互閲覧、logout / login後の同一data、failure / retryを成立させる。CarPlay、Android Auto、Drive全体、background GPS、full offline、video、AI diagnosis、Professional、MCP、全Web画面移植は初期Scope外とする。
+- Auth: MECHORI UserとProvider Identityを分離し、Google / Apple等を同じUserへlinkできる方向を優先する。email equalityだけで同一Userと判断せず、Identity linkingとAccount mergeを分け、自動mergeしない。Sign in with AppleはNative公開前の検討Gateであり今回実装しない。
+- Beta / URL: TestFlight onboarding pageを将来のbeta onboarding / acquisition surfaceとして検討する。Public Shareのcanonical URLは、将来Universal Links / App LinksでNativeの該当Experienceへ接続できる余地を残す。
+- Offline / platform: 通信失敗で入力を失わず、durable local save、retry、重複防止、media upload retry、sync stateを考慮する。React Native + Expoは候補だが固定せず、Expo Goだけで完結する前提にしない。CarPlay / Android Autoのcategory、entitlement、review、background execution、location policyは実装時に公式資料を再確認する。
+- Roadmap: Native v0のGarage / Record / Media、v1のsharing / stronger offline、v2のDrive / background GPS、v3のVoice / audio、v4のCarPlay / Android AutoはFuture Hypothesisであり、Release commitmentではない。Native化成功はStore掲載ではなくdevice-native capabilityによるCapture / Experienceの改善で判定する。

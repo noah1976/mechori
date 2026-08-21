@@ -644,6 +644,16 @@ Drive Session中の出来事は、将来`ExperienceEntry`として追加でき�
 
 正式schema、route point retention、media association、Share Page projection、Privacy Zone radiusは、Native・Privacy・Evidence modelのvalidation後に決定する。
 
+### Future Web / Native shared boundary
+
+WebとNativeは同じBackend、Supabase data、Domain Model、API Contract、Auth identity、entitlement、Vehicle、Experience、Entry、Evidence、validation / shared typesを利用する。Primary UI、DOM、CSS、Web固有navigationは共有しない。Nativeは同じdata contractの別projectionであり、別Product用の複製dataを作らない。
+
+Native Readinessには、Entryに独立して紐づくnormalized media、durable ID、sync state、retry、idempotent writeを扱える基礎が必要である。Offlineの完全なschemaや実装は将来設計とし、現αの全体JSONへNative専用dataを追加しない。
+
+### Future multi-identity boundary
+
+MECHORI Userと外部Provider Identityは分離する。Google、Apple等は同じMECHORI Userへ複数linkできるIdentityとして扱い、email equalityだけで同一Userと判断しない。Identity linkingとAccount mergeは別操作であり、後者を自動実行しない。
+
 ## NEEDS_OWNER
 
 - FIAT Barchettaの仕様分類粒度と、その信頼できる情報源

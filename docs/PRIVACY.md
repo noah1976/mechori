@@ -131,6 +131,14 @@ Privacy Zoneは、自宅、職場、家族の家、手動指定地点等の生�
 
 Vehicle-transferableな「走行中に異音が発生した」というEvidence候補と、Owner-privateな自宅からの経路・移動履歴は分離する。Vehicle RelationshipやVehicle Successionが成立しても、前OwnerのRaw GPS Routeを次Ownerや外部AIへ自動移管しない。Visibility、transferability、purpose limitation、audit、削除・撤回を別軸で保持する。
 
+## Future Native privacy and identity requirements
+
+Nativeでは、camera、location、microphone等のPermissionを目的限定・明示同意で扱い、Raw GPSやOwner-private dataを自動的にPublic ShareやVehicle Historyへ移さない。通信失敗で入力を失わないようlocal durable save、retry、重複防止、media upload retry、sync stateの表示を必須の設計要件候補とするが、full offline architectureは未確定である。
+
+MECHORI UserとGoogle / Apple等のProvider Identityは分離する。既存Userへ新しいIdentityをlinkするFlowを優先し、Apple private relay等を理由にemail equalityだけでUserを同一視しない。Providerのunlinkでは最後のLogin手段を不用意に失わせない。誤って別Userを作った場合のAccount mergeはIdentity linkingと別問題であり、自動mergeしない。
+
+TestFlight onboardingでは、既存User login、Permission、Data / Privacy、既知の問題、Feedbackを説明する。Public ShareからNative betaへ接続する場合も、未ログイン閲覧、明示同意、撤回可能性、Raw RouteとShare Projectionの分離を維持する。
+
 ## Global Compliance Review
 
 地域別の法令・規制要求とMECHORIのPrivacy設計、実装、検証の対応付けは`docs/GLOBAL_COMPLIANCE.md`で管理する。具体的な地域要件は一次資料による調査と必要な専門家確認の後に決定し、この文書の既存方針を置き換えない。
