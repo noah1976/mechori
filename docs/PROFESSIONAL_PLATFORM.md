@@ -374,3 +374,13 @@ AIやCodexは、公的資料の候補収集、比較、テストケース作成�
 - 帳票の再入力項目と削減時間
 - 既存業務ソフトとの二重入力量
 - 地域パックの誤り・差戻し・制度更新対応時間
+
+## External AI Distribution Layer（将来仮説）
+
+Professionalの低摩擦な利用経路として、普段使うChatGPT、Claude等のAI Clientから、MECHORIの許諾済みEvidenceへアクセスするAPI / MCP-compatible Layerを検討する。これは新しい巨大Professional SaaSを先に覚えてもらう代替ではなく、Owner履歴受領、案件、写真・症状・作業・部品・結果、顧客報告、Owner履歴返却のworkflowへ既存のAI interfaceから接続するDistribution仮説である。
+
+概念的なtool surfaceとして、vehicle history取得、vehicle evidence検索、similar case比較、part evidence取得、vehicle record追加、result follow-up追加等が考えられる。ただし名称・引数・API仕様・MCP schemaを正式固定しない。AI ClientはMECHORIのcore dependencyではなく、複数Clientと外部Systemへ接続できるdistribution channelとする。
+
+外部AIへ渡す情報は、authenticated user、organization entitlement、EvidenceAccessGrant、Vehicle-transferable / Owner-private / Shop-private / Mechanic portfolio rights、provenance、purpose limitation、audit、rate limitに従う。Vehicle Relationshipがあるだけで全Evidenceを返さず、private memo、invoice、location、personal communication、private photoを無条件に渡さない。AIの回答は診断保証や修理指示ではなく、根拠付きEvidenceの検索・整理・比較に限定する。
+
+Evidence density、applicability、Professional workflow validation、rights / provenance、API security、利用対価の検証が先であり、αではAPI、MCP Server、外部Client connector、Marketplace連携を実装しない。

@@ -90,3 +90,11 @@ Phase 3へ進む前に、`docs/ALPHA_PLAYBOOK.md`に従って特に親しい友�
 - EU圏を含む次地域は、需要、ナレッジ密度、翻訳確認者、法務・運営体制を確認し、UI言語を段階追加する。
 
 各段階の指標と合格条件は`docs/BUSINESS_GROWTH.md`を正とします。
+
+## Future Infrastructure: Evidence API / MCP Distribution Layer
+
+MECHORI EvidenceをChatGPT、Claude、その他のAI Clientや外部Systemから利用するAPI / MCP-compatible access layerは、将来のDistribution / Monetization Strategy仮説としてDeferredする。外部AIをMECHORIの代替や特定vendorへの依存先ではなく、MECHORI Backendへ接続する複数のDistribution Channelとして扱う。
+
+着手Gateは、Evidence modelとVehicle identity / applicabilityの成熟、Vehicle-transferable / Owner-private / Shop-private等のrights境界、provenanceとrevision、Professional workflow validation、API security、entitlement、監査、rate limit、十分なEvidence densityである。これらより前にMCP、Plugin、Connector、Marketplace連携を優先しない。
+
+外部platformのMarketplace、billing、revenue share、connector仕様は変動するため、外部AI販売やPlugin収益を事業成立の前提にしない。認証、access grant、利用量、課金、監査の中心は原則MECHORI側に置く方向を優先する。PricingとAPI仕様は将来検証まで未確定とする。

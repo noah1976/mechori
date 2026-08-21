@@ -264,3 +264,15 @@ LPでは次を手動確認します。
 - 価格仮説が高すぎる・安すぎると感じる理由
 - 相談CTAを押す前に不足した情報
 - 日本国外の専門家にも意味が通じる英語か
+
+## Evidence Distribution Layer（将来仮説）
+
+MECHORIの長期的なDistribution候補として、MECHORI Web / Nativeだけでなく、ChatGPT、Claude、その他のAI Clientや外部Systemから、許諾されたVehicle Evidenceを利用できるAPI / MCP-compatible access layerを検討する。Web / NativeはEvidenceを生み、Vehicle Historyを管理し、Ownerが直接利用するProduct Surfaceであり、API / MCP LayerはEvidenceへの安全なAccess Layer、外部AI ClientはMECHORIそのものではなくDistribution Channelと位置付ける。
+
+販売する本質はAIではなく、Vehicle、Observation、Issue、Work、Part、Result、Recurrence / Resolution、Actor、Provenance、Revision、Applicabilityに結びついた実車由来Evidenceである。General-purpose AIが推論・整理のInterfaceになっても、MECHORI固有のlongitudinalでprovenance付きのEvidenceがCore Assetになるという仮説を置く。
+
+将来の利用例として、Ownerが自分のVehicle Historyを外部AIから確認・質問し、記録やresult follow-upをMECHORIへ戻すこと、Professionalが同型車・仕様・症状・作業・部品・結果を比較し、Owner履歴受領から案件、作業、顧客報告、履歴返却までのworkflowを支援することを検証候補とする。診断保証、修理保証、断定的な修理指示は提供しない。
+
+外部AIはChatGPTやClaudeのいずれかに固定せず、MECHORI BackendからAPI / MCP-compatible layerを通じて複数Clientへ接続できる構造を目指す。Marketplace、Plugin、Connectorの販売収益や外部platformのbilling / revenue shareは確定Business Modelとせず、認証、entitlement、課金、監査の中心は原則MECHORI側に保持する方向を優先する。
+
+これはEvidence model、Vehicle identity / applicability、rights / provenance、Professional workflow、API security、entitlement、Evidence densityが成熟した後のFuture Infrastructureであり、αではAPI、MCP、Pluginを実装しない。

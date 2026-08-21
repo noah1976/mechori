@@ -770,6 +770,18 @@
 - Technical boundary: 現行の詳細Journal / shared payloadの6ファイル制約とQuick Recordの1枚制約は、一時的なα transport guardrailとして残す。Quick Record private mediaは`alpha_inline` data URLをmonolithic Workspace JSONへ保存しており、複数画像化するとpayload、再送、部分失敗、cleanupの危険が増える。private object storageとattachment正規化なしに上限だけ外さない。
 - Infrastructure boundary: DB、RLS、RPC、Storage bucket、Netlify / Supabase設定、VehicleExperience relationship、動画uploadは変更しない。
 
+### 決定: Evidence API / MCP Distribution Layerを将来戦略仮説として記録する
+
+- 日付: 2026-08-21
+- 状態: Strategic Direction / Future Hypothesis。コード、MCP Server、API、課金、外部サービス設定は今回実装しない。
+- 決定: MECHORI Web / NativeはEvidenceを生み、Vehicle Historyを管理し、ユーザーが直接利用するProduct Surfaceとする。MECHORI API / MCP-compatible LayerはEvidenceを外部AI Client・外部Systemから安全に利用するAccess Layer、ChatGPT / Claude / その他AI ClientはMECHORI EvidenceへのDistribution Channelとする。
+- 戦略中核: MECHORIが販売する本質はAIではなく、実車由来でprovenance、revision、applicability、result、recurrence / resolutionへ結びついたMaintenance Evidenceである。AI Clientは検索、整理、比較、入力のInterfaceになり得るが、MECHORIそのものやcore dependencyではない。
+- 利用仮説: OwnerのVehicle History確認・質問・record追加・result follow-up、Professionalのcross-vehicle evidence search、similar case比較、Owner履歴受領から案件・作業・顧客報告・履歴返却までのworkflow接続を検証候補とする。診断保証、repair guarantee、断定的な修理指示は提供しない。
+- Monetization境界: EvidenceをMECHORIへ提供する行為を主要Paywallで阻害しない。Owner Freeは自分のHistoryと基本記録・基本連携、Professionalは高度なEvidence検索、適用範囲比較、workflow、organization access、利用量を課金候補とする。AI overageは主にAPI原価回収候補であり、Pricing / Entitlementは未確定とする。
+- Platform independence: ChatGPT Plugin、Claude Connector、Marketplace販売、外部platform billing、revenue shareを確定Business Modelにしない。認証、EvidenceAccessGrant、entitlement、監査、rate limit、課金の中心は原則MECHORI側に保持する方向を優先する。
+- Trust boundary: Vehicle Relationshipだけで全Evidenceへアクセスさせない。authenticated user、rights projection、Vehicle-transferable / Owner-private / Shop-private / Mechanic portfolio rights、provenance、purpose limitation、auditを適用し、private memo、invoice、location、personal communication、private photoを無条件に外部AIへ渡さない。
+- Roadmap: Evidence model、Vehicle identity / applicability、rights / provenance、Professional workflow、API security、entitlement、Evidence densityが成熟した後のFuture Infrastructureとする。MCP / API / Plugin実装は現αのpriorityではない。
+
 ### 決定: PR #8を現α baselineとしてmain投入候補にする
 
 - 日付: 2026-08-20
