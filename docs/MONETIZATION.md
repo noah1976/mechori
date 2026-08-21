@@ -220,3 +220,13 @@ Freeへの広告導入は将来仮説です。AffiliateによるConsumer基盤�
 - 価格
 - 決済事業者
 - 広告導入可否と対象地域
+
+## Evidence Access Distribution（将来仮説）
+
+将来のAPI / MCP-compatible Layerは、Evidenceを提供する行為そのものを主要Paywallにするためのものではない。Owner Freeは、自分のVehicle Historyへの基本access、記録追加、将来的な基本外部AI連携を無料候補として維持し、Knowledge contributionを阻害しない。
+
+課金候補は、蓄積されたEvidenceを高度に活用する側に置く。Professionalでは、cross-vehicle Evidence search、applicability filtering、symptom / work / part / result比較、workflow integration、organization access、professional case handling、高い利用量を候補とする。Pricing、Entitlement、外部AI Client別の料金は今回確定しない。
+
+AI overageや外部API利用料は、原則としてAPI・推論・配信等の原価回収候補であり、主利益センターとはしない。長期の利益基盤は既存方針どおりProfessional workflow、Evidence access、Professional Network、Knowledge Infrastructureである。
+
+ChatGPT、Claude等の外部MarketplaceやPlugin販売の収益を前提にせず、認証、EvidenceAccessGrant、entitlement、監査、rate limit、billingの中心をMECHORI側に保持できる設計を優先する。

@@ -123,6 +123,26 @@ Vehicleの「MECHORI内で見つけられる」は、認証済みactive particip
 - 一般公開時の運営者法定表示
 - EU・英国・スイス向け同意管理の方式
 
+## Future Drive Route Privacy
+
+将来Drive Recordを実装する場合、Raw GPS RouteはOwner-private dataとして扱い、Public Share Pageへ直接公開しない。公開時は、`Raw Route -> Privacy sanitization -> Share Route`の別projectionを作り、Ownerの明示同意と後からのunpublishを前提とする。
+
+Privacy Zoneは、自宅、職場、家族の家、手動指定地点等の生活拠点を保護する候補である。半径約1kmやユーザー調整幅は未確定とし、単純なぼかし円を公開するのではなく、Zone内のroute points、正確なstart / finishをShare Projectionから除外し、Zone外から公開Routeを開始・終了する方式を有力候補とする。繰り返し共有による生活拠点推測も評価する。
+
+Vehicle-transferableな「走行中に異音が発生した」というEvidence候補と、Owner-privateな自宅からの経路・移動履歴は分離する。Vehicle RelationshipやVehicle Successionが成立しても、前OwnerのRaw GPS Routeを次Ownerや外部AIへ自動移管しない。Visibility、transferability、purpose limitation、audit、削除・撤回を別軸で保持する。
+
+## Future Native privacy and identity requirements
+
+Nativeでは、camera、location、microphone等のPermissionを目的限定・明示同意で扱い、Raw GPSやOwner-private dataを自動的にPublic ShareやVehicle Historyへ移さない。通信失敗で入力を失わないようlocal durable save、retry、重複防止、media upload retry、sync stateの表示を必須の設計要件候補とするが、full offline architectureは未確定である。
+
+MECHORI UserとGoogle / Apple等のProvider Identityは分離する。既存Userへ新しいIdentityをlinkするFlowを優先し、Apple private relay等を理由にemail equalityだけでUserを同一視しない。Providerのunlinkでは最後のLogin手段を不用意に失わせない。誤って別Userを作った場合のAccount mergeはIdentity linkingと別問題であり、自動mergeしない。
+
+TestFlight onboardingでは、既存User login、Permission、Data / Privacy、既知の問題、Feedbackを説明する。Public ShareからNative betaへ接続する場合も、未ログイン閲覧、明示同意、撤回可能性、Raw RouteとShare Projectionの分離を維持する。
+
+### OGP / Public Share privacy boundary
+
+OGPに利用できるのは、Public Shareのrights basisがあるmediaと公開projectionだけとする。Owner-private media、非公開Entry、private photo、個人情報、privacy-sensitive mediaを、OGP生成や未ログインpreviewへ流用しない。Public URLが作られてもRaw RouteやOwner-private dataの権利状態はPublicにならない。Drive ShareではRaw GPSではなくprivacy sanitization済みShare Routeだけを使う方向を維持する。
+
 ## Global Compliance Review
 
 地域別の法令・規制要求とMECHORIのPrivacy設計、実装、検証の対応付けは`docs/GLOBAL_COMPLIANCE.md`で管理する。具体的な地域要件は一次資料による調査と必要な専門家確認の後に決定し、この文書の既存方針を置き換えない。

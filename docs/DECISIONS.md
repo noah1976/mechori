@@ -770,6 +770,18 @@
 - Technical boundary: 現行の詳細Journal / shared payloadの6ファイル制約とQuick Recordの1枚制約は、一時的なα transport guardrailとして残す。Quick Record private mediaは`alpha_inline` data URLをmonolithic Workspace JSONへ保存しており、複数画像化するとpayload、再送、部分失敗、cleanupの危険が増える。private object storageとattachment正規化なしに上限だけ外さない。
 - Infrastructure boundary: DB、RLS、RPC、Storage bucket、Netlify / Supabase設定、VehicleExperience relationship、動画uploadは変更しない。
 
+### 決定: Evidence API / MCP Distribution Layerを将来戦略仮説として記録する
+
+- 日付: 2026-08-21
+- 状態: Strategic Direction / Future Hypothesis。コード、MCP Server、API、課金、外部サービス設定は今回実装しない。
+- 決定: MECHORI Web / NativeはEvidenceを生み、Vehicle Historyを管理し、ユーザーが直接利用するProduct Surfaceとする。MECHORI API / MCP-compatible LayerはEvidenceを外部AI Client・外部Systemから安全に利用するAccess Layer、ChatGPT / Claude / その他AI ClientはMECHORI EvidenceへのDistribution Channelとする。
+- 戦略中核: MECHORIが販売する本質はAIではなく、実車由来でprovenance、revision、applicability、result、recurrence / resolutionへ結びついたMaintenance Evidenceである。AI Clientは検索、整理、比較、入力のInterfaceになり得るが、MECHORIそのものやcore dependencyではない。
+- 利用仮説: OwnerのVehicle History確認・質問・record追加・result follow-up、Professionalのcross-vehicle evidence search、similar case比較、Owner履歴受領から案件・作業・顧客報告・履歴返却までのworkflow接続を検証候補とする。診断保証、repair guarantee、断定的な修理指示は提供しない。
+- Monetization境界: EvidenceをMECHORIへ提供する行為を主要Paywallで阻害しない。Owner Freeは自分のHistoryと基本記録・基本連携、Professionalは高度なEvidence検索、適用範囲比較、workflow、organization access、利用量を課金候補とする。AI overageは主にAPI原価回収候補であり、Pricing / Entitlementは未確定とする。
+- Platform independence: ChatGPT Plugin、Claude Connector、Marketplace販売、外部platform billing、revenue shareを確定Business Modelにしない。認証、EvidenceAccessGrant、entitlement、監査、rate limit、課金の中心は原則MECHORI側に保持する方向を優先する。
+- Trust boundary: Vehicle Relationshipだけで全Evidenceへアクセスさせない。authenticated user、rights projection、Vehicle-transferable / Owner-private / Shop-private / Mechanic portfolio rights、provenance、purpose limitation、auditを適用し、private memo、invoice、location、personal communication、private photoを無条件に外部AIへ渡さない。
+- Roadmap: Evidence model、Vehicle identity / applicability、rights / provenance、Professional workflow、API security、entitlement、Evidence densityが成熟した後のFuture Infrastructureとする。MCP / API / Plugin実装は現αのpriorityではない。
+
 ### 決定: PR #8を現α baselineとしてmain投入候補にする
 
 - 日付: 2026-08-20
@@ -777,3 +789,42 @@
 - 今回のbaseline: Vehicle-centered Signature Experience、Capture Intent 4択、明示issueの`issue/open`、保存後の「記録を詳しくする」、Garage Vehicle Continuity、Garage media全幅化、Vehicle History全件到達、Desktop Record CTA、Feed text / image canonical navigation、`VehicleExperience` + `ExperienceEntry`の将来Architecture decision、Product-level photo count capを設けない方針を含める。
 - Deferred: Home Information Architecture整理、HomeのDEMO・重複要素・最近の整備記録・月次summary・重複navigationの再評価、Quick Record複数画像、Media normalization、Experienceへの「続きを残す」、動画、same-model Knowledge、Vehicle Succession。
 - QA境界: legacy `local_blob`、Quick Record temporary single-image、iPhone Safari実機QAは既知のP1候補として残す。αユーザー3名の再テストはHome整理後まで開始しない。merge、Production反映、人間QAは別々の状態として追跡する。
+
+### 決定: Drive RecordをNative Engagement / Acquisition方向として記録する
+
+- 日付: 2026-08-21
+- 状態: Strategic Direction / Future Product Hypothesis。GPS、地図、Drive Session、Public Share、CarPlay、Android Auto、SNS API、DB schemaは今回実装しない。
+- Product role: Drive RecordはNavigation、route discovery、recommended route、destination recommendationではなく、そのVehicleで走った時間・場所・出来事をVehicle Experienceとして残すRoute Recording + Experience + Sharing + Engagementとする。整備のない日にも再訪理由を作り、Vehicle HistoryとEvidence Intakeを増やす可能性がある。
+- Drive Session: 将来Native AppでVehicleに紐づくDrive Sessionを検討する。start / end、route、distance、duration、photos、notes、voice annotations、vehicle observations等を持ち得るが、正式schemaは未確定とする。Drive中のObservation、Issue、Repair、Resultは将来`ExperienceEntry`へ接続できる方向を維持する。
+- Public Share / Acquisition: 未ログインユーザーがVehicle、Drive title、date、sanitized route、distance、duration、写真、選択されたExperience Entryを閲覧できるPublic Share Pageを将来検討する。canonical public URL、OGP、share preview、OS Share Sheetを通じてSNS共有とsignupへ接続する。個別SNS API integrationやMarketplaceを初期前提にしない。
+- Route presentation: route animation、start / finish、photo location、Experience marker、distance / duration revealは、経験を伝えるためのVisual Experience候補とする。装飾、fake metric、Navigation service化を目的にしない。
+- Privacy: Raw Drive RouteはOwner-privateのlocation history、Public Share RouteはPrivacy Zone等でsanitizationし明示同意を得た別projectionとする。Zone内のexact start / finishやroute pointsは除外する方向を有力候補とし、半径約1kmや調整幅は未確定とする。Public URL作成はRaw Routeの公開を意味しない。
+- Succession boundary: Vehicle-transferableな「走行中の異音」等のEvidence候補と、Owner-privateな自宅・職場を含む移動履歴を分離する。Vehicle Successionが起きてもRaw GPS Routeを自動移管しない。
+- In-car voice safety: CarPlay、Android Auto、その他In-car interfaceはhands-free Observation CaptureのInteraction Surface候補であり、AI mechanicや断定診断にはしない。音声はまずObservationとして保存し、必要最小限の一般的安全行動を促し、停車後・後日のEvidence searchへつなげる。diagnosis、repair、driving safety guaranteeは行わない。
+- Native / platform boundary: CarPlay / Android Autoのeligible category、entitlement、review、background execution、location policyは実装時に最新公式資料を確認するResearch Gateとする。Native AppはCore Productそのものではなく、camera、location、audio、share sheet等を利用する将来Surfaceである。
+- Preconditions: `VehicleExperience` / `ExperienceEntry`、Media normalization、rights / provenance、Raw / Share Route privacy、Public Share architecture、Native判断、location retention、十分な再訪・共有検証を先に行う。これはRoadmap上Future Native / Engagement / Acquisitionであり、現αのKPIや実装priorityにはしない。
+
+### 決定: Native AppをGenuine Native Product Surfaceとして将来検討する
+
+- 日付: 2026-08-21
+- 状態: Strategic Direction / Future Hypothesis。Native project、React Native / Expo導入、Apple / Google設定、Auth provider設定、DB変更は今回行わない。
+- 目的: NativeはWebの包装ではなく、camera / photo、audio、Drive Session、offline capture、push、OS Share Sheet、Deep Link、voice等を利用して、クルマと一緒にいる瞬間のExperience CaptureをWebより自然にする別Product Surfaceとする。
+- UI原則: Home、Garage、Record composer等の主要FlowをWebViewで表示するだけのwrapperは禁止方向とする。WebViewはOAuth等のbrowser flow、外部コンテンツ、明示的web-only用途に限定する。
+- 共有境界: Backend、Domain Model、API Contract、Auth identity、entitlement、Vehicle、Experience、Entry、Evidence、validationは共有する。primary UI、DOM、CSS、Web navigationは共有しない。
+- Native Readiness Gate: Product role、`VehicleExperience` → `ExperienceEntry` → `Evidence`、continuation contract、Media normalization、α JSON依存からの必要data normalization、rights / visibility、Public Share、Production identity、Multi-identity Auth、Offline / Sync原則が十分成熟してから開始する。Webの100%完成はGateにしない。
+- 初期Vertical Slice: login、Garage閲覧、Vehicle選択、Record + media作成、同じBackendへの保存、Web / Native相互閲覧、logout / login後の同一data、failure / retryを成立させる。CarPlay、Android Auto、Drive全体、background GPS、full offline、video、AI diagnosis、Professional、MCP、全Web画面移植は初期Scope外とする。
+- Auth: MECHORI UserとProvider Identityを分離し、Google / Apple等を同じUserへlinkできる方向を優先する。email equalityだけで同一Userと判断せず、Identity linkingとAccount mergeを分け、自動mergeしない。Sign in with AppleはNative公開前の検討Gateであり今回実装しない。
+- Beta / URL: TestFlight onboarding pageを将来のbeta onboarding / acquisition surfaceとして検討する。Public Shareのcanonical URLは、将来Universal Links / App LinksでNativeの該当Experienceへ接続できる余地を残す。
+- Offline / platform: 通信失敗で入力を失わず、durable local save、retry、重複防止、media upload retry、sync stateを考慮する。React Native + Expoは候補だが固定せず、Expo Goだけで完結する前提にしない。CarPlay / Android Autoのcategory、entitlement、review、background execution、location policyは実装時に公式資料を再確認する。
+- Roadmap: Native v0のGarage / Record / Media、v1のsharing / stronger offline、v2のDrive / background GPS、v3のVoice / audio、v4のCarPlay / Android AutoはFuture Hypothesisであり、Release commitmentではない。Native化成功はStore掲載ではなくdevice-native capabilityによるCapture / Experienceの改善で判定する。
+
+### 決定: Public Shareの初期OGPはUser contentを主役にする
+
+- 日付: 2026-08-21
+- 状態: Strategic Direction / Future Presentation Hypothesis。Public Share Page、OGP画像生成、SNS連携は今回実装しない。
+- 通常ExperienceのOGP画像候補は、1) Experience / Entryの1枚目の写真、2) 写真がなければVehicleのprimary / representative photo、3) それもなければMECHORI default OGP imageの順とする。exact title formatは未確定とする。
+- 毎回logo、frame、template、decorative backgroundを付けたbranded OGP cardを標準にしない。Brandはtitle、site name、description、canonical URL、domain、Public Share Page内のattributionで自然に示す。
+- Drive-specific OGP、sanitized route map、start / finish、distance、Vehicle identity、representative photo、route animationのrepresentative stateは将来候補であり、通常Experienceの標準仕様へ拡張しない。
+- crop、aspect-ratio、object-fit、focal point、preview確認は将来のPresentation検討事項とする。初期から高度な画像生成を必須にしない。
+- Public Share / OGPは、Vehicle / Experienceを魅力的に見せて未Userの閲覧、signup、beta invitationへつなぐAcquisition Surfaceとする。Private media、非公開Entry、privacy-sensitive media、rightsのないmediaはOGPへ使わない。DriveではRaw GPSではなくsanitized Share Routeだけを候補とする。
+- NativeのOS Share Sheetやcanonical Public URLにもこのprojectionとrights境界を適用する。Drive-specific OGP、exact crop、exact metadata、route animation imageはFuture Hypothesisであり、現αの実装priorityやKPIではない。

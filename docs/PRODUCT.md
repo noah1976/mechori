@@ -141,6 +141,16 @@ MECHORI は一般的な人気競争中心の車SNS、写真共有SNS、故障診
 - 自由に書けるGarage Journalと構造化整備記録を分離し、任意で関連付ける。
 - 投稿の公開・非公開、安全警告、管理者確認を設計に含める。
 
+## Drive Experience（将来Product Direction）
+
+Drive RecordはNavigation、route discovery、recommended route、destination recommendationを主目的とせず、そのVehicleで走っていた時間・場所・出来事をVehicle Experienceとして残すRoute Recording + Experience + Sharing + Engagementの機能候補とする。
+
+将来Native Appでは、Vehicleに紐づくDrive Sessionを検討する。start / end、route、distance、duration、写真、notes、voice annotation、vehicle observation等を持ち得るが、現時点では正式schemaを固定しない。Drive中の「写真を撮った」「異音がした」「音が消えた」等は、将来`VehicleExperience` / `ExperienceEntry`へ接続できる方向を維持する。
+
+Drive Recordは、整備のない日にもMECHORIを開くEngagementと、Public Share Page・SNS共有によるAcquisitionの入口になり得る。未ログインユーザーがVehicle、Drive title、date、routeの公開projectionを見て、愛車の記録開始へ進める方向を検討する。ただし、公開は明示同意と撤回可能性を前提とする。
+
+Raw GPS RouteとPublic Share Routeは分離する。Raw RouteはOwner-privateのlocation history、Share RouteはPrivacy Zone等でsanitizationされ、Ownerが明示的に公開したpresentationとする。Vehicleへ残るExperience EvidenceとOwnerの生活圏履歴を同一視しない。
+
 ## 将来拡張
 
 - メカニック向け有料プラン
@@ -149,6 +159,22 @@ MECHORI は一般的な人気競争中心の車SNS、写真共有SNS、故障診
 - 多言語検索
 - ネイティブアプリ
 - 法的要請、監査、データエクスポート対応
+
+## Native App（将来Product Direction）
+
+MECHORI Native Appは、Web版をApp StoreやGoogle Playへ載せるためのwrapperではない。同じVehicle、Experience、Evidenceへアクセスする別のProduct Surfaceとして、camera / photo、audio、background location、Drive Session、offline capture、push、OS Share Sheet、Deep Link、voice等、Webでは扱いにくい「クルマと一緒にいる瞬間」のCaptureを自然にすることを目的とする。
+
+主要なUser Flowはgenuine native UIで実装する方向とし、WebのHome、Garage、Record composer全体をWebViewで表示するだけの構成は採用しない。WebViewはOAuth等の必要なbrowser flow、外部コンテンツ、明示的にweb-onlyな画面など限定用途に留める。Backend、Domain Model、API Contract、Auth identity、entitlement、Vehicle、Experience、Entry、Evidence、validation等はWebと共有し、DOM、CSS、Web固有navigation、primary UI実装は共有しない。
+
+Native化の成功は「App Storeに存在すること」ではなく、device-native capabilityによってCapture / ExperienceがWebより自然または強力になることで判定する。開始条件はWebの100%完成ではなく、Product / Data Contract、rights、media、同期、Public Share、認証identityが十分成熟したこととする。
+
+### Public Share / OGP presentation（将来Product Direction）
+
+Public Shareの主役はMECHORI brandではなく、UserのVehicleとExperienceとする。通常のPublic ExperienceのOGP画像は、Experience / Entryの1枚目の写真、なければVehicleのprimary / representative photo、どちらもなければMECHORI default imageの順で選ぶ初期ルール候補とする。毎回logo、frame、template、decorative backgroundを付けたbranded cardを生成することは標準にしない。
+
+Brandはpage title、site name、description、canonical URL、domain、Page内の自然なattributionで示す。Drive Experienceだけは、sanitized route、start / finish、distance、Vehicle identity、representative photoを使うDrive-specific OGPが有効な可能性があるが、これはFuture Presentation Hypothesisとする。OGP cropはaspect-ratio、object-fit、focal point、preview確認を将来検討する。
+
+OGPはAcquisition Surfaceであり、Userが自然に愛車や体験を共有した結果としてPublic Share、signup、beta invitationへつながることを目指す。公開権利のないmedia、Owner-private media、非公開Entry、privacy-sensitive dataは利用せず、DriveではRaw GPSではなくPrivacy sanitization済みShare Routeだけを候補にする。NativeのOS Share SheetやPublic URLにもこの境界を引き継ぐ。
 
 ## 公開前対応
 

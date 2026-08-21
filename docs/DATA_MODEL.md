@@ -634,6 +634,26 @@ Vehicleのprivate workspaceには`memberDiscoveryEnabled: boolean`を保持す�
 
 この差分は次の実装タスクで段階的に反映します。現行localStorageデータは検証用のため、本番移行対象にしません。
 
+### Future conceptual boundary: Drive Session and route projections
+
+将来NativeでDrive Sessionを検討する。Vehicle Experienceに紐づく走行の開始・終了、route、distance、duration、photos、notes、voice annotations、vehicle observations等を表現し得るが、現αの正式schemaやGPS point保存形式は確定しない。
+
+Drive Session中の出来事は、将来`ExperienceEntry`として追加できる方向を維持する。route上の観察、Issue、作業、Resultを別の投稿系統へ分断せず、同じVehicle Experience envelopeへ接続する。ただし、実在しない因果関係を位置や時刻だけから推測しない。
+
+`RawDriveRoute`と`PublicShareRoute`は別projectionとして考える。Raw RouteはOwner-privateのlocation history、Share RouteはPrivacy Zoneのsanitizationと明示同意を経た公開presentationであり、Public URL作成だけでRaw Routeのvisibilityやrightsを変更しない。Vehicle-transferableなObservationとOwnerの生活圏履歴も分離する。
+
+正式schema、route point retention、media association、Share Page projection、Privacy Zone radiusは、Native・Privacy・Evidence modelのvalidation後に決定する。
+
+### Future Web / Native shared boundary
+
+WebとNativeは同じBackend、Supabase data、Domain Model、API Contract、Auth identity、entitlement、Vehicle、Experience、Entry、Evidence、validation / shared typesを利用する。Primary UI、DOM、CSS、Web固有navigationは共有しない。Nativeは同じdata contractの別projectionであり、別Product用の複製dataを作らない。
+
+Native Readinessには、Entryに独立して紐づくnormalized media、durable ID、sync state、retry、idempotent writeを扱える基礎が必要である。Offlineの完全なschemaや実装は将来設計とし、現αの全体JSONへNative専用dataを追加しない。
+
+### Future multi-identity boundary
+
+MECHORI Userと外部Provider Identityは分離する。Google、Apple等は同じMECHORI Userへ複数linkできるIdentityとして扱い、email equalityだけで同一Userと判断しない。Identity linkingとAccount mergeは別操作であり、後者を自動実行しない。
+
 ## NEEDS_OWNER
 
 - FIAT Barchettaの仕様分類粒度と、その信頼できる情報源

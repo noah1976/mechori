@@ -150,6 +150,22 @@ Garage由来のDesign Languageを、αテスターが頻繁に通る範囲へ限
 - Garageは最初の12件を段階表示単位にできるが、古いVehicle historyを件数で終端しない。自動loadと明示actionの両方で全履歴へ到達でき、追加表示で順序・scroll位置・media layoutを崩さない。
 - 一度にまとめて残す場合も後から続ける場合も、generic block editorを主画面にしない。本文とmediaを中心にし、工程・経由地・結果は必要な人だけが追加する。
 
+### Drive Share presentation（将来方向）
+
+Drive Shareは通常のGarageやHomeより少しemotionとmotionを許容できるが、装飾を主役にしない。「このクルマで、ここを走った」をVehicle identity、date、route、distance、duration、写真、選択されたExperience Entryから事実的に伝える。
+
+将来のroute animation、start / finish、photo location、Experience marker、distance / duration revealは、routeの意味を理解しやすくするための候補とする。強いdashboard、AI風の装飾、fake metric、過度な地図演出へは広げない。Share PageではVehicle名、Drive title、canonical public URL、OGP preview、明確な記録開始CTAを優先する。
+
+### Native surface principles（将来方向）
+
+Nativeの主要Flowはgenuine native UIとして設計し、WebのDOMやCSSを再利用するWebView wrapperにはしない。WebViewはOAuth等のbrowser flow、外部コンテンツ、明示的にweb-onlyな用途に限定する。WebとNativeは同じcontent hierarchy、用語、trust表示、Vehicle / Experience / Evidenceを共有するが、各Surfaceのnavigationとinteractionはそれぞれの環境に合わせる。
+
+Nativeの視覚表現もMECHORIのcalm、automotive、content-led、factualな方向を維持する。camera、voice、offline、location、share等のdevice-native capabilityが体験を強める箇所に集中し、Native化自体を装飾や画面数の増加として扱わない。
+
+### Public Share / OGP principles（将来方向）
+
+Share previewはBrand cardではなく、Vehicle identity、Experience title、date、写真などUser contentを最初に見せる。通常Experienceでは自然な写真をprimary visualとし、MECHORIはmetadataとattributionで分かる状態を目指す。Drive Shareはsanitized routeや代表写真で少しemotionを許容するが、地図装飾やfake metricを主役にしない。
+
 ## 未確定
 
 - ロゴ
