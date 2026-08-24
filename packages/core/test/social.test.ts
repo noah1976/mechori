@@ -15,6 +15,7 @@ import {
   isProfileMuted,
   journalContentBlocksForViewer,
   journalMediaForViewer,
+  orderJournalMediaByContentBlocks,
   journalOccurrenceDate,
   journalOccurrenceLabel,
   journalToDraft,
@@ -502,6 +503,44 @@ test("derives photo privacy from the record audience and ignores client photo fl
     "2026-07-15T10:00:00.000Z",
   ).journal;
   assert.equal(withoutPhotoFlag.media[0]?.privacyState, "public_ready");
+});
+
+test("uses content-block order for Journal media while retaining unreferenced legacy attachments", () => {
+  const first = {
+    id: "media-first",
+    kind: "image" as const,
+    source: "local_blob" as const,
+    storageKey: "media-first",
+    mimeType: "image/webp",
+    sizeBytes: 100,
+    altText: "first",
+    privacyState: "public_ready" as const,
+    createdAt: "2026-08-24T00:00:00.000Z",
+    isDemo: false,
+  };
+  const second = { ...first, id: "media-second", storageKey: "media-second", altText: "second" };
+  const legacy = { ...first, id: "media-legacy", storageKey: "media-legacy", altText: "legacy" };
+  const blocks = [
+    { id: "block-second", type: "media" as const, mediaId: second.id },
+    { id: "block-second-duplicate", type: "media" as const, mediaId: second.id },
+    { id: "block-missing", type: "media" as const, mediaId: "missing" },
+    { id: "block-first", type: "media" as const, mediaId: first.id },
+  ];
+
+  assert.deepEqual(
+    orderJournalMediaByContentBlocks([first, second, legacy], blocks).map((attachment) => attachment.id),
+    [second.id, first.id, legacy.id],
+  );
+
+  const journal = addJournalToData(
+    cloneDemoData(),
+    validDraft({ visibility: "public", media: [first, second, legacy], contentBlocks: blocks }),
+    "ja",
+  ).journal;
+  assert.deepEqual(
+    journalMediaForViewer(journal, false).map((attachment) => attachment.id),
+    [second.id, first.id, legacy.id],
+  );
 });
 
 test("keeps photo privacy synchronized when a record audience changes", () => {

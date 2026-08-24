@@ -288,3 +288,9 @@
 - **既知のP1候補**: Quick Recordのtemporary single-image、private object media storageとMedia normalization未実施、legacy `local_blob`、iPhone Safari実機QAを残す。これらを今回の「完成」とは扱わない。
 - **次iterationへDeferred**: HomeのInformation Architecture整理、HomeのDEMO・重複要素・「最近の整備記録」・月次愛車summary・重複navigationの再評価、Experienceへの「続きを残す」、動画、same-model Knowledge、Vehicle Succession、Quick Record複数画像を残す。
 - **次の停止点**: Home整理が完了するまでαユーザー3名への再テストは開始しない。現時点ではPR #8をHuman manual merge readyとして扱い、merge後の実ユーザーQAと本番反映は別状態で記録する。
+
+## 30. 2026-08-24 Media normalization implementation preparation
+
+- **実装可能設計**: `docs/MEDIA_NORMALIZATION_ARCHITECTURE.md`に、現αの`alpha_inline`、`local_blob`、`alpha_shared`とordered `contentBlocks`を監査し、private asset / Entry attachment / audience-specific variantへ進む段階移行を記録した。恒久的な写真枚数上限は設けず、Quick Recordの単一写真と詳細Journalの6件共有transport guardrailは、private object storageと正規化attachmentが整うまで維持する。
+- **安全な内部改善**: `journalMediaForViewer`がcontent blockで指定された写真順を使い、blockから欠けたlegacy attachmentは末尾へ残すようにした。visibility判定は従来どおり先に行うため、private photoを新たに表示しない。core unit testでreorder、duplicate block、missing reference、legacy attachmentを確認した。
+- **未実施 / manual gate**: DB migration、Storage bucket / RLS / RPC、object lifecycle、backfill、Quick Record複数画像、動画・音声は変更していない。これらはMECH-046の所有者承認後に、設計のstage 2以降として扱う。

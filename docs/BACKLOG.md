@@ -53,6 +53,7 @@
 - 最小移行順序: (1) private object storageとattachment参照を正本化、(2) prepared media queue・順序・remove・retry、(3) journal saveとshared projectionをpartial failure / orphan cleanup込みでtransactionally整理、(4) draft / offline recovery、(5) resource guardrailとobservability、(6) Quick Record multiple picker。既存data URLや`local_blob`を無断で削除・移動しない。
 - 完了条件: private / shared / draftのmedia ownership、順序、削除、retry、orphan cleanup、rights、公開停止、Native互換を明確にし、複数画像を追加してもAppData JSON肥大化・失敗時のrecord喪失・未参照objectを増やさない。動画は別Gateとする。
 - 所有者確認の要否: 必要。DB migration、Storage policy / RLS、bucket lifecycle、既存media backfill、resource上限、実data migrationは別途承認する。
+- 詳細設計: `docs/MEDIA_NORMALIZATION_ARCHITECTURE.md`。現行経路、目標asset / attachment / variant contract、段階移行、rollback、failure / cleanup test、manual gateをここで追跡する。
 
 ### MECH-038 遠隔α用Supabase Adapter・RLS・招待API
 

@@ -4,7 +4,9 @@ import type {
   FollowTargetSummary,
   FollowTargetType,
   GarageJournalPost,
+  JournalContentBlock,
   JournalDraft,
+  JournalMediaAttachment,
   JournalOccurrencePrecision,
   Locale,
   ProfileDisplayField,
@@ -81,11 +83,45 @@ export function journalMediaForViewer(
   journal: GarageJournalPost,
   viewerIsAuthor: boolean,
 ): GarageJournalPost["media"] {
-  if (viewerIsAuthor) return journal.media;
-  if (journal.visibility === "private") return [];
-  return journal.media.filter(
+  const visibleMedia = viewerIsAuthor
+    ? journal.media
+    : journal.visibility === "private"
+      ? []
+      : journal.media.filter(
     (attachment) => attachment.privacyState === "public_ready",
   );
+  return orderJournalMediaByContentBlocks(visibleMedia, journal.contentBlocks);
+}
+
+/**
+ * `media[]` is the attachment collection; `contentBlocks` controls the order in
+ * which an author placed those attachments in a detailed Journal. Keep any
+ * unreferenced legacy attachment after the ordered blocks so a malformed or
+ * older block list cannot make media disappear from the owner's collection.
+ */
+export function orderJournalMediaByContentBlocks(
+  media: readonly JournalMediaAttachment[],
+  contentBlocks: readonly JournalContentBlock[],
+): JournalMediaAttachment[] {
+  const mediaById = new Map(media.map((attachment) => [attachment.id, attachment]));
+  const seen = new Set<string>();
+  const ordered: JournalMediaAttachment[] = [];
+
+  for (const block of contentBlocks) {
+    if (block.type !== "media" || seen.has(block.mediaId)) continue;
+    const attachment = mediaById.get(block.mediaId);
+    if (!attachment) continue;
+    seen.add(attachment.id);
+    ordered.push(attachment);
+  }
+
+  for (const attachment of media) {
+    if (seen.has(attachment.id)) continue;
+    seen.add(attachment.id);
+    ordered.push(attachment);
+  }
+
+  return ordered;
 }
 
 export function journalContentBlocksForViewer(
