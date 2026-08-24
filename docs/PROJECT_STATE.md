@@ -1,7 +1,7 @@
 # MECHORI Project State
 
-- 更新日時: 2026-08-20
-- 対象ブランチ: `codex/alpha-evidence-signature`
+- 更新日時: 2026-08-24
+- 対象ブランチ: `codex/10-home-ia-cleanup`
 - HEAD基準: 本書を含む現在ブランチの`git log -1`を正とする
 - 本番URL: `https://mechori-alpha.netlify.app`
 - 状態文書のルール: 実装、テスト、本番反映、人間QAを別々に判定する。コード、テスト、Git履歴、既存の運用記録を照合し、根拠のない項目は完了にしない。本書を現在の実装状態の正本とする。
@@ -44,6 +44,8 @@
 - **投稿・車両・プロフィールのリンク分離**: 投稿カードと詳細の各操作を実装・テスト済み。人間QAでは投稿者、車両、本文、いいねの各タップ先を確認する。
 
 ### 車両・基本UX
+
+- **Home IA cleanup（P1）**: Authenticated Homeを「他のクルマで今何が起きているか」を読むFollowing Feedへ絞った。Home上のDEMO Signature、Reference Garage前提、最近の整備記録、月次summary、Garage由来summary、重複したKnowledge検索form、過剰なonboarding / checklistを外し、Feedの後にDesktop Record、Garage、Searchの最小導線だけを残す。Garageは自分のVehicle History、Searchは過去の経験の探索として役割を分離する。自動検証後もmobile / desktopのHuman QA前はSHIPPED_NEEDS_QAとする。
 
 - **P-081 初回Activation / Onboarding**: 招待URLや初回訪問でサービス目的と次の行動が分からないP1課題に対し、未ログインHomeの短い価値説明と「MECHORIをはじめる」、認証後の3ステップ案内、実データ連動の「MECHORIをはじめよう」チェックリストを実装した。completion／dismissはprofile ID単位のlocalStorageで保持し、Workspace／social loadingを未完了と誤認しない。実装・自動検証・本番反映後も人間QA前はSHIPPED_NEEDS_QAとして扱う。
 - **P-081B Invite Activation + First Profile Setup**: 招待URLは登録画面へ直行せず、URLフラグメント内の既存tokenを維持した説明Landingを経由する。Landingはサービスの目的と3つの価値を伝え、既存のGoogle認証・invite cookie・return-toへ接続する。新規ユーザーは表示名を必須で保存してから愛車登録へ進み、既存の`MECHORI User`はsession内で再表示しない救済dialogから名前を更新できる。プロフィールRPCとAppContextの更新を再利用し、保存後は同一session内の表示名を即時更新する。DB・RLSは変更していない。人間QA前のためSHIPPED_NEEDS_QAとして扱う。

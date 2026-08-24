@@ -828,3 +828,11 @@
 - crop、aspect-ratio、object-fit、focal point、preview確認は将来のPresentation検討事項とする。初期から高度な画像生成を必須にしない。
 - Public Share / OGPは、Vehicle / Experienceを魅力的に見せて未Userの閲覧、signup、beta invitationへつなぐAcquisition Surfaceとする。Private media、非公開Entry、privacy-sensitive media、rightsのないmediaはOGPへ使わない。DriveではRaw GPSではなくsanitized Share Routeだけを候補とする。
 - NativeのOS Share Sheetやcanonical Public URLにもこのprojectionとrights境界を適用する。Drive-specific OGP、exact crop、exact metadata、route animation imageはFuture Hypothesisであり、現αの実装priorityやKPIではない。
+
+### 決定: Authenticated HomeはFollowing Feedへ役割を絞る
+
+- 日付: 2026-08-24
+- 状態: α実装方針。Homeは「他のクルマで今何が起きているか」、Garageは「自分のクルマに何が起きてきたか」、Searchは「過去のクルマの経験から何が分かるか」、Recordは「自分のクルマに新しい経験を残す」として役割を分ける。
+- HomeにはFollowing Feed、Record CTA、GarageとSearchへの最小導線を置く。mobileは既存FABをPrimary Capture入口として維持する。
+- Homeから、理解に必須ではないDEMO Signature、Reference Garage promo、最近の整備記録、月次summary、Garage由来summary、重複したKnowledge form、過剰なonboarding / checklistを外す。Reference Garage route、未ログインLanding、初回Vehicle未登録の案内は別の目的を持つため維持する。
+- これはFollowing Feed-firstがrevisit、WAU、MAU、Evidence discovery、Meaningful Reuseを改善し得るというα仮説の整理であり、改善を実測前に断定しない。Human QAではfeed navigation、Record CTA、mobile FAB、empty / sparse state、320pxからdesktopのoverflowを確認する。
