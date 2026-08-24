@@ -3,6 +3,7 @@
 import { JournalForm } from "@/components/journal-form";
 import { QuickEventForm } from "@/components/quick-event-form";
 import { useApp } from "@/lib/app-context";
+import { canUseQuickRecordEditor } from "@/lib/quick-record";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -25,7 +26,7 @@ export default function JournalEditPage() {
     );
   }
 
-  if (journal.captureIntent || journal.eventType) {
+  if (canUseQuickRecordEditor(journal)) {
     return <QuickEventForm vehicle={vehicle} journal={journal} />;
   }
 
