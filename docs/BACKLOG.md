@@ -42,6 +42,7 @@
 - 完了条件: 既存Journalは関係を推測せずsingleton Experienceへ移行できる。Quick Recordの保存frictionを増やさず、一括入力と後日追記、Entry単位の複数画像、Maintenanceへの明示link、same-model Evidence正規化、Vehicle Succession時のtransfer-safe projectionを表現できる。動画は互換・cost・privacy Gateを別に通す。
 - 依存タスク: MECH-023、MECH-038、MECH-044、実αでの「続きを残す」需要確認
 - 所有者確認の要否: 必要。DB migration、Storage移行、retention / rights、media resource guardrail、既存recordのbackfillは別途承認する。恒久的なProduct-level画像枚数capは前提にしない。
+- 2026-08-24 implementation audit: 現αの`linkedRecordId` / `JournalMaintenanceLink`はJournalと既存Maintenance Recordの任意参照であり、Experience membership、Entry順、因果、複数actorの寄与を表さない。したがって「続きを残す」をJournal同士の便宜的linkとして先行実装しない。最小実装順序は、(1) Experience / Entryのstable IDとappend contract、(2) Entry / Maintenanceの明示relation、(3) entry単位rights・revision・media attachment、(4) singleton backfillと明示的continuation UIとする。既存Journalの近接日時や本文から関係を推測しない。
 
 ### MECH-038 遠隔α用Supabase Adapter・RLS・招待API
 

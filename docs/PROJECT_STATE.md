@@ -69,6 +69,7 @@
 ## 4. PARTIAL／OPEN
 
 - **AI翻訳**: 原文言語と翻訳導線はあるが、実運用の自動翻訳、品質確認、費用・送信範囲の確定は未完了。
+- **Experience continuation（P1）**: 現αのGarageは同じVehicleの履歴を全件読めるが、既存Journalへ後日の観察・点検・修理・結果を「同じExperienceの続き」としてappendする物理contractは未実装である。`linkedRecordId`はMaintenanceへの任意linkであり、Experience relationの代用にしない。`VehicleExperience` / `ExperienceEntry`のβ正規化、entry単位media・rights・revision、明示的なMaintenance relationを先に設計・移行する。UIだけのcontinuation link、本文や日付からの自動関連付け、DB / RLS / RPC変更は今回行わない。
 - **Professional**: P-085でOrganization、Provider、OWNER／STAFF、管理UIの最小基盤を実装した。症例庫、工場作成記録、顧客案件、帳票、契約、課金は未実装。
 - **Founding Garage**: P-085でOrganizationへの資格付与とProvider／複数Member連携を可能にした。実在工場の事業者確認、契約、entitlement詳細、共同開発運用は未着手。
 - **P-070 初回表示速度**: Phase 1として、auth確定後にAppShellとroute shellを表示し、Workspaceは依存UIだけで待機・再試行するよう分離した。共有socialの4読取はHome、フォロー中、共有記録詳細、公開Garageで必要時にsingle-flight取得し、Feedback、Admin、設定、検索初期表示では待たない。AppContext全面分割とWorkspace JSON正規化は未着手で、本番の性能QA前のため全体はPARTIALとして扱う。AUD-004のAvatar cacheは別途実装済みだが、人間QA待ちである。
