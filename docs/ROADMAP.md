@@ -123,3 +123,5 @@ Native開始はWeb UIの完成を待つのではなく、同じVehicle Experienc
 React Native + Expo ecosystemは候補だが、technologyやversionは実装開始時に再調査する。Expo Goだけで完結することを前提にせず、development build、prebuild、custom native module、direct native codeへ拡張できる余地を残す。段階候補は、v0をGarage / Record / Media、v1をsharing / stronger offline、v2をDrive Session / background GPS、v3をVoice / audio、v4をCarPlay / Android Autoとするが、正式なRelease commitmentではない。
 
 Native beta配布前には、未ログインで読めるTestFlight onboarding pageを用意し、インストール、既存User login、権限、Privacy、試す項目、既知の問題、Feedbackを説明する。Public Drive Shareからsignup / beta invitationへ接続するAcquisition surfaceにもなり得るが、URLやPage構成は未確定とする。
+
+Gateごとの依存関係、実装順、Definition of Done、Human QAは`docs/NATIVE_READINESS_PLAN.md`を正とする。Public Experience Shareの匿名projection、OGP、revoke契約は`docs/PUBLIC_SHARE_READINESS.md`を参照する。

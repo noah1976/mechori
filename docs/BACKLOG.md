@@ -55,6 +55,17 @@
 - 所有者確認の要否: 必要。DB migration、Storage policy / RLS、bucket lifecycle、既存media backfill、resource上限、実data migrationは別途承認する。
 - 詳細設計: `docs/MEDIA_NORMALIZATION_ARCHITECTURE.md`。現行経路、目標asset / attachment / variant contract、段階移行、rollback、failure / cleanup test、manual gateをここで追跡する。
 
+### MECH-047 Public Experience Share projection
+
+- 優先度: P1
+- 状態: DESIGN_READY / IMPLEMENTATION_BLOCKED
+- 目的: 未ログイン閲覧、canonical URL、OGP、revoke / unpublish、Native OS Share Sheetを、private Workspaceやα参加者共有と混同しない匿名public projectionとして成立させる。
+- 成果物: `PublicExperienceProjection`のrights / variant / audit contract、server-side metadata reader、first Entry photo → Vehicle photo → default OGP fallback、revoke test、canonical URL / deep-link compatibility。
+- 完了条件: private Entry、`alpha_shared`、`local_blob`、`alpha_inline`、raw route、private profile / maintenance dataを匿名route・OGP・error responseから返さない。public viewは明示的かつrevoke可能なprojectionだけを読む。
+- 依存タスク: MECH-045、MECH-046、media privacy public gate、production origin。
+- 所有者確認の要否: 必要。DB migration、RLS/RPC、Storage public variant、crawler-visible route、production domain / deployment、実content公開は別途承認する。
+- 詳細設計: `docs/PUBLIC_SHARE_READINESS.md`。
+
 ### MECH-038 遠隔α用Supabase Adapter・RLS・招待API
 
 - 優先度: P0

@@ -294,3 +294,10 @@
 - **実装可能設計**: `docs/MEDIA_NORMALIZATION_ARCHITECTURE.md`に、現αの`alpha_inline`、`local_blob`、`alpha_shared`とordered `contentBlocks`を監査し、private asset / Entry attachment / audience-specific variantへ進む段階移行を記録した。恒久的な写真枚数上限は設けず、Quick Recordの単一写真と詳細Journalの6件共有transport guardrailは、private object storageと正規化attachmentが整うまで維持する。
 - **安全な内部改善**: `journalMediaForViewer`がcontent blockで指定された写真順を使い、blockから欠けたlegacy attachmentは末尾へ残すようにした。visibility判定は従来どおり先に行うため、private photoを新たに表示しない。core unit testでreorder、duplicate block、missing reference、legacy attachmentを確認した。
 - **未実施 / manual gate**: DB migration、Storage bucket / RLS / RPC、object lifecycle、backfill、Quick Record複数画像、動画・音声は変更していない。これらはMECH-046の所有者承認後に、設計のstage 2以降として扱う。
+
+## 31. 2026-08-24 Experience / Public Share / Native readiness checkpoint
+
+- **Experience continuation（P1）**: `docs/EXPERIENCE_CONTINUATION_CONTRACT.md`で`VehicleExperience`、append-only `ExperienceEntry`、append orderとoccurrence timeの分離、author / actor、original text / provenance、revision、explicit result / recurrence、Maintenance relation、Entry media relation、singleton backfillを具体化した。`linkedRecordId`はlegacyの表示用Maintenance linkのままであり、continuation UI・物理schema・backfillは未実装である。
+- **Public Share readiness（P1）**: `docs/PUBLIC_SHARE_READINESS.md`で、現`/v/[slug]` Vehicle snapshotとα member Journal shareをExperience匿名公開の土台と見なせない理由、projection-only reader、canonical / OGP fallback、revoke、Native share handoffを記録した。private leakage riskとDB/RLS dependencyのためread-only public routeは追加していない。
+- **Native readiness**: `docs/NATIVE_READINESS_PLAN.md`で、Home IA human QA → Experience / Media → data normalization → rights / Public Share → identity / auth → offline sync → shared-data vertical sliceの依存順、DoD、Human QAを定義した。Native projectやexternal configurationは開始していない。
+- **新規追跡**: MECH-047を`DESIGN_READY / IMPLEMENTATION_BLOCKED`として追加した。P1 manual gateは、Experience/Media physical schema、rights/public projection、production origin、multi-identity auth、offline/syncである。

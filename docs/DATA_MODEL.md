@@ -61,6 +61,8 @@ GarageJournalPost
 
 MediaはExperience全体ではなく原則としてEntryへ属し、順序、MIME、寸法、容量、caption、Storage object参照を保持する。media固有の発生時刻はEntry時刻と異なる場合だけoptionalにする。Product-levelの恒久画像枚数上限は設けず、file size、MIME、Storage使用量、bandwidth、upload batch、rate limit、abuse対策でresourceを管理する。現αの詳細Journal / shared payloadに残る6ファイル制約とQuick Recordの1枚制約は、既存transportを守る一時的な技術上限である。Quick Recordの複数画像を有効化する前に、private Workspace JSONへdata URLを埋め込む暫定経路を、private object storageと正規化attachmentへ移す。動画はthumbnail、MOV / HEVC互換、帯域、再試行、privacy review、shared projectionが揃うまでArchitecture onlyとする。
 
+append order、idempotency、revision、result / recurrence、author / actor、explicit Maintenance relation、legacy compatibilityの詳細は`docs/EXPERIENCE_CONTINUATION_CONTRACT.md`を、asset / attachment / audience variantの詳細は`docs/MEDIA_NORMALIZATION_ARCHITECTURE.md`を正とする。いずれも現αの物理schemaを変更しない実装準備契約である。
+
 ## 共通規則
 
 - すべての主要概念に、推測可能な連番ではない安定した内部IDを持たせる。
