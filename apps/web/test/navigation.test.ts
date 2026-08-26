@@ -127,6 +127,16 @@ test("logged-out navigation keeps the explicit three-column layout", () => {
   assert.match(css, /\.bottom-nav\.signed-out\s*\{\s*grid-template-columns:\s*repeat\(3,/);
 });
 
+test("mobile bottom navigation and sticky form actions share the safe-area height contract", () => {
+  const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(css, /--mobile-bottom-nav-height:\s*calc\(68px \+ env\(safe-area-inset-bottom\)\);/);
+  assert.match(css, /\.bottom-nav\s*\{\s*position:\s*fixed;\s*inset:\s*auto 0 0;/);
+  assert.match(css, /\.content-column main\s*\{\s*padding:\s*24px 16px calc\(var\(--mobile-bottom-nav-height\) \+ 28px\);/);
+  assert.match(css, /\.form-actions\s*\{\s*position:\s*sticky;\s*z-index:\s*10;\s*bottom:\s*var\(--mobile-bottom-nav-height\);/);
+  assert.match(css, /\.journal-submit-area\s*\{\s*position:\s*sticky;\s*z-index:\s*10;\s*bottom:\s*var\(--mobile-bottom-nav-height\);/);
+});
+
 test("desktop shell hides mobile-only navigation surfaces while mobile restores them", () => {
   const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
   assert.match(css, /\.menu-trigger\s*\{[^}]*display:\s*none;/);
