@@ -24,7 +24,12 @@ test("authenticated home renders a content-first journal stream", () => {
   assert.match(home, /const feed = signedIn \? allFeed : allFeed\.slice\(0, 4\)/);
   assert.doesNotMatch(home, /AlphaHistorySignature/);
   assert.doesNotMatch(home, /ActivationOnboarding/);
-  assert.doesNotMatch(home, /ActivationChecklist/);
+  // The checklist remains only in the first-Garage invitation. It must not
+  // return to the authenticated feed once a member has a vehicle.
+  assert.match(
+    home,
+    /if \(!vehicle && signedIn\) \{[\s\S]*?<ActivationChecklist \/>/,
+  );
   assert.doesNotMatch(home, /className="home-monthly-summary"/);
   assert.doesNotMatch(home, /className="home-knowledge-section"/);
   assert.doesNotMatch(home, /className="home-record-grid"/);
