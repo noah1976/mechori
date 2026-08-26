@@ -52,6 +52,29 @@ test("flags malformed stored object paths without logging their values", async (
   assert.match(diagnostic.errorId, /^P069-[a-f0-9]{10}-404$/);
 });
 
+test("classifies transport failures without retaining photo data", async () => {
+  const objectPath = "owner-id/journal-id/photo.webp";
+  const diagnostic = await createSharedMediaLoadDiagnostic({
+    photoId: "photo-3",
+    bucket: "alpha-journal-media",
+    objectPath,
+    error: new TypeError("network detail must not be retained"),
+    sessionPresent: true,
+    attempts: 2,
+    stage: "download_transport",
+    blob: new Blob(["photo"], { type: "image/webp" }),
+  });
+
+  assert.equal(diagnostic.stage, "download_transport");
+  assert.equal(diagnostic.safeSummary, "Storage request did not complete");
+  assert.equal(diagnostic.blob?.byteLength, 5);
+  assert.equal(diagnostic.blob?.mimeType, "image/webp");
+  assert.match(diagnostic.errorId, /^P069-[a-f0-9]{10}-x-download_transport$/);
+  assert.equal(JSON.stringify(diagnostic).includes(objectPath), false);
+  assert.equal(JSON.stringify(diagnostic).includes("network detail"), false);
+  assert.equal(isSharedMediaLoadDiagnostic(diagnostic), true);
+});
+
 test("validates and binds a safe object path to its diagnostic hash", async () => {
   const objectPath = "owner-id/journal-id/photo.webp";
   const diagnostic = await createSharedMediaLoadDiagnostic({

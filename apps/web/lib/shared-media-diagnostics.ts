@@ -1,7 +1,19 @@
+export type SharedMediaLoadStage =
+  | "authenticated_download"
+  | "download_transport"
+  | "blob_validation"
+  | "blob_url"
+  | "image_decode";
+
+export interface SharedMediaBlobMetadata {
+  byteLength: number;
+  mimeType: "image/jpeg" | "image/png" | "image/webp" | "missing" | "other";
+}
+
 export interface SharedMediaLoadDiagnostic {
   errorId: string;
   photoId: string;
-  stage: "authenticated_download";
+  stage: SharedMediaLoadStage;
   requestKind: "storage_authenticated_object_get";
   httpStatus: number | null;
   supabaseErrorCode: string;
@@ -18,6 +30,7 @@ export interface SharedMediaLoadDiagnostic {
   };
   sessionPresent: boolean;
   attempts: number;
+  blob?: SharedMediaBlobMetadata;
 }
 
 export interface SharedMediaServerProbe {
@@ -48,22 +61,39 @@ export async function createSharedMediaLoadDiagnostic(input: {
   error: unknown;
   sessionPresent: boolean;
   attempts: number;
+  stage?: SharedMediaLoadStage;
+  blob?: Pick<Blob, "size" | "type"> | SharedMediaBlobMetadata | null;
 }): Promise<SharedMediaLoadDiagnostic> {
+  const stage = input.stage ?? "authenticated_download";
   const storageError = safeStorageError(input.error);
   const objectPathHash = await hashSharedMediaObjectPath(input.objectPath);
   return {
-    errorId: `P069-${objectPathHash.slice(0, 10)}-${storageError.httpStatus ?? "x"}`,
+    errorId: sharedMediaDiagnosticId(objectPathHash, storageError.httpStatus, stage),
     photoId: safeIdentifier(input.photoId),
-    stage: "authenticated_download",
+    stage,
     requestKind: "storage_authenticated_object_get",
     httpStatus: storageError.httpStatus,
     supabaseErrorCode: storageError.code,
-    safeSummary: storageError.summary,
+    safeSummary: sharedMediaFailureSummary(stage, storageError.httpStatus),
     bucket: input.bucket,
     objectPathHash,
     pathShape: describeObjectPath(input.objectPath, input.bucket),
     sessionPresent: input.sessionPresent,
     attempts: input.attempts,
+    ...(input.blob ? {
+      blob: isSharedMediaBlobMetadata(input.blob)
+        ? input.blob
+        : describeSharedMediaBlob(input.blob),
+    } : {}),
+  };
+}
+
+export function describeSharedMediaBlob(
+  blob: Pick<Blob, "size" | "type">,
+): SharedMediaBlobMetadata {
+  return {
+    byteLength: Number.isSafeInteger(blob.size) && blob.size >= 0 ? blob.size : 0,
+    mimeType: safeBlobMimeType(blob.type),
   };
 }
 
@@ -187,9 +217,9 @@ export function isSharedMediaLoadDiagnostic(
   if (!value || typeof value !== "object") return false;
   const item = value as Partial<SharedMediaLoadDiagnostic>;
   return (
-    typeof item.errorId === "string" && /^P069-[a-f0-9]{10}-(?:\d{3}|x)$/.test(item.errorId) &&
+    typeof item.errorId === "string" && /^P069-[a-f0-9]{10}-(?:\d{3}|x)(?:-(?:download_transport|blob_validation|blob_url|image_decode))?$/.test(item.errorId) &&
     typeof item.photoId === "string" && item.photoId.length <= 160 &&
-    item.stage === "authenticated_download" &&
+    isSharedMediaLoadStage(item.stage) &&
     item.requestKind === "storage_authenticated_object_get" &&
     (item.httpStatus === null ||
       (typeof item.httpStatus === "number" && item.httpStatus >= 100 && item.httpStatus <= 599)) &&
@@ -205,7 +235,8 @@ export function isSharedMediaLoadDiagnostic(
     typeof item.pathShape?.containsEncodedSlash === "boolean" &&
     typeof item.pathShape?.containsDoubleEncoding === "boolean" &&
     typeof item.sessionPresent === "boolean" &&
-    typeof item.attempts === "number" && item.attempts >= 1 && item.attempts <= 4
+    typeof item.attempts === "number" && item.attempts >= 1 && item.attempts <= 4 &&
+    (item.blob === undefined || isSharedMediaBlobMetadata(item.blob))
   );
 }
 
@@ -262,6 +293,49 @@ function storageErrorSummary(status: number | null): string {
   if (status === 404) return "Shared object was not found";
   if (status !== null && status >= 500) return "Storage service could not complete the request";
   return "Storage request failed";
+}
+
+function sharedMediaFailureSummary(
+  stage: SharedMediaLoadStage,
+  status: number | null,
+): string {
+  if (stage === "download_transport") return "Storage request did not complete";
+  if (stage === "blob_validation") return "Downloaded media data was unusable";
+  if (stage === "blob_url") return "Browser could not prepare the media URL";
+  if (stage === "image_decode") return "Browser could not render the media";
+  return storageErrorSummary(status);
+}
+
+function sharedMediaDiagnosticId(
+  objectPathHash: string,
+  status: number | null,
+  stage: SharedMediaLoadStage,
+): string {
+  const suffix = stage === "authenticated_download" ? "" : `-${stage}`;
+  return `P069-${objectPathHash.slice(0, 10)}-${status ?? "x"}${suffix}`;
+}
+
+function isSharedMediaLoadStage(value: unknown): value is SharedMediaLoadStage {
+  return value === "authenticated_download" ||
+    value === "download_transport" ||
+    value === "blob_validation" ||
+    value === "blob_url" ||
+    value === "image_decode";
+}
+
+function isSharedMediaBlobMetadata(value: unknown): value is SharedMediaBlobMetadata {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Partial<SharedMediaBlobMetadata>;
+  const byteLength = item.byteLength;
+  return typeof byteLength === "number" && Number.isSafeInteger(byteLength) && byteLength >= 0 &&
+    (item.mimeType === "image/jpeg" || item.mimeType === "image/png" ||
+      item.mimeType === "image/webp" || item.mimeType === "missing" || item.mimeType === "other");
+}
+
+function safeBlobMimeType(value: string): SharedMediaBlobMetadata["mimeType"] {
+  const type = value.trim().toLowerCase();
+  if (type === "image/jpeg" || type === "image/png" || type === "image/webp") return type;
+  return type ? "other" : "missing";
 }
 
 function describeObjectPath(objectPath: string, bucket: string) {
