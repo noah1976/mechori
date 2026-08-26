@@ -4,16 +4,19 @@ import type { JournalMediaAttachment, Locale } from "@mechori/core";
 import { ImageIcon, LoaderCircle, RefreshCw, Video } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   alphaSharedJournalMediaBucket,
 } from "@/lib/alpha-shared-journals";
 import { journalMediaStore } from "@/lib/media-store";
 import {
   createSharedMediaLoadDiagnostic,
+  describeSharedMediaBlob,
   isSharedMediaServerProbe,
+  type SharedMediaBlobMetadata,
   type SharedMediaLoadDiagnostic,
 } from "@/lib/shared-media-diagnostics";
+import { downloadSharedMediaWithRetry } from "@/lib/shared-media-download";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { journalMediaFallback } from "@/lib/journal-media-fallback";
 
@@ -85,7 +88,38 @@ function JournalMediaItem({
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [failureId, setFailureId] = useState<string | null>(null);
   const [probeCode, setProbeCode] = useState<string | null>(null);
+  const [sharedSessionPresent, setSharedSessionPresent] = useState(false);
+  const [sharedBlobMetadata, setSharedBlobMetadata] = useState<SharedMediaBlobMetadata | null>(null);
   const [aspectClass, setAspectClass] = useState<"unknown" | "portrait" | "square" | "landscape">("unknown");
+  const objectUrlRef = useRef<string | null>(null);
+  const showSharedMediaDiagnostic = useCallback((diagnostic: SharedMediaLoadDiagnostic) => {
+    setFailureId(diagnostic.errorId);
+    void reportSharedMediaDiagnostic(
+      diagnostic,
+      attachment.assetPath,
+    ).then((code) => {
+      if (code) setProbeCode(code);
+    });
+  }, [attachment.assetPath]);
+  const markUnavailable = () => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+    setSource(null);
+    setLoading(false);
+    if (attachment.source !== "alpha_shared" || !attachment.assetPath) return;
+    void createSharedMediaLoadDiagnostic({
+      photoId: attachment.id,
+      bucket: alphaSharedJournalMediaBucket,
+      objectPath: attachment.assetPath,
+      error: { code: "image_decode_or_render_failed" },
+      sessionPresent: sharedSessionPresent,
+      attempts: Math.min(loadAttempt + 1, 4),
+      stage: "image_decode",
+      blob: sharedBlobMetadata,
+    }).then(showSharedMediaDiagnostic);
+  };
 
   useEffect(() => {
     if (
@@ -100,16 +134,28 @@ function JournalMediaItem({
       .then((result) => {
         if (!active) return;
         if (result.blob) {
-          objectUrl = URL.createObjectURL(result.blob);
-          setSource(objectUrl);
+          try {
+            objectUrl = URL.createObjectURL(result.blob);
+            objectUrlRef.current = objectUrl;
+            setSharedSessionPresent(result.sessionPresent);
+            setSharedBlobMetadata(result.blobMetadata);
+            setSource(objectUrl);
+          } catch (error) {
+            if (attachment.source === "alpha_shared" && attachment.assetPath) {
+              void createSharedMediaLoadDiagnostic({
+                photoId: attachment.id,
+                bucket: alphaSharedJournalMediaBucket,
+                objectPath: attachment.assetPath,
+                error,
+                sessionPresent: result.sessionPresent,
+                attempts: result.attempts,
+                stage: "blob_url",
+                blob: result.blobMetadata,
+              }).then(showSharedMediaDiagnostic);
+            }
+          }
         } else if (result.diagnostic) {
-          setFailureId(result.diagnostic.errorId);
-          void reportSharedMediaDiagnostic(
-            result.diagnostic,
-            attachment.assetPath,
-          ).then((code) => {
-            if (active && code) setProbeCode(code);
-          });
+          showSharedMediaDiagnostic(result.diagnostic);
         }
       })
       .catch(() => {
@@ -121,8 +167,9 @@ function JournalMediaItem({
     return () => {
       active = false;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
+      if (objectUrlRef.current === objectUrl) objectUrlRef.current = null;
     };
-  }, [attachment, loadAttempt]);
+  }, [attachment, loadAttempt, showSharedMediaDiagnostic]);
 
   if (loading) {
     return (
@@ -156,6 +203,9 @@ function JournalMediaItem({
             type="button"
             className="journal-media-retry"
             onClick={() => {
+              setFailureId(null);
+              setProbeCode(null);
+              setSharedBlobMetadata(null);
               setLoading(true);
               setLoadAttempt((current) => current + 1);
             }}
@@ -176,6 +226,7 @@ function JournalMediaItem({
       alt={attachment.altText}
       loading={priority ? "eager" : "lazy"}
       decoding="async"
+      onError={attachment.source === "alpha_shared" ? markUnavailable : undefined}
       onLoad={(event) => {
         const ratio = event.currentTarget.naturalWidth / event.currentTarget.naturalHeight;
         setAspectClass(ratio < 0.85 ? "portrait" : ratio > 1.35 ? "landscape" : "square");
@@ -189,6 +240,7 @@ function JournalMediaItem({
       sizes="(max-width: 760px) 100vw, 820px"
       unoptimized
       priority={priority}
+      onError={attachment.source === "alpha_shared" ? markUnavailable : undefined}
     />
   ) : null;
   return (
@@ -232,38 +284,108 @@ function JournalMediaItem({
 
 async function loadJournalMediaBlob(
   attachment: JournalMediaAttachment,
-): Promise<{ blob: Blob | null; diagnostic: SharedMediaLoadDiagnostic | null }> {
+): Promise<{
+  blob: Blob | null;
+  diagnostic: SharedMediaLoadDiagnostic | null;
+  sessionPresent: boolean;
+  attempts: number;
+  blobMetadata: SharedMediaBlobMetadata | null;
+}> {
   if (attachment.source === "local_blob" && attachment.storageKey) {
-    return { blob: await journalMediaStore.load(attachment.storageKey), diagnostic: null };
+    return {
+      blob: await journalMediaStore.load(attachment.storageKey),
+      diagnostic: null,
+      sessionPresent: false,
+      attempts: 1,
+      blobMetadata: null,
+    };
   }
   if (attachment.source !== "alpha_shared" || !attachment.assetPath) {
-    return { blob: null, diagnostic: null };
+    return { blob: null, diagnostic: null, sessionPresent: false, attempts: 1, blobMetadata: null };
   }
 
-  const supabase = createSupabaseBrowserClient();
-  const storage = supabase.storage.from(
-    alphaSharedJournalMediaBucket,
-  );
-  const session = await supabase.auth.getSession();
-  let lastError: unknown = { code: "empty_storage_response" };
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    const result = await storage.download(attachment.assetPath);
-    if (!result.error && result.data) {
-      return { blob: result.data, diagnostic: null };
+  try {
+    const supabase = createSupabaseBrowserClient();
+    const storage = supabase.storage.from(alphaSharedJournalMediaBucket);
+    const session = await supabase.auth.getSession();
+    const sessionPresent = Boolean(session.data.session);
+    const result = await downloadSharedMediaWithRetry({
+      attempts: 2,
+      download: () => storage.download(attachment.assetPath),
+      wait: () => wait(650),
+    });
+    if (result.blob) {
+      const blobMetadata = describeSharedMediaBlob(result.blob);
+      if (blobMetadata.byteLength > 0) {
+        return {
+          blob: result.blob,
+          diagnostic: null,
+          sessionPresent,
+          attempts: result.attempts,
+          blobMetadata,
+        };
+      }
+      return sharedMediaLoadFailure({
+        attachment,
+        objectPath: attachment.assetPath,
+        error: { code: "zero_byte_blob" },
+        sessionPresent,
+        attempts: result.attempts,
+        stage: "blob_validation",
+        blobMetadata,
+      });
     }
-    lastError = result.error ?? lastError;
-    if (attempt === 0) await wait(650);
+    return sharedMediaLoadFailure({
+      attachment,
+      objectPath: attachment.assetPath,
+      error: result.error,
+      sessionPresent,
+      attempts: result.attempts,
+      stage: result.failureKind === "transport" ? "download_transport" : "authenticated_download",
+    });
+  } catch (error) {
+    return sharedMediaLoadFailure({
+      attachment,
+      objectPath: attachment.assetPath,
+      error,
+      sessionPresent: false,
+      attempts: 1,
+      stage: "download_transport",
+    });
   }
+}
+
+async function sharedMediaLoadFailure(input: {
+  attachment: JournalMediaAttachment;
+  objectPath: string;
+  error: unknown;
+  sessionPresent: boolean;
+  attempts: number;
+  stage: "authenticated_download" | "download_transport" | "blob_validation";
+  blobMetadata?: SharedMediaBlobMetadata;
+}): Promise<{
+  blob: null;
+  diagnostic: SharedMediaLoadDiagnostic;
+  sessionPresent: boolean;
+  attempts: number;
+  blobMetadata: SharedMediaBlobMetadata | null;
+}> {
+  const { attachment } = input;
   return {
     blob: null,
     diagnostic: await createSharedMediaLoadDiagnostic({
       photoId: attachment.id,
       bucket: alphaSharedJournalMediaBucket,
-      objectPath: attachment.assetPath,
-      error: lastError,
-      sessionPresent: Boolean(session.data.session),
-      attempts: 2,
+      objectPath: input.objectPath,
+      error: input.error,
+      sessionPresent: input.sessionPresent,
+      attempts: input.attempts,
+      stage: input.stage,
+      blob: input.blobMetadata,
     }),
+    sessionPresent: input.sessionPresent,
+    attempts: input.attempts,
+    blobMetadata: input.blobMetadata ?? null,
   };
 }
 
