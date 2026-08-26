@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { addJournalToData, cloneDemoData } from "@mechori/core";
+import { addJournalToData, cloneDemoData, type GarageJournalPost } from "@mechori/core";
 import {
+  canUseQuickRecordEditor,
   captureIntentForJournal,
   captureIntentLabel,
   captureIntentPlaceholder,
@@ -80,6 +81,36 @@ test("capture intent remains broader than detailed event type", () => {
   assert.equal(captureIntentForJournal(undefined, "repair"), "service");
   assert.equal(captureIntentLabel("service", "ja"), "整備・修理");
   assert.equal(captureIntentPlaceholder("issue", "ja"), "何が気になりますか？");
+});
+
+test("uses the detailed editor when an event record has richer media or block content", () => {
+  const compact = {
+    captureIntent: "other",
+    eventType: "other",
+    media: [],
+    contentBlocks: [{ id: "body", type: "text", style: "paragraph", text: "One note" }],
+  } satisfies Pick<GarageJournalPost, "captureIntent" | "eventType" | "media" | "contentBlocks">;
+  const richMedia = {
+    ...compact,
+    media: [
+      { id: "one" },
+      { id: "two" },
+    ],
+  } as Pick<GarageJournalPost, "captureIntent" | "eventType" | "media" | "contentBlocks">;
+  const richBlocks = {
+    ...compact,
+    contentBlocks: [
+      { id: "heading", type: "text" as const, style: "heading" as const, text: "Heading" },
+      { id: "body", type: "text" as const, style: "paragraph" as const, text: "One note" },
+    ],
+  } satisfies Pick<GarageJournalPost, "captureIntent" | "eventType" | "media" | "contentBlocks">;
+
+  assert.equal(canUseQuickRecordEditor(compact), true);
+  assert.equal(canUseQuickRecordEditor(richMedia), false);
+  assert.equal(canUseQuickRecordEditor(richBlocks), false);
+
+  const editPage = read("../app/journal/[id]/edit/page.tsx");
+  assert.match(editPage, /canUseQuickRecordEditor\(journal\)/);
 });
 
 test("explicit issue intent saves open while service intent stays unclassified", () => {

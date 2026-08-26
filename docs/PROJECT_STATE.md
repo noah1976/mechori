@@ -301,3 +301,7 @@
 - **Public Share readiness（P1）**: `docs/PUBLIC_SHARE_READINESS.md`で、現`/v/[slug]` Vehicle snapshotとα member Journal shareをExperience匿名公開の土台と見なせない理由、projection-only reader、canonical / OGP fallback、revoke、Native share handoffを記録した。private leakage riskとDB/RLS dependencyのためread-only public routeは追加していない。
 - **Native readiness**: `docs/NATIVE_READINESS_PLAN.md`で、Home IA human QA → Experience / Media → data normalization → rights / Public Share → identity / auth → offline sync → shared-data vertical sliceの依存順、DoD、Human QAを定義した。Native projectやexternal configurationは開始していない。
 - **新規追跡**: MECH-047を`DESIGN_READY / IMPLEMENTATION_BLOCKED`として追加した。P1 manual gateは、Experience/Media physical schema、rights/public projection、production origin、multi-identity auth、offline/syncである。
+
+## 32. 2026-08-24 Rich Journal edit guard
+
+- **P2 preventive fix**: capture intentまたはevent typeを持つ既存Journalでも、複数media、複数text block、heading / quoteを含むリッチ記録はQuick editorではなく既存Detailed Journal editorへ送るようにした。Quick editorは1 paragraph＋1 mediaまでの現α契約を保つため、保存時に未対応attachmentやblockを再構成して失う境界を避ける。現行Quick Recordの作成UI、単一写真制約、保存契約は変更していない。

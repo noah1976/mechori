@@ -1,4 +1,5 @@
 import type {
+  GarageJournalPost,
   JournalCaptureIntent,
   JournalEventType,
   Locale,
@@ -72,4 +73,32 @@ export function captureIntentPlaceholder(
     other: ["愛車に何がありましたか？", "What happened with your vehicle?"],
   };
   return labels[intent][locale === "ja" ? 0 : 1];
+}
+
+/**
+ * The focused Quick editor intentionally supports one paragraph and one image.
+ * Older or enriched event records can have the same event fields but richer
+ * block/media content, so route those to the detailed editor rather than
+ * rebuilding their draft and dropping attachments on save.
+ */
+export function canUseQuickRecordEditor(
+  journal: Pick<
+    GarageJournalPost,
+    "captureIntent" | "eventType" | "media" | "contentBlocks"
+  >,
+): boolean {
+  if (!journal.captureIntent && !journal.eventType) return false;
+  if (journal.media.length > 1 || journal.contentBlocks.length > 2) return false;
+
+  let textBlockCount = 0;
+  let mediaBlockCount = 0;
+  for (const block of journal.contentBlocks) {
+    if (block.type === "text") {
+      if (block.style !== "paragraph") return false;
+      textBlockCount += 1;
+    } else {
+      mediaBlockCount += 1;
+    }
+  }
+  return textBlockCount <= 1 && mediaBlockCount <= 1;
 }
