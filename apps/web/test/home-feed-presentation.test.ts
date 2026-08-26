@@ -19,15 +19,27 @@ test("authenticated home renders a content-first journal stream", () => {
   assert.match(home, /className="home-journal-feed"/);
   assert.match(home, /variant="home"/);
   assert.match(home, /home-following-section/);
-  assert.match(home, /フォロー中の記録/);
+  assert.match(home, /<h1 id="following-feed-heading">/);
+  assert.match(home, /フォロー中/);
   assert.match(home, /const feed = signedIn \? allFeed : allFeed\.slice\(0, 4\)/);
-  assert.match(home, /className="home-monthly-summary"/);
-  assert.match(home, /className="home-knowledge-section"/);
+  assert.doesNotMatch(home, /AlphaHistorySignature/);
+  assert.doesNotMatch(home, /ActivationOnboarding/);
+  // The checklist remains only in the first-Garage invitation. It must not
+  // return to the authenticated feed once a member has a vehicle.
+  assert.match(
+    home,
+    /if \(!vehicle && signedIn\) \{[\s\S]*?<ActivationChecklist \/>/,
+  );
+  assert.doesNotMatch(home, /className="home-monthly-summary"/);
+  assert.doesNotMatch(home, /className="home-knowledge-section"/);
+  assert.doesNotMatch(home, /className="home-record-grid"/);
   assert.doesNotMatch(home, /className="monthly-owner-band"/);
   assert.doesNotMatch(home, /YOUR VEHICLE HISTORY/);
   assert.doesNotMatch(home, /home-featured-journal/);
   assert.doesNotMatch(home, /FROM ALPHA GARAGES/);
   assert.match(home, /home-record-link-desktop/);
+  assert.match(home, /href="\/garage"/);
+  assert.match(home, /href="\/search"/);
   assert.match(css, /\.home-record-link-desktop \{ display: none; \}/);
   assert.doesNotMatch(home, /href="\/feed"/);
 });

@@ -32,10 +32,11 @@ test("explicit issue capture is open without diagnosis while other intents stay 
   assert.doesNotMatch(completion, /原因:|診断:|Evidence \d+%/);
 });
 
-test("Home, Quick Record, and Garage share the Vehicle Continuity vocabulary", () => {
-  assert.match(home, /<AlphaHistorySignature locale=\{locale\} compact headingLevel="h1" \/>/);
-  assert.ok(home.indexOf("<AlphaHistorySignature") < home.indexOf("<ActivationOnboarding"));
-  assert.ok(home.indexOf("<AlphaHistorySignature") < home.indexOf("{feed.length"));
+test("Quick Record and Garage share the Vehicle Continuity vocabulary while Home stays a live feed", () => {
+  assert.doesNotMatch(home, /<AlphaHistorySignature/);
+  assert.doesNotMatch(home, /<ActivationOnboarding/);
+  assert.match(home, /home-following-section/);
+  assert.match(home, /home-journal-feed/);
   assert.match(completion, /<VehicleContinuity/);
   assert.match(garage, /<VehicleContinuity/);
   assert.match(continuity, /vehicle-continuity-anchor/);
@@ -94,9 +95,9 @@ test("desktop capture is directly below the brand while the mobile FAB remains",
   assert.match(css, /\.nav-add \{ min-height: 46px; margin: 2px 0 6px;/);
 });
 
-test("onboarding is demoted below the signature and no longer uses the black panel", () => {
+test("onboarding is outside the authenticated Feed surface and no longer uses the black panel", () => {
   assert.doesNotMatch(appShell, /<ActivationOnboarding/);
-  assert.match(home, /<ActivationOnboarding \/>/);
+  assert.doesNotMatch(home, /<ActivationOnboarding/);
   assert.doesNotMatch(css, /\.activation-onboarding[^}]*background: #252927/);
   assert.match(css, /\.activation-onboarding \{[^}]*background: transparent;/);
 });
