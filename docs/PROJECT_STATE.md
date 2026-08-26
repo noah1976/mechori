@@ -71,6 +71,9 @@
 ## 4. PARTIAL／OPEN
 
 - **AI翻訳**: 原文言語と翻訳導線はあるが、実運用の自動翻訳、品質確認、費用・送信範囲の確定は未完了。
+- **Experience continuation（P1）**: 現αのGarageは同じVehicleの履歴を全件読めるが、既存Journalへ後日の観察・点検・修理・結果を「同じExperienceの続き」としてappendする物理contractは未実装である。`linkedRecordId`はMaintenanceへの任意linkであり、Experience relationの代用にしない。`VehicleExperience` / `ExperienceEntry`のβ正規化、entry単位media・rights・revision、明示的なMaintenance relationを先に設計・移行する。UIだけのcontinuation link、本文や日付からの自動関連付け、DB / RLS / RPC変更は今回行わない。
+- **Media normalization（P1）**: 詳細Journalの`media[]` / `contentBlocks`とshared object uploadは複数画像を扱える一方、Quick Recordは先頭ファイル1件を`alpha_inline` data URLとして全AppData JSONへ保存する暫定経路である。現行のshared upload loopだけをQuick Recordへ開放すると、private正本、draft、partial upload、orphan cleanupがずれる。Product-levelの画像枚数capは設けないが、private object media正本、attachment正規化、queue / retry / deletion、resource guardrailを先に整える。動画は未着手。
+- **Native Readiness gap audit（2026-08-24）**: Home IAはPR #10で実装・Human QA待ちのためPARTIAL。Experience continuation、Media normalization、全AppData JSONからのdata normalization、rights / public projection、Public Experience Share、Multi-identity Auth、Offline / SyncはNOT READY。`mechori.com`のProduction identityはDNS / hostingのmanual configurationを要するためBLOCKED BY MANUAL CONFIG。Drive / Voice / CarPlayはこれらのGate後のFutureであり、Native projectは開始しない。
 - **Professional**: P-085でOrganization、Provider、OWNER／STAFF、管理UIの最小基盤を実装した。症例庫、工場作成記録、顧客案件、帳票、契約、課金は未実装。
 - **Founding Garage**: P-085でOrganizationへの資格付与とProvider／複数Member連携を可能にした。実在工場の事業者確認、契約、entitlement詳細、共同開発運用は未着手。
 - **P-070 初回表示速度**: Phase 1として、auth確定後にAppShellとroute shellを表示し、Workspaceは依存UIだけで待機・再試行するよう分離した。共有socialの4読取はHome、フォロー中、共有記録詳細、公開Garageで必要時にsingle-flight取得し、Feedback、Admin、設定、検索初期表示では待たない。AppContext全面分割とWorkspace JSON正規化は未着手で、本番の性能QA前のため全体はPARTIALとして扱う。AUD-004のAvatar cacheは別途実装済みだが、人間QA待ちである。
@@ -287,3 +290,16 @@
 - **既知のP1候補**: Quick Recordのtemporary single-image、private object media storageとMedia normalization未実施、legacy `local_blob`、iPhone Safari実機QAを残す。これらを今回の「完成」とは扱わない。
 - **次iterationへDeferred**: HomeのInformation Architecture整理、HomeのDEMO・重複要素・「最近の整備記録」・月次愛車summary・重複navigationの再評価、Experienceへの「続きを残す」、動画、same-model Knowledge、Vehicle Succession、Quick Record複数画像を残す。
 - **次の停止点**: Home整理が完了するまでαユーザー3名への再テストは開始しない。現時点ではPR #8をHuman manual merge readyとして扱い、merge後の実ユーザーQAと本番反映は別状態で記録する。
+
+## 30. 2026-08-24 Media normalization implementation preparation
+
+- **実装可能設計**: `docs/MEDIA_NORMALIZATION_ARCHITECTURE.md`に、現αの`alpha_inline`、`local_blob`、`alpha_shared`とordered `contentBlocks`を監査し、private asset / Entry attachment / audience-specific variantへ進む段階移行を記録した。恒久的な写真枚数上限は設けず、Quick Recordの単一写真と詳細Journalの6件共有transport guardrailは、private object storageと正規化attachmentが整うまで維持する。
+- **安全な内部改善**: `journalMediaForViewer`がcontent blockで指定された写真順を使い、blockから欠けたlegacy attachmentは末尾へ残すようにした。visibility判定は従来どおり先に行うため、private photoを新たに表示しない。core unit testでreorder、duplicate block、missing reference、legacy attachmentを確認した。
+- **未実施 / manual gate**: DB migration、Storage bucket / RLS / RPC、object lifecycle、backfill、Quick Record複数画像、動画・音声は変更していない。これらはMECH-046の所有者承認後に、設計のstage 2以降として扱う。
+
+## 31. 2026-08-24 Experience / Public Share / Native readiness checkpoint
+
+- **Experience continuation（P1）**: `docs/EXPERIENCE_CONTINUATION_CONTRACT.md`で`VehicleExperience`、append-only `ExperienceEntry`、append orderとoccurrence timeの分離、author / actor、original text / provenance、revision、explicit result / recurrence、Maintenance relation、Entry media relation、singleton backfillを具体化した。`linkedRecordId`はlegacyの表示用Maintenance linkのままであり、continuation UI・物理schema・backfillは未実装である。
+- **Public Share readiness（P1）**: `docs/PUBLIC_SHARE_READINESS.md`で、現`/v/[slug]` Vehicle snapshotとα member Journal shareをExperience匿名公開の土台と見なせない理由、projection-only reader、canonical / OGP fallback、revoke、Native share handoffを記録した。private leakage riskとDB/RLS dependencyのためread-only public routeは追加していない。
+- **Native readiness**: `docs/NATIVE_READINESS_PLAN.md`で、Home IA human QA → Experience / Media → data normalization → rights / Public Share → identity / auth → offline sync → shared-data vertical sliceの依存順、DoD、Human QAを定義した。Native projectやexternal configurationは開始していない。
+- **新規追跡**: MECH-047を`DESIGN_READY / IMPLEMENTATION_BLOCKED`として追加した。P1 manual gateは、Experience/Media physical schema、rights/public projection、production origin、multi-identity auth、offline/syncである。

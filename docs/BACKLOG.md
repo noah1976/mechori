@@ -42,6 +42,29 @@
 - 完了条件: 既存Journalは関係を推測せずsingleton Experienceへ移行できる。Quick Recordの保存frictionを増やさず、一括入力と後日追記、Entry単位の複数画像、Maintenanceへの明示link、same-model Evidence正規化、Vehicle Succession時のtransfer-safe projectionを表現できる。動画は互換・cost・privacy Gateを別に通す。
 - 依存タスク: MECH-023、MECH-038、MECH-044、実αでの「続きを残す」需要確認
 - 所有者確認の要否: 必要。DB migration、Storage移行、retention / rights、media resource guardrail、既存recordのbackfillは別途承認する。恒久的なProduct-level画像枚数capは前提にしない。
+- 2026-08-24 implementation audit: 現αの`linkedRecordId` / `JournalMaintenanceLink`はJournalと既存Maintenance Recordの任意参照であり、Experience membership、Entry順、因果、複数actorの寄与を表さない。したがって「続きを残す」をJournal同士の便宜的linkとして先行実装しない。最小実装順序は、(1) Experience / Entryのstable IDとappend contract、(2) Entry / Maintenanceの明示relation、(3) entry単位rights・revision・media attachment、(4) singleton backfillと明示的continuation UIとする。既存Journalの近接日時や本文から関係を推測しない。
+
+### MECH-046 Media normalization readiness
+
+- 優先度: P1
+- 状態: READY
+- 目的: Product-levelの写真枚数capを設けず、Quick Record、詳細Journal、shared projection、将来Nativeが同じ順序付きmedia attachmentを安全に扱える基盤へ移行する。
+- 現在地: `GarageJournalPost`は`media[]`と順序付き`contentBlocks`を持ち、shared publishは全`public_ready`画像を個別objectへuploadし、RPC失敗時は新規objectをcleanupする。Quick Recordは`PreparedImage | null`、`files?.[0]`、単一attachmentであり、private Workspace JSON内の`alpha_inline` data URLを正本にする。`local_blob`はorigin限定IndexedDBのlegacy fallbackである。
+- 最小移行順序: (1) private object storageとattachment参照を正本化、(2) prepared media queue・順序・remove・retry、(3) journal saveとshared projectionをpartial failure / orphan cleanup込みでtransactionally整理、(4) draft / offline recovery、(5) resource guardrailとobservability、(6) Quick Record multiple picker。既存data URLや`local_blob`を無断で削除・移動しない。
+- 完了条件: private / shared / draftのmedia ownership、順序、削除、retry、orphan cleanup、rights、公開停止、Native互換を明確にし、複数画像を追加してもAppData JSON肥大化・失敗時のrecord喪失・未参照objectを増やさない。動画は別Gateとする。
+- 所有者確認の要否: 必要。DB migration、Storage policy / RLS、bucket lifecycle、既存media backfill、resource上限、実data migrationは別途承認する。
+- 詳細設計: `docs/MEDIA_NORMALIZATION_ARCHITECTURE.md`。現行経路、目標asset / attachment / variant contract、段階移行、rollback、failure / cleanup test、manual gateをここで追跡する。
+
+### MECH-047 Public Experience Share projection
+
+- 優先度: P1
+- 状態: DESIGN_READY / IMPLEMENTATION_BLOCKED
+- 目的: 未ログイン閲覧、canonical URL、OGP、revoke / unpublish、Native OS Share Sheetを、private Workspaceやα参加者共有と混同しない匿名public projectionとして成立させる。
+- 成果物: `PublicExperienceProjection`のrights / variant / audit contract、server-side metadata reader、first Entry photo → Vehicle photo → default OGP fallback、revoke test、canonical URL / deep-link compatibility。
+- 完了条件: private Entry、`alpha_shared`、`local_blob`、`alpha_inline`、raw route、private profile / maintenance dataを匿名route・OGP・error responseから返さない。public viewは明示的かつrevoke可能なprojectionだけを読む。
+- 依存タスク: MECH-045、MECH-046、media privacy public gate、production origin。
+- 所有者確認の要否: 必要。DB migration、RLS/RPC、Storage public variant、crawler-visible route、production domain / deployment、実content公開は別途承認する。
+- 詳細設計: `docs/PUBLIC_SHARE_READINESS.md`。
 
 ### MECH-038 遠隔α用Supabase Adapter・RLS・招待API
 
