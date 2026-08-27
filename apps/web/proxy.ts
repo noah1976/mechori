@@ -1,32 +1,22 @@
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import {
   getMechoriRuntime,
   getSupabasePublicConfig,
 } from "@/lib/runtime-config";
 
-export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({ request });
-  if (getMechoriRuntime() !== "alpha") return response;
+export function proxy(request: NextRequest) {
+  if (getMechoriRuntime() !== "alpha") return NextResponse.next({ request });
 
-  const config = getSupabasePublicConfig();
-  if (!config) return serviceUnavailable();
+  try {
+    if (!getSupabasePublicConfig()) return serviceUnavailable();
+  } catch {
+    return serviceUnavailable();
+  }
 
-  const supabase = createServerClient(config.url, config.publishableKey, {
-    cookies: {
-      getAll: () => request.cookies.getAll(),
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-        response = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) =>
-          response.cookies.set(name, value, options),
-        );
-      },
-    },
-  });
-
-  await supabase.auth.getClaims();
-  return response;
+  // This proxy runs in Netlify Edge for every matched request. Do not make an
+  // upstream Supabase Auth call here: a delayed Auth response must not take the
+  // entire Alpha site offline. Authorization remains at the data/API boundary.
+  return NextResponse.next({ request });
 }
 
 function serviceUnavailable() {
