@@ -19,6 +19,31 @@
 - 環境変数の例は `.env.example` に限定する。
 - ユーザー権限、管理者権限、有料機能権限を将来分離できるようにする。
 
+## Software Supply Chain・開発ツール境界
+
+依存packageだけでなく、repositoryを開く・CIを実行する・AI coding agentを接続する行為もcredentialと実行権限の境界です。MCP Registry掲載、署名済みlockfile、OIDC Trusted Publishingだけを安全性の保証として扱いません。
+
+### 導入前の静的preflight
+
+未知の外部repo、MCP、IDE extension、AI agent plugin、dependencyを導入・clone・workspace open・実行する前に、read-onlyで次を確認します。
+
+- `.codex`、`.claude`、`.vscode`、`.github/workflows`、`.gemini`、`.cursor`、`.opencode`、`.mcp.json`などのagent / IDE / MCP設定
+- `package.json` / lockfile、package lifecycle scripts、shell / setup script、`binding.gyp`とnode-gyp等native build hook
+- Git hooks、devcontainer、外部download、`eval`、base64 decode後の実行、credential discovery、filesystem-wide scan、永続化設定
+- GitHub Actionsのtrigger、checkout対象、permissions、secrets、OIDC token発行、deploy credential
+
+新しいdependency、MCP、external repo、GitHub Action / OIDC変更は明示承認を要します。commit messageだけでdependency updateを信頼せず、manifest、lockfile、source repository、実行設定を照合します。
+
+### GitHub Actions / OIDC
+
+`pull_request_target`、`issue_comment`、`workflow_run`と、forkまたはexternal PR由来codeのcheckout、`id-token: write`、`contents: write`、`packages: write`、deployment / cloud credentialの組合せをhigh-riskとしてreviewします。OIDC Trusted Publishingは、credentialを発行するworkflowの権限設計を不要にしません。CodeQL等のsecurity workflowも通常workflowと同じく改変対象として監査します。
+
+### 不審な証拠を見つけた場合
+
+known IOC、不明な実行設定、MCP、native build hook、GitHub Actions変更、永続化、malicious dependencyの疑いを見つけた場合は、script、install、test、build、workflowを実行しません。証拠を削除・改変せず、network accessを増やさず、侵害の可能性として扱います。
+
+credential rotationは感染疑い端末で開始しません。原則は、isolate → known persistenceの存在確認 → clean device → GitHub / package registry / cloud / CI / AI API / SSH / Supabase / Netlify等のcredential rotationです。実際の隔離・rotation・外部設定変更は所有者の判断と別手順で行います。
+
 ## 将来拡張
 
 - セキュリティ事故対応手順
