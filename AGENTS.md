@@ -117,6 +117,14 @@ MECHORIに信頼できる収益化の見通しが立つまで、継続的なサ�
 - 根拠のない推測を整備情報へ混ぜず、型式、部品番号、締付トルク、配線、修理手順を推測で生成しない。
 - 根拠がなければ「分からない」を選び、将来のAI機能は必ず参照元へ戻れる構造にする。
 
+## Software Supply Chain・AI開発ツール
+
+- npm / PyPI / RubyGemsの依存だけでなく、`.codex`、`.claude`、`.vscode`、`.github/workflows`、`.gemini`、`.cursor`、`.opencode`、MCP設定、`package.json` scripts、`binding.gyp`、Git hooksを実行可能なSupply Chain Boundaryとして扱う。
+- 未知のMCP、registry掲載MCP、外部repo、依存追加を、便利さだけを理由に自動導入・clone・workspace open・実行しない。導入前にsource repositoryと上記設定・scripts・native build hookを静的に確認し、所有者の明示承認を得る。
+- 未知repoをVS Code、Claude Code、Codex等で開く前に、AI/IDE設定、MCP設定、GitHub Actions、package lifecycle scripts、`binding.gyp`をread-onlyで確認する。
+- GitHub Actions、特にOIDC、`contents: write`、`id-token: write`、deployment権限、`pull_request_target`、`issue_comment`、`workflow_run`の変更はhigh-risk security changeとして扱い、明示承認なしに追加・緩和しない。
+- IOC、不審な永続化、不明な実行設定、疑わしいdependencyを見つけた場合は実行・削除・credential rotationをせず、証拠を保持して隔離→clean deviceで確認→credential rotationの順を所有者へ報告する。
+
 ## 状態管理
 
 - 機能実装を完了したCodexタスクは、同じコミットで `docs/PROJECT_STATE.md` と必要に応じて `docs/ALPHA_LAUNCH_CHECKLIST.md` を更新する。
