@@ -44,6 +44,13 @@ known IOC、不明な実行設定、MCP、native build hook、GitHub Actions変�
 
 credential rotationは感染疑い端末で開始しません。原則は、isolate → known persistenceの存在確認 → clean device → GitHub / package registry / cloud / CI / AI API / SSH / Supabase / Netlify等のcredential rotationです。実際の隔離・rotation・外部設定変更は所有者の判断と別手順で行います。
 
+## Supply-chain incident status（2026-08-31）
+
+- **Current status**: 悪性versionの配布は停止済みで、通常の新規installによる感染リスクは大きく低下した。ただし、incident window中に該当versionを取得した端末・CI、lockfile、npm / CI cacheからの再利用可能性は引き続き監査対象であり、incident resolvedとは扱わない。
+- **Reported package status**: `@7nohe/openapi-react-query-codegen`の報告された悪性version群はnpmから削除済みで、current latestは安全版`3.0.2`へ戻ったとされる。関連するCritical advisoryは[GHSA-9pvf-vcx3-x239](https://github.com/advisories/GHSA-9pvf-vcx3-x239)を参照する。
+- **MECHORI audit result**: 前回のread-only監査では、当該package、指定された悪性version、既知IOC、指定永続化path、trackedなIDE / agent / MCP設定、GitHub Actions、`binding.gyp`は検出されなかった。この結果は維持するが、package削除だけで安全性を確定しない。
+- **Response remains**: IOC、repository configuration、MCP、native build hook、Actions / OIDC、dependency、cacheを確認し、credential compromiseが疑われる場合は感染疑い端末上でrotationを開始せず、`isolate → clean device → credential rotation`の順とする。未知MCP・dependency・external repoのexplicit approval gateも維持する。
+
 ## 将来拡張
 
 - セキュリティ事故対応手順
