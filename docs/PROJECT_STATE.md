@@ -311,3 +311,26 @@
 - **Metadata / discovery**: Production buildの`metadataBase`を環境由来のNetlify URLではなく正式originへ固定する。現αはnoindexで、公開Experience projection、route別canonical / OGP、sitemapは未実装のため、このmigrationで公開範囲やcrawler surfaceを増やさない。
 - **Auth manual gate**: Supabase AuthのSite URLとproduction callback allow list、Google OAuth clientの登録値はDashboardで所有者が確認する。Googleのredirect URIがSupabaseの`https://<project-ref>.supabase.co/auth/v1/callback`である構成は変更しない。既存hostのcookieは新domainへ移せないため、初回は再loginが必要になり得るが、同じGoogle / MECHORI UserならGarage dataは同一Supabase dataを参照する。
 - **状態**: repository変更、test、Deploy PreviewまではPRで確認する。Production反映、Google login、既存Garage data、logout / login、iPhone Safari、Android ChromeはHuman QA pendingとし、完了扱いにしない。
+
+## 33. 2026-09-09 Business / Product / GTM review checkpoint
+
+- **対象と根拠**: `codex/business-strategy-review-20260909`。GitHub APIとfetchで最新main `d41f0a645dc0df41b5ed4dcba16fbc99773228fa`（PR #17 merge）を確認し、追跡済み文書と検索コード、戦略判断に必要な外部一次資料をレビューした。実利用DB・個別テスターの非公開情報・請求実績は取得していない。
+- **完了したこと**: [経営戦略レビュー](STRATEGY_REVIEW_2026-09-09.md)に、18項目の判断、4つのbeachhead比較、競合の利用循環、90日実験、KPI、Kill/Pivot条件、支援工数を含む収支、12か月/3年の条件付きシナリオを記録した。これはレビュー成果物の作成であり、事業検証や機能実装の完了ではない。
+- **提案と理由**: 日本語Barchettaを暫定beachheadとし、本人の履歴再利用→他者Evidenceの有用性→Owner/工場の支払を検証する。接点は14日で判定する。Evidence検証をNative/Driveより前へ動かし、Professionalを未検証の主収益として固定しない。新料金・公開範囲・Founding Garage条件等の変更は採用未決定で、既存の約束と権利を維持する。
+- **P0/P1/P2**: 新規P0事故の確認はないが、セキュリティ監査ではない。戦略上のP1として、レビュー範囲内の実測cohort/有料継続/支援原価の証拠不足、README等の旧状態と新checkpointの混在、空検索を含む有用性定義、30日/90日累積再利用目標の不整合を識別した。P-086、P-081/B、P-070等の実機QA、MECH-041の現場検証を優先する提案であり、状態は従来どおり。MECH-044〜047やNative/Drive/API等の順位変更は提案に留め、既存項目を削除しない。
+- **未完了**: テスター再試験、接点/支払/原価の実測、提案の採用判断、既存事業文書の方針統合。人間QA、本番反映、契約、課金、DB/RLS、外部送信範囲の変更は行っていない。
+- **次に行うこと**: 既存α3名と外部Owner2名の基本体験/別日再利用、同車種10人への到達性、本人実記録と上位5情報ニーズ、3工場の実案件観察、現行費用とFounder時間の確認。採用後にBUSINESS_GROWTH、MEASUREMENT_PLAN、BUSINESS_MODEL、MONETIZATION、ROADMAP、BACKLOG、DECISIONSを置換理由付きで整合させる。
+- **検証**: 文書のみの変更として、差分、参照先、18章の順序、4つの収支計算、90日の日付、時間配分を確認済み。アプリのlint/typecheck/test/buildは文書専用変更のため未実行で、新たな動作保証を追加しない。既存Human QA状態は変更しない。
+
+## 34. 2026-09-09 Strategy v2 Red Team checkpoint
+
+- **対象と根拠**: `codex/strategy-review-v2-20260909`。最新main `d41f0a645dc0df41b5ed4dcba16fbc99773228fa`（PR #17）と、ユーザー指定のStrategy v1全文を基準にレビューした。v1は開始時にmain未収録のローカル成果物であり、今回の文書PRへ比較基準として保存する。v1作成時の§33を履歴として残し、追加観察に対する現在のレビュー結論は§34とv2を参照する。
+- **成果物**: [Strategy v2](STRATEGY_REVIEW_V2_2026-09.md)。25章、v1のKEEP/MODIFY/REJECT、5案のbeachhead比較、18のWebリスク、四群比較、8仮説の停止条件、90日・12か月・3年の条件付き計画を作成した。状態は **REVIEW_READY / ADOPTION_PENDING / EXPERIMENTS_NOT_RUN**。戦略レビュー完成と、実利用検証・製品完成を分離する。
+- **主な変更提案と理由**: Barchettaは唯一の獲得対象からAnchorへ変更。接点があり30日内の維持課題を持つ趣味車Ownerを対象に、既存αと新規参加者を区別して観察する。接点制約が新たに明示されたためで、既存αを安易に排除しない。主価値は本人の履歴を次の相談で再利用できること。
+- **Web / Professional**: Open Web GroundingはPROTOTYPE ONLYとして条件付き検証、本番採用は未決定。外部参照と新しい実車結果を別出自で保持し、内部Evidenceの追加価値と自然な結果返却を個別評価する。ProfessionalはVALIDATION ONLY。ベテラン整備士のGoogle AI利用はFounder報告のn=1であり、PMF・支払・性能優位の証拠にしない。
+- **新たに明示したP1**: Barchettaの獲得到達性、Web利用から結果返却への未検証、Googleと同じ資料を使った場合の固有差、検索・AI・無料支援を含む採算、外部Referenceの誤った自社Evidence化。現AI_POLICY / KNOWLEDGE_SYNTHESISの内部公開事例中心の許可範囲と本番Grounding案には差分があり、採用時の別審査が必要。いずれも検証設計済み／実測未了。
+- **P0/P1/P2と既存状態**: 新規P0事故を調査・検証した作業ではない。P-086、P-081/B、P-070等のHuman QA、MECH-041の現場検証、MECH-044〜047の実装・承認状態は変更なし。P2相当の将来拡張・Native/Drive/Voice/APIの凍結は戦略提案であり、既存Backlogを削除しない。
+- **未完了**: Ownerの採用判断、募集、実例資料の確認、四群実験、再利用・返却・支払・全継続費・Founder工数の実測、関連方針文書への採用後統合。価格付き申込・実支払・更新を別状態にする。外部AI送信・契約・課金・公開設定・本番DBは未変更。
+- **次に行うこと**: v2 §25のTOP 5を起点に、既存α3名＋紹介候補の利用機会、実機QA、Founder実在題材、最小測定台帳、既知工場の検索利用と費用・時間を確認する。Day 14/28/60/90のgateで進行判断する。
+- **検証**: 25章の順序、文書内参照先、90日の連続日付、時間配分100%、4つの検索費感度ケース、5つの単位採算を確認した。文書のみのためアプリのlint/typecheck/test/buildは未実行。新たな動作保証は付加しない。最終差分を文書3ファイルに限定して確認する。
+- **Checkpoint**: 途中の判断とsourceは最終v2へ統合し、別の中間checkpointをsource of truthとして残さない。v1・v2・PROJECT_STATEの役割を分離し、採用後にDECISIONS等へ変更理由を追記する。
