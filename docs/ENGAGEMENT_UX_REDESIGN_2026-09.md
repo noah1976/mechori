@@ -4,7 +4,7 @@
 
 対象: 少人数の既存αが、整備の用事がない日にも数日に一度、自分から戻るWeb体験。これは設計提案であり、製品方針の採用・実装・本番反映・UX検証の完了を意味しない。
 
-基準コード: main `d41f0a645dc0df41b5ed4dcba16fbc99773228fa`。09-10の再開時にもGitHubでmainが同じことを確認。branch: `codex/engagement-ux-redesign-20260909`。
+基準コード: main `d41f0a645dc0df41b5ed4dcba16fbc99773228fa`。09-10の再開時にもGitHubでmainが同じことを確認。branch: `codex/engagement-ux-redesign-20260909`。設計PR: [#19](https://github.com/noah1976/mechori/pull/19)（未merge）。
 
 必読のStrategy v2はmain未収録で、[PR #18](https://github.com/noah1976/mechori/pull/18)の提案を参照した。監査に用いた[Strategy v2の固定版](https://github.com/noah1976/mechori/blob/a45655affa9d59a6bd401d3421f9e433849ab18b/docs/STRATEGY_REVIEW_V2_2026-09.md)とmainの実装を混同しない。本書はそのFreeze、既存α維持、Self-historyと他者Evidence reuseの分離を前提とする。
 
