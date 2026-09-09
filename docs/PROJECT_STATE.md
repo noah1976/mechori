@@ -311,3 +311,14 @@
 - **Metadata / discovery**: Production buildの`metadataBase`を環境由来のNetlify URLではなく正式originへ固定する。現αはnoindexで、公開Experience projection、route別canonical / OGP、sitemapは未実装のため、このmigrationで公開範囲やcrawler surfaceを増やさない。
 - **Auth manual gate**: Supabase AuthのSite URLとproduction callback allow list、Google OAuth clientの登録値はDashboardで所有者が確認する。Googleのredirect URIがSupabaseの`https://<project-ref>.supabase.co/auth/v1/callback`である構成は変更しない。既存hostのcookieは新domainへ移せないため、初回は再loginが必要になり得るが、同じGoogle / MECHORI UserならGarage dataは同一Supabase dataを参照する。
 - **状態**: repository変更、test、Deploy PreviewまではPRで確認する。Production反映、Google login、既存Garage data、logout / login、iPhone Safari、Android ChromeはHuman QA pendingとし、完了扱いにしない。
+
+## 2026-09-10 Engagement UX design review checkpoint
+
+- **現在の状態**: `DESIGN_REVIEW_READY / NOT_IMPLEMENTED / HUMAN_VALIDATION_PENDING`。[Engagement UX redesign](ENGAGEMENT_UX_REDESIGN_2026-09.md)に、Product Design audit、Home 3案、6つのwireframe、12画面の契約、Visual方向、Social primitives、2週間の検証、Red Teamを記録した。設計提案の完成と、コード完成・本番反映・人間QA・効果検証は別状態である。
+- **基準と関連branch／PR**: main `d41f0a645dc0df41b5ed4dcba16fbc99773228fa`から`codex/engagement-ux-redesign-20260909`を作成。Strategy v2は[PR #18](https://github.com/noah1976/mechori/pull/18)のcommit `a45655affa9d59a6bd401d3421f9e433849ab18b`を参照した未merge提案であり、mainで採用済みとは扱わない。本設計のPRは同branchから作成する。
+- **新たに確認したP1: EUX-01**: ログイン後Home／記録詳細が提示する一つの車名リンク `/garage/[vehicleId]` が本番で404になることを確認した。同routeの`page.tsx`は基準mainに存在しない。個別ID・画像・α本文はGitへ転載せず、再現経路とローカル証拠S12を設計文書に記録。共有車の`/v/…`全件が同様とは断定しない。状態は**再現確認／未修正／実機QA未実施**。今回のdesign-only指示によりコード修正は行わない。
+- **その他P1／P2**: EUX-03はQuick Record保存前の共有先理解、EUX-09はHome閲覧・自発sessionを現行月次集計だけでは測れない問題。いずれも設計・検証課題。Garage、Search、Owner表現、Visual整合はP2提案。新規P0は本監査では確認していないが、網羅的な安全性監査ではない。
+- **重要な判断と理由**: SNS不足を原因と断定せず、自車の小さい入口とVehicle主語の有限Feedを組み合わせたHybridを推奨。最小sliceは「他車の記録を見る→自車に一文残す→自車履歴へ戻る」。同案件の続報はMECH-045の永続契約が必要なため、このsliceから外した。`linkedRecordId`の流用、編集時刻による疑似新着、架空activityを用いない。
+- **未完了／次に行うこと**: 所有者が設計を検討し、別の実装タスクでP1導線・共有先・保存を整えて実機QAした後、2週間の観測を開始する。現段階で実験はNOT RUN。自発再訪、軽い記録、自己履歴利用、後日経過を分けて測り、Founder／督促／通知／QA由来は別集計する。
+- **維持する状態**: P-070、P-081、P-086等のHuman QAおよびMECH-045/046/047の既存依存・未実装状態は変更しない。application code、CSS、DB/schema/migration、API、外部サービス設定、依存パッケージ、Netlify／Supabase設定は変更していない。通常画面閲覧に伴う既存アクセス・利用計測は発生し得る。
+- **文書検証**: 34章、6wireframe、12画面×11項目、Before/After、CURRENT/PROPOSED/FUTUREと依存を確認する。docsのみのためapplicationのlint/typecheck/test/buildは対象外とし、差分・リンク・`git diff --check`を検証する。本番デプロイやmergeは実行しない。
