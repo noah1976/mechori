@@ -26,7 +26,7 @@ test("hashes an invitation token without exposing the raw value", async () => {
 });
 
 test("keeps the invitation token in the URL fragment", () => {
-  const url = new URL(buildInvitationUrl("https://mechori-alpha.netlify.app", "secret-token"));
+  const url = new URL(buildInvitationUrl("https://mechori.com", "secret-token"));
 
   assert.equal(url.pathname, "/join");
   assert.equal(url.search, "");

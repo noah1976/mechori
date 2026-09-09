@@ -9,7 +9,7 @@
 ## 初回だけ必要な手順
 
 1. Google OAuthがテスト中の場合だけ、Google Auth Platformの`対象`で、所有者が使うGoogleアカウントをテストユーザーへ追加する。
-2. `https://mechori-alpha.netlify.app/auth`で`Googleで続ける`を選ぶ。
+2. `https://mechori.com/auth`で`Googleで続ける`を選ぶ。
 3. 初回は「有効な招待URLが必要です」と戻る。これは正常で、Supabase AuthenticationにはGoogleユーザーが作成される。
 4. Supabase Dashboardの`Authentication` → `Users`で、自分のユーザーUUIDをコピーする。
 5. Supabase SQL Editorで、下の`00000000-...`だけを自分のUUIDへ置き換えて実行する。

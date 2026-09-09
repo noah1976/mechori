@@ -37,7 +37,7 @@ private Experience / Entry / MediaAsset
 
 ## URL, OGP, and Native handoff
 
-- Canonical URL candidate: `https://mechori.com/e/<opaque-share-slug>`. It is independent of Journal, Vehicle, profile, or Storage IDs, and survives a display-title edit. The exact production origin is blocked on the separate domain/hosting manual configuration.
+- Canonical URL candidate: `https://mechori.com/e/<opaque-share-slug>`. It is independent of Journal, Vehicle, profile, or Storage IDs, and survives a display-title edit. The production origin is established, but the projection, rights, server metadata, and anonymous reader remain separate implementation gates.
 - The route is server-rendered or metadata-capable server code. Canonical, `og:url`, title, description, `og:image`, Twitter metadata, and robots state are derived solely from the current public projection.
 - Image selection is deterministic: first ordered eligible photo of the selected Experience/Entry → eligible Vehicle representative photo → versioned MECHORI default OGP. “First” means the normalized Entry attachment order, not creation order or a guessed photo.
 - OGP image delivery uses the approved public derivative; no source/original URL leaks through image metadata, redirects, error responses, or image optimization. Crop/focal-point data, if later added, belongs to the approved variant/projection.
@@ -67,6 +67,6 @@ private Experience / Entry / MediaAsset
 
 - **P1:** anonymous public read requires new DB/RLS/RPC and a projection writer; it is not safe to layer onto participant sharing.
 - **P1:** public media privacy review and derivative lifecycle are prerequisites; current α image confirmation does not meet the documented anonymous-public gate.
-- **P1:** the production `mechori.com` canonical origin is manual DNS/hosting work and remains separate from local code.
+- **P1:** the production `mechori.com` canonical origin is established; Public Experience sharing still requires the projection, public-media rights, server metadata, revoke behavior, and separate owner-approved DB/RLS work described above.
 - **P2:** current Vehicle sharing offers a useful revoke precedent, but conversion of its data URL snapshot to normalized media needs a separate owner-approved migration plan.
 - **MANUAL_NEXT:** owner approval is required before DB/RLS/Storage changes, external crawler-visible routes, production domain settings, deployment, or real public content is enabled.

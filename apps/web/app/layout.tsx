@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { AppShell } from "@/components/app-shell";
 import { NotificationProvider } from "@/components/notification-provider";
 import { AppProvider } from "@/lib/app-context";
+import { mechoriProductionOrigin } from "@/lib/site-origin";
 import "./globals.css";
 
 /* eslint-disable @next/next/next-script-for-ga -- MECHORI uses the owner-supplied GTM container snippet verbatim. */
@@ -10,9 +11,11 @@ import "./globals.css";
 const remoteAlpha = process.env.NEXT_PUBLIC_MECHORI_RUNTIME === "alpha";
 const googleTagManagerId = process.env.NEXT_PUBLIC_GTM_ID?.trim() || "GTM-M54GKLLL";
 const analyticsEnabled = process.env.NODE_ENV === "production" && /^GTM-[A-Z0-9]+$/.test(googleTagManagerId);
-const siteUrl = process.env.NEXT_PUBLIC_MECHORI_SITE_URL?.trim()
-  || process.env.URL?.trim()
-  || (process.env.NODE_ENV === "production" ? "https://mechori.com" : "http://localhost:3000");
+const siteUrl = process.env.NODE_ENV === "production"
+  ? mechoriProductionOrigin
+  : process.env.NEXT_PUBLIC_MECHORI_SITE_URL?.trim()
+    || process.env.URL?.trim()
+    || "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

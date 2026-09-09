@@ -7,11 +7,11 @@
 - `[ ]` 未実装または未完了
 - `[-]` 今回対象外・延期・撤回
 
-このチェックリストは、人間QAを省略して実装済み機能を完了扱いにしない。コード、テスト、本番反映、人間QAは別々に確認する。現在のα確認先は `https://mechori-alpha.netlify.app`。
+このチェックリストは、人間QAを省略して実装済み機能を完了扱いにしない。コード、テスト、本番反映、人間QAは別々に確認する。現在の正式なα確認先は `https://mechori.com`。
 
 ## 1. α開始前
 
-- `[~]` Netlify α URLへアクセスできる
+- `[~]` `https://mechori.com`へアクセスできる
 - `[~]` Supabase Authで招待Googleログインができる
 - `[~]` 招待URLを複数発行し、同じURLの重複利用を防げる
 - `[~]` クルマまたはバイクを登録できる
@@ -33,7 +33,7 @@
 - `[~]` 愛車を登録し、愛称・所有開始時期・メイン写真を設定する
 - `[~]` P-084B: 新規Vehicleは「MECHORI内で見つけられる」が既定ONで、ownerが編集画面からOFF／ONできる。OFF後は検索から消え、外部匿名共有と既存Vehicle Followは変わらないことを確認する
 - `[~]` P-086: Garageまたは「記録する」からUniversal Composerを開き、Vehicle、本文のみ、または本文＋写真で保存する。Quick Record初期画面に公開範囲・種別・「詳しく記録する」別入口がなく、保存後にGarage Timelineへ反映されることを確認する
-- `[~]` PR #5統合QA: Deploy PreviewでGoogle OAuth後に同じPreviewへ戻り、Logout → Login後もsessionが維持されることを確認する。Productionと正規の`deploy-preview-<digits>--mechori-alpha.netlify.app`以外のoriginは許可しない。
+- `[~]` PR #5統合QA: Deploy PreviewでGoogle OAuth後に同じPreviewへ戻り、Logout → Login後もsessionが維持されることを確認する。`https://mechori.com`と正規の`deploy-preview-<digits>--mechori-alpha.netlify.app`以外のoriginは許可しない。
 - `[~]` Garage Vehicle Identity: メーカー、車名＋trim、型式・年式、車齢／所有期間／走行距離、Ownerを順に確認する。長い車名は320 / 375 / 390 / 430pxで横にはみ出さず、trim・型式・年式・走行距離等が未入力の場合は「不明」等のplaceholderを表示せず自然に省略する。人間QA待ち
 - `[~]` Garageから詳しい記録を、写真なしで保存する
 - `[~]` P-085: 整備記録で「自分で作業／お店・工場／不明・記録しない」を選び、既存Provider検索または店名＋市区町村の最小追加を行う。編集後も当時の名称snapshotが維持されることを確認する
@@ -118,7 +118,7 @@
 - `[~]` ProfessionalのOrganization／membership／Founding Garage最小基盤（P-085、人間QA待ち）
 - `[ ]` Professionalの症例庫、工場作成記録、帳票、契約、課金
 - `[-]` 決済・広告・有料プランの本番導入
-- `[-]` `mechori.com`へのDNS・ホスティング切り替え
+- `[~]` `mechori.com`へのDNS・HTTPS接続は完了。正式originへのAuth／metadata／旧Netlify URL転送はPRで更新し、Production反映後のGoogle Loginと端末別QAを待つ
 
 ## 8. 人間QAの記録
 
@@ -199,3 +199,13 @@ P-069のように本番で再現した不具合は、テスト成功だけを根
 
 - `[ ]` PR #8をmainへmergeする前に、CEOがDeploy Preview上でVehicle-centered Signature Experience、Capture Intent、Garage全履歴、写真表示、保存後詳細、Feed detail navigationを確認する。PR #8は現α baseline候補であり、実機QA未完了をもって「完成」と扱わない。
 - `[ ]` Home Information Architecture、DEMO・重複要素、最近の整備記録、月次summary、重複navigationの整理後に、αユーザー3名へ再テストを依頼する。
+
+## 17. 2026-09-09 Production domain migration
+
+- `[~]` `https://mechori.com`を正式Production originとするcode／docs変更済み。main反映後に直接アクセス、HTTPS、主要routeを確認する。
+- `[~]` `https://www.mechori.com`がpathを保って`https://mechori.com`へ転送されることを確認する。Netlify側に既存転送があるためrepositoryへ重複ruleは追加しない。
+- `[~]` 旧`https://mechori-alpha.netlify.app`のroot、`/garage`、query付きURLが、path／queryを保って正式domainへ301転送されることをmain反映後に確認する。
+- `[ ]` Supabase AuthenticationのSite URLを`https://mechori.com`、Redirect URLを`https://mechori.com/auth/callback`として確認し、既存Deploy Preview用Redirect URLを残す。
+- `[ ]` `mechori.com`からGoogle Loginし、同domainへ戻ること、既存Garage dataが同一であること、logout／再loginを確認する。host変更により旧domainのcookieは移らないため、正式domainで一度loginし直す。
+- `[ ]` 正規のDeploy PreviewでGoogle Login後に同じPreviewへ戻り、旧Production hostや類似hostがAuth originとして許可されないことを確認する。
+- `[ ]` iPhone SafariとAndroid Chromeで正式domain、Google Login、Garage、logout／再loginを確認する。Human QA完了前にdomain migrationを完了扱いにしない。

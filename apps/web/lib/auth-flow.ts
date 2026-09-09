@@ -1,8 +1,8 @@
 import { sanitizeLocalReturnPath } from "@mechori/core";
 import { translate } from "@mechori/i18n";
+import { mechoriProductionOrigin } from "./site-origin.ts";
 
 export const alphaInviteCookieName = "mechori_alpha_invite";
-const productionOrigin = "https://mechori-alpha.netlify.app";
 const deployPreviewHostPattern = /^deploy-preview-\d+--mechori-alpha\.netlify\.app$/;
 
 export function isAllowedMechoriAuthOrigin(value: string | null | undefined): boolean {
@@ -12,7 +12,7 @@ export function isAllowedMechoriAuthOrigin(value: string | null | undefined): bo
     const url = new URL(value);
     return url.protocol === "https:"
       && url.port === ""
-      && (url.origin === productionOrigin || deployPreviewHostPattern.test(url.hostname));
+      && (url.origin === mechoriProductionOrigin || deployPreviewHostPattern.test(url.hostname));
   } catch {
     return false;
   }
@@ -45,7 +45,7 @@ export function resolvePublicOrigin({
     if (candidate && isAllowedMechoriAuthOrigin(candidate)) return new URL(candidate).origin;
   }
 
-  return productionOrigin;
+  return mechoriProductionOrigin;
 }
 
 export function authContinuationUrl(

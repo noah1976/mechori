@@ -6,7 +6,7 @@
 
 秘密情報、データベースパスワード、Google Client Secretをチャット、Git、文書へ貼りません。所有者がパスワード管理ツール、ローカルの`.env.local`、SupabaseまたはNetlifyの環境変数画面へ直接入力します。
 
-## 接続状況（2026-07-17）
+## 接続状況（2026-09-09）
 
 - Supabase Freeの`mechori-alpha`を東京リージョンに作成済み
 - Project URLとPublishable keyをGit対象外の`apps/web/.env.local`へ設定済み
@@ -14,7 +14,7 @@
 - 全6テーブルでRLS有効、未ログイン時の非公開Workspaceは空応答
 - 未ログイン時の招待一覧と招待関数は401拒否
 - Supabase DashboardのGitHub Connectは未使用。GitHub連携はNetlify設定時に行う
-- Netlify Freeへ`https://mechori-alpha.netlify.app`としてαブランチを接続済み
+- Netlify FreeへαSiteを接続済み。正式Production URLは`https://mechori.com`、旧Site URLは`https://mechori-alpha.netlify.app`
 - Google OAuth Client、Supabase Google Provider、Site URL、ローカル・Netlify Redirect URLを設定済み
 - Google OAuth callback、招待引換、参加権限確認、ログアウト、利用者別Workspace Adapterを実装済み
 - 1人用招待URLの発行画面を`/settings/alpha`へ実装済み
@@ -111,8 +111,8 @@ MECHORIはGoogle Drive、連絡先、友人一覧、投稿等へアクセスし�
 1. Google Auth Platformの`データアクセス`が`openid`、`userinfo.email`、`userinfo.profile`だけである。
 2. Authorized JavaScript originsが、使用中のMECHORI α URLとローカル開発URLだけである。
 3. Authorized redirect URIが、SupabaseのGoogle Provider画面に表示されるCallback URLと一致する。
-4. `https://mechori-alpha.netlify.app/privacy`をログアウト状態で開ける。
-5. ホーム、プライバシーポリシー、将来の利用規約を、正式公開時には所有・確認済みの`mechori.com`へ揃える計画がある。
+4. `https://mechori.com/privacy`をログアウト状態で開ける。
+5. ホーム、プライバシーポリシー、利用規約のoriginが、所有・確認済みの`mechori.com`へ揃っている。
 
 Google Auth Platformの画面で次を行います。
 
@@ -148,6 +148,24 @@ Googleのブランド確認では、公開ホーム、プライバシーポリ�
 5. Environment variablesへ`apps/web/.env.local`と同じ公開環境変数を所有者が直接入力する。Google OAuth公開ステータスは、Google Auth Platformがテスト中なら`testing`、本番環境なら`production`にする。
 6. Deploy Previewと本番相当α URLのどちらを使うかを決め、Google OAuthのOriginとSupabase Redirect allow listへ同じURLを登録する。
 7. デプロイ後、環境変数が画面やビルドログへ出ていないことを確認する。
+
+### 正式domain移行時のAuth確認
+
+Supabase Dashboardの`Authentication` → `URL Configuration`で、次を所有者が設定・確認します。
+
+```text
+Site URL:
+https://mechori.com
+
+Redirect URLsへ追加:
+https://mechori.com/auth/callback
+```
+
+既存のNetlify Deploy Preview用Redirect URLは削除しません。production callbackは完全なpathを登録し、不要に`https://mechori.com/**`へ広げません。repositoryのAuth実装も、`https://mechori.com`と数値形式のMECHORI Deploy Previewだけを許可します。
+
+Google Auth Platformの対象Web clientでは、Authorized redirect URIがSupabase Google Provider画面に表示される`https://<project-ref>.supabase.co/auth/v1/callback`と一致することを確認します。MECHORI domain移行だけを理由に、このURIやClient Secretを作り直しません。Authorized JavaScript originsに旧Netlify production URLを明示登録している場合は`https://mechori.com`を追加し、Google loginのHuman QAが終わるまで既存値を削除しません。
+
+NetlifyのEnvironment variablesに`NEXT_PUBLIC_MECHORI_SITE_URL`が存在する場合は、値を`https://mechori.com`へ合わせます。未設定の場合、今回のためだけにsecretや重複したdomain設定を追加する必要はありません。旧Netlify production hostの301転送はrepositoryの`apps/web/public/_redirects`で管理し、Deploy Previewへ適用しません。
 
 月次計測を有効にする場合だけ、`202607170003_monthly_activity.sql`を内容確認後に適用し、Netlifyへ次を追加します。
 

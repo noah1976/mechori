@@ -8,7 +8,7 @@ import {
   resolvePublicOrigin,
 } from "../lib/auth-flow.ts";
 
-const origin = "https://mechori-alpha.netlify.app";
+const origin = "https://mechori.com";
 
 test("keeps the raw invitation out of the same-site OAuth continuation URL", () => {
   const url = new URL(authContinuationUrl(origin, "signup", "/garage"));
@@ -52,6 +52,8 @@ test("allows the production origin and numeric MECHORI deploy previews only", ()
   assert.equal(isAllowedMechoriAuthOrigin("https://deploy-preview-302--mechori-alpha.netlify.app"), true);
 
   for (const candidate of [
+    "https://www.mechori.com",
+    "https://mechori-alpha.netlify.app",
     "https://foo--mechori-alpha.netlify.app",
     "https://deploy-preview-abc--mechori-alpha.netlify.app",
     "https://deploy-preview-2--other-project.netlify.app",
