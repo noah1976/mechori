@@ -836,3 +836,12 @@
 - HomeにはFollowing Feed、Record CTA、GarageとSearchへの最小導線を置く。mobileは既存FABをPrimary Capture入口として維持する。
 - Homeから、理解に必須ではないDEMO Signature、Reference Garage promo、最近の整備記録、月次summary、Garage由来summary、重複したKnowledge form、過剰なonboarding / checklistを外す。Reference Garage route、未ログインLanding、初回Vehicle未登録の案内は別の目的を持つため維持する。
 - これはFollowing Feed-firstがrevisit、WAU、MAU、Evidence discovery、Meaningful Reuseを改善し得るというα仮説の整理であり、改善を実測前に断定しない。Human QAではfeed navigation、Record CTA、mobile FAB、empty / sparse state、320pxからdesktopのoverflowを確認する。
+
+### 決定: Production identityを`https://mechori.com`へ統一する
+
+- 日付: 2026-09-09
+- 状態: repository implementation / Production・Auth Human QA pending。
+- 正式Production origin、metadata absolute URLの基準、将来Public Share URLのdomainを`https://mechori.com`へ統一する。旧`https://mechori-alpha.netlify.app/*`はpathとqueryを保って正式domainへ301転送する。
+- Deploy Previewは認証と検証の独立surfaceとして維持し、数値形式`deploy-preview-<digits>--mechori-alpha.netlify.app`だけをAuth originに許可する。旧Production host、`www`、類似host、HTTP、port付きoriginはcallback originとして許可しない。
+- `www.mechori.com`のcanonical転送はNetlifyのprimary-domain設定へ任せ、repositoryに二重redirectを追加しない。現αのnoindex、private media、Public Experience projection未実装という境界も維持する。
+- Supabase Site URL / Redirect URLsとGoogle OAuth clientの登録値は所有者がDashboardで確認する。Database、RLS、RPC、OAuth provider、secretはこの変更で更新しない。

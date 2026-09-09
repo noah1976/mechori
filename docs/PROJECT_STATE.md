@@ -1,9 +1,9 @@
 # MECHORI Project State
 
-- 更新日時: 2026-08-24
-- 対象ブランチ: `codex/10-home-ia-cleanup`
+- 更新日時: 2026-09-09
+- 対象ブランチ: `codex/18-production-domain-migration`
 - HEAD基準: 本書を含む現在ブランチの`git log -1`を正とする
-- 本番URL: `https://mechori-alpha.netlify.app`
+- 本番URL: `https://mechori.com`
 - 状態文書のルール: 実装、テスト、本番反映、人間QAを別々に判定する。コード、テスト、Git履歴、既存の運用記録を照合し、根拠のない項目は完了にしない。本書を現在の実装状態の正本とする。
 
 ## 1. 現在テスターが利用できる主要フロー
@@ -303,3 +303,11 @@
 - **Public Share readiness（P1）**: `docs/PUBLIC_SHARE_READINESS.md`で、現`/v/[slug]` Vehicle snapshotとα member Journal shareをExperience匿名公開の土台と見なせない理由、projection-only reader、canonical / OGP fallback、revoke、Native share handoffを記録した。private leakage riskとDB/RLS dependencyのためread-only public routeは追加していない。
 - **Native readiness**: `docs/NATIVE_READINESS_PLAN.md`で、Home IA human QA → Experience / Media → data normalization → rights / Public Share → identity / auth → offline sync → shared-data vertical sliceの依存順、DoD、Human QAを定義した。Native projectやexternal configurationは開始していない。
 - **新規追跡**: MECH-047を`DESIGN_READY / IMPLEMENTATION_BLOCKED`として追加した。P1 manual gateは、Experience/Media physical schema、rights/public projection、production origin、multi-identity auth、offline/syncである。
+
+## 32. 2026-09-09 Production domain migration checkpoint
+
+- **正式origin**: Production identityを`https://mechori.com`へ統一する。Authは同originと、既存の数値形式`deploy-preview-<digits>--mechori-alpha.netlify.app`だけを許可し、旧Netlify production host、`www`、類似host、HTTP、port付きoriginをcallback originとして許可しない。
+- **旧URL移行**: `https://mechori-alpha.netlify.app/*`だけをNetlify CDNで`https://mechori.com/:splat`へ301転送するrepository ruleを追加する。pathとqueryを保持し、Deploy Previewとbranch deployには適用しない。`www.mechori.com`のcanonical転送は現在のNetlify domain設定へ任せ、二重ruleを追加しない。
+- **Metadata / discovery**: Production buildの`metadataBase`を環境由来のNetlify URLではなく正式originへ固定する。現αはnoindexで、公開Experience projection、route別canonical / OGP、sitemapは未実装のため、このmigrationで公開範囲やcrawler surfaceを増やさない。
+- **Auth manual gate**: Supabase AuthのSite URLとproduction callback allow list、Google OAuth clientの登録値はDashboardで所有者が確認する。Googleのredirect URIがSupabaseの`https://<project-ref>.supabase.co/auth/v1/callback`である構成は変更しない。既存hostのcookieは新domainへ移せないため、初回は再loginが必要になり得るが、同じGoogle / MECHORI UserならGarage dataは同一Supabase dataを参照する。
+- **状態**: repository変更、test、Deploy PreviewまではPRで確認する。Production反映、Google login、既存Garage data、logout / login、iPhone Safari、Android ChromeはHuman QA pendingとし、完了扱いにしない。
