@@ -21,5 +21,5 @@ test("journal forms do not expose a separate photo audience control", () => {
 
 test("journal forms explain that photos follow the record audience", () => {
   assert.match(journalFormSource, /写真は記録本文と同じ範囲で公開します/);
-  assert.match(quickEventFormSource, /写真は記録本文と同じ公開範囲で保存します/);
+  assert.match(quickEventFormSource, /MECHORIの参加者に見せます。写真にも同じ範囲が適用されます/);
 });

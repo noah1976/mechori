@@ -1,19 +1,21 @@
 "use client";
 
 import { DemoNotice } from "@/components/demo-notice";
-import { ActivationChecklist } from "@/components/activation-checklist";
 import { JournalCard } from "@/components/journal-card";
 import { useApp } from "@/lib/app-context";
 import {
   getFollowedSharedFeed,
   getFollowingFeed,
   getPreferredVehicle,
+  displayVehicleModel,
+  journalOccurrenceLabel,
 } from "@mechori/core";
 import { translate } from "@mechori/i18n";
 import {
   ArrowRight,
   BookOpenText,
   CarFront,
+  ChevronRight,
   LogIn,
   PenLine,
   Search,
@@ -39,7 +41,10 @@ export default function HomePage() {
     sharedJournals,
     sharedProfiles,
   } = useApp();
-  const vehicle = getPreferredVehicle(data.vehicles);
+  const ownVehicles = data.vehicles.filter(
+    (item) => item.ownerProfileId === data.currentProfileId,
+  );
+  const vehicle = getPreferredVehicle(ownVehicles);
   const ownJournalIds = new Set(data.journals.map((journal) => journal.id));
   const allFeed = signedIn
     ? [
@@ -61,8 +66,24 @@ export default function HomePage() {
             left.publishedAt ?? left.createdAt,
           ),
         );
-  // Home is the following feed for signed-in alpha users; signed-out discovery stays compact.
-  const feed = signedIn ? allFeed : allFeed.slice(0, 4);
+  const signedInFeed = allFeed.filter(
+    (journal) => journal.authorProfileId !== data.currentProfileId,
+  );
+  // The engagement experiment uses a finite set of existing, authorized records.
+  const feed = signedIn ? signedInFeed.slice(0, 8) : allFeed.slice(0, 4);
+  const latestVehicleJournal = vehicle
+    ? data.journals
+        .filter(
+          (journal) =>
+            journal.vehicleId === vehicle.id &&
+            journal.authorProfileId === data.currentProfileId,
+        )
+        .sort((left, right) =>
+          (right.publishedAt ?? right.createdAt).localeCompare(
+            left.publishedAt ?? left.createdAt,
+          ),
+        )[0]
+    : undefined;
   const [query, setQuery] = useState("");
   const router = useRouter();
   const ja = locale === "ja";
@@ -97,33 +118,8 @@ export default function HomePage() {
     );
   }
 
-  if (!vehicle && signedIn) {
-    return (
-      <div className="page-stack first-garage-home">
-        <section className="first-garage-invitation">
-          <span className="eyebrow">WELCOME TO MECHORI</span>
-          <CarFront size={42} aria-hidden="true" />
-          <h1>{ja ? "あなたのクルマを、ここから主役に。" : "Put your vehicle at the center."}</h1>
-          <p>{ja ? "メーカーと車名だけで始められます。写真、年式、詳しい仕様は、分かるときに後から足せます。" : "Make and model are enough to begin. Add a photo, year, and detailed specifications whenever you know them."}</p>
-          <Link href="/garage/new" className="primary-action"><ArrowRight size={18} />{ja ? "愛車ページをつくる" : "Create my vehicle page"}</Link>
-          <small>{ja ? "クルマもバイクも、候補にない車種はその場で自由入力できます。" : "Cars and motorcycles can be entered freely, including unlisted and rare models."}</small>
-        </section>
-        <ActivationChecklist />
-      </div>
-    );
-  }
-
-  if (!vehicle) return null;
-
   return (
     <div className="page-stack">
-      {signedIn && isRemoteAlpha && sharedJournalLoadState === "loading" && (
-        <p className="muted-copy" role="status">{ja ? "みんなの記録を読み込んでいます…" : "Loading shared records…"}</p>
-      )}
-      {signedIn && isRemoteAlpha && sharedJournalLoadState === "error" && (
-        <div className="empty-state"><p>{ja ? "みんなの記録を読み込めませんでした。" : "Shared records could not be loaded."}</p><button type="button" className="secondary-action" onClick={() => void refreshSharedJournals()}>{ja ? "もう一度試す" : "Try again"}</button></div>
-      )}
-
       {!signedIn ? (
         <section className="signed-out-hero" aria-labelledby="signed-out-hero-heading">
           <Image
@@ -184,15 +180,61 @@ export default function HomePage() {
 
       {!signedIn && <DemoNotice />}
 
-      {signedIn && <section className="home-feed-section home-following-section" aria-labelledby="following-feed-heading">
+      {signedIn && <>
+        <h1 className="sr-only">{ja ? "ホーム" : "Home"}</h1>
+        <section className="home-self-context" aria-labelledby="home-self-context-heading">
+          {vehicle ? (
+            <Link href={`/garage?vehicle=${encodeURIComponent(vehicle.id)}`} className="home-self-vehicle">
+              {vehicle.imagePath ? (
+                <Image
+                  src={vehicle.imagePath}
+                  alt=""
+                  width={64}
+                  height={64}
+                  className="home-self-vehicle-image"
+                  unoptimized={vehicle.imagePath.startsWith("data:")}
+                />
+              ) : (
+                <span className="home-self-vehicle-fallback" aria-hidden="true"><CarFront size={23} /></span>
+              )}
+              <span className="home-self-vehicle-copy">
+                <small>{ja ? "自分のクルマ" : "My vehicle"}</small>
+                <strong id="home-self-context-heading">{vehicle.make} {displayVehicleModel(vehicle, locale)}</strong>
+                <span>
+                  {latestVehicleJournal
+                    ? `${journalOccurrenceLabel(latestVehicleJournal, locale)} · ${latestVehicleJournal.bodyOriginal}`
+                    : (ja ? "まだ記録はありません。一文から残せます。" : "No records yet. Start with one sentence.")}
+                </span>
+              </span>
+              <ChevronRight size={19} aria-hidden="true" />
+            </Link>
+          ) : (
+            <div className="home-self-vehicle is-empty">
+              <span className="home-self-vehicle-fallback" aria-hidden="true"><CarFront size={23} /></span>
+              <span className="home-self-vehicle-copy">
+                <small>{ja ? "自分のクルマ" : "My vehicle"}</small>
+                <strong id="home-self-context-heading">{ja ? "愛車を登録すると、ここに履歴が育ちます" : "Add a vehicle to begin its history"}</strong>
+              </span>
+              <Link href="/garage/new" className="text-link">{ja ? "登録する" : "Add vehicle"}<ChevronRight size={16} aria-hidden="true" /></Link>
+            </div>
+          )}
+        </section>
+
+        <section className="home-feed-section home-following-section" aria-labelledby="following-feed-heading">
         <div className="home-feed-heading">
           <div>
-            <h1 id="following-feed-heading">{ja ? "フォロー中" : "Following"}</h1>
-            <p>{ja ? "人とクルマの新しい記録" : "New records from people and vehicles"}</p>
+            <p className="home-section-label">{ja ? "最近の記録" : "Recent records"}</p>
+            <h2 id="following-feed-heading">{ja ? "みんなのクルマに起きたこと" : "What happened to other vehicles"}</h2>
           </div>
         </div>
+        {isRemoteAlpha && sharedJournalLoadState === "loading" && (
+          <p className="muted-copy" role="status">{ja ? "みんなの記録を読み込んでいます…" : "Loading shared records…"}</p>
+        )}
+        {isRemoteAlpha && sharedJournalLoadState === "error" && (
+          <div className="home-feed-inline-error"><p>{ja ? "みんなの記録を読み込めませんでした。" : "Shared records could not be loaded."}</p><button type="button" className="secondary-action" onClick={() => void refreshSharedJournals()}>{ja ? "もう一度試す" : "Try again"}</button></div>
+        )}
         {feed.length ? <div className="home-journal-feed">
-          {feed.map((journal) => (
+          {feed.map((journal, index) => (
             <JournalCard
               key={journal.id}
               journal={journal}
@@ -221,23 +263,26 @@ export default function HomePage() {
               }
               alphaAudience={isRemoteAlpha}
               showPrivateMedia={signedIn && journal.authorProfileId === data.currentProfileId}
+              mediaPriority={index === 0}
+              vehicleImagePath={data.vehicles.find((item) => item.id === journal.vehicleId)?.imagePath}
               variant="home"
             />
           ))}
         </div> : <div className="home-feed-empty">
           <BookOpenText size={22} aria-hidden="true" />
           <div>
-            <strong>{ja ? "フォロー中の新しい記録はありません" : "No new records from people you follow"}</strong>
-            <p>{ja ? "人やクルマをフォローすると、ここで新しい記録を確認できます。" : "Follow people or vehicles to see their new records here."}</p>
+            <strong>{ja ? "新しい記録はまだありません" : "No recent records yet"}</strong>
+            <p>{ja ? "公開済みの記録が増えると、ここにクルマの出来事が並びます。" : "Visible vehicle records will appear here as they are added."}</p>
           </div>
           <Link href="/people" className="text-link"><UsersRound size={16} aria-hidden="true" />{ja ? "人・クルマを探す" : "Find people and vehicles"}</Link>
         </div>}
+        {feed.length > 0 && <p className="home-feed-end">{ja ? "最近の記録はここまでです。" : "That is all for recent records."}</p>}
         <div className="home-following-actions">
           <Link href="/journal/new" className="text-link home-record-link-desktop">
             <PenLine size={16} aria-hidden="true" />
             {ja ? "記録する" : "Record"}
           </Link>
-          <Link href="/garage" className="text-link">
+          <Link href={vehicle ? `/garage?vehicle=${encodeURIComponent(vehicle.id)}` : "/garage"} className="text-link">
             <CarFront size={16} aria-hidden="true" />
             {ja ? "自分のガレージ" : "My Garage"}
           </Link>
@@ -246,7 +291,8 @@ export default function HomePage() {
             {ja ? "記録を探す" : "Search records"}
           </Link>
         </div>
-      </section>}
+      </section>
+      </>}
 
       {!signedIn && <section className="home-feed-section home-public-feed" aria-labelledby="public-feed-heading">
         <div className="home-feed-heading">
@@ -256,7 +302,7 @@ export default function HomePage() {
           </div>
         </div>
         {feed.length ? <div className="home-journal-feed">
-          {feed.map((journal) => (
+          {feed.map((journal, index) => (
             <JournalCard
               key={journal.id}
               journal={journal}
@@ -265,6 +311,8 @@ export default function HomePage() {
               locale={locale}
               translations={data.contentTranslations}
               showPrivateMedia={false}
+              mediaPriority={index === 0}
+              vehicleImagePath={data.vehicles.find((item) => item.id === journal.vehicleId)?.imagePath}
               variant="home"
             />
           ))}

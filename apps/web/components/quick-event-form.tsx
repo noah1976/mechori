@@ -26,6 +26,7 @@ import {
 } from "@mechori/core";
 import { translate, type TranslationKey } from "@mechori/i18n";
 import { ArrowRight, ChevronDown, CircleAlert, Ellipsis, LoaderCircle, MapPinned, Save, ShieldCheck, Wrench } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
@@ -66,11 +67,21 @@ const eventTypes: Array<{ value: JournalEventType; label: TranslationKey }> = [
   { value: "other", label: "eventOther" },
 ];
 
-const captureIntents = [
+const captureIntents: Array<{
+  value: JournalCaptureIntent;
+  Icon: LucideIcon;
+  helperJa?: string;
+  helperEn?: string;
+}> = [
   { value: "issue" as const, Icon: CircleAlert },
   { value: "service" as const, Icon: Wrench },
   { value: "drive" as const, Icon: MapPinned },
-  { value: "other" as const, Icon: Ellipsis },
+  {
+    value: "other" as const,
+    Icon: Ellipsis,
+    helperJa: "洗車、部品が届いた、久しぶりに乗ったことなど",
+    helperEn: "A wash, a part arriving, or the first drive in a while",
+  },
 ];
 
 type OccurrenceDraft = Pick<
@@ -348,6 +359,7 @@ export function QuickEventForm({
         vehicle={vehicle}
         locale={locale}
         onClose={() => router.push(`/journal/${completion.id}`)}
+        onViewGarage={() => router.push(`/garage?vehicle=${encodeURIComponent(vehicle.id)}&record=${encodeURIComponent(completion.id)}&moment=added`)}
         onSaveEnrichment={async (draft) => {
           const updated = await updateJournal(completion.id, draft);
           setCompletion(updated);
@@ -391,10 +403,13 @@ export function QuickEventForm({
                   <p>{locale === "ja" ? "ひとつ選ぶと、すぐに書けます。" : "Choose one and start writing right away."}</p>
                 </div>
                 <div className="quick-capture-intent-options">
-                  {captureIntents.map(({ value, Icon }) => (
+                  {captureIntents.map(({ value, Icon, helperJa, helperEn }) => (
                     <button type="button" key={value} onClick={() => chooseCaptureIntent(value)}>
                       <Icon size={19} aria-hidden="true" />
-                      <span>{captureIntentLabel(value, locale)}</span>
+                      <span>
+                        <strong>{captureIntentLabel(value, locale)}</strong>
+                        {(helperJa || helperEn) && <small>{locale === "ja" ? helperJa : helperEn}</small>}
+                      </span>
                       <ArrowRight size={17} aria-hidden="true" />
                     </button>
                   ))}
@@ -448,6 +463,13 @@ export function QuickEventForm({
             <button type="button" className="text-action" onClick={() => setCaptureIntent(null)}>{locale === "ja" ? "変更" : "Change"}</button>
           </div>
         )}
+        {!editing && (
+          <p className="quick-note-invitation">
+            {locale === "ja"
+              ? "一文でも残せます。詳しい整理はあとで。"
+              : "One sentence is enough. Add details later."}
+          </p>
+        )}
         <label className="field quick-note-field">
           <span className="sr-only">{locale === "ja" ? "記録本文" : "Record text"}</span>
           <textarea
@@ -477,8 +499,8 @@ export function QuickEventForm({
             <ShieldCheck size={15} />
             {isRemoteAlpha
               ? locale === "ja"
-                ? "写真は記録本文と同じ公開範囲で保存します。"
-                : "The photo uses the same audience as the record."
+                ? "MECHORIの参加者に見せます。写真にも同じ範囲が適用されます。"
+                : "Shared with MECHORI participants. The photo uses the same audience."
               : translate(locale, "momentPrivateFirst")}
           </p>
         </div>

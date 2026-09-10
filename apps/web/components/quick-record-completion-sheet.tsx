@@ -2,7 +2,6 @@
 
 import { OccurrenceDateFields } from "@/components/occurrence-date-fields";
 import { ServiceAttributionField } from "@/components/service-attribution-field";
-import { VehicleContinuity, type VehicleExperienceMark } from "@/components/vehicle-continuity";
 import { captureIntentForJournal, captureIntentLabel } from "@/lib/quick-record";
 import {
   displayVehicleModel,
@@ -17,7 +16,7 @@ import {
   type Locale,
   type Vehicle,
 } from "@mechori/core";
-import { CheckCircle2, ListPlus, LoaderCircle, X } from "lucide-react";
+import { CarFront, CheckCircle2, ListPlus, LoaderCircle, X } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 const eventTypes: Array<{ value: JournalEventType; ja: string; en: string }> = [
@@ -44,12 +43,14 @@ export function QuickRecordCompletionSheet({
   vehicle,
   locale,
   onClose,
+  onViewGarage,
   onSaveEnrichment,
 }: {
   journal: GarageJournalPost;
   vehicle?: Vehicle;
   locale: Locale;
   onClose(): void;
+  onViewGarage(): void;
   onSaveEnrichment(draft: JournalDraft): Promise<GarageJournalPost>;
 }) {
   const ja = locale === "ja";
@@ -73,16 +74,6 @@ export function QuickRecordCompletionSheet({
   const [error, setError] = useState("");
   const [savedJournal, setSavedJournal] = useState(journal);
   const isIssue = savedJournal.eventType === "issue" && savedJournal.issueStatus === "open";
-  const experience: VehicleExperienceMark = {
-      id: savedJournal.id,
-      dateLabel: journalOccurrenceLabel(savedJournal, locale),
-      dateTime: savedJournal.occurredOn ?? savedJournal.createdAt,
-      label: captureIntentLabel(captureIntent, locale),
-      title: savedJournal.bodyOriginal,
-      actor: { role: ja ? "記録" : "Recorded by", name: ja ? "自分" : "You" },
-      status: isIssue ? (ja ? "未解決" : "Unresolved") : undefined,
-      kind: isIssue ? "issue" : "record",
-  };
 
   async function saveEnrichment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -122,41 +113,24 @@ export function QuickRecordCompletionSheet({
       <section className="quick-record-sheet" role="dialog" aria-modal="true" aria-labelledby="quick-record-sheet-title">
         {mode === "prompt" && <>
           <CheckCircle2 className="quick-record-sheet-icon" size={30} aria-hidden="true" />
-          <h1 id="quick-record-sheet-title">{ja ? "このクルマに、ひとつ経験が残りました。" : "One more experience is now part of this vehicle."}</h1>
+          <h1 id="quick-record-sheet-title">{ja ? `${vehicleLabel}に記録を残しました` : `Record saved to ${vehicleLabel}`}</h1>
+          <p>{ja ? "このクルマの履歴に加わりました。" : "It is now part of this vehicle's history."}</p>
           <section className="quick-record-evidence-preview" aria-label={ja ? "保存した記録" : "Saved record"}>
-            <VehicleContinuity
-              label={ja ? "このクルマに残った経験" : "Experience added to this vehicle"}
-              ledgerLabel={ja ? "保存した経験" : "Saved experience"}
-              density="compact"
-              identity={{
-                make: vehicle?.make ?? vehicleLabel,
-                model: vehicle ? displayVehicleModel(vehicle, locale) : undefined,
-                badge: ja ? "車両" : "Vehicle",
-                objectLabel: ja ? "この個体" : "This individual vehicle",
-              }}
-              experiences={[experience]}
-              continuation={{
-                label: ja ? "この先" : "What comes next",
-                title: isIssue
-                  ? (ja ? "点検・対応・結果を続けられます" : "Inspection, work, and results can follow")
-                  : (ja ? "次の経験をここへ続けられます" : "The next experience can continue here"),
-                description: ja ? "まだ記録はありません。" : "Nothing has been recorded here yet.",
-              }}
-            />
+            <p><CarFront size={17} aria-hidden="true" />{vehicleLabel}</p>
+            <blockquote>{savedJournal.bodyOriginal}</blockquote>
             <dl>
-              <div><dt>{ja ? "記録日時" : "Recorded"}</dt><dd>{journalOccurrenceLabel(journal, locale)}</dd></div>
-              <div><dt>{ja ? "本文" : "Text"}</dt><dd>{ja ? "保存済み" : "Saved"}</dd></div>
+              <div><dt>{ja ? "記録日" : "Date"}</dt><dd>{journalOccurrenceLabel(savedJournal, locale)}</dd></div>
+              {isIssue && <div><dt>{ja ? "状態" : "Status"}</dt><dd>{ja ? "未解決" : "Unresolved"}</dd></div>}
               {photoCount > 0 && <div><dt>{ja ? "写真" : "Photos"}</dt><dd>{ja ? `${photoCount}枚` : `${photoCount}`}</dd></div>}
             </dl>
           </section>
-          <p>{ja ? "種類や時期など、分かる範囲で詳しくすると、あとから探しやすくなります。" : "Adding the type or timing you know can make this record easier to find later."}</p>
           <div className="quick-record-sheet-actions">
-            <button type="button" className="primary-action" onClick={() => setMode("form")}>
-              <ListPlus size={17} aria-hidden="true" />
-              {ja ? "記録を詳しくする" : "Add record details"}
-            </button>
-            <button type="button" className="secondary-action" onClick={onClose}>{ja ? "閉じる" : "Close"}</button>
+            <button type="button" className="primary-action" onClick={onViewGarage}><CarFront size={17} aria-hidden="true" />{ja ? "ガレージで見る" : "View in Garage"}</button>
+            <button type="button" className="secondary-action" onClick={onClose}>{ja ? "記録を見る" : "View record"}</button>
           </div>
+          <button type="button" className="text-action quick-record-enrich-action" onClick={() => setMode("form")}>
+            <ListPlus size={16} aria-hidden="true" />{ja ? "種類や時期を追加" : "Add type or timing"}
+          </button>
         </>}
 
         {mode === "form" && <>
@@ -223,27 +197,14 @@ export function QuickRecordCompletionSheet({
               ? ja ? "気になることとして、未解決のまま車両履歴に残っています。" : "It remains in the vehicle history as an unresolved issue."
               : ja ? "元の記録にも反映されています。" : "The original record has been updated."}
           </p>
-          <VehicleContinuity
-            label={ja ? "更新した車両履歴" : "Updated vehicle history"}
-            ledgerLabel={ja ? "このクルマに残った経験" : "Experience kept with this vehicle"}
-            density="compact"
-            identity={{
-              make: vehicle?.make ?? vehicleLabel,
-              model: vehicle ? displayVehicleModel(vehicle, locale) : undefined,
-              badge: ja ? "車両" : "Vehicle",
-              objectLabel: ja ? "この個体" : "This individual vehicle",
-            }}
-            experiences={[experience]}
-            continuation={{
-              label: ja ? "この先" : "What comes next",
-              title: isIssue
-                ? (ja ? "点検・対応・結果を続けられます" : "Inspection, work, and results can follow")
-                : (ja ? "次の経験をここへ続けられます" : "The next experience can continue here"),
-              description: ja ? "まだ記録はありません。" : "Nothing has been recorded here yet.",
-            }}
-          />
+          <section className="quick-record-evidence-preview" aria-label={ja ? "保存した記録" : "Saved record"}>
+            <p><CarFront size={17} aria-hidden="true" />{vehicleLabel}</p>
+            <blockquote>{savedJournal.bodyOriginal}</blockquote>
+            <dl><div><dt>{ja ? "記録日" : "Date"}</dt><dd>{journalOccurrenceLabel(savedJournal, locale)}</dd></div></dl>
+          </section>
           <div className="quick-record-sheet-actions">
-            <button type="button" className="primary-action" onClick={onClose}>{ja ? "投稿を見る" : "View record"}</button>
+            <button type="button" className="primary-action" onClick={onViewGarage}><CarFront size={17} aria-hidden="true" />{ja ? "ガレージで見る" : "View in Garage"}</button>
+            <button type="button" className="secondary-action" onClick={onClose}>{ja ? "記録を見る" : "View record"}</button>
           </div>
         </>}
       </section>

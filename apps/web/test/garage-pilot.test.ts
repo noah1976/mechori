@@ -49,6 +49,18 @@ test("Garage timeline prefers the shared photo representation used by journal de
   assert.doesNotMatch(source, /media: journal\.media\[0\]/);
 });
 
+test("Garage selects and reveals the vehicle history requested after a record save", () => {
+  const source = readFileSync(new URL("../app/garage/page.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /const requestedVehicleId = params\.get\("vehicle"\)/);
+  assert.match(source, /setSelectedVehicleId\(requestedOwnedVehicleId\)/);
+  assert.match(source, /getElementById\(`vehicle-experience-\$\{encodeURIComponent\(requestedRecordId\)\}`\)/);
+  assert.match(source, /scrollIntoView\(\{ block: "center" \}\)/);
+  assert.match(source, /setHighlightedRecordId\(requestedRecordId\)/);
+  assert.match(source, /anchorId: item\.id/);
+  assert.match(source, /highlighted: item\.id === highlightedRecordId/);
+});
+
 test("Garage identity keeps make, model, trim, specifications, and facts in a factual hierarchy", () => {
   const source = readFileSync(new URL("../app/garage/page.tsx", import.meta.url), "utf8");
   assert.match(source, /<GarageVehicleIdentity/);

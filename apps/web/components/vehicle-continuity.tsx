@@ -26,6 +26,8 @@ export type VehicleExperienceMark = {
   href?: string;
   media?: ReactNode;
   featured?: boolean;
+  anchorId?: string;
+  highlighted?: boolean;
 };
 
 export type VehicleContinuationSlot = {
@@ -117,7 +119,10 @@ function VehicleExperience({ experience }: { experience: VehicleExperienceMark }
   );
 
   return (
-    <li className={`${experience.featured ? "is-featured " : ""}is-${experience.kind ?? "record"}`}>
+    <li
+      id={experience.anchorId ? `vehicle-experience-${encodeURIComponent(experience.anchorId)}` : undefined}
+      className={`${experience.featured ? "is-featured " : ""}${experience.highlighted ? "is-highlighted " : ""}is-${experience.kind ?? "record"}`}
+    >
       {experience.href ? (
         <Link href={experience.href} className={`vehicle-experience-mark${experience.media ? " has-media" : ""}`}>
           {body}

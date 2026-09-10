@@ -209,3 +209,13 @@ P-069のように本番で再現した不具合は、テスト成功だけを根
 - `[ ]` `mechori.com`からGoogle Loginし、同domainへ戻ること、既存Garage dataが同一であること、logout／再loginを確認する。host変更により旧domainのcookieは移らないため、正式domainで一度loginし直す。
 - `[ ]` 正規のDeploy PreviewでGoogle Login後に同じPreviewへ戻り、旧Production hostや類似hostがAuth originとして許可されないことを確認する。
 - `[ ]` iPhone SafariとAndroid Chromeで正式domain、Google Login、Garage、logout／再loginを確認する。Human QA完了前にdomain migrationを完了扱いにしない。
+
+## 18. 2026-09-10 α engagement minimal slice
+
+- `[~]` ログイン後Homeで、小さい自車入口の直後に他車の有限Feedが続き、390px前後で1件目のVehicle名と本文冒頭が初期viewport付近に見える。自車なし、Feed 0件／1件、同じVehicleの連続でも架空内容を表示しない。
+- `[~]` Feed CardでVehicle名、出来事、発生日、写真、Owner contextの順に読める。長いVehicle名、長文、写真あり／なしをiPhoneとAndroidで確認する。
+- `[~]` EUX-01: 自分のVehicleは選択済みGarage、他Ownerの閲覧可能なVehicleは既存公開VehicleまたはOwner Garageへ到達する。Home／記録詳細／direct link／browser backで404にならず、権限のないVehicleやprivate dataを表示しない。
+- `[~]` HomeからQuick Recordを開き、4つのIntentと「一文でも残せます。詳しい整理はあとで。」、その他の日常例を確認する。短文、写真付き、保存失敗、下書き、keyboard表示中のCTAを確認する。
+- `[~]` 保存後に保存済み本文を確認し、「ガレージで見る」で正しいVehicleが選択され、今保存した記録が履歴に表示・強調される。不要な成功dialogや架空の続報が追加されていない。
+- `[ ]` iPhone SafariとAndroid Chromeでbottom navigation、safe area、200% text scaling、visible focus、long text、no-image record、logout／login後の既存data、従来どおりのprivate／visibilityを確認する。
+- `[ ]` Deploy Previewと実機QAが終わるまで2週間のEngagement experimentを開始しない。開始後は督促・Founder投稿・QA sessionを自発利用から分離し、3〜7日再訪、他Vehicle閲覧、軽い記録、保存後Garage到達、「また見たい」を記録する。
