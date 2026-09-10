@@ -334,3 +334,16 @@
 - **次に行うこと**: v2 §25のTOP 5を起点に、既存α3名＋紹介候補の利用機会、実機QA、Founder実在題材、最小測定台帳、既知工場の検索利用と費用・時間を確認する。Day 14/28/60/90のgateで進行判断する。
 - **検証**: 25章の順序、文書内参照先、90日の連続日付、時間配分100%、4つの検索費感度ケース、5つの単位採算を確認した。文書のみのためアプリのlint/typecheck/test/buildは未実行。新たな動作保証は付加しない。最終差分を文書3ファイルに限定して確認する。
 - **Checkpoint**: 途中の判断とsourceは最終v2へ統合し、別の中間checkpointをsource of truthとして残さない。v1・v2・PROJECT_STATEの役割を分離し、採用後にDECISIONS等へ変更理由を追記する。
+
+## 2026-09-10 Engagement UX design review checkpoint
+
+- **現在の状態**: `DESIGN_REVIEW_READY / NOT_IMPLEMENTED / HUMAN_VALIDATION_PENDING`。[Engagement UX redesign](ENGAGEMENT_UX_REDESIGN_2026-09.md)に、Product Design audit、Home 3案、6つのwireframe、12画面の契約、Visual方向、Social primitives、2週間の検証、Red Teamを記録した。設計提案の完成と、コード完成・本番反映・人間QA・効果検証は別状態である。
+- **基準と関連branch／PR**: main `d41f0a645dc0df41b5ed4dcba16fbc99773228fa`から`codex/engagement-ux-redesign-20260909`を作成し、[設計PR #19](https://github.com/noah1976/mechori/pull/19)へpush済み（未merge）。Strategy v2の監査参照版は[PR #18](https://github.com/noah1976/mechori/pull/18)のcommit `a45655affa9d59a6bd401d3421f9e433849ab18b`。設計開始時は未mergeだったが、今回の統合時にはPR #18はmainへmerge済み。文書の収録と、戦略の実行・検証完了は区別する。
+- **新たに確認したP1: EUX-01**: ログイン後Home／記録詳細が提示する一つの車名リンク `/garage/[vehicleId]` が本番で404になることを確認した。同routeの`page.tsx`は基準mainに存在しない。個別ID・画像・α本文はGitへ転載せず、再現経路とローカル証拠S12を設計文書に記録。共有車の`/v/…`全件が同様とは断定しない。状態は**再現確認／未修正／実機QA未実施**。今回のdesign-only指示によりコード修正は行わない。
+- **その他P1／P2**: EUX-03はQuick Record保存前の共有先理解、EUX-09はHome閲覧・自発sessionを現行月次集計だけでは測れない問題。いずれも設計・検証課題。Garage、Search、Owner表現、Visual整合はP2提案。新規P0は本監査では確認していないが、網羅的な安全性監査ではない。
+- **重要な判断と理由**: SNS不足を原因と断定せず、自車の小さい入口とVehicle主語の有限Feedを組み合わせたHybridを推奨。最小sliceは「他車の記録を見る→自車に一文残す→自車履歴へ戻る」。同案件の続報はMECH-045の永続契約が必要なため、このsliceから外した。`linkedRecordId`の流用、編集時刻による疑似新着、架空activityを用いない。
+- **未完了／次に行うこと**: 所有者が設計を検討し、別の実装タスクでP1導線・共有先・保存を整えて実機QAした後、2週間の観測を開始する。現段階で実験はNOT RUN。自発再訪、軽い記録、自己履歴利用、後日経過を分けて測り、Founder／督促／通知／QA由来は別集計する。
+- **維持する状態**: P-070、P-081、P-086等のHuman QAおよびMECH-045/046/047の既存依存・未実装状態は変更しない。application code、CSS、DB/schema/migration、API、外部サービス設定、依存パッケージ、Netlify／Supabase設定は変更していない。通常画面閲覧に伴う既存アクセス・利用計測は発生し得る。
+- **文書検証**: 34章、6wireframe、12画面×11項目、Before/After、CURRENT/PROPOSED/FUTUREと依存を確認済み。ローカル参照リンク、docsだけの差分、`git diff --check`は成功。docsのみのためapplicationのlint/typecheck/test/buildは対象外で未実行。本番デプロイやmergeは実行していない。
+
+- **PR #19統合時の追記**: 所有者からmainへのmergeを明示承認された。main `291af4b`に追加された§33／§34と本UX checkpointの末尾追記が競合したため、両方を時系列順に保持して解消した。Strategy v2の収録状態だけを現状へ合わせ、設計の基準コード・結論・P1 EUX-01未修正・Human QA未了は変更しない。PRの最終merge状態は[PR #19](https://github.com/noah1976/mechori/pull/19)を参照。アプリ実装・DB・外部設定の変更は含まない。
