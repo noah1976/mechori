@@ -4,9 +4,9 @@
 
 対象: 少人数の既存αが、整備の用事がない日にも数日に一度、自分から戻るWeb体験。これは設計提案であり、製品方針の採用・実装・本番反映・UX検証の完了を意味しない。
 
-基準コード: main `d41f0a645dc0df41b5ed4dcba16fbc99773228fa`。09-10の再開時にもGitHubでmainが同じことを確認。branch: `codex/engagement-ux-redesign-20260909`。設計PR: [#19](https://github.com/noah1976/mechori/pull/19)（未merge）。
+基準コード: main `d41f0a645dc0df41b5ed4dcba16fbc99773228fa`。09-10の再開時にもGitHubでmainが同じことを確認。branch: `codex/engagement-ux-redesign-20260909`。設計PR: [#19](https://github.com/noah1976/mechori/pull/19)（作成時は未merge。統合状態はPRを参照）。
 
-必読のStrategy v2はmain未収録で、[PR #18](https://github.com/noah1976/mechori/pull/18)の提案を参照した。監査に用いた[Strategy v2の固定版](https://github.com/noah1976/mechori/blob/a45655affa9d59a6bd401d3421f9e433849ab18b/docs/STRATEGY_REVIEW_V2_2026-09.md)とmainの実装を混同しない。本書はそのFreeze、既存α維持、Self-historyと他者Evidence reuseの分離を前提とする。
+必読のStrategy v2は監査開始時にmain未収録だったため、[PR #18](https://github.com/noah1976/mechori/pull/18)の提案を参照した。PR #19の競合解消時にはPR #18はmainへmerge済みであり、文書の収録と戦略の実行・検証完了は区別する。監査に用いた[Strategy v2の固定版](https://github.com/noah1976/mechori/blob/a45655affa9d59a6bd401d3421f9e433849ab18b/docs/STRATEGY_REVIEW_V2_2026-09.md)とmainの実装を混同しない。本書はそのFreeze、既存α維持、Self-historyと他者Evidence reuseの分離を前提とする。
 
 表記: **CURRENT**＝確認できた現行、**PROPOSED**＝本書の提案、**FUTURE**＝依存条件を満たした後の候補。優先度P1/P2は本監査の優先度で、既存P番号の完了宣言ではない。監査項目は `EUX-01` 等で識別する。
 

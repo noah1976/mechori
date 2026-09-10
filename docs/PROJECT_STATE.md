@@ -312,13 +312,38 @@
 - **Auth manual gate**: Supabase AuthのSite URLとproduction callback allow list、Google OAuth clientの登録値はDashboardで所有者が確認する。Googleのredirect URIがSupabaseの`https://<project-ref>.supabase.co/auth/v1/callback`である構成は変更しない。既存hostのcookieは新domainへ移せないため、初回は再loginが必要になり得るが、同じGoogle / MECHORI UserならGarage dataは同一Supabase dataを参照する。
 - **状態**: repository変更、test、Deploy PreviewまではPRで確認する。Production反映、Google login、既存Garage data、logout / login、iPhone Safari、Android ChromeはHuman QA pendingとし、完了扱いにしない。
 
+## 33. 2026-09-09 Business / Product / GTM review checkpoint
+
+- **対象と根拠**: `codex/business-strategy-review-20260909`。GitHub APIとfetchで最新main `d41f0a645dc0df41b5ed4dcba16fbc99773228fa`（PR #17 merge）を確認し、追跡済み文書と検索コード、戦略判断に必要な外部一次資料をレビューした。実利用DB・個別テスターの非公開情報・請求実績は取得していない。
+- **完了したこと**: [経営戦略レビュー](STRATEGY_REVIEW_2026-09-09.md)に、18項目の判断、4つのbeachhead比較、競合の利用循環、90日実験、KPI、Kill/Pivot条件、支援工数を含む収支、12か月/3年の条件付きシナリオを記録した。これはレビュー成果物の作成であり、事業検証や機能実装の完了ではない。
+- **提案と理由**: 日本語Barchettaを暫定beachheadとし、本人の履歴再利用→他者Evidenceの有用性→Owner/工場の支払を検証する。接点は14日で判定する。Evidence検証をNative/Driveより前へ動かし、Professionalを未検証の主収益として固定しない。新料金・公開範囲・Founding Garage条件等の変更は採用未決定で、既存の約束と権利を維持する。
+- **P0/P1/P2**: 新規P0事故の確認はないが、セキュリティ監査ではない。戦略上のP1として、レビュー範囲内の実測cohort/有料継続/支援原価の証拠不足、README等の旧状態と新checkpointの混在、空検索を含む有用性定義、30日/90日累積再利用目標の不整合を識別した。P-086、P-081/B、P-070等の実機QA、MECH-041の現場検証を優先する提案であり、状態は従来どおり。MECH-044〜047やNative/Drive/API等の順位変更は提案に留め、既存項目を削除しない。
+- **未完了**: テスター再試験、接点/支払/原価の実測、提案の採用判断、既存事業文書の方針統合。人間QA、本番反映、契約、課金、DB/RLS、外部送信範囲の変更は行っていない。
+- **次に行うこと**: 既存α3名と外部Owner2名の基本体験/別日再利用、同車種10人への到達性、本人実記録と上位5情報ニーズ、3工場の実案件観察、現行費用とFounder時間の確認。採用後にBUSINESS_GROWTH、MEASUREMENT_PLAN、BUSINESS_MODEL、MONETIZATION、ROADMAP、BACKLOG、DECISIONSを置換理由付きで整合させる。
+- **検証**: 文書のみの変更として、差分、参照先、18章の順序、4つの収支計算、90日の日付、時間配分を確認済み。アプリのlint/typecheck/test/buildは文書専用変更のため未実行で、新たな動作保証を追加しない。既存Human QA状態は変更しない。
+
+## 34. 2026-09-09 Strategy v2 Red Team checkpoint
+
+- **対象と根拠**: `codex/strategy-review-v2-20260909`。最新main `d41f0a645dc0df41b5ed4dcba16fbc99773228fa`（PR #17）と、ユーザー指定のStrategy v1全文を基準にレビューした。v1は開始時にmain未収録のローカル成果物であり、今回の文書PRへ比較基準として保存する。v1作成時の§33を履歴として残し、追加観察に対する現在のレビュー結論は§34とv2を参照する。
+- **成果物**: [Strategy v2](STRATEGY_REVIEW_V2_2026-09.md)。25章、v1のKEEP/MODIFY/REJECT、5案のbeachhead比較、18のWebリスク、四群比較、8仮説の停止条件、90日・12か月・3年の条件付き計画を作成した。状態は **REVIEW_READY / ADOPTION_PENDING / EXPERIMENTS_NOT_RUN**。戦略レビュー完成と、実利用検証・製品完成を分離する。
+- **主な変更提案と理由**: Barchettaは唯一の獲得対象からAnchorへ変更。接点があり30日内の維持課題を持つ趣味車Ownerを対象に、既存αと新規参加者を区別して観察する。接点制約が新たに明示されたためで、既存αを安易に排除しない。主価値は本人の履歴を次の相談で再利用できること。
+- **Web / Professional**: Open Web GroundingはPROTOTYPE ONLYとして条件付き検証、本番採用は未決定。外部参照と新しい実車結果を別出自で保持し、内部Evidenceの追加価値と自然な結果返却を個別評価する。ProfessionalはVALIDATION ONLY。ベテラン整備士のGoogle AI利用はFounder報告のn=1であり、PMF・支払・性能優位の証拠にしない。
+- **新たに明示したP1**: Barchettaの獲得到達性、Web利用から結果返却への未検証、Googleと同じ資料を使った場合の固有差、検索・AI・無料支援を含む採算、外部Referenceの誤った自社Evidence化。現AI_POLICY / KNOWLEDGE_SYNTHESISの内部公開事例中心の許可範囲と本番Grounding案には差分があり、採用時の別審査が必要。いずれも検証設計済み／実測未了。
+- **P0/P1/P2と既存状態**: 新規P0事故を調査・検証した作業ではない。P-086、P-081/B、P-070等のHuman QA、MECH-041の現場検証、MECH-044〜047の実装・承認状態は変更なし。P2相当の将来拡張・Native/Drive/Voice/APIの凍結は戦略提案であり、既存Backlogを削除しない。
+- **未完了**: Ownerの採用判断、募集、実例資料の確認、四群実験、再利用・返却・支払・全継続費・Founder工数の実測、関連方針文書への採用後統合。価格付き申込・実支払・更新を別状態にする。外部AI送信・契約・課金・公開設定・本番DBは未変更。
+- **次に行うこと**: v2 §25のTOP 5を起点に、既存α3名＋紹介候補の利用機会、実機QA、Founder実在題材、最小測定台帳、既知工場の検索利用と費用・時間を確認する。Day 14/28/60/90のgateで進行判断する。
+- **検証**: 25章の順序、文書内参照先、90日の連続日付、時間配分100%、4つの検索費感度ケース、5つの単位採算を確認した。文書のみのためアプリのlint/typecheck/test/buildは未実行。新たな動作保証は付加しない。最終差分を文書3ファイルに限定して確認する。
+- **Checkpoint**: 途中の判断とsourceは最終v2へ統合し、別の中間checkpointをsource of truthとして残さない。v1・v2・PROJECT_STATEの役割を分離し、採用後にDECISIONS等へ変更理由を追記する。
+
 ## 2026-09-10 Engagement UX design review checkpoint
 
 - **現在の状態**: `DESIGN_REVIEW_READY / NOT_IMPLEMENTED / HUMAN_VALIDATION_PENDING`。[Engagement UX redesign](ENGAGEMENT_UX_REDESIGN_2026-09.md)に、Product Design audit、Home 3案、6つのwireframe、12画面の契約、Visual方向、Social primitives、2週間の検証、Red Teamを記録した。設計提案の完成と、コード完成・本番反映・人間QA・効果検証は別状態である。
-- **基準と関連branch／PR**: main `d41f0a645dc0df41b5ed4dcba16fbc99773228fa`から`codex/engagement-ux-redesign-20260909`を作成し、[設計PR #19](https://github.com/noah1976/mechori/pull/19)へpush済み（未merge）。Strategy v2は[PR #18](https://github.com/noah1976/mechori/pull/18)のcommit `a45655affa9d59a6bd401d3421f9e433849ab18b`を参照した未merge提案であり、mainで採用済みとは扱わない。
+- **基準と関連branch／PR**: main `d41f0a645dc0df41b5ed4dcba16fbc99773228fa`から`codex/engagement-ux-redesign-20260909`を作成し、[設計PR #19](https://github.com/noah1976/mechori/pull/19)へpush済み（未merge）。Strategy v2の監査参照版は[PR #18](https://github.com/noah1976/mechori/pull/18)のcommit `a45655affa9d59a6bd401d3421f9e433849ab18b`。設計開始時は未mergeだったが、今回の統合時にはPR #18はmainへmerge済み。文書の収録と、戦略の実行・検証完了は区別する。
 - **新たに確認したP1: EUX-01**: ログイン後Home／記録詳細が提示する一つの車名リンク `/garage/[vehicleId]` が本番で404になることを確認した。同routeの`page.tsx`は基準mainに存在しない。個別ID・画像・α本文はGitへ転載せず、再現経路とローカル証拠S12を設計文書に記録。共有車の`/v/…`全件が同様とは断定しない。状態は**再現確認／未修正／実機QA未実施**。今回のdesign-only指示によりコード修正は行わない。
 - **その他P1／P2**: EUX-03はQuick Record保存前の共有先理解、EUX-09はHome閲覧・自発sessionを現行月次集計だけでは測れない問題。いずれも設計・検証課題。Garage、Search、Owner表現、Visual整合はP2提案。新規P0は本監査では確認していないが、網羅的な安全性監査ではない。
 - **重要な判断と理由**: SNS不足を原因と断定せず、自車の小さい入口とVehicle主語の有限Feedを組み合わせたHybridを推奨。最小sliceは「他車の記録を見る→自車に一文残す→自車履歴へ戻る」。同案件の続報はMECH-045の永続契約が必要なため、このsliceから外した。`linkedRecordId`の流用、編集時刻による疑似新着、架空activityを用いない。
 - **未完了／次に行うこと**: 所有者が設計を検討し、別の実装タスクでP1導線・共有先・保存を整えて実機QAした後、2週間の観測を開始する。現段階で実験はNOT RUN。自発再訪、軽い記録、自己履歴利用、後日経過を分けて測り、Founder／督促／通知／QA由来は別集計する。
 - **維持する状態**: P-070、P-081、P-086等のHuman QAおよびMECH-045/046/047の既存依存・未実装状態は変更しない。application code、CSS、DB/schema/migration、API、外部サービス設定、依存パッケージ、Netlify／Supabase設定は変更していない。通常画面閲覧に伴う既存アクセス・利用計測は発生し得る。
 - **文書検証**: 34章、6wireframe、12画面×11項目、Before/After、CURRENT/PROPOSED/FUTUREと依存を確認済み。ローカル参照リンク、docsだけの差分、`git diff --check`は成功。docsのみのためapplicationのlint/typecheck/test/buildは対象外で未実行。本番デプロイやmergeは実行していない。
+
+- **PR #19統合時の追記**: 所有者からmainへのmergeを明示承認された。main `291af4b`に追加された§33／§34と本UX checkpointの末尾追記が競合したため、両方を時系列順に保持して解消した。Strategy v2の収録状態だけを現状へ合わせ、設計の基準コード・結論・P1 EUX-01未修正・Human QA未了は変更しない。PRの最終merge状態は[PR #19](https://github.com/noah1976/mechori/pull/19)を参照。アプリ実装・DB・外部設定の変更は含まない。
