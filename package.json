@@ -11,7 +11,9 @@
     "build": "npm run build --workspace @mechori/web",
     "lint": "npm run lint --workspace @mechori/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test:alpha-mail && npm run test --workspaces --if-present",
+    "test:alpha-mail": "node --test scripts/alpha-mail/*.test.mjs",
+    "alpha:mail": "node scripts/alpha-mail/send.mjs"
   },
   "engines": {
     "node": ">=20.19.0",
