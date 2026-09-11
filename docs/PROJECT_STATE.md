@@ -358,3 +358,9 @@
 - **検証と境界**: web全214 testを含む全workspace test、全workspace typecheck、web lint、production build、PR #20のNetlify Deploy Preview／Header／Redirect checksを通過。Deploy Previewの未ログインHomeをbrowser確認した。local browserではログイン済みHome、自車入口、他Owner GarageへのVehicle fallback、Home由来の記録詳細と戻る導線、Quick Record 4択と短文保存、保存後sheet、「ガレージで見る」から対象Vehicleと保存recordへのscrollを確認した。Previewのログイン後状態、390／412px実機、写真付き保存、long text、ログアウト後再ログイン、private／visibilityはHuman QA pending。DB/schema/migration、API、Supabase、Netlify設定、dependency、Native、Search／Garage／Profile全面刷新、新Social機能は変更していない。
 - **既存P1の扱い**: P-086、P-081／B、P-070は従来どおりHuman QAまたはPARTIALであり、今回DONEへ変更しない。MECH-045/046/047も未実装・承認待ちのまま。2週間のEngagement experimentはDeploy Preview／実機QA後に開始し、開始前の状態は`NOT STARTED`とする。
 - **Q20-01（P1）**: Quick Recordの600ms autosave callbackがsave成功後のdraft削除より遅れて書き戻せるraceを修正した。pending timerをsubmit前にcancelし、generation guardで既にqueueへ入ったcallbackも無効化する。成功時はautosaveを停止したまま当該Vehicle／Userのdraft keyだけを削除し、失敗時はsubmit時の入力snapshotを同じkeyへ保存してautosaveを再開する。fast save、autosave後のsave、failure、retry success、離脱、別Vehicle draft、unmountを自動検証し、local-only browserで即保存→Garage／detail反映→Quick Record再入場時にdraft復活なしを確認した。状態は`IMPLEMENTED / AUTOMATED_VERIFIED / LOCAL_VERIFIED / PHYSICAL_DEVICE_HUMAN_QA_PENDING`。2週間Experimentは`NOT STARTED`のまま。
+
+## 36. 2026-09-11 暫定α testerメール運用ツール
+
+- **状態**: `TEMPORARY ALPHA OPERATIONS TOOL / IMPLEMENTED / AUTOMATED_VERIFIED / LIVE SEND NOT PERFORMED`。Native Push未導入のWeb α期間だけ、Founder / Codexがローカルから明示実行できるResend HTTP API CLIを追加した。MECHORI本体runtime、DB、Supabase、Netlify、scheduler、user一覧には接続しない。
+- **安全境界**: 標準はdry-runで、`--send`時だけ実送信する。local allowlistから重複を除き1recipientずつ送信し、tester同士へaddressを露出しない。件名とplain text本文はFounder指定を原文どおり扱い、API key・宛先実値・本文一時ファイルはGit管理外とする。
+- **未完了 / manual gate**: Resend account、sender domain verification、DNS、Sending access API key、local envはFounder管理とし、自動作成・変更しない。今回、Founderへのtest sendおよびtester全員への送信は行っていない。Native Push導入後は頻度を下げるか削除可能であり、恒久Notification Architectureとは扱わない。
