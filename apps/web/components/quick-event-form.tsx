@@ -26,6 +26,7 @@ import {
 } from "@mechori/core";
 import { translate, type TranslationKey } from "@mechori/i18n";
 import { ArrowRight, ChevronDown, CircleAlert, Ellipsis, LoaderCircle, MapPinned, Save, ShieldCheck, Wrench } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
@@ -37,6 +38,7 @@ import {
   loadQuickEventLocalDraft,
   quickEventLocalDraftKey,
   saveLocalDraft,
+  type QuickEventLocalDraft,
 } from "@/lib/local-draft-store";
 import { ServiceAttributionField } from "@/components/service-attribution-field";
 import {
@@ -48,6 +50,7 @@ import {
   quickRecordTitle,
 } from "@/lib/quick-record";
 import { journalSaveErrorMessage } from "@/lib/journal-save-error";
+import { createDraftAutosaveLifecycle } from "@/lib/draft-autosave-lifecycle";
 
 const eventTypes: Array<{ value: JournalEventType; label: TranslationKey }> = [
   { value: "delivery", label: "eventDelivery" },
@@ -66,11 +69,21 @@ const eventTypes: Array<{ value: JournalEventType; label: TranslationKey }> = [
   { value: "other", label: "eventOther" },
 ];
 
-const captureIntents = [
+const captureIntents: Array<{
+  value: JournalCaptureIntent;
+  Icon: LucideIcon;
+  helperJa?: string;
+  helperEn?: string;
+}> = [
   { value: "issue" as const, Icon: CircleAlert },
   { value: "service" as const, Icon: Wrench },
   { value: "drive" as const, Icon: MapPinned },
-  { value: "other" as const, Icon: Ellipsis },
+  {
+    value: "other" as const,
+    Icon: Ellipsis,
+    helperJa: "洗車、部品が届いた、久しぶりに乗ったことなど",
+    helperEn: "A wash, a part arriving, or the first drive in a while",
+  },
 ];
 
 type OccurrenceDraft = Pick<
@@ -128,9 +141,19 @@ export function QuickEventForm({
   const [pendingDraft, setPendingDraft] = useState<ReturnType<typeof loadQuickEventLocalDraft>>(null);
   const [omittedMediaCount, setOmittedMediaCount] = useState(0);
   const [completion, setCompletion] = useState<GarageJournalPost | null>(null);
+  const [draftAutosave] = useState(() =>
+    createDraftAutosaveLifecycle(
+      (callback, delayMs) => setTimeout(callback, delayMs),
+      (timer) => clearTimeout(timer),
+    ),
+  );
   const router = useRouter();
   const vehicleModel = displayVehicleModel(vehicle, locale);
   const localDraftKey = quickEventLocalDraftKey(data.currentProfileId, vehicle.id, journal?.id);
+
+  useEffect(() => {
+    return () => draftAutosave.dispose();
+  }, [draftAutosave]);
 
   useEffect(() => {
     if (journal) return;
@@ -145,8 +168,11 @@ export function QuickEventForm({
   }, [journal, localDraftKey]);
 
   useEffect(() => {
-    if (journal || !draftReady || (!note.trim() && !image && omittedMediaCount === 0)) return;
-    const timer = window.setTimeout(() => {
+    if (journal || !draftReady || (!note.trim() && !image && omittedMediaCount === 0)) {
+      draftAutosave.cancelPending();
+      return;
+    }
+    draftAutosave.schedule(() => {
       setDraftStatus(
         saveLocalDraft(localDraftKey, {
           captureIntent: captureIntent ?? undefined,
@@ -161,8 +187,8 @@ export function QuickEventForm({
           : "error",
       );
     }, 600);
-    return () => window.clearTimeout(timer);
-  }, [captureIntent, draftReady, eventType, image, journal, localDraftKey, note, occurrence, omittedMediaCount, serviceAttribution]);
+    return () => draftAutosave.cancelPending();
+  }, [captureIntent, draftAutosave, draftReady, eventType, image, journal, localDraftKey, note, occurrence, omittedMediaCount, serviceAttribution]);
 
   function restoreDraft() {
     const stored = pendingDraft;
@@ -189,6 +215,8 @@ export function QuickEventForm({
   }
 
   function startNewDraft() {
+    draftAutosave.cancelPending();
+    draftAutosave.resume();
     clearLocalDraft(localDraftKey);
     setPendingDraft(null);
     setCaptureIntent(null);
@@ -240,6 +268,7 @@ export function QuickEventForm({
     setError("");
     setPublicationError("");
     let slowSaveTimer: number | undefined;
+    let submittedDraftSnapshot: QuickEventLocalDraft | null = null;
     try {
       const mediaId = image ? `journal-media-${crypto.randomUUID()}` : existingAttachment?.id;
       const newAttachment: JournalMediaAttachment | undefined = image && mediaId ? {
@@ -304,13 +333,23 @@ export function QuickEventForm({
         );
         return;
       }
+      submittedDraftSnapshot = {
+        captureIntent: captureIntent ?? undefined,
+        eventType,
+        ...occurrence,
+        note,
+        visibility: "public",
+        hasPhoto: Boolean(image) || omittedMediaCount > 0,
+        ...(journalSupportsServiceAttribution(eventType) ? { serviceAttribution } : {}),
+      };
+      draftAutosave.beginSubmission();
       setSaving(true);
       slowSaveTimer = window.setTimeout(() => {
         setSaveTakingLong(true);
       }, 8000);
       const savedJournal = journal ? await updateJournal(journal.id, draft) : await addJournal(draft);
       window.clearTimeout(slowSaveTimer);
-      clearLocalDraft(localDraftKey);
+      draftAutosave.completeSuccess(() => clearLocalDraft(localDraftKey));
       if (journal) {
         router.push(`/journal/${journal.id}?updated=1`);
       } else {
@@ -322,6 +361,15 @@ export function QuickEventForm({
       setSaveTakingLong(false);
       setPublicationError(journalSaveErrorMessage(caught, locale === "ja"));
       setSaving(false);
+      if (!journal) {
+        setDraftStatus(
+          submittedDraftSnapshot && draftAutosave.completeFailure(
+            () => Boolean(saveLocalDraft(localDraftKey, submittedDraftSnapshot)),
+          )
+            ? "saved"
+            : "error",
+        );
+      }
     }
   }
 
@@ -348,6 +396,7 @@ export function QuickEventForm({
         vehicle={vehicle}
         locale={locale}
         onClose={() => router.push(`/journal/${completion.id}`)}
+        onViewGarage={() => router.push(`/garage?vehicle=${encodeURIComponent(vehicle.id)}&record=${encodeURIComponent(completion.id)}&moment=added`)}
         onSaveEnrichment={async (draft) => {
           const updated = await updateJournal(completion.id, draft);
           setCompletion(updated);
@@ -391,10 +440,13 @@ export function QuickEventForm({
                   <p>{locale === "ja" ? "ひとつ選ぶと、すぐに書けます。" : "Choose one and start writing right away."}</p>
                 </div>
                 <div className="quick-capture-intent-options">
-                  {captureIntents.map(({ value, Icon }) => (
+                  {captureIntents.map(({ value, Icon, helperJa, helperEn }) => (
                     <button type="button" key={value} onClick={() => chooseCaptureIntent(value)}>
                       <Icon size={19} aria-hidden="true" />
-                      <span>{captureIntentLabel(value, locale)}</span>
+                      <span>
+                        <strong>{captureIntentLabel(value, locale)}</strong>
+                        {(helperJa || helperEn) && <small>{locale === "ja" ? helperJa : helperEn}</small>}
+                      </span>
                       <ArrowRight size={17} aria-hidden="true" />
                     </button>
                   ))}
@@ -448,6 +500,13 @@ export function QuickEventForm({
             <button type="button" className="text-action" onClick={() => setCaptureIntent(null)}>{locale === "ja" ? "変更" : "Change"}</button>
           </div>
         )}
+        {!editing && (
+          <p className="quick-note-invitation">
+            {locale === "ja"
+              ? "一文でも残せます。詳しい整理はあとで。"
+              : "One sentence is enough. Add details later."}
+          </p>
+        )}
         <label className="field quick-note-field">
           <span className="sr-only">{locale === "ja" ? "記録本文" : "Record text"}</span>
           <textarea
@@ -477,8 +536,8 @@ export function QuickEventForm({
             <ShieldCheck size={15} />
             {isRemoteAlpha
               ? locale === "ja"
-                ? "写真は記録本文と同じ公開範囲で保存します。"
-                : "The photo uses the same audience as the record."
+                ? "MECHORIの参加者に見せます。写真にも同じ範囲が適用されます。"
+                : "Shared with MECHORI participants. The photo uses the same audience."
               : translate(locale, "momentPrivateFirst")}
           </p>
         </div>

@@ -19,25 +19,27 @@ const css = read("../app/globals.css");
 test("explicit issue capture is open without diagnosis while other intents stay neutral", () => {
   assert.match(composer, /defaultEventTypeForCaptureIntent\(intent\)/);
   assert.match(composer, /issueStatus: eventType === "issue"/);
-  assert.match(completion, /このクルマに、ひとつ経験が残りました/);
+  assert.match(completion, /このクルマの履歴に加わりました/);
   assert.match(completion, /const \[savedJournal, setSavedJournal\] = useState\(journal\)/);
   assert.match(completion, /savedJournal\.eventType === "issue" && savedJournal\.issueStatus === "open"/);
   assert.match(completion, /const updated = await onSaveEnrichment\(draft\)/);
   assert.match(completion, /setSavedJournal\(updated\)/);
   assert.match(completion, /captureIntentLabel\(captureIntent, locale\)/);
-  assert.match(completion, /kind: isIssue \? "issue" : "record"/);
-  assert.match(completion, /<VehicleContinuity/);
-  assert.match(completion, /まだ記録はありません/);
+  assert.match(completion, /savedJournal\.bodyOriginal/);
+  assert.match(completion, /onViewGarage/);
+  assert.doesNotMatch(completion, /<VehicleContinuity/);
+  assert.doesNotMatch(completion, /まだ記録はありません/);
   assert.match(completion, /元の記録は残っています/);
   assert.doesNotMatch(completion, /原因:|診断:|Evidence \d+%/);
 });
 
-test("Quick Record and Garage share the Vehicle Continuity vocabulary while Home stays a live feed", () => {
+test("Garage retains Vehicle Continuity while post-save shows only the saved record", () => {
   assert.doesNotMatch(home, /<AlphaHistorySignature/);
   assert.doesNotMatch(home, /<ActivationOnboarding/);
   assert.match(home, /home-following-section/);
   assert.match(home, /home-journal-feed/);
-  assert.match(completion, /<VehicleContinuity/);
+  assert.doesNotMatch(completion, /<VehicleContinuity/);
+  assert.match(completion, /quick-record-evidence-preview/);
   assert.match(garage, /<VehicleContinuity/);
   assert.match(continuity, /vehicle-continuity-anchor/);
   assert.match(continuity, /vehicle-experience-mark/);

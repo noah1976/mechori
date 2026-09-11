@@ -136,8 +136,12 @@ test("post-save enrichment is optional and cannot replace the saved record", () 
   const sheet = read("../components/quick-record-completion-sheet.tsx");
   const context = read("../lib/app-context.tsx");
   const composer = read("../components/quick-event-form.tsx");
-  assert.match(sheet, /このクルマに、ひとつ経験が残りました/);
-  assert.match(sheet, /記録を詳しくする/);
+  assert.match(sheet, /\$\{vehicleLabel\}に記録を残しました/);
+  assert.match(sheet, /このクルマの履歴に加わりました/);
+  assert.match(sheet, /savedJournal\.bodyOriginal/);
+  assert.match(sheet, /ガレージで見る/);
+  assert.match(sheet, /onViewGarage/);
+  assert.match(sheet, /種類や時期を追加/);
   assert.match(sheet, /記録の詳細/);
   assert.doesNotMatch(sheet, /整備情報を追加/);
   assert.match(sheet, /onClose/);
@@ -149,12 +153,22 @@ test("post-save enrichment is optional and cannot replace the saved record", () 
   assert.match(sheet, /captureIntent === "service" \|\| captureIntent === "other"/);
   assert.match(sheet, /value: "issue", ja: "不具合・気になること"/);
   assert.match(sheet, /issueStatus: eventType === "issue" \? "open" : undefined/);
-  assert.match(sheet, /点検・対応・結果を続けられます/);
+  assert.doesNotMatch(sheet, /VehicleContinuity/);
+  assert.doesNotMatch(sheet, /まだ記録はありません/);
   assert.match(sheet, /savedJournal\.eventType === "issue" && savedJournal\.issueStatus === "open"/);
   assert.match(composer, /const savedJournal = journal \? await updateJournal\(journal\.id, draft\) : await addJournal\(draft\)/);
   assert.match(composer, /setCompletion\(savedJournal\)/);
   assert.match(composer, /captureIntent: captureIntent \?\? undefined/);
   assert.match(context, /await saveAlphaWorkspace\(data\);[\s\S]*?setData\(data\);/);
+});
+
+test("quick record explicitly welcomes small everyday experiences without changing its four intents", () => {
+  const composer = read("../components/quick-event-form.tsx");
+  assert.match(composer, /洗車、部品が届いた、久しぶりに乗ったことなど/);
+  assert.match(composer, /一文でも残せます。詳しい整理はあとで。/);
+  assert.match(composer, /MECHORIの参加者に見せます。写真にも同じ範囲が適用されます。/);
+  assert.equal(composer.match(/value: "(?:issue|service|drive|other)" as const/g)?.length, 4);
+  assert.match(composer, /if \(!note\.trim\(\)\)/);
 });
 
 test("record detail disclosure is visibly interactive without narrowing every experience to maintenance", () => {

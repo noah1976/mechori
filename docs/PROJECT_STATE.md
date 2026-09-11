@@ -1,7 +1,7 @@
 # MECHORI Project State
 
-- 更新日時: 2026-09-09
-- 対象ブランチ: `codex/18-production-domain-migration`
+- 更新日時: 2026-09-11
+- 対象ブランチ: `codex/19-alpha-engagement-slice`
 - HEAD基準: 本書を含む現在ブランチの`git log -1`を正とする
 - 本番URL: `https://mechori.com`
 - 状態文書のルール: 実装、テスト、本番反映、人間QAを別々に判定する。コード、テスト、Git履歴、既存の運用記録を照合し、根拠のない項目は完了にしない。本書を現在の実装状態の正本とする。
@@ -347,3 +347,14 @@
 - **文書検証**: 34章、6wireframe、12画面×11項目、Before/After、CURRENT/PROPOSED/FUTUREと依存を確認済み。ローカル参照リンク、docsだけの差分、`git diff --check`は成功。docsのみのためapplicationのlint/typecheck/test/buildは対象外で未実行。本番デプロイやmergeは実行していない。
 
 - **PR #19統合時の追記**: 所有者からmainへのmergeを明示承認された。main `291af4b`に追加された§33／§34と本UX checkpointの末尾追記が競合したため、両方を時系列順に保持して解消した。Strategy v2の収録状態だけを現状へ合わせ、設計の基準コード・結論・P1 EUX-01未修正・Human QA未了は変更しない。PRの最終merge状態は[PR #19](https://github.com/noah1976/mechori/pull/19)を参照。アプリ実装・DB・外部設定の変更は含まない。
+
+## 35. 2026-09-10 α engagement minimal slice implementation checkpoint
+
+- **状態**: `IMPLEMENTED / AUTOMATED_VERIFIED / PREVIEW_DEPLOYED / PREVIEW_SIGNED_OUT_VERIFIED / AUTHENTICATED_HUMAN_QA_PENDING / EXPERIMENT_NOT_STARTED`。設計Source of Truthの§26と§29に限定し、自車の小さい入口、Vehicle主語の有限Feed、Quick Recordの心理的負担軽減、保存後の正しいGarage履歴への導線を実装した。自発再訪やretentionが改善したとは判定しない。branchは`codex/19-alpha-engagement-slice`、確認先は[PR #20](https://github.com/noah1976/mechori/pull/20)。
+- **EUX-01**: Feedと記録詳細が、所有車の内部IDを存在しない`/garage/[vehicleId]`へ渡していたことが404の原因だった。所有車は既存`/garage?vehicle=...`、安全な公開Vehicle slugは既存`/v/...`、他Ownerの閲覧可能な記録は既存公開Garageへ明示的にfallbackする。未知IDや権限のないVehicle用routeは作らず、公開範囲・read model・access controlを変更していない。自動回帰テスト済み、Deploy Previewと実機でのself／他Owner／direct link／backはHuman QA pending。
+- **Home / Feed**: 認証後Homeを「小さい自車入口→他車の最近の記録」のHybridへ変更した。他車Feedは現在閲覧可能な既存projectionだけを使い、自分の記録を除外して最大8件で終了する。CardはVehicle名、発生日、本文、media、Owner context、既存statusの順へ寄せた。0件、1件、同一Vehicle連続でも架空activityや重複Vehicleを作らない。
+- **Quick Record / post-save**: 4つのCapture Intent、本文必須、1画像、下書き、現行共有範囲を維持した。「一文でも残せます。詳しい整理はあとで。」と、その他の日常例を追加した。保存後は保存済み本文を確認し、「ガレージで見る」から対象Vehicleを選択し、保存recordを履歴上で表示・強調する。Experience continuation、Result chaining、`linkedRecordId`流用は追加していない。
+- **Measurement**: 新規SDKと新規イベント基盤は追加していない。既存`page_view`の`/`、`/journal/*`、`/garage`と既存`journal_saved`で、Home閲覧、記録詳細閲覧、Garage到達、保存を最小限確認できる。Home内の個別click、prompted／unprompted、Founder／QA session、「また見たい」は2週間の手動台帳で分離する。
+- **検証と境界**: web全214 testを含む全workspace test、全workspace typecheck、web lint、production build、PR #20のNetlify Deploy Preview／Header／Redirect checksを通過。Deploy Previewの未ログインHomeをbrowser確認した。local browserではログイン済みHome、自車入口、他Owner GarageへのVehicle fallback、Home由来の記録詳細と戻る導線、Quick Record 4択と短文保存、保存後sheet、「ガレージで見る」から対象Vehicleと保存recordへのscrollを確認した。Previewのログイン後状態、390／412px実機、写真付き保存、long text、ログアウト後再ログイン、private／visibilityはHuman QA pending。DB/schema/migration、API、Supabase、Netlify設定、dependency、Native、Search／Garage／Profile全面刷新、新Social機能は変更していない。
+- **既存P1の扱い**: P-086、P-081／B、P-070は従来どおりHuman QAまたはPARTIALであり、今回DONEへ変更しない。MECH-045/046/047も未実装・承認待ちのまま。2週間のEngagement experimentはDeploy Preview／実機QA後に開始し、開始前の状態は`NOT STARTED`とする。
+- **Q20-01（P1）**: Quick Recordの600ms autosave callbackがsave成功後のdraft削除より遅れて書き戻せるraceを修正した。pending timerをsubmit前にcancelし、generation guardで既にqueueへ入ったcallbackも無効化する。成功時はautosaveを停止したまま当該Vehicle／Userのdraft keyだけを削除し、失敗時はsubmit時の入力snapshotを同じkeyへ保存してautosaveを再開する。fast save、autosave後のsave、failure、retry success、離脱、別Vehicle draft、unmountを自動検証し、local-only browserで即保存→Garage／detail反映→Quick Record再入場時にdraft復活なしを確認した。状態は`IMPLEMENTED / AUTOMATED_VERIFIED / LOCAL_VERIFIED / PHYSICAL_DEVICE_HUMAN_QA_PENDING`。2週間Experimentは`NOT STARTED`のまま。

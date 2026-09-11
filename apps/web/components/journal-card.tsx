@@ -14,7 +14,8 @@ import type {
   SocialProfile,
 } from "@mechori/core";
 import { translate } from "@mechori/i18n";
-import { ArrowRight, BookOpen, Heart, Link2, Lock, Users } from "lucide-react";
+import { ArrowRight, BookOpen, CarFront, Heart, Link2, Lock, Users } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { JournalMedia } from "@/components/journal-media";
@@ -23,6 +24,7 @@ import { ProfileSafetyMenu } from "@/components/profile-safety-menu";
 import { useApp } from "@/lib/app-context";
 import { journalDetailHref } from "@/lib/journal-detail-route";
 import { hasDistinctJournalTitle } from "@/lib/journal-feed-presentation";
+import { journalVehicleDestination } from "@/lib/journal-vehicle-context";
 import { publicProfileHref } from "@/lib/public-profile-url";
 
 export function JournalCard({
@@ -37,6 +39,7 @@ export function JournalCard({
   authorLinkEnabled = true,
   alphaAudience = false,
   showPrivateMedia = false,
+  vehicleImagePath,
   variant = "default",
 }: {
   journal: GarageJournalPost;
@@ -49,6 +52,7 @@ export function JournalCard({
   authorLinkEnabled?: boolean;
   alphaAudience?: boolean;
   showPrivateMedia?: boolean;
+  vehicleImagePath?: string;
   variant?: "default" | "home";
   safety?: {
     muted: boolean;
@@ -80,15 +84,35 @@ export function JournalCard({
     isRemoteAlpha &&
     displayJournal.authorProfileId === data.currentProfileId;
   const authorHref = author && authorLinkEnabled ? publicProfileHref(author) : undefined;
-  const detailHref = journalDetailHref(displayJournal.id);
-  const vehicleHref = displayJournal.vehicleId
-    ? `/garage/${encodeURIComponent(displayJournal.vehicleId)}`
-    : displayJournal.vehicleTargetId
-      ? `/v/${encodeURIComponent(displayJournal.vehicleTargetId)}`
-      : undefined;
+  const detailHref = journalDetailHref(
+    displayJournal.id,
+    variant === "home" ? "/" : undefined,
+  );
+  const vehicleDestination = journalVehicleDestination({
+    journal: displayJournal,
+    ownedVehicleIds: new Set(
+      data.vehicles
+        .filter((vehicle) => vehicle.ownerProfileId === data.currentProfileId)
+        .map((vehicle) => vehicle.id),
+    ),
+    ownerGarageHref: authorHref,
+  });
+  const vehicleHref = vehicleDestination?.href;
   const showTitle = hasDistinctJournalTitle(display.title, display.body);
   const showVisibility = variant !== "home" || displayJournal.visibility !== "public";
   const showReadAction = variant !== "home";
+  const recordedAt = displayJournal.publishedAt ?? displayJournal.createdAt;
+  const recordedLabel = new Intl.DateTimeFormat(ja ? "ja-JP" : "en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(new Date(recordedAt));
+  const occurrenceLabel = journalOccurrenceLabel(displayJournal, locale);
+  const hasExplicitOccurrence = Boolean(
+    displayJournal.occurredOn ||
+    displayJournal.occurredYear ||
+    displayJournal.occurredPrecision === "unknown",
+  );
   return (
     <article className={variant === "home" ? "journal-card journal-card-home" : "journal-card"}>
       <Link
@@ -97,7 +121,35 @@ export function JournalCard({
         className="journal-card-hit-area"
         aria-label={ja ? `${display.title}の詳細を読む` : `Read ${display.title}`}
       />
-      <div className="journal-card-meta">
+      {variant === "home" ? (
+        <div className="journal-card-vehicle-meta">
+          {vehicleImagePath ? (
+            <Image
+              src={vehicleImagePath}
+              alt=""
+              width={48}
+              height={48}
+              className="journal-card-vehicle-image"
+              unoptimized={vehicleImagePath.startsWith("data:")}
+            />
+          ) : (
+            <span className="journal-card-vehicle-fallback" aria-hidden="true">
+              <CarFront size={20} />
+            </span>
+          )}
+          <div>
+            <strong>
+              {vehicleHref ? (
+                <Link href={vehicleHref} className="journal-vehicle-link">{displayJournal.vehicleLabel}</Link>
+              ) : displayJournal.vehicleLabel}
+            </strong>
+            <small><time dateTime={recordedAt}>{ja ? `記録 ${recordedLabel}` : `Recorded ${recordedLabel}`}</time></small>
+          </div>
+          <div className="journal-card-actions">
+            {displayJournal.isDemo && <span className="demo-label">DEMO</span>}
+          </div>
+        </div>
+      ) : <div className="journal-card-meta">
         {authorHref ? (
           <Link href={authorHref} className="journal-author-link" aria-label={ja ? `${author?.displayName}のガレージ` : `${author?.displayName}'s garage`}>
             <ProfileAvatar
@@ -140,7 +192,7 @@ export function JournalCard({
             />
           )}
         </div>
-      </div>
+      </div>}
       {showTitle && <h3>{display.title}</h3>}
       <p>{display.body}</p>
       {!display.translated && display.sourceLanguage !== locale && (
@@ -164,6 +216,15 @@ export function JournalCard({
         linkAriaLabel={ja ? `${display.title}の詳細を読む` : `Read ${display.title}`}
       />
       <footer>
+        {variant === "home" && hasExplicitOccurrence && (
+          <span className="journal-occurrence-context">{ja ? `出来事 ${occurrenceLabel}` : `Event ${occurrenceLabel}`}</span>
+        )}
+        {variant === "home" && (
+          <span className="journal-owner-context">
+            {ja ? "記録" : "By"}
+            {authorHref ? <Link href={authorHref}>{author?.displayName}</Link> : author?.displayName ?? (ja ? "不明な投稿者" : "Unknown author")}
+          </span>
+        )}
         {displayJournal.eventType === "issue" && displayJournal.issueStatus === "open" && (
           <span className="journal-issue-state">{ja ? "未解決" : "Unresolved"}</span>
         )}
@@ -216,6 +277,14 @@ export function JournalCard({
           {ja ? "読む" : "Read"}
           <ArrowRight size={15} aria-hidden="true" />
         </Link>}
+        {variant === "home" && vehicleHref && (
+          <Link href={vehicleHref} className="text-link journal-vehicle-context-link">
+            {vehicleDestination?.kind === "owner_garage"
+              ? (ja ? "ガレージを見る" : "View Garage")
+              : (ja ? "このクルマを見る" : "View vehicle")}
+            <ArrowRight size={15} aria-hidden="true" />
+          </Link>
+        )}
       </footer>
       {reactionError && <small className="form-error" role="alert">{ja ? "いいねを保存できませんでした。もう一度お試しください。" : "The like could not be saved. Please try again."}</small>}
     </article>

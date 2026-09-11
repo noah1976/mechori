@@ -37,7 +37,8 @@ import { ProfileAvatar } from "@/components/profile-avatar";
 import { ProfileSafetyMenu } from "@/components/profile-safety-menu";
 import { recordOdometerLabel } from "@/components/record-card";
 import { publicProfileHref } from "@/lib/public-profile-url";
-import { journalDetailAvailability } from "@/lib/journal-detail-route";
+import { journalDetailAvailability, journalReturnHref } from "@/lib/journal-detail-route";
+import { journalVehicleDestination } from "@/lib/journal-vehicle-context";
 
 export default function JournalDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -63,6 +64,7 @@ export default function JournalDetailPage() {
   const [reacting, setReacting] = useState(false);
   const [reactionError, setReactionError] = useState(false);
   const ja = locale === "ja";
+  const returnHref = journalReturnHref(searchParams.get("from"), signedIn);
   useEffect(() => {
     if (signedIn && isRemoteAlpha && workspaceLoadState === "ready") {
       void ensureSocialData().catch(() => undefined);
@@ -108,7 +110,7 @@ export default function JournalDetailPage() {
         <button type="button" className="primary-action" onClick={() => void refreshSharedJournals()}>
           {ja ? "再読み込み" : "Try again"}
         </button>
-        <Link href="/feed" className="secondary-action">{ja ? "フィードへ戻る" : "Back to feed"}</Link>
+        <Link href={returnHref} className="secondary-action">{returnHref === "/" ? (ja ? "ホームへ戻る" : "Back to home") : (ja ? "フィードへ戻る" : "Back to feed")}</Link>
       </div>
     );
   }
@@ -142,8 +144,8 @@ export default function JournalDetailPage() {
             {ja ? "ログイン" : "Sign in"}
           </Link>
         )}
-        <Link href={signedIn ? "/feed" : "/"} className="secondary-action">
-          {signedIn ? (ja ? "フィードへ戻る" : "Back to feed") : (ja ? "ホームへ戻る" : "Back to home")}
+        <Link href={returnHref} className="secondary-action">
+          {returnHref === "/" ? (ja ? "ホームへ戻る" : "Back to home") : (ja ? "フィードへ戻る" : "Back to feed")}
         </Link>
       </div>
     );
@@ -153,11 +155,15 @@ export default function JournalDetailPage() {
     (profile) => profile.id === journal.authorProfileId,
   ) ?? sharedProfiles.find((profile) => profile.id === journal.authorProfileId);
   const authorHref = author ? publicProfileHref(author) : undefined;
-  const vehicleHref = journal.vehicleId
-    ? `/garage/${encodeURIComponent(journal.vehicleId)}`
-    : journal.vehicleTargetId
-      ? `/v/${encodeURIComponent(journal.vehicleTargetId)}`
-      : undefined;
+  const vehicleHref = journalVehicleDestination({
+    journal,
+    ownedVehicleIds: new Set(
+      data.vehicles
+        .filter((vehicle) => vehicle.ownerProfileId === data.currentProfileId)
+        .map((vehicle) => vehicle.id),
+    ),
+    ownerGarageHref: authorHref,
+  })?.href;
   const record = data.records.find((item) => item.id === journal.linkedRecordId);
   const knowledgeClass = classifyJournalForKnowledge(journal);
   const ownJournal = signedIn && journal.authorProfileId === data.currentProfileId;
@@ -182,9 +188,9 @@ export default function JournalDetailPage() {
 
   return (
     <div className="page-stack journal-detail-page">
-      <Link href={signedIn ? "/feed" : "/"} className="back-link">
+      <Link href={returnHref} className="back-link">
         <ArrowLeft size={17} aria-hidden="true" />
-        {signedIn ? (ja ? "フォロー中へ戻る" : "Back to following") : (ja ? "ホームへ戻る" : "Back to home")}
+        {returnHref === "/" ? (ja ? "ホームへ戻る" : "Back to home") : (ja ? "フォロー中へ戻る" : "Back to following")}
       </Link>
 
       {searchParams.get("updated") === "1" && ownJournal && (

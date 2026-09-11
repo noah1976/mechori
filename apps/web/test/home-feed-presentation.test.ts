@@ -15,21 +15,20 @@ test("feed presentation suppresses only title and body duplicates", () => {
   assert.equal(hasDistinctJournalTitle("オイル交換", "交換後は静かになった"), true);
 });
 
-test("authenticated home renders a content-first journal stream", () => {
+test("authenticated home renders a compact self context above a finite vehicle feed", () => {
+  assert.match(home, /className="home-self-context"/);
+  assert.match(home, /className="home-self-vehicle"/);
   assert.match(home, /className="home-journal-feed"/);
   assert.match(home, /variant="home"/);
   assert.match(home, /home-following-section/);
-  assert.match(home, /<h1 id="following-feed-heading">/);
-  assert.match(home, /フォロー中/);
-  assert.match(home, /const feed = signedIn \? allFeed : allFeed\.slice\(0, 4\)/);
+  assert.match(home, /<h2 id="following-feed-heading">/);
+  assert.match(home, /みんなのクルマに起きたこと/);
+  assert.match(home, /journal\.authorProfileId !== data\.currentProfileId/);
+  assert.match(home, /signedInFeed\.slice\(0, 8\)/);
+  assert.match(home, /最近の記録はここまでです/);
   assert.doesNotMatch(home, /AlphaHistorySignature/);
   assert.doesNotMatch(home, /ActivationOnboarding/);
-  // The checklist remains only in the first-Garage invitation. It must not
-  // return to the authenticated feed once a member has a vehicle.
-  assert.match(
-    home,
-    /if \(!vehicle && signedIn\) \{[\s\S]*?<ActivationChecklist \/>/,
-  );
+  assert.doesNotMatch(home, /ActivationChecklist/);
   assert.doesNotMatch(home, /className="home-monthly-summary"/);
   assert.doesNotMatch(home, /className="home-knowledge-section"/);
   assert.doesNotMatch(home, /className="home-record-grid"/);
@@ -38,16 +37,20 @@ test("authenticated home renders a content-first journal stream", () => {
   assert.doesNotMatch(home, /home-featured-journal/);
   assert.doesNotMatch(home, /FROM ALPHA GARAGES/);
   assert.match(home, /home-record-link-desktop/);
-  assert.match(home, /href="\/garage"/);
+  assert.match(home, /`\/garage\?vehicle=\$\{encodeURIComponent\(vehicle\.id\)\}`/);
   assert.match(home, /href="\/search"/);
   assert.match(css, /\.home-record-link-desktop \{ display: none; \}/);
   assert.doesNotMatch(home, /href="\/feed"/);
 });
 
-test("journal cards retain owner, vehicle, date, likes, and detail navigation", () => {
+test("journal cards lead with vehicle while retaining owner, date, likes, and detail navigation", () => {
   assert.match(card, /author\?\.displayName/);
   assert.match(card, /journal\.vehicleLabel/);
   assert.match(card, /journalOccurrenceLabel\(journal, locale\)/);
+  assert.match(card, /className="journal-card-vehicle-meta"/);
+  assert.match(card, /<time dateTime=\{recordedAt\}>/);
+  assert.match(card, /className="journal-occurrence-context"/);
+  assert.match(card, /className="journal-owner-context"/);
   assert.match(card, /toggleJournalLike\(displayJournal\.id\)/);
   assert.match(card, /className="journal-card-hit-area"/);
   assert.match(card, /const showVisibility = variant !== "home" \|\| displayJournal\.visibility !== "public"/);
@@ -66,7 +69,7 @@ test("journal card keeps the record text before its optional feed photo", () => 
 });
 
 test("feed photos use the same canonical detail route as the card hit area", () => {
-  assert.match(card, /const detailHref = journalDetailHref\(displayJournal\.id\)/);
+  assert.match(card, /const detailHref = journalDetailHref\([\s\S]*displayJournal\.id,[\s\S]*variant === "home" \? "\/" : undefined/);
   assert.match(card, /className="journal-card-hit-area"/);
   assert.match(card, /href=\{detailHref\}/);
   assert.match(card, /linkHref=\{detailHref\}/);

@@ -58,6 +58,9 @@ function GarageContent() {
     ensureSocialData,
   } = useApp();
   const params = useSearchParams();
+  const requestedVehicleId = params.get("vehicle");
+  const requestedRecordId = params.get("record");
+  const requestedMoment = params.get("moment");
   const ownVehicles = data.vehicles.filter(
     (item) => item.ownerProfileId === data.currentProfileId,
   );
@@ -65,10 +68,12 @@ function GarageContent() {
   const previousVehicles = [...groupedVehicles.previous].sort((left, right) =>
     (right.ownershipEndedYear ?? right.ownershipStartedYear ?? 0) -
     (left.ownershipEndedYear ?? left.ownershipStartedYear ?? 0));
-  const requestedVehicle = ownVehicles.find((item) => item.id === params.get("vehicle"));
+  const requestedVehicle = ownVehicles.find((item) => item.id === requestedVehicleId);
+  const requestedOwnedVehicleId = requestedVehicle?.id;
   const initialVehicle = requestedVehicle ?? groupedVehicles.current[0] ?? previousVehicles[0] ?? groupedVehicles.other[0];
   const [selectedVehicleId, setSelectedVehicleId] = useState(initialVehicle?.id ?? "");
   const [momentAdded, setMomentAdded] = useState(false);
+  const [highlightedRecordId, setHighlightedRecordId] = useState(requestedRecordId);
   const vehicle = ownVehicles.find((item) => item.id === selectedVehicleId) ?? initialVehicle;
   const owner = data.profiles.find((profile) => profile.id === vehicle?.ownerProfileId);
   const records = data.records.filter((record) => record.vehicleId === vehicle?.id);
@@ -83,17 +88,27 @@ function GarageContent() {
     }
   }, [ensureSocialData, isRemoteAlpha, signedIn, workspaceLoadState]);
   useEffect(() => {
-    const selected = params.get("vehicle");
-    if (params.get("moment") !== "added") {
-      if (selected) window.history.replaceState({}, "", "/garage");
-      return;
-    }
     const timer = window.setTimeout(() => {
-      setMomentAdded(true);
+      if (requestedOwnedVehicleId) setSelectedVehicleId(requestedOwnedVehicleId);
+      if (requestedMoment === "added") setMomentAdded(true);
+      if (requestedRecordId) setHighlightedRecordId(requestedRecordId);
     }, 0);
-    window.history.replaceState({}, "", "/garage");
-    return () => window.clearTimeout(timer);
-  }, [params]);
+    const scrollTimer = requestedRecordId
+      ? window.setTimeout(() => {
+          document
+            .getElementById(`vehicle-experience-${encodeURIComponent(requestedRecordId)}`)
+            ?.scrollIntoView({ block: "center" });
+          window.history.replaceState({}, "", "/garage");
+        }, 100)
+      : undefined;
+    if ((requestedVehicleId || requestedMoment) && !requestedRecordId) {
+      window.history.replaceState({}, "", "/garage");
+    }
+    return () => {
+      window.clearTimeout(timer);
+      if (scrollTimer !== undefined) window.clearTimeout(scrollTimer);
+    };
+  }, [requestedMoment, requestedOwnedVehicleId, requestedRecordId, requestedVehicleId]);
   if (!signedIn) {
     return (
       <div className="page-stack narrow-page">
@@ -206,6 +221,8 @@ function GarageContent() {
         ? <JournalMedia attachments={item.media} locale={locale} compact />
         : undefined,
       featured: index === 0,
+      anchorId: item.id,
+      highlighted: item.id === highlightedRecordId,
     };
   });
 
