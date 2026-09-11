@@ -38,6 +38,7 @@ import {
   loadQuickEventLocalDraft,
   quickEventLocalDraftKey,
   saveLocalDraft,
+  type QuickEventLocalDraft,
 } from "@/lib/local-draft-store";
 import { ServiceAttributionField } from "@/components/service-attribution-field";
 import {
@@ -49,6 +50,7 @@ import {
   quickRecordTitle,
 } from "@/lib/quick-record";
 import { journalSaveErrorMessage } from "@/lib/journal-save-error";
+import { createDraftAutosaveLifecycle } from "@/lib/draft-autosave-lifecycle";
 
 const eventTypes: Array<{ value: JournalEventType; label: TranslationKey }> = [
   { value: "delivery", label: "eventDelivery" },
@@ -139,9 +141,19 @@ export function QuickEventForm({
   const [pendingDraft, setPendingDraft] = useState<ReturnType<typeof loadQuickEventLocalDraft>>(null);
   const [omittedMediaCount, setOmittedMediaCount] = useState(0);
   const [completion, setCompletion] = useState<GarageJournalPost | null>(null);
+  const [draftAutosave] = useState(() =>
+    createDraftAutosaveLifecycle(
+      (callback, delayMs) => setTimeout(callback, delayMs),
+      (timer) => clearTimeout(timer),
+    ),
+  );
   const router = useRouter();
   const vehicleModel = displayVehicleModel(vehicle, locale);
   const localDraftKey = quickEventLocalDraftKey(data.currentProfileId, vehicle.id, journal?.id);
+
+  useEffect(() => {
+    return () => draftAutosave.dispose();
+  }, [draftAutosave]);
 
   useEffect(() => {
     if (journal) return;
@@ -156,8 +168,11 @@ export function QuickEventForm({
   }, [journal, localDraftKey]);
 
   useEffect(() => {
-    if (journal || !draftReady || (!note.trim() && !image && omittedMediaCount === 0)) return;
-    const timer = window.setTimeout(() => {
+    if (journal || !draftReady || (!note.trim() && !image && omittedMediaCount === 0)) {
+      draftAutosave.cancelPending();
+      return;
+    }
+    draftAutosave.schedule(() => {
       setDraftStatus(
         saveLocalDraft(localDraftKey, {
           captureIntent: captureIntent ?? undefined,
@@ -172,8 +187,8 @@ export function QuickEventForm({
           : "error",
       );
     }, 600);
-    return () => window.clearTimeout(timer);
-  }, [captureIntent, draftReady, eventType, image, journal, localDraftKey, note, occurrence, omittedMediaCount, serviceAttribution]);
+    return () => draftAutosave.cancelPending();
+  }, [captureIntent, draftAutosave, draftReady, eventType, image, journal, localDraftKey, note, occurrence, omittedMediaCount, serviceAttribution]);
 
   function restoreDraft() {
     const stored = pendingDraft;
@@ -200,6 +215,8 @@ export function QuickEventForm({
   }
 
   function startNewDraft() {
+    draftAutosave.cancelPending();
+    draftAutosave.resume();
     clearLocalDraft(localDraftKey);
     setPendingDraft(null);
     setCaptureIntent(null);
@@ -251,6 +268,7 @@ export function QuickEventForm({
     setError("");
     setPublicationError("");
     let slowSaveTimer: number | undefined;
+    let submittedDraftSnapshot: QuickEventLocalDraft | null = null;
     try {
       const mediaId = image ? `journal-media-${crypto.randomUUID()}` : existingAttachment?.id;
       const newAttachment: JournalMediaAttachment | undefined = image && mediaId ? {
@@ -315,13 +333,23 @@ export function QuickEventForm({
         );
         return;
       }
+      submittedDraftSnapshot = {
+        captureIntent: captureIntent ?? undefined,
+        eventType,
+        ...occurrence,
+        note,
+        visibility: "public",
+        hasPhoto: Boolean(image) || omittedMediaCount > 0,
+        ...(journalSupportsServiceAttribution(eventType) ? { serviceAttribution } : {}),
+      };
+      draftAutosave.beginSubmission();
       setSaving(true);
       slowSaveTimer = window.setTimeout(() => {
         setSaveTakingLong(true);
       }, 8000);
       const savedJournal = journal ? await updateJournal(journal.id, draft) : await addJournal(draft);
       window.clearTimeout(slowSaveTimer);
-      clearLocalDraft(localDraftKey);
+      draftAutosave.completeSuccess(() => clearLocalDraft(localDraftKey));
       if (journal) {
         router.push(`/journal/${journal.id}?updated=1`);
       } else {
@@ -333,6 +361,15 @@ export function QuickEventForm({
       setSaveTakingLong(false);
       setPublicationError(journalSaveErrorMessage(caught, locale === "ja"));
       setSaving(false);
+      if (!journal) {
+        setDraftStatus(
+          submittedDraftSnapshot && draftAutosave.completeFailure(
+            () => Boolean(saveLocalDraft(localDraftKey, submittedDraftSnapshot)),
+          )
+            ? "saved"
+            : "error",
+        );
+      }
     }
   }
 

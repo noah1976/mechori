@@ -219,3 +219,4 @@ P-069のように本番で再現した不具合は、テスト成功だけを根
 - `[~]` 保存後に保存済み本文を確認し、「ガレージで見る」で正しいVehicleが選択され、今保存した記録が履歴に表示・強調される。不要な成功dialogや架空の続報が追加されていない。
 - `[ ]` iPhone SafariとAndroid Chromeでbottom navigation、safe area、200% text scaling、visible focus、long text、no-image record、logout／login後の既存data、従来どおりのprivate／visibilityを確認する。
 - `[ ]` Deploy Previewと実機QAが終わるまで2週間のEngagement experimentを開始しない。開始後は督促・Founder投稿・QA sessionを自発利用から分離し、3〜7日再訪、他Vehicle閲覧、軽い記録、保存後Garage到達、「また見たい」を記録する。
+- `[~]` Q20-01: 本文入力後にautosaveの600msを待たず即保存し、保存成功後にGarageへ同じ記録が1件だけ追加され、Quick Recordへ再入場しても保存済み本文が「書きかけ」として復活しないことを実機で確認する。通信失敗時は本文とdraftが残り、再試行成功後は復活しないこと、別Vehicleの未保存draftは残ることも確認する。

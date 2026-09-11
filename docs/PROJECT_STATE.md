@@ -1,6 +1,6 @@
 # MECHORI Project State
 
-- 更新日時: 2026-09-10
+- 更新日時: 2026-09-11
 - 対象ブランチ: `codex/19-alpha-engagement-slice`
 - HEAD基準: 本書を含む現在ブランチの`git log -1`を正とする
 - 本番URL: `https://mechori.com`
@@ -357,3 +357,4 @@
 - **Measurement**: 新規SDKと新規イベント基盤は追加していない。既存`page_view`の`/`、`/journal/*`、`/garage`と既存`journal_saved`で、Home閲覧、記録詳細閲覧、Garage到達、保存を最小限確認できる。Home内の個別click、prompted／unprompted、Founder／QA session、「また見たい」は2週間の手動台帳で分離する。
 - **検証と境界**: web全214 testを含む全workspace test、全workspace typecheck、web lint、production build、PR #20のNetlify Deploy Preview／Header／Redirect checksを通過。Deploy Previewの未ログインHomeをbrowser確認した。local browserではログイン済みHome、自車入口、他Owner GarageへのVehicle fallback、Home由来の記録詳細と戻る導線、Quick Record 4択と短文保存、保存後sheet、「ガレージで見る」から対象Vehicleと保存recordへのscrollを確認した。Previewのログイン後状態、390／412px実機、写真付き保存、long text、ログアウト後再ログイン、private／visibilityはHuman QA pending。DB/schema/migration、API、Supabase、Netlify設定、dependency、Native、Search／Garage／Profile全面刷新、新Social機能は変更していない。
 - **既存P1の扱い**: P-086、P-081／B、P-070は従来どおりHuman QAまたはPARTIALであり、今回DONEへ変更しない。MECH-045/046/047も未実装・承認待ちのまま。2週間のEngagement experimentはDeploy Preview／実機QA後に開始し、開始前の状態は`NOT STARTED`とする。
+- **Q20-01（P1）**: Quick Recordの600ms autosave callbackがsave成功後のdraft削除より遅れて書き戻せるraceを修正した。pending timerをsubmit前にcancelし、generation guardで既にqueueへ入ったcallbackも無効化する。成功時はautosaveを停止したまま当該Vehicle／Userのdraft keyだけを削除し、失敗時はsubmit時の入力snapshotを同じkeyへ保存してautosaveを再開する。fast save、autosave後のsave、failure、retry success、離脱、別Vehicle draft、unmountを自動検証し、local-only browserで即保存→Garage／detail反映→Quick Record再入場時にdraft復活なしを確認した。状態は`IMPLEMENTED / AUTOMATED_VERIFIED / LOCAL_VERIFIED / PHYSICAL_DEVICE_HUMAN_QA_PENDING`。2週間Experimentは`NOT STARTED`のまま。
