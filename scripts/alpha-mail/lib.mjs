@@ -3,6 +3,8 @@ export const RESEND_EMAILS_ENDPOINT = "https://api.resend.com/emails";
 
 const EMAIL_PATTERN = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
 const SENDER_PATTERN = /^(?:[^\r\n<>]+\s*)?<([^\s@<>]+@[^\s@<>]+\.[^\s@<>]+)>$|^([^\s@<>]+@[^\s@<>]+\.[^\s@<>]+)$/;
+const AUTH_USERS_PAGE_SIZE = 1000;
+const MAX_AUTH_USER_PAGES = 20;
 
 export class AlphaMailError extends Error {
   constructor(message) {
@@ -132,7 +134,138 @@ export function bodyToHtml(body) {
   return `<div style="white-space: pre-wrap">${escapeHtml(body)}</div>`;
 }
 
-export async function createMailPlan({ args, env, readFile }) {
+function supabaseHeaders(secretKey) {
+  const headers = {
+    Accept: "application/json",
+    apikey: secretKey,
+  };
+
+  if (!secretKey.startsWith("sb_secret_")) {
+    headers.Authorization = `Bearer ${secretKey}`;
+  }
+
+  return headers;
+}
+
+function googleIdentityEmail(user) {
+  const providers = new Set([
+    user?.app_metadata?.provider,
+    ...(Array.isArray(user?.app_metadata?.providers) ? user.app_metadata.providers : []),
+    ...(Array.isArray(user?.identities)
+      ? user.identities.map((identity) => identity?.provider)
+      : []),
+  ]);
+
+  if (!providers.has("google") || !isValidEmail(user?.email ?? "")) {
+    return undefined;
+  }
+
+  return user.email;
+}
+
+async function fetchSupabaseJson(fetchImpl, url, headers, label) {
+  let response;
+  try {
+    response = await fetchImpl(url, { headers });
+  } catch {
+    throw new AlphaMailError(`${label} could not be reached.`);
+  }
+
+  if (!response.ok) {
+    throw new AlphaMailError(`${label} failed (HTTP ${response.status}).`);
+  }
+
+  try {
+    return await response.json();
+  } catch {
+    throw new AlphaMailError(`${label} returned an invalid response.`);
+  }
+}
+
+export async function resolveAlphaTesterRecipients({ env, fetchImpl = globalThis.fetch }) {
+  const supabaseUrl = env.SUPABASE_URL?.trim().replace(/\/$/, "");
+  if (!supabaseUrl || !/^https?:\/\/[^\s]+$/.test(supabaseUrl)) {
+    throw new AlphaMailError("SUPABASE_URL is missing or invalid.");
+  }
+
+  const secretKey = env.SUPABASE_SECRET_KEY?.trim();
+  if (!secretKey) {
+    throw new AlphaMailError("SUPABASE_SECRET_KEY is required to resolve alpha tester emails.");
+  }
+
+  const headers = supabaseHeaders(secretKey);
+  const membershipUrl = new URL("/rest/v1/test_memberships", supabaseUrl);
+  membershipUrl.searchParams.set("select", "user_id");
+  membershipUrl.searchParams.set("phase", "eq.alpha");
+  membershipUrl.searchParams.set("status", "eq.active");
+  membershipUrl.searchParams.set("order", "joined_at.asc");
+
+  const ownerUrl = new URL("/rest/v1/app_user_roles", supabaseUrl);
+  ownerUrl.searchParams.set("select", "user_id");
+  ownerUrl.searchParams.set("role_code", "eq.owner");
+
+  const [memberships, ownerRoles] = await Promise.all([
+    fetchSupabaseJson(fetchImpl, membershipUrl, headers, "Alpha membership lookup"),
+    fetchSupabaseJson(fetchImpl, ownerUrl, headers, "Owner role lookup"),
+  ]);
+
+  if (!Array.isArray(memberships) || !Array.isArray(ownerRoles)) {
+    throw new AlphaMailError("Supabase membership data has an unexpected shape.");
+  }
+
+  const users = [];
+  for (let page = 1; page <= MAX_AUTH_USER_PAGES; page += 1) {
+    const usersUrl = new URL("/auth/v1/admin/users", supabaseUrl);
+    usersUrl.searchParams.set("page", String(page));
+    usersUrl.searchParams.set("per_page", String(AUTH_USERS_PAGE_SIZE));
+    const result = await fetchSupabaseJson(fetchImpl, usersUrl, headers, "Auth user lookup");
+
+    if (!Array.isArray(result?.users)) {
+      throw new AlphaMailError("Supabase Auth user data has an unexpected shape.");
+    }
+    users.push(...result.users);
+
+    if (result.users.length < AUTH_USERS_PAGE_SIZE) {
+      break;
+    }
+    if (page === MAX_AUTH_USER_PAGES) {
+      throw new AlphaMailError("Auth user lookup exceeded its safety page limit.");
+    }
+  }
+
+  const ownerIds = new Set(ownerRoles.map((role) => role.user_id));
+  const usersById = new Map(users.map((user) => [user.id, user]));
+  const recipients = [];
+  let unresolved = 0;
+
+  for (const membership of memberships) {
+    if (ownerIds.has(membership.user_id)) {
+      continue;
+    }
+
+    const email = googleIdentityEmail(usersById.get(membership.user_id));
+    if (!email) {
+      unresolved += 1;
+      continue;
+    }
+    recipients.push(email);
+  }
+
+  if (unresolved > 0) {
+    throw new AlphaMailError(
+      `${unresolved} active alpha member(s) have no resolvable Google login email.`,
+    );
+  }
+
+  return normalizeRecipients(recipients.join(","));
+}
+
+export async function createMailPlan({
+  args,
+  env,
+  readFile,
+  recipientResolver = resolveAlphaTesterRecipients,
+}) {
   const subject = args.subject ?? "";
   if (subject.trim().length === 0 || /[\r\n]/.test(subject)) {
     throw new AlphaMailError("Subject is missing or contains a line break.");
@@ -151,10 +284,15 @@ export async function createMailPlan({ args, env, readFile }) {
   }
 
   const from = validateSender(env.MECHORI_ALPHA_MAIL_FROM);
+  const apiKey = env.RESEND_API_KEY?.trim();
+  if (args.send && !apiKey) {
+    throw new AlphaMailError("RESEND_API_KEY is required when --send is used.");
+  }
+
   const testTo = args.testTo?.trim();
   const recipients = testTo
     ? normalizeRecipients(testTo)
-    : normalizeRecipients(env.MECHORI_ALPHA_MAIL_TO);
+    : normalizeRecipients((await recipientResolver({ env })).join(","));
 
   if (testTo && recipients.length !== 1) {
     throw new AlphaMailError("--test-to accepts exactly one address.");
@@ -163,11 +301,6 @@ export async function createMailPlan({ args, env, readFile }) {
   const replyTo = env.MECHORI_ALPHA_MAIL_REPLY_TO?.trim();
   if (replyTo && !isValidEmail(replyTo)) {
     throw new AlphaMailError("MECHORI_ALPHA_MAIL_REPLY_TO is invalid.");
-  }
-
-  const apiKey = env.RESEND_API_KEY?.trim();
-  if (args.send && !apiKey) {
-    throw new AlphaMailError("RESEND_API_KEY is required when --send is used.");
   }
 
   return {

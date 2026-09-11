@@ -361,6 +361,6 @@
 
 ## 36. 2026-09-11 暫定α testerメール運用ツール
 
-- **状態**: `TEMPORARY ALPHA OPERATIONS TOOL / IMPLEMENTED / AUTOMATED_VERIFIED / LIVE SEND NOT PERFORMED`。Native Push未導入のWeb α期間だけ、Founder / Codexがローカルから明示実行できるResend HTTP API CLIを追加した。MECHORI本体runtime、DB、Supabase、Netlify、scheduler、user一覧には接続しない。
-- **安全境界**: 標準はdry-runで、`--send`時だけ実送信する。local allowlistから重複を除き1recipientずつ送信し、tester同士へaddressを露出しない。件名とplain text本文はFounder指定を原文どおり扱い、API key・宛先実値・本文一時ファイルはGit管理外とする。
-- **未完了 / manual gate**: Resend account、sender domain verification、DNS、Sending access API key、local envはFounder管理とし、自動作成・変更しない。今回、Founderへのtest sendおよびtester全員への送信は行っていない。Native Push導入後は頻度を下げるか削除可能であり、恒久Notification Architectureとは扱わない。
+- **状態**: `TEMPORARY ALPHA OPERATIONS TOOL / IMPLEMENTED / AUTOMATED_VERIFIED / LIVE SEND NOT PERFORMED`。Native Push未導入のWeb α期間だけ、Founder / Codexがローカルから明示実行できるResend HTTP API CLIを追加した。アプリruntime、Netlify、schedulerには接続せず、送信時の宛先解決だけSupabaseのmembership / Authへread-onlyで接続する。DB schemaや保存データは変更しない。
+- **安全境界**: 標準はdry-runで、`--send`時だけ実送信する。activeなα membershipとSupabase AuthのGoogle identityをローカル実行時にread-onlyで照合し、Owner、停止・離脱済みuserを除いて1recipientずつ送信する。別のtester住所録を作らず、tester同士へaddressを露出しない。件名とplain text本文はFounder指定を原文どおり扱い、API key・宛先実値・本文一時ファイルはGit管理外とする。
+- **未完了 / manual gate**: Resend account、sender domain verification、DNS、Sending access API key、ローカル専用Supabase Secret API key、local envはFounder管理とし、自動作成・変更しない。Secret keyはRLSをbypassするためアプリruntime、ブラウザ、Netlifyへ渡さない。今回、Founderへのtest sendおよびtester全員への送信は行っていない。Native Push導入後は頻度を下げるか削除可能であり、恒久Notification Architectureとは扱わない。
