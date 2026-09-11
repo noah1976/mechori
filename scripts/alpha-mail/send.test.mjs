@@ -8,13 +8,15 @@ import {
   deliverMail,
   normalizeRecipients,
   parseCliArgs,
+  resolveAlphaTesterRecipients,
 } from "./lib.mjs";
 
 const BASE_ENV = {
   MECHORI_ALPHA_MAIL_FROM: "MECHORI <alpha@mechori.com>",
-  MECHORI_ALPHA_MAIL_TO: "one@example.com,two@example.com",
   MECHORI_ALPHA_MAIL_REPLY_TO: "founder@example.com",
   RESEND_API_KEY: "secret-test-key",
+  SUPABASE_SECRET_KEY: "sb_secret_test-key",
+  SUPABASE_URL: "https://project.supabase.co",
 };
 
 const BASE_ARGS = {
@@ -31,10 +33,15 @@ const noFileRead = async () => {
 };
 
 async function makePlan({ args = BASE_ARGS, env = BASE_ENV, readFile = noFileRead } = {}) {
-  return createMailPlan({ args, env, readFile });
+  return createMailPlan({
+    args,
+    env,
+    readFile,
+    recipientResolver: async () => ["one@example.com", "two@example.com"],
+  });
 }
 
-test("dry-run performs zero API calls", async () => {
+test("dry-run performs zero Resend API calls", async () => {
   const plan = await makePlan();
   let calls = 0;
   const result = await deliverMail(plan, {
@@ -49,7 +56,7 @@ test("dry-run performs zero API calls", async () => {
   assert.equal(result.mode, "dry-run");
 });
 
-test("--send is required before an API call is made", async () => {
+test("--send is required before a Resend API call is made", async () => {
   const args = parseCliArgs(["--subject", "指定件名", "--body", "指定本文", "--send"]);
   const plan = await makePlan({ args });
   let calls = 0;
@@ -74,14 +81,24 @@ test("recipients are deduplicated case-insensitively", () => {
 
 test("an invalid recipient stops the plan", async () => {
   await assert.rejects(
-    makePlan({ env: { ...BASE_ENV, MECHORI_ALPHA_MAIL_TO: "valid@example.com,not-an-email" } }),
+    createMailPlan({
+      args: BASE_ARGS,
+      env: BASE_ENV,
+      readFile: noFileRead,
+      recipientResolver: async () => ["valid@example.com", "not-an-email"],
+    }),
     AlphaMailError,
   );
 });
 
 test("an invalid recipient cannot inject a new log line", async () => {
   await assert.rejects(
-    makePlan({ env: { ...BASE_ENV, MECHORI_ALPHA_MAIL_TO: "valid@example.com\nforged" } }),
+    createMailPlan({
+      args: BASE_ARGS,
+      env: BASE_ENV,
+      readFile: noFileRead,
+      recipientResolver: async () => ["valid@example.com\nforged"],
+    }),
     (error) => {
       assert.equal(error.message, "Invalid recipient: [invalid address]");
       return true;
@@ -91,7 +108,12 @@ test("an invalid recipient cannot inject a new log line", async () => {
 
 test("an empty recipient list stops the plan", async () => {
   await assert.rejects(
-    makePlan({ env: { ...BASE_ENV, MECHORI_ALPHA_MAIL_TO: "" } }),
+    createMailPlan({
+      args: BASE_ARGS,
+      env: BASE_ENV,
+      readFile: noFileRead,
+      recipientResolver: async () => [],
+    }),
     /No recipients are configured/,
   );
 });
@@ -166,7 +188,7 @@ test("partial API failure is reported and remaining recipients continue", async 
   assert.equal(responses.length, 0);
 });
 
-test("--test-to excludes the tester allowlist", async () => {
+test("--test-to bypasses the Supabase tester directory", async () => {
   const plan = await makePlan({
     args: { ...BASE_ARGS, send: true, testTo: "founder@example.com" },
   });
@@ -222,4 +244,82 @@ test("body-file content is read and preserved verbatim", async () => {
   });
 
   assert.equal(plan.body, body);
+});
+
+test("active alpha Google users are resolved while the owner is excluded", async () => {
+  const requests = [];
+  const fetchImpl = async (url, request) => {
+    requests.push({ headers: request.headers, url: String(url) });
+    const pathname = new URL(url).pathname;
+    if (pathname.endsWith("/test_memberships")) {
+      return {
+        ok: true,
+        json: async () => [{ user_id: "owner" }, { user_id: "tester" }],
+      };
+    }
+    if (pathname.endsWith("/app_user_roles")) {
+      return { ok: true, json: async () => [{ user_id: "owner" }] };
+    }
+    return {
+      ok: true,
+      json: async () => ({
+        users: [
+          {
+            app_metadata: { provider: "google" },
+            email: "owner@example.com",
+            id: "owner",
+          },
+          {
+            app_metadata: { providers: ["google"] },
+            email: "tester@example.com",
+            id: "tester",
+          },
+        ],
+      }),
+    };
+  };
+
+  const recipients = await resolveAlphaTesterRecipients({ env: BASE_ENV, fetchImpl });
+
+  assert.deepEqual(recipients, ["tester@example.com"]);
+  assert.equal(requests.length, 3);
+  assert.match(requests[0].url, /phase=eq\.alpha/);
+  assert.match(requests[0].url, /status=eq\.active/);
+  assert.equal(requests.every((request) => request.headers.apikey === BASE_ENV.SUPABASE_SECRET_KEY), true);
+  assert.equal(requests.every((request) => !("Authorization" in request.headers)), true);
+});
+
+test("active alpha users without a Google login email stop delivery", async () => {
+  const fetchImpl = async (url) => {
+    const pathname = new URL(url).pathname;
+    if (pathname.endsWith("/test_memberships")) {
+      return { ok: true, json: async () => [{ user_id: "tester" }] };
+    }
+    if (pathname.endsWith("/app_user_roles")) {
+      return { ok: true, json: async () => [] };
+    }
+    return {
+      ok: true,
+      json: async () => ({
+        users: [{ app_metadata: { provider: "email" }, email: "tester@example.com", id: "tester" }],
+      }),
+    };
+  };
+
+  await assert.rejects(
+    resolveAlphaTesterRecipients({ env: BASE_ENV, fetchImpl }),
+    /no resolvable Google login email/,
+  );
+});
+
+test("recipient resolution requires a Supabase secret key", async () => {
+  await assert.rejects(
+    resolveAlphaTesterRecipients({
+      env: { ...BASE_ENV, SUPABASE_SECRET_KEY: "" },
+      fetchImpl: async () => {
+        throw new Error("must not fetch");
+      },
+    }),
+    /SUPABASE_SECRET_KEY is required/,
+  );
 });
