@@ -1,7 +1,7 @@
 # MECHORI Project State
 
-- 更新日時: 2026-09-11
-- 対象ブランチ: `codex/19-alpha-engagement-slice`
+- 更新日時: 2026-09-16
+- 対象ブランチ: `codex/22-knowledge-acquisition-review`
 - HEAD基準: 本書を含む現在ブランチの`git log -1`を正とする
 - 本番URL: `https://mechori.com`
 - 状態文書のルール: 実装、テスト、本番反映、人間QAを別々に判定する。コード、テスト、Git履歴、既存の運用記録を照合し、根拠のない項目は完了にしない。本書を現在の実装状態の正本とする。
@@ -364,3 +364,13 @@
 - **状態**: `TEMPORARY ALPHA OPERATIONS TOOL / IMPLEMENTED / AUTOMATED_VERIFIED / LIVE SEND NOT PERFORMED`。Native Push未導入のWeb α期間だけ、Founder / Codexがローカルから明示実行できるResend HTTP API CLIを追加した。アプリruntime、Netlify、schedulerには接続せず、送信時の宛先解決だけSupabaseのmembership / Authへread-onlyで接続する。DB schemaや保存データは変更しない。
 - **安全境界**: 標準はdry-runで、`--send`時だけ実送信する。activeなα membershipとSupabase AuthのGoogle identityをローカル実行時にread-onlyで照合し、Owner、停止・離脱済みuserを除いて1recipientずつ送信する。別のtester住所録を作らず、tester同士へaddressを露出しない。件名とplain text本文はFounder指定を原文どおり扱い、API key・宛先実値・本文一時ファイルはGit管理外とする。
 - **未完了 / manual gate**: Resend account、sender domain verification、DNS、Sending access API key、ローカル専用Supabase Secret API key、local envはFounder管理とし、自動作成・変更しない。Secret keyはRLSをbypassするためアプリruntime、ブラウザ、Netlifyへ渡さない。今回、Founderへのtest sendおよびtester全員への送信は行っていない。Native Push導入後は頻度を下げるか削除可能であり、恒久Notification Architectureとは扱わない。
+
+## 37. 2026-09-16 Knowledge Acquisition戦略レビュー
+
+- **状態**: `REVIEW_READY / ADOPTION_PENDING / EXPERIMENT_NOT_STARTED`。[Knowledge Acquisition Review](KNOWLEDGE_ACQUISITION_REVIEW_2026-09.md)を作成。最新main `94a67c9d6b834384b3a5bb39576ad4abd57cfc60`（PR #22）から`codex/22-knowledge-acquisition-review`で分岐した。関連作業はMECH-048。Documentation-only PRとして提出し、merge・本番反映・実験開始は行わない。
+- **結論と理由**: 限定Hybrid（既存資料からの候補化＋目前の相談準備＋後日の結果回収）を次の検証として推奨。自発投稿の摩擦低減だけでは、用事のある瞬間の選択と結果回収を説明できないため。UGCを撤去せず、純粋なAI相談・全面OCR実装にも進まない。本人便益と共有Evidence事業を別々に判定する。
+- **根拠と限界**: 指定11文書と関連状態・最小Capture実装、12の公式Web sourceを使用。Founderの自発利用不足の報告を受けたが、本番利用ログ・実資料・請求実績は未取得。§35のHuman QA待ち・実験未開始を完了へ変更しない。iATN等に結果付き修理情報の仕組みが存在し、「Web全体にOutcomeがない」は未証明と整理した。
+- **P0/P1/P2**: 新規P0事故を確認した作業ではない。P1 **KA-01**（実用便益と資料提供・確認の未検証）、**KA-02**（結果返却・独立他車への追加価値の未検証）、**KA-03**（汎用AI代替・権利処理込み取得原価の未検証）を新たな戦略検証課題として記録。いずれも`EXPERIMENT_DESIGNED / NOT_RUN`。P2相当の追加Social・Native・広いAI機能は本レビューでは後回しの提案であり、既存Backlogを削除しない。
+- **次の最小実験**: Founder実資料5枚以内で手順確認後、外部Owner最初の2人、gate通過時のみ最大4人・各1件。35日以内、Founder計12時間、新規サービス費なし。実課題持込・資料確認・実際の相談利用・別日の結果・本人再利用・他車Evidenceの増分を判定する。最初の2人が資料提供と確認へ進まなければその段階を止める。
+- **未完了**: 採用判断、参加者の確保・同意、実資料と利用権の確認、試験、汎用AIへの同等context比較、支払理由・継続費の実測。共有価値がなければKnowledge Network投資停止／本人履歴へ縮小する反証条件を明記した。製品方針や外部AI送信範囲の改定は未実施。
+- **検証**: 文書構成、8方式×20観点、source日付と事実／推論、7つの判定質問、工数上限、相対リンク、差分の文書限定、`git diff --check`を確認。lint/typecheck/test/buildはdocumentation-onlyのため未実行。既存P-070・P-081/B・P-086・EUX-01・Q20-01のQA状態、MECH-044〜047の実装・承認状態は変更しない。コード変更・実験開始はいずれもNO。

@@ -4,6 +4,17 @@
 
 この文書は、プロジェクト方針・技術方針・法務/安全/プライバシーに関する判断を記録します。未確定事項は断定せず、`docs/BACKLOG.md` の `NEEDS_OWNER` にも反映します。
 
+## 2026-09-16
+
+### レビュー記録: Knowledge Acquisition方式を再検証する（採用待ち）
+
+- 根拠: α Engagement改善後も自発利用が弱いとのFounder報告を受け、[Knowledge Acquisition Review](KNOWLEDGE_ACQUISITION_REVIEW_2026-09.md)を作成した。最新mainは`94a67c9d6b834384b3a5bb39576ad4abd57cfc60`。利用ログや正式実験の完了は未確認であり、UGCの失敗が証明されたとは判断しない。
+- 推奨: 自発投稿を主な供給源にする仮説に対し、既存資料＋目前の相談準備＋結果回収の限定Hybridを、コードなしで比較する。これは戦略採用・実験開始の決定ではない。MECH-048で採用判断を追跡する。
+- 理由: 本人の用事とEvidence生成の接続を先に検証するため。Outcomeのある既存サービスも確認できたので、独自性をOutcomeの不存在ではなく、適用範囲・出自・継続結果・実用再利用の追加価値で判定する。
+- 既存決定との関係: 2026-08-16のConsumer供給とB2B収益の統合、Evidence Loop、後日のFeed／Capture方針は履歴として維持。今回の提案が採用・検証された場合にだけ、置換理由と範囲をPRODUCT・ROADMAP等へ反映する。Strategy v2の本人価値と共有価値の別証明を維持し、試験量と入口を絞る。
+- 反転条件: 資料提供・確認が起きない、結果が返らない、本人の別日実用がない、汎用AIに同じ資料を渡すと差がない、他Owner Evidence追加に実用差がない、取得工数・権利が成立しない場合はHybridを撤回／縮小する。UGC少数Contributorや工場の既存出力が優れる場合も選び直す。
+- 境界: コード、DB、外部AI送信、課金、公開範囲、production、既存Human QA状態は変更しない。状態は`REVIEW_READY / ADOPTION_PENDING / EXPERIMENT_NOT_STARTED`。
+
 ## 2026-07-12
 
 ### 決定: 初期タスクは文書作成のみ（完了）
