@@ -12,7 +12,7 @@ const promptData = read("../lib/journal-prompts.ts");
 const newJournal = read("../app/journal/new/page.tsx");
 const form = read("../components/journal-form.tsx");
 const detailRoute = read("../lib/journal-detail-route.ts");
-const home = read("../app/page.tsx");
+const home = read("../app/home/page.tsx");
 
 test("post authors and vehicles have separate public destinations", () => {
   assert.match(card, /publicProfileHref/);

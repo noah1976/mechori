@@ -374,7 +374,7 @@ export function applyRecordDraftToData(
     record,
     data: {
       ...data,
-      schemaVersion: 14,
+      schemaVersion: 15,
       vehicles: data.vehicles.map((item) => (item.id === vehicleId ? nextVehicle : item)),
       records,
     },
@@ -504,7 +504,7 @@ export function migrateAppData(input: unknown): AppData | null {
   });
 
   return {
-    schemaVersion: 14,
+    schemaVersion: 15,
     vehicles,
     records,
     profiles: Array.isArray(source.profiles)
@@ -611,6 +611,16 @@ export function migrateAppData(input: unknown): AppData | null {
       : [],
     contentReports: Array.isArray(source.contentReports)
       ? source.contentReports
+      : [],
+    vehiclePassports: Array.isArray(source.vehiclePassports)
+      ? source.vehiclePassports.filter((passport) =>
+          passport &&
+          typeof passport.vehicleId === "string" &&
+          typeof passport.createdAt === "string" &&
+          typeof passport.updatedAt === "string" &&
+          typeof passport.completedAt === "string" &&
+          vehicles.some((vehicle) => vehicle.id === passport.vehicleId),
+        )
       : [],
   };
 }

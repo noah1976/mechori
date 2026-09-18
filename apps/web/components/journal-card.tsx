@@ -86,7 +86,7 @@ export function JournalCard({
   const authorHref = author && authorLinkEnabled ? publicProfileHref(author) : undefined;
   const detailHref = journalDetailHref(
     displayJournal.id,
-    variant === "home" ? "/" : undefined,
+    variant === "home" ? (signedIn ? "/home" : "/") : undefined,
   );
   const vehicleDestination = journalVehicleDestination({
     journal: displayJournal,

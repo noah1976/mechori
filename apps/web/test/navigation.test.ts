@@ -23,7 +23,7 @@ test("logged-out navigation returns only home, search, and sign-in", () => {
 
 test("signed-in navigation returns the four trial destinations", () => {
   assert.deepEqual(hrefs("mobileBottom", "authenticated"), [
-    "/",
+    "/home",
     "/search",
     "/notifications",
     "/garage",
@@ -33,7 +33,7 @@ test("signed-in navigation returns the four trial destinations", () => {
 
 test("admin navigation keeps user destinations and adds admin only to the drawer", () => {
   assert.deepEqual(hrefs("mobileBottom", "authenticated", true), [
-    "/",
+    "/home",
     "/search",
     "/notifications",
     "/garage",
@@ -87,12 +87,12 @@ test("loading state exposes no navigation before auth is known", () => {
 });
 
 test("active state maps detail routes to their parent navigation item", () => {
-  assert.equal(isActiveNavigation("/", "/"), true);
+  assert.equal(isActiveNavigation("/home", "/home"), true);
   assert.equal(isActiveNavigation("/search/results", "/search"), true);
   assert.equal(isActiveNavigation("/notifications", "/notifications"), true);
   assert.equal(isActiveNavigation("/garage/vehicle-1", "/garage"), true);
-  assert.equal(isActiveNavigation("/journal/abc", "/"), true);
-  assert.equal(isActiveNavigation("/records/abc", "/"), true);
+  assert.equal(isActiveNavigation("/journal/abc", "/home"), true);
+  assert.equal(isActiveNavigation("/records/abc", "/home"), true);
   assert.equal(isActiveNavigation("/settings/profile", "/settings/profile"), true);
   assert.equal(isActiveNavigation("/search", "/garage"), false);
 
@@ -107,7 +107,8 @@ test("coming-soon navigation uses existing safe routes", () => {
 });
 
 test("record FAB is hidden from the Garage hero and focused record-entry routes", () => {
-  assert.equal(shouldShowRecordFab("/"), true);
+  assert.equal(shouldShowRecordFab("/"), false);
+  assert.equal(shouldShowRecordFab("/home"), true);
   assert.equal(shouldShowRecordFab("/garage"), false);
   assert.equal(shouldShowRecordFab("/garage/vehicle-1"), true);
   assert.equal(shouldShowRecordFab("/journal/new"), false);

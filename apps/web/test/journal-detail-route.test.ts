@@ -13,6 +13,9 @@ const journal = {
 test("journal detail links preserve the exact journal identifier", () => {
   assert.equal(journalDetailHref("journal / with space"), "/journal/journal%20%2F%20with%20space");
   assert.equal(journalDetailHref("journal-1", "/"), "/journal/journal-1?from=%2F");
+  assert.equal(journalDetailHref("journal-1", "/home"), "/journal/journal-1?from=%2Fhome");
+  assert.equal(journalReturnHref("/home", true), "/home");
+  assert.equal(journalReturnHref("/home", false), "/");
   assert.equal(journalReturnHref("/", true), "/");
   assert.equal(journalReturnHref("https://example.com", true), "/feed");
 });

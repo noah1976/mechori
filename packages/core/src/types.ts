@@ -496,8 +496,33 @@ export interface JournalDraft {
   serviceAttribution?: MaintenanceServiceAttributionV1;
 }
 
+export interface VehiclePassport {
+  vehicleId: string;
+  odometerValue?: number;
+  odometerUnit: PrototypeOdometerUnit;
+  modifications?: string;
+  recentMaintenance?: string;
+  workshopConcerns?: string;
+  otherNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string;
+  shareToken?: string;
+  sharedAt?: string;
+}
+
+export interface VehiclePassportDraft {
+  vehicleId: string;
+  odometerValue: string;
+  odometerUnit: PrototypeOdometerUnit;
+  modifications: string;
+  recentMaintenance: string;
+  workshopConcerns: string;
+  otherNotes: string;
+}
+
 export interface AppData {
-  schemaVersion: 14;
+  schemaVersion: 14 | 15;
   vehicles: Vehicle[];
   records: MaintenanceRecord[];
   profiles: SocialProfile[];
@@ -507,4 +532,5 @@ export interface AppData {
   follows: FollowRelation[];
   profileSafetyRelations: ProfileSafetyRelation[];
   contentReports: ContentReport[];
+  vehiclePassports?: VehiclePassport[];
 }

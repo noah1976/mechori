@@ -127,7 +127,7 @@ export const signatureDemoStory = {
 } as const;
 
 export const demoData: AppData = {
-  schemaVersion: 14,
+  schemaVersion: 15,
   vehicles: [
     {
       id: "vehicle-demo-barchetta",
@@ -597,6 +597,7 @@ export const demoData: AppData = {
   ],
   profileSafetyRelations: [],
   contentReports: [],
+  vehiclePassports: [],
 };
 
 export function cloneDemoData(): AppData {

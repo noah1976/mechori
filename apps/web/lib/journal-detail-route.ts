@@ -2,7 +2,7 @@ import type { GarageJournalPost } from "@mechori/core";
 
 export type SharedJournalLoadState = "idle" | "loading" | "ready" | "error";
 
-export function journalDetailHref(journalId: string, returnTo?: "/" | "/feed"): string {
+export function journalDetailHref(journalId: string, returnTo?: "/" | "/home" | "/feed"): string {
   const href = `/journal/${encodeURIComponent(journalId)}`;
   return returnTo ? `${href}?from=${encodeURIComponent(returnTo)}` : href;
 }
@@ -10,7 +10,8 @@ export function journalDetailHref(journalId: string, returnTo?: "/" | "/feed"): 
 export function journalReturnHref(
   from: string | null,
   signedIn: boolean,
-): "/" | "/feed" {
+): "/" | "/home" | "/feed" {
+  if (from === "/home" && signedIn) return "/home";
   if (from === "/") return "/";
   return signedIn ? "/feed" : "/";
 }

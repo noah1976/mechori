@@ -1,5 +1,14 @@
 # BACKLOG
 
+### P-087 愛車パスポート α vertical slice
+
+- 優先度: P0 experiment
+- 状態: `PASSPORT_PROTOTYPE_READY` / `EXPERIMENT_NOT_STARTED` / Human QA pending
+- 実装: Authenticated `/` Passport入口、`/home`への既存Feed移動、Vehicle 0/1/複数、全任意入力、private AppData保存、Owner preview/edit、既存Feedback再利用、明示的なWorkshop share作成・copy/share・revoke、unauthenticated `/p/[token]`限定projection、`noindex / nofollow`。
+- Security: tokenは32-byte entropy、公開tableはhashだけを保持し、anon direct selectを許可しない。public RPCはactive tokenに一致するPassport projectionだけを返す。
+- Remaining: additive migrationの対象環境適用、Deploy Preview、iPhone Safari、Android Chrome、実アカウントsave/reload、incognito閲覧、revoke、既存Home/Garage/Quick Record、preview authのHuman QA。
+- Scope外: Workshop account／返却、AI診断、Evidence Graph、OCR、Professional marketplace、決済、Native、Drive、generic survey。
+
 ## 運用ルール
 
 - 1回の夜間作業では、原則としてREADYタスクを推奨順に1件だけ処理する。

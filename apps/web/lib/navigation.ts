@@ -65,7 +65,7 @@ const allNavigationItems: readonly NavigationItem[] = [
   },
   {
     id: "home",
-    href: "/",
+    href: "/home",
     label: "home",
     icon: House,
     surfaces: ["mobileBottom", "desktopSide", "drawer"],
@@ -284,6 +284,7 @@ export function getNavigationItems(
   return allNavigationItems
     .filter((item) => item.surfaces.includes(surface))
     .filter((item) => canShowNavigationItem(item, authState, isAdmin, hasProfessionalAccess))
+    .map((item) => item.id === "home" && authState === "signed-out" ? { ...item, href: "/" } : item)
     .sort((left, right) => left.order - right.order);
 }
 
@@ -294,7 +295,7 @@ export function navigationLabel(label: NavigationLabelKey, locale: SupportedUiLo
 export function isNavigationItemActive(pathname: string, item: NavigationItem): boolean {
   switch (item.activeMatch) {
     case "home":
-      return pathname === "/" || pathname === "/feed" || pathname.startsWith("/journal/") || pathname.startsWith("/records/");
+      return pathname === "/home" || pathname === "/feed" || pathname.startsWith("/journal/") || pathname.startsWith("/records/");
     case "search":
       return pathname === "/search" || pathname.startsWith("/search/") || pathname === "/people" || pathname.startsWith("/people/");
     case "notifications":
@@ -323,14 +324,16 @@ export function isActiveNavigation(pathname: string, href: string) {
 
 export function screenTitle(pathname: string, locale: SupportedUiLocale) {
   if (locale !== "ja") {
-    if (pathname === "/") return "MECHORI";
+    if (pathname === "/") return "Vehicle passport";
+    if (pathname === "/home") return "Home";
     if (pathname.startsWith("/search") || pathname.startsWith("/people")) return "Search";
     if (pathname.startsWith("/notifications")) return "Notifications";
     if (pathname.startsWith("/garage") || pathname.startsWith("/profile") || pathname.startsWith("/v/")) return "Garage";
     if (pathname.startsWith("/journal") || pathname.startsWith("/records")) return "Record";
     return "MECHORI";
   }
-  if (pathname === "/") return "MECHORI";
+  if (pathname === "/") return "愛車パスポート";
+  if (pathname === "/home") return "ホーム";
   if (pathname.startsWith("/search") || pathname.startsWith("/people")) return "探す";
   if (pathname.startsWith("/notifications")) return "通知";
   if (pathname.startsWith("/garage") || pathname.startsWith("/profile") || pathname.startsWith("/v/")) return "ガレージ";
@@ -342,6 +345,8 @@ export function screenTitle(pathname: string, locale: SupportedUiLocale) {
 
 export function shouldShowRecordFab(pathname: string) {
   return !(
+    pathname === "/" ||
+    pathname.startsWith("/p/") ||
     pathname === "/garage" ||
     pathname === "/search" ||
     pathname.startsWith("/search/") ||
