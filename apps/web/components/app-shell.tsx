@@ -342,7 +342,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             )}
           </div>
           {authenticated ? (
-            <strong className={`top-bar-title${pathname === "/" ? " is-home" : ""}`}>
+            <strong className={`top-bar-title${pathname === "/home" ? " is-home" : ""}`}>
               {screenTitle(pathname, locale)}
             </strong>
           ) : (
@@ -559,6 +559,7 @@ function isPublicPath(pathname: string): boolean {
     pathname === "/privacy" ||
     pathname === "/ai-policy" ||
     pathname === "/professional" ||
+    pathname.startsWith("/p/") ||
     pathname.startsWith("/v/") ||
     pathname.startsWith("/profile/") ||
     (pathname.startsWith("/journal/") &&

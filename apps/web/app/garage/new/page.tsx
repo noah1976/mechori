@@ -31,6 +31,10 @@ function NewVehicleContent() {
   const { addVehicle, locale, isRemoteAlpha } = useApp();
   const params = useSearchParams();
   const isPrevious = params.get("ownership") === "previously_owned";
+  const requestedReturnTo = params.get("returnTo");
+  const returnTo = requestedReturnTo?.startsWith("/") && !requestedReturnTo.startsWith("//")
+    ? requestedReturnTo
+    : undefined;
   const [draft, setDraft] = useState<VehicleDraft>(() => ({
     ...createEmptyVehicleDraft(),
     ownershipType: isPrevious ? "previously_owned" : "owned",
@@ -120,9 +124,11 @@ function NewVehicleContent() {
         collaborativeIdentity ? { identity: collaborativeIdentity } : undefined,
       );
       window.clearTimeout(slowSaveTimer);
-      router.push(isPrevious
-        ? `/garage?vehicle=${encodeURIComponent(vehicle.id)}`
-        : `/garage/${encodeURIComponent(vehicle.id)}/welcome`);
+      router.push(returnTo && !isPrevious
+        ? returnTo
+        : isPrevious
+          ? `/garage?vehicle=${encodeURIComponent(vehicle.id)}`
+          : `/garage/${encodeURIComponent(vehicle.id)}/welcome`);
     } catch {
       window.clearTimeout(slowSaveTimer);
       setSaveTakingLong(false);

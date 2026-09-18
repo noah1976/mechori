@@ -433,7 +433,7 @@ export function updateVehicleOwnershipInData(
     vehicle: nextVehicle,
     data: {
       ...data,
-      schemaVersion: 14,
+      schemaVersion: 15,
       vehicles: data.vehicles.map((item) => item.id === vehicleId ? nextVehicle : item),
     },
   };

@@ -14,6 +14,8 @@ import {
   toggleMuteProfileInData,
   updateVehicleOwnershipInData,
   updateVehicleSpecificationInData,
+  upsertVehiclePassportInData,
+  setVehiclePassportShareInData,
   isFollowing,
   isProfileBlocked,
   updateCurrentProfileIdentity,
@@ -49,6 +51,8 @@ import {
   type VehicleCatalogResolutionOverride,
   type VehicleDraft,
   type VehicleOwnershipUpdate,
+  type VehiclePassport,
+  type VehiclePassportDraft,
   type VehicleSpecificationUpdate,
 } from "@mechori/core";
 import { LocalStorageDataProvider } from "@mechori/shared";
@@ -134,6 +138,8 @@ interface AppContextValue {
   ): Promise<Vehicle>;
   updateVehicleOwnership(vehicleId: string, update: VehicleOwnershipUpdate): Promise<Vehicle>;
   updateVehicleSpecification(vehicleId: string, update: VehicleSpecificationUpdate): Promise<Vehicle>;
+  saveVehiclePassport(draft: VehiclePassportDraft): Promise<VehiclePassport>;
+  setVehiclePassportShare(vehicleId: string, shareToken?: string): Promise<void>;
   addRecord(draft: RecordDraft, vehicleId?: string): Promise<MaintenanceRecord>;
   updateRecord(id: string, draft: RecordDraft): Promise<MaintenanceRecord | null>;
   addJournal(
@@ -564,6 +570,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const result = updateVehicleSpecificationInData(data, vehicleId, update);
       await persist(result.data);
       return result.vehicle;
+    },
+    [authSession, data, persist],
+  );
+
+  const saveVehiclePassport = useCallback(
+    async (draft: VehiclePassportDraft) => {
+      if (!isSignedIn(authSession)) throw new Error("authentication_required");
+      const result = upsertVehiclePassportInData(data, draft);
+      await persist(result.data);
+      return result.passport;
+    },
+    [authSession, data, persist],
+  );
+
+  const setVehiclePassportShare = useCallback(
+    async (vehicleId: string, shareToken?: string) => {
+      if (!isSignedIn(authSession)) throw new Error("authentication_required");
+      await persist(setVehiclePassportShareInData(data, vehicleId, shareToken));
     },
     [authSession, data, persist],
   );
@@ -1007,6 +1031,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addVehicle,
       updateVehicleOwnership,
       updateVehicleSpecification,
+      saveVehiclePassport,
+      setVehiclePassportShare,
       addRecord,
       updateRecord,
       addJournal,
@@ -1048,6 +1074,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       addVehicle,
       updateVehicleOwnership,
       updateVehicleSpecification,
+      saveVehiclePassport,
+      setVehiclePassportShare,
       addRecord,
       updateRecord,
       addJournal,

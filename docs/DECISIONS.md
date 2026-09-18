@@ -856,3 +856,13 @@
 - Deploy Previewは認証と検証の独立surfaceとして維持し、数値形式`deploy-preview-<digits>--mechori-alpha.netlify.app`だけをAuth originに許可する。旧Production host、`www`、類似host、HTTP、port付きoriginはcallback originとして許可しない。
 - `www.mechori.com`のcanonical転送はNetlifyのprimary-domain設定へ任せ、repositoryに二重redirectを追加しない。現αのnoindex、private media、Public Experience projection未実装という境界も維持する。
 - Supabase Site URL / Redirect URLsとGoogle OAuth clientの登録値は所有者がDashboardで確認する。Database、RLS、RPC、OAuth provider、secretはこの変更で更新しない。
+
+### 決定: 愛車パスポートをOwner → Workshop循環の最小α実験として実装する
+
+- 日付: 2026-09-17
+- 状態: Prototype implementation / Experiment not started。価値仮説の成功、Professional、Evidence Graph、Workshopからの記録返却を確定するDecisionではない。
+- Authenticated `/`はPassport入口とし、既存Following Feed Homeは`/home`へ移す。未ログイン`/`は既存Login flowを維持し、認証後はPassportへ戻す。Home、Garage、Quick Record、Feedは削除しない。
+- Passportはcomplete vehicle historyではなく「今、工場へ渡せる範囲の愛車情報」とする。登録済みVehicle identityを再利用し、追加入力はすべて任意とし、分からない・覚えていない・未入力を正常状態として扱う。
+- Passport本文はOwner-private workspaceへ保存する。Workshop共有はOwnerの明示操作後だけ作成し、高entropy token、server-side hash、限定projection、停止可能なlinkで提供する。private AppData全体、email、auth ID、Owner profile、無関係なVehicle・記録をunauthenticated endpointへ返さない。
+- Workshop shareは一般公開KnowledgeやSEO surfaceではなく、`noindex / nofollow`の目的限定共有とする。共有停止後は旧tokenを拒否し、Owner-private Passport本文は削除しない。
+- Passport作成直後の自由回答は既存Feedback基盤を再利用し、回答を完成条件にしない。誘導質問、汎用Survey、Workshop account、Workshopからの整備返却は今回実装しない。

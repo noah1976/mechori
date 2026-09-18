@@ -32,6 +32,28 @@ flowchart LR
 | 改善が必要な箇所 | P-081Bで招待Landingと表示名設定を追加した。人間QAでは約5秒で目的と最初の行動を理解できるか、招待token／return-to、既存`MECHORI User`救済を確認する |
 | 計測したいイベント | `invite_opened`、`auth_completed`、`vehicle_registration_started`、`vehicle_saved`、`first_record_started`、`first_record_saved` |
 
+## A2. 愛車パスポートを作り、工場へ見せる
+
+```mermaid
+flowchart LR
+  A[Login] --> B[愛車パスポート]
+  B --> C[分かる範囲を保存]
+  C --> D[任意Feedback]
+  C --> E[パスポートを見る]
+  E --> F[共有リンクを作る]
+  F --> G[工場が未ログインで閲覧]
+  F --> H[共有を停止]
+```
+
+| 項目 | 内容 |
+| --- | --- |
+| 状態 | Prototype ready / Experiment not started / Human QA pending |
+| 開始条件 | authenticated `/`。Vehicle 0台では既存愛車登録へ進み、完了後に`/`へ戻る |
+| 主要ステップ | Vehicleを確認 → 任意項目を分かる範囲だけ入力 → 保存 → feedbackは送る／skip → Owner preview → 明示的に共有link作成 → 工場が未ログイン閲覧 |
+| Privacy | 初期private。共有projectionはPassport表示項目だけ。email、auth ID、内部ID、無関係な記録を含めない。shareは停止可能で旧URLを拒否する |
+| 失敗状態 | private保存失敗とshare失敗を分離する。共有失敗でprivate Passportを失わない |
+| 検証 | 概念理解、作成完了、工場へ見せたい意向、足りない／邪魔な情報を自由回答とHuman QAで確認する |
+
 ## B. 記録を残す
 
 ```mermaid

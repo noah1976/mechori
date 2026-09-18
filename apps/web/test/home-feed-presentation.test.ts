@@ -4,7 +4,7 @@ import test from "node:test";
 import { hasDistinctJournalTitle } from "../lib/journal-feed-presentation.ts";
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
-const home = read("../app/page.tsx");
+const home = read("../app/home/page.tsx");
 const card = read("../components/journal-card.tsx");
 const media = read("../components/journal-media.tsx");
 const css = read("../app/globals.css");
@@ -69,7 +69,7 @@ test("journal card keeps the record text before its optional feed photo", () => 
 });
 
 test("feed photos use the same canonical detail route as the card hit area", () => {
-  assert.match(card, /const detailHref = journalDetailHref\([\s\S]*displayJournal\.id,[\s\S]*variant === "home" \? "\/" : undefined/);
+  assert.match(card, /const detailHref = journalDetailHref\([\s\S]*displayJournal\.id,[\s\S]*variant === "home" \? \(signedIn \? "\/home" : "\/"\) : undefined/);
   assert.match(card, /className="journal-card-hit-area"/);
   assert.match(card, /href=\{detailHref\}/);
   assert.match(card, /linkHref=\{detailHref\}/);
