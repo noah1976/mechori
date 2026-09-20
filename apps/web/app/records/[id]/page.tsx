@@ -67,6 +67,12 @@ export default function RecordDetailPage() {
           </dl>
         </article>)}
       </section>
+      {record.notes && (
+        <section className="detail-section">
+          <div className="section-heading compact"><div><span className="eyebrow">NOTES</span><h2>{ja ? "補足" : "Notes"}</h2></div></div>
+          <p className="body-copy pre-wrap">{record.notes}</p>
+        </section>
+      )}
 
       <section className="detail-band">
         <div><span className="eyebrow">SOURCE</span><h2>{ja ? "出典と確認状態" : "Source and verification"}</h2><p>{record.sourceType === "demo" ? (ja ? "操作確認用に作成されたDEMOデータ" : "DEMO data created for interaction testing") : `${ja ? "オーナー自身の記録" : "Owner-provided record"} · ${evidenceBasisLabel(record.evidenceBasis, ja)}`}</p></div>

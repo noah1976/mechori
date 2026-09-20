@@ -1943,6 +1943,49 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .workshop-passport-header p { margin: 0; color: var(--muted); line-height: 1.6; }
 .workshop-share-note { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 11px; padding: 15px 17px; color: #385047; background: #edf3ef; border-left: 3px solid var(--brand); }
 .workshop-share-note p { margin: 0; font-size: 12px; line-height: 1.7; }
+.workshop-report-section { display: grid; gap: 18px; padding: 24px 0; border-block: 1px solid var(--line); }
+.workshop-report-intro { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 13px; align-items: start; }
+.workshop-report-intro > svg { margin-top: 2px; color: var(--brand); }
+.workshop-report-intro h2 { margin: 0; font-size: 22px; }
+.workshop-report-intro p { max-width: 680px; margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
+.workshop-report-section > .primary-action { justify-self: start; }
+.workshop-report-form, .passport-report-review { display: grid; gap: 17px; padding-top: 19px; border-top: 1px solid var(--line); }
+.workshop-report-form > p, .passport-report-review-note { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
+.workshop-report-form .field > span, .passport-report-review .field > span { font-weight: 750; }
+.workshop-report-form .field small, .passport-report-review .field small { color: var(--muted); font-size: 11px; font-weight: 500; }
+.workshop-report-form input, .workshop-report-form select, .workshop-report-form textarea, .passport-report-review input, .passport-report-review select, .passport-report-review textarea { border-radius: 4px; }
+.workshop-report-form textarea, .passport-report-review textarea { min-height: 86px; resize: vertical; }
+.workshop-report-date-row { display: grid; grid-template-columns: minmax(150px, 0.8fr) minmax(150px, 1fr) 96px; gap: 11px; align-items: end; }
+.workshop-report-success { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 13px; padding: 22px 0; color: #255d45; border-block: 1px solid #b9d7c8; }
+.workshop-report-success h2 { margin: 0; font-size: 22px; }
+.workshop-report-success p { margin: 6px 0 0; color: var(--muted); line-height: 1.65; }
+.passport-report-inbox { display: grid; gap: 18px; padding: 23px 0; border-block: 1px solid var(--line); }
+.passport-report-inbox.is-error { justify-items: start; }
+.passport-report-inbox.is-error p { margin: 0; color: var(--muted); }
+.passport-report-inbox-heading { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; }
+.passport-report-inbox-heading > svg { margin-top: 2px; color: var(--brand); }
+.passport-report-inbox-heading h2 { margin: 0; font-size: 21px; }
+.passport-report-inbox-heading p { margin: 5px 0 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.passport-report-list { display: grid; gap: 12px; }
+.passport-report-item { background: var(--surface); border: 1px solid var(--line); border-radius: 5px; }
+.passport-report-summary { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 17px 18px; }
+.passport-report-summary span { color: var(--muted); font-size: 11px; }
+.passport-report-summary h3 { margin: 5px 0 0; font-size: 17px; line-height: 1.45; }
+.passport-report-summary p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+.passport-report-review { padding: 19px 18px 18px; background: var(--surface-soft); }
+.passport-report-original { padding: 13px 0; border-block: 1px solid var(--line); }
+.passport-report-original summary { cursor: pointer; color: var(--brand-strong); font-size: 13px; font-weight: 750; }
+.passport-report-original dl { display: grid; gap: 0; margin: 12px 0 0; }
+.passport-report-original dl > div { display: grid; grid-template-columns: minmax(120px, 0.32fr) minmax(0, 1fr); gap: 15px; padding: 10px 0; border-top: 1px solid var(--line); }
+.passport-report-original dt { color: var(--muted); font-size: 11px; }
+.passport-report-original dd { margin: 0; font-size: 13px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.passport-report-dismiss-confirm { display: grid; gap: 11px; padding: 14px; background: #fff8f6; border-left: 3px solid var(--danger); }
+.passport-report-dismiss-confirm p { margin: 0; font-size: 13px; }
+.passport-report-dismiss-confirm > div { display: flex; gap: 10px; }
+.passport-history-added { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 13px; color: #255d45; }
+.passport-history-added strong { display: block; }
+.passport-history-added p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+.passport-report-dismissed { margin: 0; color: var(--muted); font-size: 13px; }
 
 @media (max-width: 1040px) {
   .home-hero { grid-template-columns: 1fr; }
@@ -2036,6 +2079,15 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .passport-share-actions { display: grid; grid-template-columns: 1fr; }
   .passport-share-actions > * { width: 100%; justify-content: center; }
   .workshop-passport-header h1 { font-size: 31px; }
+  .workshop-report-section > .primary-action { width: 100%; justify-content: center; }
+  .workshop-report-date-row { grid-template-columns: minmax(0, 1fr); }
+  .workshop-report-form .form-actions, .passport-report-review .form-actions { display: grid; grid-template-columns: 1fr; }
+  .workshop-report-form .form-actions > *, .passport-report-review .form-actions > * { width: 100%; justify-content: center; }
+  .passport-report-summary { align-items: flex-start; flex-direction: column; }
+  .passport-report-summary .secondary-action { width: 100%; justify-content: center; }
+  .passport-report-original dl > div { grid-template-columns: 1fr; gap: 4px; }
+  .passport-history-added { grid-template-columns: auto minmax(0, 1fr); }
+  .passport-history-added .primary-action { grid-column: 1 / -1; width: 100%; justify-content: center; }
   .top-bar-actions .icon-text-button { padding-inline: 6px; font-size: 12px; }
   .auth-page { margin-top: 0; gap: 20px; }
   .auth-heading h1 { font-size: 29px; }

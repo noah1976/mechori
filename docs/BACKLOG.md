@@ -3,11 +3,12 @@
 ### P-087 愛車パスポート α vertical slice
 
 - 優先度: P0 experiment
-- 状態: `PASSPORT_PROTOTYPE_READY` / `EXPERIMENT_NOT_STARTED` / Human QA pending
-- 実装: Authenticated `/` Passport入口、`/home`への既存Feed移動、Vehicle 0/1/複数、全任意入力、private AppData保存、Owner preview/edit、既存Feedback再利用、明示的なWorkshop share作成・copy/share・revoke、unauthenticated `/p/[token]`限定projection、`noindex / nofollow`。
-- Security: tokenは32-byte entropy、公開tableはhashだけを保持し、anon direct selectを許可しない。public RPCはactive tokenに一致するPassport projectionだけを返す。
-- Remaining: additive migrationの対象環境適用、Deploy Preview、iPhone Safari、Android Chrome、実アカウントsave/reload、incognito閲覧、revoke、既存Home/Garage/Quick Record、preview authのHuman QA。
-- Scope外: Workshop account／返却、AI診断、Evidence Graph、OCR、Professional marketplace、決済、Native、Drive、generic survey。
+- 状態: `ROUNDTRIP_PROTOTYPE_READY` / `EXPERIMENT_NOT_STARTED` / Human QA pending
+- 実装: Authenticated `/` Passport入口、`/home`への既存Feed移動、Vehicle 0/1/複数、全任意入力、private AppData保存、Owner preview/edit、既存Feedback再利用、明示的なWorkshop share作成・copy/share・revoke、unauthenticated `/p/[token]`限定projection、`noindex / nofollow`。さらに、未ログインWorkshopによる整備内容返却、Owner pending inbox、原文を保持したreview/edit、dismiss、既存Garage Maintenanceへの明示追加までを一周できる。
+- Security: tokenは32-byte entropy、公開tableはhashだけを保持する。anonはshare projection取得とactive tokenに対するreport送信RPCだけを実行でき、share/report tableを直接read/writeできない。Owner report取得・accept・dismissは`auth.uid()`の所有範囲に限定する。
+- Idempotency: Workshop送信はshareとsubmission keyの組で重複を防ぎ、Owner承認はreport UUID由来のdeterministic Maintenance IDとaccepted statusで再試行時の重複履歴を防ぐ。元reportはOwner修正後も保持する。
+- Remaining: `mechori-alpha`へのadditive Passport share/report migrations適用、Deploy Preview、iPhone Safari、Android Chrome、実アカウントsave/reload、incognito送信、Owner edit/accept/dismiss、revoke前submission維持、revoke後送信拒否、既存Home/Garage/Quick Record、preview authのHuman QA。remote migrationは安全ゲートにより未適用で、迂回実行していない。
+- Scope外: Workshop account／本人確認、写真返却、通知基盤、AI診断・要約、Evidence Graph、OCR、Professional marketplace、決済、Native、Drive、generic survey、一般公開Knowledge化。
 
 ## 運用ルール
 

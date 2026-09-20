@@ -1,6 +1,7 @@
 "use client";
 
 import { useApp } from "@/lib/app-context";
+import { PassportServiceReportInbox } from "@/components/passport-service-report-inbox";
 import {
   publishPassportShare,
   revokePassportShare,
@@ -52,7 +53,7 @@ export function PassportExperience() {
   const preferred = getPreferredVehicle(vehicles);
   const [vehicleId, setVehicleId] = useState(preferred?.id ?? "");
   const vehicle = vehicles.find((item) => item.id === vehicleId) ?? preferred;
-  const passports = data.vehiclePassports ?? [];
+  const passports = useMemo(() => data.vehiclePassports ?? [], [data.vehiclePassports]);
   const passport = vehicle
     ? passports.find((item) => item.vehicleId === vehicle.id)
     : undefined;
@@ -322,6 +323,7 @@ function PassportOwnerView({ vehicle, passport, onEdit, onShareTokenChange, focu
     <div className="passport-owner-view">
       <div className="passport-view-heading"><div><span className="eyebrow">YOUR PASSPORT</span><h2>工場へ見せる内容</h2></div><button type="button" className="secondary-action" onClick={onEdit}><Pencil size={16} />編集する</button></div>
       <PassportPreview vehicle={vehicle} passport={passport} />
+      <PassportServiceReportInbox vehicleId={vehicle.id} />
       <section className="passport-share-controls" ref={shareControlsRef} tabIndex={-1}>
         <div className="section-heading compact"><div><span className="eyebrow">SHARE</span><h2>工場に見せる</h2></div><ShieldCheck size={21} aria-hidden="true" /></div>
         <p>共有を始めるまで、このパスポートは非公開です。共有ページには、上に表示した情報だけが載ります。</p>

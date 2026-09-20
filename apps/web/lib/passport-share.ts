@@ -9,7 +9,8 @@ import {
 export { buildPassportShareProjection, type PassportShareProjection } from "@/lib/passport-share-projection";
 
 const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
-const LOCAL_SHARE_PREFIX = "mechori.local.passport-share.";
+export const LOCAL_PASSPORT_SHARE_PREFIX = "mechori.local.passport-share.";
+export const LOCAL_PASSPORT_SHARE_OWNER_PREFIX = "mechori.local.passport-share-owner.";
 
 export function createPassportShareToken(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
@@ -27,7 +28,8 @@ export async function publishPassportShare(
   if (!TOKEN_PATTERN.test(token)) throw new Error("passport_share_token_invalid");
   const projection = buildPassportShareProjection(vehicle, passport);
   if (getMechoriRuntime() !== "alpha") {
-    window.localStorage.setItem(`${LOCAL_SHARE_PREFIX}${token}`, JSON.stringify(projection));
+    window.localStorage.setItem(`${LOCAL_PASSPORT_SHARE_PREFIX}${token}`, JSON.stringify(projection));
+    window.localStorage.setItem(`${LOCAL_PASSPORT_SHARE_OWNER_PREFIX}${token}`, vehicle.id);
     return token;
   }
   const { data, error } = await createSupabaseBrowserClient().rpc("create_passport_share", {
@@ -42,7 +44,7 @@ export async function publishPassportShare(
 export async function loadPassportShare(token: string): Promise<PassportShareProjection | null> {
   if (!TOKEN_PATTERN.test(token)) return null;
   if (getMechoriRuntime() !== "alpha") {
-    const stored = window.localStorage.getItem(`${LOCAL_SHARE_PREFIX}${token}`);
+    const stored = window.localStorage.getItem(`${LOCAL_PASSPORT_SHARE_PREFIX}${token}`);
     return stored ? JSON.parse(stored) as PassportShareProjection : null;
   }
   const { data, error } = await createSupabaseBrowserClient()
@@ -55,7 +57,7 @@ export async function loadPassportShare(token: string): Promise<PassportSharePro
 export async function revokePassportShare(token: string): Promise<void> {
   if (!TOKEN_PATTERN.test(token)) throw new Error("passport_share_token_invalid");
   if (getMechoriRuntime() !== "alpha") {
-    window.localStorage.removeItem(`${LOCAL_SHARE_PREFIX}${token}`);
+    window.localStorage.removeItem(`${LOCAL_PASSPORT_SHARE_PREFIX}${token}`);
     return;
   }
   const { data, error } = await createSupabaseBrowserClient().rpc("revoke_passport_share", {
