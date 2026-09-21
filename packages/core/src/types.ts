@@ -538,6 +538,8 @@ export interface VehiclePassport {
   completedAt: string;
   shareToken?: string;
   sharedAt?: string;
+  /** True only after the owner explicitly enables maintenance history in the share snapshot. */
+  historyShareEnabled?: boolean;
 }
 
 export interface VehiclePassportDraft {

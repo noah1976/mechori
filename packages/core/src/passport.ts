@@ -50,6 +50,7 @@ export function upsertVehiclePassportInData(
     completedAt: existing?.completedAt ?? now,
     ...(existing?.shareToken ? { shareToken: existing.shareToken } : {}),
     ...(existing?.sharedAt ? { sharedAt: existing.sharedAt } : {}),
+    ...(existing?.historyShareEnabled ? { historyShareEnabled: true } : {}),
   };
   return {
     passport,
@@ -67,6 +68,7 @@ export function setVehiclePassportShareInData(
   data: AppData,
   vehicleId: string,
   shareToken?: string,
+  historyShareEnabled?: boolean,
   now = new Date().toISOString(),
 ): AppData {
   const passports = data.vehiclePassports ?? [];
@@ -76,10 +78,14 @@ export function setVehiclePassportShareInData(
     ...passport,
     updatedAt: now,
     ...(shareToken ? { shareToken, sharedAt: now } : {}),
+    ...(shareToken && historyShareEnabled ? { historyShareEnabled: true } : {}),
   };
   if (!shareToken) {
     delete nextPassport.shareToken;
     delete nextPassport.sharedAt;
+    delete nextPassport.historyShareEnabled;
+  } else if (!historyShareEnabled) {
+    delete nextPassport.historyShareEnabled;
   }
   return {
     ...data,

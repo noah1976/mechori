@@ -58,6 +58,7 @@ import {
   type VehicleSpecificationUpdate,
 } from "@mechori/core";
 import { LocalStorageDataProvider } from "@mechori/shared";
+import { publishPassportShare } from "@/lib/passport-share";
 import { loadAlphaAuthSession, signOutFromAlpha } from "@/lib/alpha-auth";
 import { recordAlphaEngagement } from "@/lib/alpha-engagement";
 import {
@@ -141,7 +142,11 @@ interface AppContextValue {
   updateVehicleOwnership(vehicleId: string, update: VehicleOwnershipUpdate): Promise<Vehicle>;
   updateVehicleSpecification(vehicleId: string, update: VehicleSpecificationUpdate): Promise<Vehicle>;
   saveVehiclePassport(draft: VehiclePassportDraft): Promise<VehiclePassport>;
-  setVehiclePassportShare(vehicleId: string, shareToken?: string): Promise<void>;
+  setVehiclePassportShare(
+    vehicleId: string,
+    shareToken?: string,
+    historyShareEnabled?: boolean,
+  ): Promise<void>;
   savePassportServiceReportToHistory(
     vehicleId: string,
     confirmation: PassportServiceReportConfirmation,
@@ -591,9 +596,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   const setVehiclePassportShare = useCallback(
-    async (vehicleId: string, shareToken?: string) => {
+    async (vehicleId: string, shareToken?: string, historyShareEnabled?: boolean) => {
       if (!isSignedIn(authSession)) throw new Error("authentication_required");
-      await persist(setVehiclePassportShareInData(data, vehicleId, shareToken));
+      await persist(setVehiclePassportShareInData(
+        data,
+        vehicleId,
+        shareToken,
+        historyShareEnabled,
+      ));
     },
     [authSession, data, persist],
   );
@@ -628,6 +638,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!vehicle) throw new Error("A demo vehicle is required");
       const result = applyRecordDraftToData(data, draft, undefined, locale, vehicle.id);
       await persist(result.data);
+      void syncHistoryEnabledPassportShare(result.data, vehicle.id).catch(() => undefined);
       recordLocalEngagement("maintenance_saved");
       void recordAlphaEngagement("maintenance_saved").catch(() => undefined);
       pushAnalyticsEvent("maintenance_saved", {
@@ -645,6 +656,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!previous) return null;
       const result = applyRecordDraftToData(data, draft, id, previous.sourceLanguage);
       await persist(result.data);
+      void syncHistoryEnabledPassportShare(result.data, previous.vehicleId).catch(() => undefined);
       recordLocalEngagement("maintenance_saved");
       void recordAlphaEngagement("maintenance_saved").catch(() => undefined);
       if (previous.resolutionStatus === "unresolved" && result.record.resolutionStatus === "resolved") {
@@ -1130,6 +1142,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+}
+
+async function syncHistoryEnabledPassportShare(data: AppData, vehicleId: string): Promise<void> {
+  const passport = data.vehiclePassports?.find((item) => item.vehicleId === vehicleId);
+  const vehicle = data.vehicles.find((item) => item.id === vehicleId);
+  if (!passport?.shareToken || !passport.historyShareEnabled || !vehicle) return;
+  await publishPassportShare(vehicle, passport, data.records, passport.shareToken, true);
 }
 
 export function useApp(): AppContextValue {
