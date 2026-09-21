@@ -5,19 +5,25 @@ import {
 import { getMechoriRuntime } from "@/lib/runtime-config";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
+  legacyReportToServiceItem,
   validatePassportServiceReportDraft,
   type PassportServiceReport,
   type PassportServiceReportDraft,
 } from "@/lib/passport-service-report-model";
 
 export {
+  createEmptyPassportServiceItem,
   createEmptyPassportServiceReportDraft,
   defaultPassportServiceReportSummary,
   PASSPORT_REPORT_TEXT_LIMIT,
+  PASSPORT_SERVICE_ITEM_LIMIT,
+  PASSPORT_SERVICE_ITEM_SUBJECT_LIMIT,
+  PASSPORT_SERVICE_ITEM_TEXT_LIMIT,
   toPassportServiceReportConfirmation,
   validatePassportServiceReportDraft,
   type PassportServiceReport,
   type PassportServiceReportDraft,
+  type PassportServiceItemDraft,
   type PassportServiceReportStatus,
 } from "@/lib/passport-service-report-model";
 
@@ -58,7 +64,7 @@ export async function submitPassportServiceReport(
 
 export async function loadMyPassportServiceReports(): Promise<PassportServiceReport[]> {
   if (getMechoriRuntime() !== "alpha") return loadLocalReports();
-  const { data, error } = await createSupabaseBrowserClient().rpc("list_my_passport_service_reports");
+  const { data, error } = await createSupabaseBrowserClient().rpc("list_my_passport_service_visits");
   if (error) throw new Error("passport_reports_load_failed");
   return ((data ?? []) as Array<Record<string, unknown>>).map(mapReportRow);
 }
@@ -107,15 +113,22 @@ function draftToDatabase(draft: PassportServiceReportDraft): Record<string, unkn
     odometer_value: draft.odometerValue.trim() || null,
     odometer_unit: draft.odometerUnit,
     workshop_name: draft.workshopName.trim() || null,
-    inspection_notes: draft.inspectionNotes.trim() || null,
-    work_performed: draft.workPerformed.trim() || null,
-    parts_used: draft.partsUsed.trim() || null,
-    result_notes: draft.resultNotes.trim() || null,
-    other_notes: draft.otherNotes.trim() || null,
+    visit_notes: draft.visitNotes.trim() || null,
+    service_items: draft.serviceItems.map((item) => ({
+      id: item.id,
+      subject: item.subject.trim(),
+      observed_condition: item.observedCondition.trim() || null,
+      work_performed: item.workPerformed.trim() || null,
+      parts_used: item.partsUsed.trim() || null,
+      result: item.result.trim() || null,
+      follow_up_note: item.followUpNote.trim() || null,
+    })),
   };
 }
 
 function mapReportRow(row: Record<string, unknown>): PassportServiceReport {
+  const legacySubmission = legacySubmissionFromRow(row);
+  const serviceItems = serviceItemsFromRow(row.service_items);
   return {
     id: String(row.id),
     vehicleId: String(row.vehicle_id),
@@ -127,11 +140,11 @@ function mapReportRow(row: Record<string, unknown>): PassportServiceReport {
     odometerValue: optionalString(row.odometer_value) ?? "",
     odometerUnit: row.odometer_unit === "mi" || row.odometer_unit === "unknown" ? row.odometer_unit : "km",
     workshopName: optionalString(row.workshop_name) ?? "",
-    inspectionNotes: optionalString(row.inspection_notes) ?? "",
-    workPerformed: optionalString(row.work_performed) ?? "",
-    partsUsed: optionalString(row.parts_used) ?? "",
-    resultNotes: optionalString(row.result_notes) ?? "",
-    otherNotes: optionalString(row.other_notes) ?? "",
+    visitNotes: optionalString(row.visit_notes) ?? (serviceItems.length ? "" : legacySubmission.otherNotes),
+    serviceItems: serviceItems.length
+      ? serviceItems
+      : [legacyReportToServiceItem(String(row.id), legacySubmission)],
+    ...(serviceItems.length ? {} : { legacySubmission }),
   };
 }
 
@@ -162,31 +175,47 @@ function submitLocalReport(
 }
 
 function loadLocalReports(): PassportServiceReport[] {
-  return loadLocalReportsWithMetadata().map((report) => ({
-    id: report.id,
-    vehicleId: report.vehicleId,
-    submittedAt: report.submittedAt,
-    status: report.status,
-    reviewedAt: report.reviewedAt,
-    acceptedRecordId: report.acceptedRecordId,
-    serviceDate: report.serviceDate,
-    odometerValue: report.odometerValue,
-    odometerUnit: report.odometerUnit,
-    workshopName: report.workshopName,
-    inspectionNotes: report.inspectionNotes,
-    workPerformed: report.workPerformed,
-    partsUsed: report.partsUsed,
-    resultNotes: report.resultNotes,
-    otherNotes: report.otherNotes,
-  }));
+  return loadLocalReportsWithMetadata().map((storedReport) => {
+    const report = { ...storedReport } as Partial<StoredLocalReport>;
+    delete report.submissionKey;
+    delete report.shareToken;
+    return report as PassportServiceReport;
+  });
 }
 
 function loadLocalReportsWithMetadata(): StoredLocalReport[] {
   const value = window.localStorage.getItem(LOCAL_REPORTS_KEY);
   if (!value) return [];
   try {
-    const parsed = JSON.parse(value) as StoredLocalReport[];
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed = JSON.parse(value) as Array<Record<string, unknown>>;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.flatMap((row) => {
+      const id = optionalString(row.id);
+      const vehicleId = optionalString(row.vehicleId);
+      const submittedAt = optionalString(row.submittedAt);
+      const submissionKey = optionalString(row.submissionKey);
+      const shareToken = optionalString(row.shareToken);
+      if (!id || !vehicleId || !submittedAt || !submissionKey || !shareToken) return [];
+      const legacySubmission = legacySubmissionFromLocalRow(row);
+      const serviceItems = serviceItemsFromLocalRow(row.serviceItems);
+      return [{
+        id,
+        vehicleId,
+        submittedAt,
+        submissionKey,
+        shareToken,
+        status: row.status === "accepted" || row.status === "dismissed" ? row.status : "pending",
+        reviewedAt: optionalString(row.reviewedAt),
+        acceptedRecordId: optionalString(row.acceptedRecordId),
+        serviceDate: optionalString(row.serviceDate) ?? "",
+        odometerValue: optionalString(row.odometerValue) ?? "",
+        odometerUnit: row.odometerUnit === "mi" || row.odometerUnit === "unknown" ? row.odometerUnit : "km",
+        workshopName: optionalString(row.workshopName) ?? "",
+        visitNotes: optionalString(row.visitNotes) ?? (serviceItems.length ? "" : legacySubmission.otherNotes),
+        serviceItems: serviceItems.length ? serviceItems : [legacyReportToServiceItem(id, legacySubmission)],
+        ...(serviceItems.length ? {} : { legacySubmission }),
+      } satisfies StoredLocalReport];
+    });
   } catch {
     return [];
   }
@@ -210,4 +239,64 @@ function updateLocalReport(
 function optionalString(value: unknown): string | undefined {
   if (typeof value === "number" && Number.isFinite(value)) return String(value);
   return typeof value === "string" && value ? value : undefined;
+}
+
+function legacySubmissionFromRow(row: Record<string, unknown>) {
+  return {
+    inspectionNotes: optionalString(row.inspection_notes) ?? "",
+    workPerformed: optionalString(row.work_performed) ?? "",
+    partsUsed: optionalString(row.parts_used) ?? "",
+    resultNotes: optionalString(row.result_notes) ?? "",
+    otherNotes: optionalString(row.other_notes) ?? "",
+  };
+}
+
+function legacySubmissionFromLocalRow(row: Record<string, unknown>) {
+  return {
+    inspectionNotes: optionalString(row.inspectionNotes) ?? "",
+    workPerformed: optionalString(row.workPerformed) ?? "",
+    partsUsed: optionalString(row.partsUsed) ?? "",
+    resultNotes: optionalString(row.resultNotes) ?? "",
+    otherNotes: optionalString(row.otherNotes) ?? "",
+  };
+}
+
+function serviceItemsFromRow(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const row = item as Record<string, unknown>;
+    const id = optionalString(row.id);
+    const subject = optionalString(row.subject);
+    if (!id || !subject) return [];
+    return [{
+      id,
+      subject,
+      observedCondition: optionalString(row.observed_condition) ?? "",
+      workPerformed: optionalString(row.work_performed) ?? "",
+      partsUsed: optionalString(row.parts_used) ?? "",
+      result: optionalString(row.result) ?? "",
+      followUpNote: optionalString(row.follow_up_note) ?? "",
+    }];
+  });
+}
+
+function serviceItemsFromLocalRow(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const row = item as Record<string, unknown>;
+    const id = optionalString(row.id);
+    const subject = optionalString(row.subject);
+    if (!id || !subject) return [];
+    return [{
+      id,
+      subject,
+      observedCondition: optionalString(row.observedCondition) ?? "",
+      workPerformed: optionalString(row.workPerformed) ?? "",
+      partsUsed: optionalString(row.partsUsed) ?? "",
+      result: optionalString(row.result) ?? "",
+      followUpNote: optionalString(row.followUpNote) ?? "",
+    }];
+  });
 }

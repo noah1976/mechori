@@ -1,6 +1,6 @@
 # MECHORI Project State
 
-- 更新日時: 2026-09-20
+- 更新日時: 2026-09-21
 - 対象ブランチ: `codex/24-passport-workshop-roundtrip`
 - HEAD基準: 本書を含む現在ブランチの`git log -1`を正とする
 - 本番URL: `https://mechori.com`
@@ -10,14 +10,14 @@
 
 ### Passport roundtrip prototype checkpoint
 
-- **状態: `ROUNDTRIP_PROTOTYPE_READY` / `EXPERIMENT_NOT_STARTED` / `HUMAN_QA_PENDING`**。Authenticated `/`を愛車パスポート入口とし、既存Following Feed Homeは`/home`へ移して共通navigationから引き続き利用できる。未ログイン`/`とOAuth callbackの既定return pathは維持する。
+- **状態: `ROUNDTRIP_PROTOTYPE_REFINED` / `EXPERIMENT_NOT_STARTED` / `HUMAN_QA_PENDING`**。Authenticated `/`を愛車パスポート入口とし、primary navigationをPassport、Search、Notifications、Garage中心へ整理した。既存Following Feed Homeは`/home`で維持するが、Passport実験を混濁させないためprimary navigationから退避した。未ログイン`/`とOAuth callbackの既定return pathは維持する。
 - Ownerは登録済みVehicleを土台に、走行距離、重要な仕様・改造、最近わかる整備、工場へ伝えたいこと、その他をすべて任意で保存できる。Vehicle 0台では既存`/garage/new`を再利用し、登録後にPassportへ戻る。
 - Passport本文はprivate workspaceのAppData schema 15へ保存する。Owner feedbackは既存`alpha_feedback` RPCへ`passport_owner` context付きで保存し、free textをanalytics payloadへ送らない。
 - Workshop共有は明示的opt-inで、Passport専用の高entropy token、hash保存、限定projection、revokeを持つ。`/p/[token]`は未ログイン閲覧可能かつ`noindex / nofollow`で、email、auth ID、内部ID、他の記録、private notesは返さない。
-- Activeな共有URLでは、未ログイン利用者が任意の作業日、走行距離、確認内容、作業、部品、結果、補足、工場名をOwnerへ返せる。送信者本人性は確認せず、UIは「共有リンクから届いた内容」と表示する。匿名roleはreport tableへ直接read/writeできず、token検証・長さ検証・空送信拒否・α abuse guardを持つ限定RPCだけを使う。
-- Ownerは自分宛てのpending reportだけを確認し、原文を保持したまま修正、履歴追加、dismissを選べる。履歴追加は既存`MaintenanceRecord`へ保存し、deterministic record IDとreport statusにより再試行・二重操作でも重複作成しない。共有停止前のpending reportは残り、停止後の新規送信は拒否する。
+- Activeな共有URLでは、未ログイン利用者が1回の入庫をService Visitとして、任意の作業日、走行距離、未確認の工場名、全体補足と、1〜20件のService ItemをOwnerへ返せる。各Itemは「どこ・何について？」「何をした？」を中心にし、状態、部品、結果、次回注意を必要時だけ展開する。送信者本人性は確認せず、UIは「共有リンクから届いた内容」と表示する。匿名roleはreport tableへ直接read/writeできず、token検証・件数／長さ／内容検証・α abuse guardを持つ限定RPCだけを使う。
+- Ownerは自分宛てのpending Visitだけを確認し、original submissionを保持したままItemの追加・修正・削除、履歴追加、dismissを選べる。履歴追加は`1 Visit = 1 MaintenanceRecord`、`1 Item = 1 MaintenanceRecordAction`として既存`actions[]`へ順序を保って保存する。deterministic record IDとreport statusにより再試行・二重操作でもRecord／actionsを重複作成しない。旧flat reportはDBを書き換えず1件のlegacy Itemとして確認・承認できる。共有停止前のpending reportは残り、停止後の新規送信は拒否する。
 - ローカル390px QAでは、Passport作成、共有、Workshop入力・送信、Owner pending表示・編集・承認、Garage追加、再読込、横overflowなしを確認した。これはProduction実機QA完了を意味しない。
-- α projectは`mechori-alpha`（project ref `bodccmvwiqqghxzhezwt`）の1件だけであることを確認したが、安全ゲートがremote mutationを拒否したため、Passport share/report migrationsはこのcheckpoint時点で未適用。Deploy Previewで実共有を試す前にOwnerによるmigration適用が必要である。iPhone Safari、Android Chrome、実アカウント、incognito、revoke前後、preview authはHuman QA pendingである。ローカルではdismissも確認済み。
+- α projectは`mechori-alpha`（project ref `bodccmvwiqqghxzhezwt`）の1件だけであることを確認した。Ownerが手動適用した既存Passport share/report schemaに対し、additive migration `202609210001_passport_service_items.sql`を2026-09-21に適用済み。`service_items`／`visit_notes`追加と限定RPC更新だけで、anon table access、RLS、既存rowを書き換えていない。iPhone Safari、Android Chrome、実アカウント、incognito、revoke前後、preview authはHuman QA pendingである。
 - この実装は「愛車パスポート戦略が成功した」「Workshop価値が実証された」「Knowledge Networkが成立した」ことを意味しない。一周完了率、工場へ見せたい意向、入力負荷、Owner修正量、欠けている情報をα実験で確認する。
 
 招待URLからGoogleログインし、クルマまたはバイクを登録する。車種マスタにない車両、写真のない車両、過去に所有していた車両も登録を開始できる。Quick RecordはVehicle確認後、「気になること・不具合」「整備・修理」「ドライブ・思い出」「その他」から1回だけ選び、本文と任意写真へ進む。現αでは「α参加者に公開」を既定かつ固定とし、日付や細かな種別等は保存後または編集時に追加する。詳しいJournal形式と構造化整備記録は既存データ互換のため維持する。

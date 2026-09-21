@@ -22,6 +22,8 @@ export function applyPassportServiceReportToData(
   sourceLanguage: LanguageTag = "ja",
 ): { data: AppData; record: MaintenanceRecord } {
   const recordId = passportServiceReportRecordId(confirmation.reportId);
+  const [primaryItem, ...additionalItems] = confirmation.items;
+  if (!primaryItem) throw new Error("passport_service_item_required");
   const draft: RecordDraft = {
     serviceDate: confirmation.serviceDate.trim(),
     serviceDatePrecision: confirmation.serviceDate.trim() ? "day" : "unknown",
@@ -31,37 +33,53 @@ export function applyPassportServiceReportToData(
     odometerEpisodeId: "",
     odometerChangeReason: "same_episode",
     summary: confirmation.summary,
-    symptoms: confirmation.inspectionNotes,
+    symptoms: primaryItem.observedCondition,
     causeCandidates: "",
-    checksPerformed: confirmation.inspectionNotes,
-    workPerformed: confirmation.workPerformed,
-    partName: confirmation.partsUsed,
+    checksPerformed: primaryItem.observedCondition,
+    workPerformed: primaryItem.workPerformed,
+    partName: primaryItem.partsUsed,
     partManufacturer: "",
     partNumber: "",
     cost: "",
     resolutionStatus: confirmation.resolutionStatus,
     hazardLevel: "LOW",
     evidenceBasis: "unknown",
-    additionalActions: [],
+    additionalActions: additionalItems.map((item) => ({
+      clientId: item.id,
+      summary: item.subject,
+      causeCandidates: "",
+      checksPerformed: item.observedCondition,
+      workPerformed: item.workPerformed,
+      partName: item.partsUsed,
+      partManufacturer: "",
+      partNumber: "",
+      result: item.result,
+      resolutionStatus: confirmation.resolutionStatus,
+      hazardLevel: "LOW",
+    })),
     serviceAttribution: unknownServiceAttribution(),
     requestSharing: false,
   };
   const applied = applyRecordDraftToData(data, draft, recordId, sourceLanguage, vehicleId);
-  const result = confirmation.resultNotes.trim();
+  const result = primaryItem.result.trim();
   const record: MaintenanceRecord = {
     ...applied.record,
-    checksPerformed: confirmation.inspectionNotes.trim(),
-    workPerformed: confirmation.workPerformed.trim(),
+    checksPerformed: primaryItem.observedCondition.trim(),
+    workPerformed: primaryItem.workPerformed.trim(),
     result,
-    notes: confirmation.otherNotes.trim() || undefined,
-    actions: applied.record.actions.map((action, index) => index === 0
-      ? {
-          ...action,
-          checksPerformed: confirmation.inspectionNotes.trim(),
-          workPerformed: confirmation.workPerformed.trim(),
-          result,
-        }
-      : action),
+    notes: confirmation.visitNotes.trim() || undefined,
+    actions: applied.record.actions.map((action, index) => {
+      const item = confirmation.items[index]!;
+      return {
+        ...action,
+        summary: item.subject.trim(),
+        causeCandidates: "",
+        checksPerformed: item.observedCondition.trim(),
+        workPerformed: item.workPerformed.trim(),
+        result: item.result.trim(),
+        followUpNote: item.followUpNote.trim() || undefined,
+      };
+    }),
     sourceReference: {
       type: "passport_service_report",
       id: confirmation.reportId.toLowerCase(),

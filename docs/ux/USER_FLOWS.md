@@ -42,7 +42,7 @@ flowchart LR
   C --> E[パスポートを見る]
   E --> F[共有リンクを作る]
   F --> G[工場が未ログインで閲覧]
-  G --> I[今回の整備内容を入力]
+  G --> I[入庫情報と整備項目を入力]
   I --> J[Ownerへ送信]
   J --> K[Ownerにpending表示]
   K --> L{Owner確認}
@@ -54,12 +54,14 @@ flowchart LR
 
 | 項目 | 内容 |
 | --- | --- |
-| 状態 | Roundtrip prototype ready / Experiment not started / Human QA pending |
+| 状態 | Roundtrip prototype refined / Experiment not started / Human QA pending |
 | 開始条件 | authenticated `/`。Vehicle 0台では既存愛車登録へ進み、完了後に`/`へ戻る |
-| 主要ステップ | Vehicleを確認 → 任意項目を分かる範囲だけ入力 → 保存 → feedbackは送る／skip → Owner preview → 明示的に共有link作成 → 工場が未ログイン閲覧・任意項目を返却 → Ownerが原文を確認・必要なら修正 → 履歴追加またはdismiss → Garageで確認 |
+| 主要ステップ | Vehicleを確認 → 任意項目を分かる範囲だけ入力 → 保存 → feedbackは送る／skip → Owner preview → 明示的に共有link作成 → 工場が未ログイン閲覧 → 1回の入庫へ「どこ・何について？」「何をした？」を中心とする整備項目を1件以上追加 → Ownerが原文を確認しItem追加・修正・削除 → 履歴追加またはdismiss → 1 Visit／複数actionsをGarageで確認 |
 | Privacy | 初期private。共有projectionはPassport表示項目だけ。email、auth ID、内部ID、無関係な記録を含めない。Workshop submissionと承認後HistoryもOwner-privateで、一般公開Knowledgeへ変換しない。shareは停止可能で旧URLの閲覧と新規送信を拒否する |
 | 失敗状態 | private保存、share、Workshop送信、Owner受信、History保存を分離する。共有失敗でprivate Passportを失わず、History保存後のstatus更新失敗は同じdeterministic record IDで再試行し重複を防ぐ |
 | 検証 | 概念理解、作成完了、一往復完了率、Workshop入力負荷、Owner修正量、工場へ見せたい意向、足りない／邪魔な情報を自由回答とHuman QAで確認する |
+
+Passport実験中はFeedをprimary navigationへ表示しない。`/home`への直接アクセスと既存Feed機能は維持し、実験後のNavigation判断とは分ける。
 
 ## B. 記録を残す
 

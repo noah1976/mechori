@@ -876,3 +876,12 @@
 - 公開境界は既存Passport shareを維持する。anonへtable accessを与えず、active token検証、入力長、空送信拒否、低い頻度制限を持つ限定RPCだけを公開する。share revoke後は閲覧と新規送信を拒否するが、既に届いたpending reportはOwnerが確認できる。
 - 承認はreport UUIDから決まるMaintenance IDとstatus transitionでidempotentにする。Workspace保存後にstatus更新が失敗しても、再試行で同じrecordを更新し、重複Historyを作らない。
 - 写真、Workshop identity verification、通知、AI/OCR、公開Evidence化、Professional workflowはこのprototypeへ含めない。
+
+### Refinement: Passport実験導線とWorkshop返却をService Visit + Itemsへ整理する
+
+- 日付: 2026-09-21
+- 状態: Prototype refinement / Experiment not started。Knowledge model validatedを意味しない。
+- Passport実験中のauthenticated primary navigationはPassport、Search、Notifications、Garageを中心にする。Following Feedは`/home`と既存data／Follow／Likeを維持するが、実験理解を「SNS + Passport」へ引き戻さないためprimary navigationから退避する。
+- Workshop返却はflatな大textarea群ではなく、1回の入庫をService Visit、入庫内の各整備箇所・作業を複数Service Itemとして扱う。WorkshopへKnowledge記事、原因診断、技術考察を要求せず、「どこ・何について？」「何をした？」を中心に、状態・部品・結果・次回注意は任意で追加する。
+- Garageでは新しい履歴systemを作らず、`1 Service Visit = 1 MaintenanceRecord`、`1 Service Item = 1 MaintenanceRecordAction`として既存`actions[]`をcanonicalな複数作業表現に使う。Item順序と入力文字列を保ち、部品名・原因・結果を推測しない。
+- Workshop original submissionはOwner編集で上書きしない。既存flat reportはrewriteせず1件のlegacy Itemへ投影する。Evidence Graph、Knowledge normalization、AI extractionは将来に残す。

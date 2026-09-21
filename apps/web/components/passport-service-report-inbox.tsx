@@ -2,17 +2,21 @@
 
 import { useApp } from "@/lib/app-context";
 import {
+  createEmptyPassportServiceItem,
   defaultPassportServiceReportSummary,
   dismissPassportServiceReport,
   loadMyPassportServiceReports,
   markPassportServiceReportAccepted,
   PASSPORT_REPORT_TEXT_LIMIT,
+  PASSPORT_SERVICE_ITEM_LIMIT,
   toPassportServiceReportConfirmation,
   validatePassportServiceReportDraft,
   type PassportServiceReport,
+  type PassportServiceItemDraft,
 } from "@/lib/passport-service-reports";
+import { PassportServiceItemEditor } from "@/components/passport-service-item-editor";
 import type { PrototypeOdometerUnit, ResolutionStatus } from "@mechori/core";
-import { CheckCircle2, Inbox, LoaderCircle, RefreshCw, Save, X } from "lucide-react";
+import { CheckCircle2, Inbox, LoaderCircle, Plus, RefreshCw, Save, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 
@@ -118,11 +122,10 @@ function PassportServiceReportReview({
   const [serviceDate, setServiceDate] = useState(report.serviceDate);
   const [odometerValue, setOdometerValue] = useState(report.odometerValue);
   const [odometerUnit, setOdometerUnit] = useState<PrototypeOdometerUnit>(report.odometerUnit);
-  const [inspectionNotes, setInspectionNotes] = useState(report.inspectionNotes);
-  const [workPerformed, setWorkPerformed] = useState(report.workPerformed);
-  const [partsUsed, setPartsUsed] = useState(report.partsUsed);
-  const [resultNotes, setResultNotes] = useState(report.resultNotes);
-  const [otherNotes, setOtherNotes] = useState(report.otherNotes);
+  const [serviceItems, setServiceItems] = useState<PassportServiceItemDraft[]>(
+    () => report.serviceItems.map((item) => ({ ...item })),
+  );
+  const [visitNotes, setVisitNotes] = useState(report.visitNotes);
   const [resolutionStatus, setResolutionStatus] = useState<ResolutionStatus>("unresolved");
 
   async function accept(event: FormEvent<HTMLFormElement>) {
@@ -133,11 +136,8 @@ function PassportServiceReportReview({
       odometerValue,
       odometerUnit,
       workshopName: report.workshopName,
-      inspectionNotes,
-      workPerformed,
-      partsUsed,
-      resultNotes,
-      otherNotes,
+      visitNotes,
+      serviceItems,
     });
     if (!summary.trim() || summary.trim().length > 120 || !validation.valid) {
       setError("入力内容を確認してください。記録の見出しは必須です。");
@@ -153,11 +153,8 @@ function PassportServiceReportReview({
           serviceDate,
           odometerValue,
           odometerUnit,
-          inspectionNotes,
-          workPerformed,
-          partsUsed,
-          resultNotes,
-          otherNotes,
+          visitNotes,
+          items: serviceItems,
           resolutionStatus,
         }),
       );
@@ -200,11 +197,22 @@ function PassportServiceReportReview({
             <label className="field"><span>作業時の走行距離</span><input type="number" min="0" max="1000000000" inputMode="numeric" value={odometerValue} onChange={(event) => setOdometerValue(event.target.value)} /></label>
             <label className="field workshop-report-unit"><span>単位</span><select value={odometerUnit} onChange={(event) => setOdometerUnit(event.target.value as PrototypeOdometerUnit)}><option value="km">km</option><option value="mi">mi</option><option value="unknown">不明</option></select></label>
           </div>
-          <ReviewTextarea label="今回確認したこと" value={inspectionNotes} onChange={setInspectionNotes} />
-          <ReviewTextarea label="実施した作業" value={workPerformed} onChange={setWorkPerformed} />
-          <ReviewTextarea label="使用した部品" value={partsUsed} onChange={setPartsUsed} />
-          <ReviewTextarea label="結果" value={resultNotes} onChange={setResultNotes} />
-          <ReviewTextarea label="補足" value={otherNotes} onChange={setOtherNotes} />
+          <div className="service-item-list" aria-label="届いた整備項目">
+            {serviceItems.map((item, index) => (
+              <PassportServiceItemEditor
+                key={item.id}
+                item={item}
+                index={index}
+                canRemove={serviceItems.length > 1}
+                onChange={(nextItem) => setServiceItems((current) => current.map((value) => value.id === item.id ? nextItem : value))}
+                onRemove={() => setServiceItems((current) => current.filter((value) => value.id !== item.id))}
+              />
+            ))}
+          </div>
+          <button className="service-item-add secondary-action" type="button" disabled={serviceItems.length >= PASSPORT_SERVICE_ITEM_LIMIT} onClick={() => setServiceItems((current) => [...current, createEmptyPassportServiceItem()])}>
+            <Plus size={17} aria-hidden="true" />整備項目を追加
+          </button>
+          <ReviewTextarea label="全体の補足" value={visitNotes} onChange={setVisitNotes} />
           <label className="field"><span>作業後の状態</span><select value={resolutionStatus} onChange={(event) => setResolutionStatus(event.target.value as ResolutionStatus)}><option value="unresolved">未確認・経過確認中</option><option value="resolved">完了</option></select></label>
           <details className="passport-report-original">
             <summary>届いた内容（原文）</summary>
@@ -233,17 +241,45 @@ function ReviewTextarea({ label, value, onChange }: { label: string; value: stri
 }
 
 function OriginalReport({ report }: { report: PassportServiceReport }) {
-  const rows = [
+  const visitMetadataRows = [
     ["工場名（入力値）", report.workshopName],
     ["作業日", report.serviceDate],
     ["走行距離", report.odometerValue ? `${report.odometerValue} ${report.odometerUnit === "unknown" ? "" : report.odometerUnit}`.trim() : ""],
-    ["確認したこと", report.inspectionNotes],
-    ["実施した作業", report.workPerformed],
-    ["使用した部品", report.partsUsed],
-    ["結果", report.resultNotes],
-    ["補足", report.otherNotes],
   ].filter(([, value]) => value);
-  return <dl>{rows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>;
+  if (report.legacySubmission) {
+    const legacyRows = [
+      ["確認したこと", report.legacySubmission.inspectionNotes],
+      ["実施した作業", report.legacySubmission.workPerformed],
+      ["使用した部品", report.legacySubmission.partsUsed],
+      ["結果", report.legacySubmission.resultNotes],
+      ["補足", report.legacySubmission.otherNotes],
+    ].filter(([, value]) => value);
+    return <dl>{[...visitMetadataRows, ...legacyRows].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>;
+  }
+  const visitRows = report.visitNotes
+    ? [...visitMetadataRows, ["全体の補足", report.visitNotes]]
+    : visitMetadataRows;
+  return (
+    <div className="passport-report-original-content">
+      {visitRows.length > 0 && <dl>{visitRows.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>}
+      <div className="passport-report-original-items">
+        {report.serviceItems.map((item, index) => (
+          <section key={item.id}>
+            <strong>整備項目 {index + 1}: {item.subject}</strong>
+            <dl>
+              {[
+                ["どうなっていた？", item.observedCondition],
+                ["何をした？", item.workPerformed],
+                ["交換・使用した部品", item.partsUsed],
+                ["作業後どうなった？", item.result],
+                ["次に気をつけること", item.followUpNote],
+              ].filter(([, value]) => value).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}
+            </dl>
+          </section>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function formatReceivedAt(value: string): string {

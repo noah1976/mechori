@@ -19,11 +19,16 @@ function confirmation(
     serviceDate: "2026-09-19",
     odometerValue: "86420",
     odometerUnit: "km",
-    inspectionNotes: "左リア周辺を確認",
-    workPerformed: "キャリパー交換とエア抜き",
-    partsUsed: "TRW リアキャリパー",
-    resultNotes: "漏れがないことを確認",
-    otherNotes: "共有リンクから受領",
+    visitNotes: "共有リンクから受領",
+    items: [{
+      id: "4336a3e1-17dd-4ee5-a6b8-10de3d33010d",
+      subject: "左リアブレーキ",
+      observedCondition: "左リア周辺を確認",
+      workPerformed: "キャリパー交換とエア抜き",
+      partsUsed: "TRW リアキャリパー",
+      result: "漏れがないことを確認",
+      followUpNote: "次回車検時に再確認",
+    }],
     resolutionStatus: "resolved",
     ...overrides,
   };
@@ -42,6 +47,10 @@ test("maps an owner-confirmed Passport report into the existing private Maintena
   assert.equal(applied.record.serviceAttribution.performedByType, "unknown");
   assert.equal(applied.record.result, "漏れがないことを確認");
   assert.equal(applied.record.notes, "共有リンクから受領");
+  assert.equal(applied.record.actions.length, 1);
+  assert.equal(applied.record.actions[0]!.summary, "左リアブレーキ");
+  assert.equal(applied.record.actions[0]!.parts[0]!.name, "TRW リアキャリパー");
+  assert.equal(applied.record.actions[0]!.followUpNote, "次回車検時に再確認");
   assert.deepEqual(applied.record.sourceReference, {
     type: "passport_service_report",
     id: reportId,
@@ -76,6 +85,38 @@ test("retries replace the deterministic record instead of creating a duplicate",
   assert.equal(retried.record.summary, "Ownerが確認した見出し");
   assert.equal(retried.record.createdAt, first.record.createdAt);
   assert.deepEqual(retried.record.sourceReference, first.record.sourceReference);
+  assert.equal(retried.record.actions.length, 1);
+});
+
+test("maps one Service Visit with five ordered items to one record with five actions", () => {
+  const original = cloneDemoData();
+  const vehicleId = original.vehicles[0]!.id;
+  const items = Array.from({ length: 5 }, (_, index) => ({
+    id: `4336a3e1-17dd-4ee5-a6b8-10de3d3301${index}`,
+    subject: `整備箇所 ${index + 1}`,
+    observedCondition: index === 0 ? "漏れあり" : "",
+    workPerformed: `作業 ${index + 1}`,
+    partsUsed: index === 1 ? "入力された部品名" : "",
+    result: index === 2 ? "確認済み" : "",
+    followUpNote: index === 3 ? "次回確認" : "",
+  }));
+  const first = applyPassportServiceReportToData(
+    original,
+    vehicleId,
+    confirmation({ summary: "整備箇所 1 ほか4件", items }),
+  );
+  const retried = applyPassportServiceReportToData(
+    first.data,
+    vehicleId,
+    confirmation({ summary: "整備箇所 1 ほか4件", items }),
+  );
+
+  assert.equal(first.record.actions.length, 5);
+  assert.deepEqual(first.record.actions.map((action) => action.summary), items.map((item) => item.subject));
+  assert.equal(first.record.actions[1]!.parts[0]!.name, "入力された部品名");
+  assert.equal(first.record.actions[3]!.followUpNote, "次回確認");
+  assert.equal(retried.data.records.filter((record) => record.id === first.record.id).length, 1);
+  assert.equal(retried.record.actions.length, 5);
 });
 
 test("rejects a malformed report id before creating a Maintenance record", () => {

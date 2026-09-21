@@ -125,6 +125,7 @@ export function filterRecords(
         action.checksPerformed,
         action.workPerformed,
         action.result,
+        action.followUpNote ?? "",
         ...action.parts.flatMap((part) => [
           part.name,
           part.manufacturer ?? "",

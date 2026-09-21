@@ -1,13 +1,16 @@
 "use client";
 
 import {
+  createEmptyPassportServiceItem,
   createEmptyPassportServiceReportDraft,
+  PASSPORT_SERVICE_ITEM_LIMIT,
   PASSPORT_REPORT_TEXT_LIMIT,
   submitPassportServiceReport,
   validatePassportServiceReportDraft,
   type PassportServiceReportDraft,
 } from "@/lib/passport-service-reports";
-import { CheckCircle2, LoaderCircle, Send, Wrench } from "lucide-react";
+import { PassportServiceItemEditor } from "@/components/passport-service-item-editor";
+import { CheckCircle2, LoaderCircle, Plus, Send, Wrench } from "lucide-react";
 import { useState, type FormEvent } from "react";
 
 export function PassportServiceReportForm({ token }: { token: string }) {
@@ -29,9 +32,11 @@ export function PassportServiceReportForm({ token }: { token: string }) {
     if (state === "sending" || state === "sent") return;
     const validation = validatePassportServiceReportDraft(draft);
     if (!validation.valid) {
-      setError(validation.error === "empty"
-        ? "確認したこと、作業、部品、結果、補足のいずれかを入力してください。"
-        : "入力内容を確認してください。");
+      setError(validation.error === "subject"
+        ? `整備項目 ${(validation.itemIndex ?? 0) + 1}の「どこ・何について？」を入力してください。`
+        : validation.error === "empty"
+          ? `整備項目 ${(validation.itemIndex ?? 0) + 1}に、行ったことか追加情報を入力してください。`
+          : "入力内容を確認してください。");
       return;
     }
     setState("sending");
@@ -72,7 +77,7 @@ export function PassportServiceReportForm({ token }: { token: string }) {
         </button>
       ) : (
         <form className="workshop-report-form" onSubmit={submit} noValidate>
-          <p>分かる範囲だけで入力できます。空欄はそのままで大丈夫です。</p>
+          <p>オイル交換だけなら「どこ・何について？」「何をした？」だけで送れます。車検など複数の作業がある場合は、整備項目を追加してください。</p>
           <label className="field">
             <span>工場名 <small>任意</small></span>
             <input maxLength={120} value={draft.workshopName} onChange={(event) => setField("workshopName", event.target.value)} />
@@ -93,11 +98,27 @@ export function PassportServiceReportForm({ token }: { token: string }) {
               </select>
             </label>
           </div>
-          <ReportTextarea label="今回確認したこと" value={draft.inspectionNotes} placeholder="例: 左リアブレーキ周辺を確認" onChange={(value) => setField("inspectionNotes", value)} />
-          <ReportTextarea label="実施した作業" value={draft.workPerformed} placeholder="例: 左リアキャリパー交換、エア抜き" onChange={(value) => setField("workPerformed", value)} />
-          <ReportTextarea label="使用した部品" value={draft.partsUsed} placeholder="例: TRW リアキャリパー" onChange={(value) => setField("partsUsed", value)} />
-          <ReportTextarea label="結果" value={draft.resultNotes} placeholder="例: 漏れがないことを確認" onChange={(value) => setField("resultNotes", value)} />
-          <ReportTextarea label="補足" value={draft.otherNotes} placeholder="必要なことがあれば" onChange={(value) => setField("otherNotes", value)} />
+          <div className="service-item-list" aria-label="今回の整備項目">
+            {draft.serviceItems.map((item, index) => (
+              <PassportServiceItemEditor
+                key={item.id}
+                item={item}
+                index={index}
+                canRemove={draft.serviceItems.length > 1}
+                onChange={(nextItem) => setField("serviceItems", draft.serviceItems.map((current) => current.id === item.id ? nextItem : current))}
+                onRemove={() => setField("serviceItems", draft.serviceItems.filter((current) => current.id !== item.id))}
+              />
+            ))}
+          </div>
+          <button
+            className="service-item-add secondary-action"
+            type="button"
+            disabled={draft.serviceItems.length >= PASSPORT_SERVICE_ITEM_LIMIT}
+            onClick={() => setField("serviceItems", [...draft.serviceItems, createEmptyPassportServiceItem()])}
+          >
+            <Plus size={17} aria-hidden="true" />整備項目を追加
+          </button>
+          <ReportTextarea label="全体の補足" value={draft.visitNotes} placeholder="入庫全体について必要なことがあれば" onChange={(value) => setField("visitNotes", value)} />
           {error && <p className="form-error-summary" role="alert">{error}</p>}
           <div className="form-actions">
             <button className="secondary-action" type="button" disabled={state === "sending"} onClick={() => setOpen(false)}>閉じる</button>

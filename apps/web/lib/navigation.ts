@@ -1,6 +1,7 @@
 import type { SupportedUiLocale } from "@mechori/core";
 import {
   Bell,
+  BookOpenText,
   Building2,
   CarFront,
   CircleHelp,
@@ -21,6 +22,7 @@ export type NavigationStatus = "active" | "comingSoon";
 export type AuthDisplayState = "loading" | "authenticated" | "signed-out";
 export type NavigationLabelKey =
   | "home"
+  | "passport"
   | "search"
   | "notifications"
   | "garage"
@@ -64,12 +66,24 @@ const allNavigationItems: readonly NavigationItem[] = [
     group: "secondary",
   },
   {
+    id: "passport",
+    href: "/",
+    label: "passport",
+    icon: BookOpenText,
+    surfaces: ["mobileBottom", "desktopSide", "drawer"],
+    auth: "authenticated",
+    activeMatch: "passport",
+    order: 10,
+    status: "active",
+    group: "primary",
+  },
+  {
     id: "home",
     href: "/home",
     label: "home",
     icon: House,
     surfaces: ["mobileBottom", "desktopSide", "drawer"],
-    auth: "public",
+    auth: "signed-out",
     activeMatch: "home",
     order: 10,
     status: "active",
@@ -239,6 +253,7 @@ export const appNavigationItems = allNavigationItems.filter((item) =>
 
 const labelMap: Record<NavigationLabelKey, { ja: string; en: string }> = {
   home: { ja: "ホーム", en: "Home" },
+  passport: { ja: "パスポート", en: "Passport" },
   search: { ja: "探す", en: "Search" },
   notifications: { ja: "通知", en: "Notifications" },
   garage: { ja: "ガレージ", en: "Garage" },
@@ -294,8 +309,10 @@ export function navigationLabel(label: NavigationLabelKey, locale: SupportedUiLo
 
 export function isNavigationItemActive(pathname: string, item: NavigationItem): boolean {
   switch (item.activeMatch) {
+    case "passport":
+      return pathname === "/";
     case "home":
-      return pathname === "/home" || pathname === "/feed" || pathname.startsWith("/journal/") || pathname.startsWith("/records/");
+      return pathname === "/home" || pathname === "/feed";
     case "search":
       return pathname === "/search" || pathname.startsWith("/search/") || pathname === "/people" || pathname.startsWith("/people/");
     case "notifications":

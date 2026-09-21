@@ -201,6 +201,7 @@ export interface MaintenanceRecordAction {
   workPerformed: string;
   parts: PartReference[];
   result: string;
+  followUpNote?: string;
   resolutionStatus: ResolutionStatus;
   hazardLevel: HazardLevel;
 }
@@ -248,6 +249,16 @@ export interface MaintenanceRecord {
   isDemo: boolean;
 }
 
+export interface PassportServiceItemConfirmation {
+  id: string;
+  subject: string;
+  observedCondition: string;
+  workPerformed: string;
+  partsUsed: string;
+  result: string;
+  followUpNote: string;
+}
+
 export interface PassportServiceReportConfirmation {
   reportId: string;
   submittedAt: string;
@@ -255,11 +266,8 @@ export interface PassportServiceReportConfirmation {
   serviceDate: string;
   odometerValue: string;
   odometerUnit: PrototypeOdometerUnit;
-  inspectionNotes: string;
-  workPerformed: string;
-  partsUsed: string;
-  resultNotes: string;
-  otherNotes: string;
+  visitNotes: string;
+  items: PassportServiceItemConfirmation[];
   resolutionStatus: ResolutionStatus;
 }
 
