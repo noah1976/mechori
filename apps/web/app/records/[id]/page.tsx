@@ -55,18 +55,25 @@ export default function RecordDetailPage() {
       </section>
 
       <section className="action-list" aria-labelledby="actions-heading">
-        <div className="section-heading"><div><span className="eyebrow">ACTIONS</span><h2 id="actions-heading">{ja ? `実施作業 ${record.actions.length}件` : `${record.actions.length} recorded actions`}</h2></div></div>
+        <div className="section-heading"><div><span className="eyebrow">ACTIONS</span><h2 id="actions-heading">{ja ? `整備項目 ${record.actions.length}件` : `${record.actions.length} service items`}</h2></div></div>
         {record.actions.map((action, index) => <article className="action-detail" key={action.id}>
           <header><span>{String(index + 1).padStart(2, "0")}</span><div><h3>{action.summary}</h3><div className="badge-row"><ResolutionBadge value={action.resolutionStatus} locale={locale} /><HazardBadge level={action.hazardLevel} /></div></div></header>
           <dl>
-            <div><dt>{ja ? "原因候補" : "Possible causes"}</dt><dd>{action.causeCandidates}</dd></div>
-            <div><dt>{ja ? "確認した箇所" : "Checks performed"}</dt><dd>{action.checksPerformed}</dd></div>
-            <div><dt>{ja ? "実施した作業" : "Work performed"}</dt><dd>{action.workPerformed}</dd></div>
-            <div><dt>{ja ? "結果" : "Result"}</dt><dd>{action.result}</dd></div>
-            {action.parts.length > 0 && <div><dt>{ja ? "部品" : "Parts"}</dt><dd>{action.parts.map((part) => [part.name, part.manufacturer, part.partNumber].filter(Boolean).join(" / ")).join(", ")}</dd></div>}
+            {action.causeCandidates && action.causeCandidates !== "未確認" && <div><dt>{ja ? "原因候補" : "Possible causes"}</dt><dd>{action.causeCandidates}</dd></div>}
+            {action.checksPerformed && action.checksPerformed !== "未入力" && <div><dt>{ja ? "どうなっていた？" : "Observed condition"}</dt><dd>{action.checksPerformed}</dd></div>}
+            {action.workPerformed && action.workPerformed !== "未入力" && <div><dt>{ja ? "何をした？" : "Work performed"}</dt><dd>{action.workPerformed}</dd></div>}
+            {action.parts.length > 0 && <div><dt>{ja ? "交換・使用した部品" : "Parts used"}</dt><dd>{action.parts.map((part) => [part.name, part.manufacturer, part.partNumber].filter(Boolean).join(" / ")).join(", ")}</dd></div>}
+            {action.result && action.result !== "未解決" && <div><dt>{ja ? "作業後どうなった？" : "Result"}</dt><dd>{action.result}</dd></div>}
+            {action.followUpNote && <div><dt>{ja ? "次に気をつけること" : "Follow-up"}</dt><dd>{action.followUpNote}</dd></div>}
           </dl>
         </article>)}
       </section>
+      {record.notes && (
+        <section className="detail-section">
+          <div className="section-heading compact"><div><span className="eyebrow">NOTES</span><h2>{ja ? "補足" : "Notes"}</h2></div></div>
+          <p className="body-copy pre-wrap">{record.notes}</p>
+        </section>
+      )}
 
       <section className="detail-band">
         <div><span className="eyebrow">SOURCE</span><h2>{ja ? "出典と確認状態" : "Source and verification"}</h2><p>{record.sourceType === "demo" ? (ja ? "操作確認用に作成されたDEMOデータ" : "DEMO data created for interaction testing") : `${ja ? "オーナー自身の記録" : "Owner-provided record"} · ${evidenceBasisLabel(record.evidenceBasis, ja)}`}</p></div>

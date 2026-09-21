@@ -125,6 +125,7 @@ export function filterRecords(
         action.checksPerformed,
         action.workPerformed,
         action.result,
+        action.followUpNote ?? "",
         ...action.parts.flatMap((part) => [
           part.name,
           part.manufacturer ?? "",
@@ -341,7 +342,13 @@ export function applyRecordDraftToData(
     existingRecord?.sourceLanguage ?? sourceLanguage,
   );
   const record: MaintenanceRecord = existingRecord
-    ? { ...created, createdAt: existingRecord.createdAt, isDemo: existingRecord.isDemo }
+    ? {
+        ...created,
+        notes: existingRecord.notes,
+        sourceReference: existingRecord.sourceReference,
+        createdAt: existingRecord.createdAt,
+        isDemo: existingRecord.isDemo,
+      }
     : created;
   if (odometerReading) {
     record.odometerReading = odometerReading;

@@ -866,3 +866,22 @@
 - Passport本文はOwner-private workspaceへ保存する。Workshop共有はOwnerの明示操作後だけ作成し、高entropy token、server-side hash、限定projection、停止可能なlinkで提供する。private AppData全体、email、auth ID、Owner profile、無関係なVehicle・記録をunauthenticated endpointへ返さない。
 - Workshop shareは一般公開KnowledgeやSEO surfaceではなく、`noindex / nofollow`の目的限定共有とする。共有停止後は旧tokenを拒否し、Owner-private Passport本文は削除しない。
 - Passport作成直後の自由回答は既存Feedback基盤を再利用し、回答を完成条件にしない。誘導質問、汎用Survey、Workshop account、Workshopからの整備返却は今回実装しない。
+
+### Refinement: 愛車パスポートをWorkshop返却までの一往復prototypeへ拡張する
+
+- 日付: 2026-09-20
+- 状態: Roundtrip prototype implementation / Experiment not started。2026-09-17の半周scopeを、説明ではなく実操作で価値を検証するために限定的に拡張する。Passport戦略、Workshop価値、Knowledge Networkの成功を確定するDecisionではない。
+- Activeな共有URLから、未ログイン利用者が作業日、走行距離、確認内容、作業、部品、結果、補足等をOwnerへ返せる。Workshop accountや本人確認は導入せず、入力された工場名も未確認値として原文側へ保持し、認証済み工場・整備士確認済みとは表示しない。
+- SubmissionはOwner-privateな受信候補であり、Garage履歴へ自動追加しない。Ownerが原文を確認し、必要なら修正し、明示的に承認した内容だけを既存Maintenance Recordへ保存する。Original submissionは上書きせず、report IDとaccepted record IDで由来を追跡する。
+- 公開境界は既存Passport shareを維持する。anonへtable accessを与えず、active token検証、入力長、空送信拒否、低い頻度制限を持つ限定RPCだけを公開する。share revoke後は閲覧と新規送信を拒否するが、既に届いたpending reportはOwnerが確認できる。
+- 承認はreport UUIDから決まるMaintenance IDとstatus transitionでidempotentにする。Workspace保存後にstatus更新が失敗しても、再試行で同じrecordを更新し、重複Historyを作らない。
+- 写真、Workshop identity verification、通知、AI/OCR、公開Evidence化、Professional workflowはこのprototypeへ含めない。
+
+### Refinement: Passport実験導線とWorkshop返却をService Visit + Itemsへ整理する
+
+- 日付: 2026-09-21
+- 状態: Prototype refinement / Experiment not started。Knowledge model validatedを意味しない。
+- Passport実験中のauthenticated primary navigationはPassport、Search、Notifications、Garageを中心にする。Following Feedは`/home`と既存data／Follow／Likeを維持するが、実験理解を「SNS + Passport」へ引き戻さないためprimary navigationから退避する。
+- Workshop返却はflatな大textarea群ではなく、1回の入庫をService Visit、入庫内の各整備箇所・作業を複数Service Itemとして扱う。WorkshopへKnowledge記事、原因診断、技術考察を要求せず、「どこ・何について？」「何をした？」を中心に、状態・部品・結果・次回注意は任意で追加する。
+- Garageでは新しい履歴systemを作らず、`1 Service Visit = 1 MaintenanceRecord`、`1 Service Item = 1 MaintenanceRecordAction`として既存`actions[]`をcanonicalな複数作業表現に使う。Item順序と入力文字列を保ち、部品名・原因・結果を推測しない。
+- Workshop original submissionはOwner編集で上書きしない。既存flat reportはrewriteせず1件のlegacy Itemへ投影する。Evidence Graph、Knowledge normalization、AI extractionは将来に残す。

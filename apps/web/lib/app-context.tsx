@@ -6,6 +6,7 @@ import {
   createEmptyAppData,
   addVehicleToData,
   applyRecordDraftToData,
+  applyPassportServiceReportToData,
   addJournalToData,
   applyModerationAction,
   submitContentReport,
@@ -43,6 +44,7 @@ import {
   type Locale,
   type MaintenanceRecord,
   type ModerationAction,
+  type PassportServiceReportConfirmation,
   type ProfileDisplayField,
   type ProfileVisibility,
   type RecordDraft,
@@ -140,6 +142,10 @@ interface AppContextValue {
   updateVehicleSpecification(vehicleId: string, update: VehicleSpecificationUpdate): Promise<Vehicle>;
   saveVehiclePassport(draft: VehiclePassportDraft): Promise<VehiclePassport>;
   setVehiclePassportShare(vehicleId: string, shareToken?: string): Promise<void>;
+  savePassportServiceReportToHistory(
+    vehicleId: string,
+    confirmation: PassportServiceReportConfirmation,
+  ): Promise<MaintenanceRecord>;
   addRecord(draft: RecordDraft, vehicleId?: string): Promise<MaintenanceRecord>;
   updateRecord(id: string, draft: RecordDraft): Promise<MaintenanceRecord | null>;
   addJournal(
@@ -592,6 +598,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [authSession, data, persist],
   );
 
+  const savePassportServiceReportToHistory = useCallback(
+    async (vehicleId: string, confirmation: PassportServiceReportConfirmation) => {
+      if (!isSignedIn(authSession)) throw new Error("authentication_required");
+      if (isRemoteAlpha && !contentPolicyAccepted) {
+        throw new Error("content_policy_acceptance_required");
+      }
+      const result = applyPassportServiceReportToData(
+        data,
+        vehicleId,
+        confirmation,
+        locale,
+      );
+      await persist(result.data);
+      recordLocalEngagement("maintenance_saved");
+      void recordAlphaEngagement("maintenance_saved").catch(() => undefined);
+      return result.record;
+    },
+    [authSession, contentPolicyAccepted, data, locale, persist],
+  );
+
   const addRecord = useCallback(
     async (draft: RecordDraft, vehicleId?: string) => {
       if (!isSignedIn(authSession)) throw new Error("authentication_required");
@@ -1033,6 +1059,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateVehicleSpecification,
       saveVehiclePassport,
       setVehiclePassportShare,
+      savePassportServiceReportToHistory,
       addRecord,
       updateRecord,
       addJournal,
@@ -1076,6 +1103,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       updateVehicleSpecification,
       saveVehiclePassport,
       setVehiclePassportShare,
+      savePassportServiceReportToHistory,
       addRecord,
       updateRecord,
       addJournal,

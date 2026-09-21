@@ -201,6 +201,7 @@ export interface MaintenanceRecordAction {
   workPerformed: string;
   parts: PartReference[];
   result: string;
+  followUpNote?: string;
   resolutionStatus: ResolutionStatus;
   hazardLevel: HazardLevel;
 }
@@ -235,11 +236,39 @@ export interface MaintenanceRecord {
   evidenceBasis: RecordEvidenceBasis;
   matchScope: string;
   result: string;
+  notes?: string;
   actions: MaintenanceRecordAction[];
   serviceAttribution: MaintenanceServiceAttributionV1;
+  sourceReference?: {
+    type: "passport_service_report";
+    id: string;
+    receivedAt: string;
+  };
   createdAt: string;
   updatedAt: string;
   isDemo: boolean;
+}
+
+export interface PassportServiceItemConfirmation {
+  id: string;
+  subject: string;
+  observedCondition: string;
+  workPerformed: string;
+  partsUsed: string;
+  result: string;
+  followUpNote: string;
+}
+
+export interface PassportServiceReportConfirmation {
+  reportId: string;
+  submittedAt: string;
+  summary: string;
+  serviceDate: string;
+  odometerValue: string;
+  odometerUnit: PrototypeOdometerUnit;
+  visitNotes: string;
+  items: PassportServiceItemConfirmation[];
+  resolutionStatus: ResolutionStatus;
 }
 
 export interface RecordActionDraft {

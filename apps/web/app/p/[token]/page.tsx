@@ -1,6 +1,7 @@
 "use client";
 
 import { PassportPreview } from "@/components/passport-experience";
+import { PassportServiceReportForm } from "@/components/passport-service-report-form";
 import { loadPassportShare, type PassportShareProjection } from "@/lib/passport-share";
 import { CarFront, LoaderCircle, ShieldCheck } from "lucide-react";
 import Link from "next/link";
@@ -23,6 +24,7 @@ export default function PublicPassportPage() {
     <div className="page-stack narrow-page workshop-passport-page">
       <header className="workshop-passport-header"><span className="eyebrow">愛車パスポート</span><h1>{share.make} {share.model}</h1><p>工場へ伝えるために、オーナーがまとめた愛車情報です。</p></header>
       <PassportPreview vehicle={vehicle} passport={passport} />
+      <PassportServiceReportForm token={token} />
       <aside className="workshop-share-note"><ShieldCheck size={20} aria-hidden="true" /><p>この情報は車両オーナーが工場への共有用に公開しています。整備の正しさや車両状態を保証するものではありません。</p></aside>
     </div>
   );

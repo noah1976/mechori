@@ -8,6 +8,7 @@ import {
   isNavigationItemActive,
   navigationLabel,
   navigationItems,
+  screenTitle,
   shouldShowRecordFab,
 } from "../lib/navigation.ts";
 
@@ -23,7 +24,7 @@ test("logged-out navigation returns only home, search, and sign-in", () => {
 
 test("signed-in navigation returns the four trial destinations", () => {
   assert.deepEqual(hrefs("mobileBottom", "authenticated"), [
-    "/home",
+    "/",
     "/search",
     "/notifications",
     "/garage",
@@ -33,7 +34,7 @@ test("signed-in navigation returns the four trial destinations", () => {
 
 test("admin navigation keeps user destinations and adds admin only to the drawer", () => {
   assert.deepEqual(hrefs("mobileBottom", "authenticated", true), [
-    "/home",
+    "/",
     "/search",
     "/notifications",
     "/garage",
@@ -53,7 +54,7 @@ test("professional navigation is limited to members and platform admins", () => 
 
 test("desktop navigation exposes the full sidebar set from the shared definition", () => {
   assert.deepEqual(getNavigationItems("desktopSide", "authenticated").map((item) => item.id), [
-    "home",
+    "passport",
     "search",
     "notifications",
     "garage",
@@ -67,6 +68,7 @@ test("desktop navigation exposes the full sidebar set from the shared definition
     "privacy",
   ]);
   assert.equal(navigationLabel("feedback", "ja"), "フィードバック");
+  assert.equal(navigationLabel("passport", "ja"), "パスポート");
 });
 
 test("each surface selects stable, non-duplicated definitions", () => {
@@ -88,17 +90,27 @@ test("loading state exposes no navigation before auth is known", () => {
 
 test("active state maps detail routes to their parent navigation item", () => {
   assert.equal(isActiveNavigation("/home", "/home"), true);
+  assert.equal(isActiveNavigation("/", "/"), true);
   assert.equal(isActiveNavigation("/search/results", "/search"), true);
   assert.equal(isActiveNavigation("/notifications", "/notifications"), true);
   assert.equal(isActiveNavigation("/garage/vehicle-1", "/garage"), true);
-  assert.equal(isActiveNavigation("/journal/abc", "/home"), true);
-  assert.equal(isActiveNavigation("/records/abc", "/home"), true);
+  assert.equal(isActiveNavigation("/journal/abc", "/home"), false);
+  assert.equal(isActiveNavigation("/records/abc", "/home"), false);
   assert.equal(isActiveNavigation("/settings/profile", "/settings/profile"), true);
   assert.equal(isActiveNavigation("/search", "/garage"), false);
 
   const garage = getNavigationItems("mobileBottom", "authenticated").find((item) => item.href === "/garage");
   assert.ok(garage);
   assert.equal(isNavigationItemActive("/v/barchetta", garage), true);
+});
+
+test("Passport experiment keeps Feed out of authenticated primary navigation", () => {
+  for (const surface of ["mobileBottom", "desktopSide", "drawer"] as const) {
+    const items = getNavigationItems(surface, "authenticated");
+    assert.equal(items.some((item) => item.id === "home"), false);
+    assert.equal(items.some((item) => item.id === "passport"), true);
+  }
+  assert.equal(screenTitle("/home", "ja"), "ホーム");
 });
 
 test("coming-soon navigation uses existing safe routes", () => {
