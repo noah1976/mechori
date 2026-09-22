@@ -387,3 +387,12 @@
 - **次の最小実験**: Founder実資料5枚以内で手順確認後、外部Owner最初の2人、gate通過時のみ最大4人・各1件。35日以内、Founder計12時間、新規サービス費なし。実課題持込・資料確認・実際の相談利用・別日の結果・本人再利用・他車Evidenceの増分を判定する。最初の2人が資料提供と確認へ進まなければその段階を止める。
 - **未完了**: 採用判断、参加者の確保・同意、実資料と利用権の確認、試験、汎用AIへの同等context比較、支払理由・継続費の実測。共有価値がなければKnowledge Network投資停止／本人履歴へ縮小する反証条件を明記した。製品方針や外部AI送信範囲の改定は未実施。
 - **検証**: 文書構成、8方式×20観点、source日付と事実／推論、7つの判定質問、工数上限、相対リンク、差分の文書限定、`git diff --check`を確認。lint/typecheck/test/buildはdocumentation-onlyのため未実行。既存P-070・P-081/B・P-086・EUX-01・Q20-01のQA状態、MECH-044〜047の実装・承認状態は変更しない。コード変更・実験開始はいずれもNO。
+
+## 38. 2026-09-22 MECHORI positioning audit checkpoint
+
+- **状態**: `POSITIONING_RECOMMENDATION_READY / ADOPTION_PENDING / ALPHA_EXPERIMENT_NOT_RUN`。repo-local `startup-positioning` SkillのDunford 5+1、JTBD、Moore、Neumeier、Ries/Troutを使い、[Positioning Decision](strategy/positioning-2026-09/MECHORI_POSITIONING_DECISION.md)と関連deliverablesを作成した。branchは`codex/27-mechori-positioning-audit`。対応P番号はなく、既存Backlogの完了状態を変更しない。
+- **Entry recommendation**: 過去整備が散在し、新しい／追加の工場へ履歴を伝える必要がある長期所有の趣味車・旧車・希少車・輸入車Ownerをbest-fitとし、entry categoryを「愛車の整備履歴パスポート」、primary valueを「過去の整備を次の工場へ渡し、今回の整備を次回へ残す」とする。primary competitive alternativeは、LINE／口頭で今回を伝え、紙・明細・写真で過去を持つstatus quo bundleである。
+- **PR #26 boundary**: [PR #26](https://github.com/noah1976/mechori/pull/26)のdescriptionとdiffをread-onlyで確認した。監査時点ではOPEN・未mergeだったが、その後merge commit `d289f67be6fd0a3f59ad8d639c5014bfabcb765b`として`main`へmergeされた。過去MaintenanceRecordの限定projectionと返却後の共有更新は現在`main`の実装事実だが、LINEとの差を作るProduct Hypothesisの市場検証は未実施のままである。本positioning auditはPR #26の内容変更またはmergeを行っていない。
+- **Long-term thesis**: Passport roundtripは、許諾・出典・確認状態を保った結果Evidenceを生む可能性があり、Knowledge Networkと「整備士のGitHub」へ接続し得る。ただしWorkshop利用、後日再利用、Knowledge化、mechanic reputation、Professional revenue、global networkはいずれも未検証で、entry marketing claimにしない。
+- **Positioning risk / next step**: 最大の未解決riskは、Workshopが履歴を読まず、Ownerも次回再利用せず、追加workflowがLINEを上回らないこと。新機能なしのα実験として、説明前の二方向理解、実Workshop handoff、返却、Owner承認、7〜14日後の次回手段選択を一つの実験で確認する。開始・Human QA・実行結果は別状態で記録する。
+- **検証**: 必須7 deliverables、MECHORI固有decision、4 raw files、progress、verification reportを作成し、内部整合、FACT/HYPOTHESIS、category label、best-fit、LINE critical test、global/local境界、Red/Yellow Flags、sourceを確認した。verificationはcritical 0、warning 3。documentation-onlyのためapplication lint/typecheck/test/buildは対象外で未実行。application code、DB、migration、外部サービス、本番設定、PR #26はいずれも変更していない。
