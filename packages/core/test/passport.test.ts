@@ -56,11 +56,18 @@ test("passport sharing metadata is revocable without removing private content", 
     ...createVehiclePassportDraft(vehicleResult.vehicle.id),
     recentMaintenance: "バッテリー交換済み",
   });
-  const shared = setVehiclePassportShareInData(saved.data, vehicleResult.vehicle.id, "token");
-  const revoked = setVehiclePassportShareInData(shared, vehicleResult.vehicle.id);
+  const shared = setVehiclePassportShareInData(saved.data, vehicleResult.vehicle.id, "token", true);
+  const updated = upsertVehiclePassportInData(shared, {
+    ...createVehiclePassportDraft(vehicleResult.vehicle.id, shared.vehiclePassports?.[0]),
+    recentMaintenance: "バッテリー交換済み",
+  });
+  const revoked = setVehiclePassportShareInData(updated.data, vehicleResult.vehicle.id);
 
   assert.equal(shared.vehiclePassports?.[0]?.shareToken, "token");
+  assert.equal(shared.vehiclePassports?.[0]?.historyShareEnabled, true);
+  assert.equal(updated.passport.historyShareEnabled, true);
   assert.equal(revoked.vehiclePassports?.[0]?.shareToken, undefined);
+  assert.equal(revoked.vehiclePassports?.[0]?.historyShareEnabled, undefined);
   assert.equal(revoked.vehiclePassports?.[0]?.recentMaintenance, "バッテリー交換済み");
 });
 

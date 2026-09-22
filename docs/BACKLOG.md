@@ -4,10 +4,10 @@
 
 - 優先度: P0 experiment
 - 状態: `ROUNDTRIP_PROTOTYPE_REFINED` / `EXPERIMENT_NOT_STARTED` / Human QA pending
-- 実装: Authenticated `/` Passport入口、primary navigationからのFeed退避、`/home`での既存Feed維持、Vehicle 0/1/複数、全任意入力、private AppData保存、Owner preview/edit、既存Feedback再利用、明示的なWorkshop share作成・copy/share・revoke、unauthenticated `/p/[token]`限定projection、`noindex / nofollow`。Workshop返却は1 Visit内へ1〜20件のService Itemを追加でき、Ownerは原文を保持したままItem追加・修正・削除、dismiss、既存Garage Maintenanceへの明示追加までを一周できる。
+- 実装: Authenticated `/` Passport入口、primary navigationからのFeed退避、`/home`での既存Feed維持、Vehicle 0/1/複数、全任意入力、private AppData保存、Owner preview/edit、既存Feedback再利用、明示的なWorkshop share作成・copy/share・revoke、unauthenticated `/p/[token]`限定projection、`noindex / nofollow`。新規／明示更新shareは対象VehicleのGarage整備履歴をID・cost・private notesなしのsnapshotで持ち運び、既存shareは自動拡張しない。Workshop返却は1 Visit内へ1〜20件のService Itemを追加でき、Ownerは原文を保持したままItem追加・修正・削除、dismiss、既存Garage Maintenanceへの明示追加までを一周できる。
 - Security: tokenは32-byte entropy、公開tableはhashだけを保持する。anonはshare projection取得とactive tokenに対するreport送信RPCだけを実行でき、share/report tableを直接read/writeできない。Owner report取得・accept・dismissは`auth.uid()`の所有範囲に限定する。
 - Idempotency: Workshop送信はshareとsubmission keyの組で重複を防ぎ、Owner承認はreport UUID由来のdeterministic Maintenance IDとaccepted statusで再試行時の重複履歴を防ぐ。元reportはOwner修正後も保持する。
-- Persistence: `202609170001_alpha_passport_shares.sql`と`202609200001_alpha_passport_service_reports.sql`はOwner適用済み。`202609210001_passport_service_items.sql`も`mechori-alpha`へ適用済みで、既存flat rowをrewriteせずlegacy Itemへ投影する。
+- Persistence: `202609170001_alpha_passport_shares.sql`、`202609200001_alpha_passport_service_reports.sql`、`202609210001_passport_service_items.sql`、`202609210002_passport_history_projection.sql`は`mechori-alpha`へ適用済み。history migrationは既存rowをv1のまま保ち、履歴同意後だけv2 snapshotへ更新するadditive migrationである。
 - Remaining: Deploy Preview、iPhone Safari、Android Chrome、実アカウントsave/reload、incognito送信、Owner item edit/add/remove・accept/dismiss、revoke前submission維持、revoke後送信拒否、既存`/home`／Garage／Quick Record、preview authのHuman QA。
 - Scope外: Workshop account／本人確認、写真返却、通知基盤、AI診断・要約、Evidence Graph、OCR、Professional marketplace、決済、Native、Drive、generic survey、一般公開Knowledge化。
 

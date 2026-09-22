@@ -15,16 +15,17 @@ import {
   type PassportServiceItemDraft,
 } from "@/lib/passport-service-reports";
 import { PassportServiceItemEditor } from "@/components/passport-service-item-editor";
-import type { PrototypeOdometerUnit, ResolutionStatus } from "@mechori/core";
+import type { MaintenanceRecord, PrototypeOdometerUnit, ResolutionStatus } from "@mechori/core";
 import { CheckCircle2, Inbox, LoaderCircle, Plus, RefreshCw, Save, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 
-export function PassportServiceReportInbox({ vehicleId }: { vehicleId: string }) {
+export function PassportServiceReportInbox({ vehicleId, onHistorySaved }: { vehicleId: string; onHistorySaved?: (record: MaintenanceRecord) => Promise<void> }) {
   const [reports, setReports] = useState<PassportServiceReport[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [addedRecordId, setAddedRecordId] = useState<string>();
   const [dismissed, setDismissed] = useState(false);
+  const [shareSyncFailed, setShareSyncFailed] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -70,6 +71,7 @@ export function PassportServiceReportInbox({ vehicleId }: { vehicleId: string })
           <Link className="primary-action" href={`/garage?vehicle=${encodeURIComponent(vehicleId)}&record=${encodeURIComponent(addedRecordId)}`}>ガレージで見る</Link>
         </div>
       )}
+      {addedRecordId && shareSyncFailed && <p className="passport-share-sync-warning" role="alert">履歴には保存しましたが、共有ページの更新に失敗しました。「共有内容を更新」から再試行できます。</p>}
       {dismissed && !addedRecordId && <p className="passport-report-dismissed" role="status">今回は履歴に追加しませんでした。</p>}
       {pending.length > 0 && (
         <>
@@ -83,9 +85,11 @@ export function PassportServiceReportInbox({ vehicleId }: { vehicleId: string })
                 key={report.id}
                 report={report}
                 vehicleId={vehicleId}
-                onAccepted={(recordId) => {
+                onHistorySaved={onHistorySaved}
+                onAccepted={(recordId, syncFailed) => {
                   setReports((current) => current.map((item) => item.id === report.id ? { ...item, status: "accepted", acceptedRecordId: recordId } : item));
                   setAddedRecordId(recordId);
+                  setShareSyncFailed(syncFailed);
                   setDismissed(false);
                 }}
                 onDismissed={() => {
@@ -105,12 +109,14 @@ export function PassportServiceReportInbox({ vehicleId }: { vehicleId: string })
 function PassportServiceReportReview({
   report,
   vehicleId,
+  onHistorySaved,
   onAccepted,
   onDismissed,
 }: {
   report: PassportServiceReport;
   vehicleId: string;
-  onAccepted(recordId: string): void;
+  onHistorySaved?: (record: MaintenanceRecord) => Promise<void>;
+  onAccepted(recordId: string, shareSyncFailed: boolean): void;
   onDismissed(): void;
 }) {
   const { savePassportServiceReportToHistory } = useApp();
@@ -159,7 +165,15 @@ function PassportServiceReportReview({
         }),
       );
       await markPassportServiceReportAccepted(report.id, record.id);
-      onAccepted(record.id);
+      let shareSyncFailed = false;
+      if (onHistorySaved) {
+        try {
+          await onHistorySaved(record);
+        } catch {
+          shareSyncFailed = true;
+        }
+      }
+      onAccepted(record.id, shareSyncFailed);
     } catch {
       setError("履歴へ追加できませんでした。通信を確認して、もう一度お試しください。");
     } finally {
