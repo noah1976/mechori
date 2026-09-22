@@ -5,7 +5,7 @@
 
 **[Data | FACT]** MECHORI currently has an Owner-centered Garage and maintenance-history foundation. On the audited `main`, an Owner can prepare an 愛車パスポート, share a purpose-limited URL with a Workshop, receive a structured Service Visit, review or edit it, and add the accepted content to the Garage history. The repository explicitly marks this as `EXPERIMENT_NOT_STARTED` and `HUMAN_QA_PENDING`.
 
-**[Data | FACT]** [PR #26](https://github.com/noah1976/mechori/pull/26), 「愛車パスポートに整備履歴共有を追加」, was OPEN and unmerged on 2026-09-22. Its diff adds an Owner-approved, Workshop-facing projection of past `MaintenanceRecord` data and refreshes the shared history after an accepted Workshop return. It excludes cost, private notes, internal identifiers, and unrelated records. The PR reports automated verification and an α migration, but also states that the Passport hypothesis is unvalidated and the experiment has not started.
+**[Data | FACT]** [PR #26](https://github.com/noah1976/mechori/pull/26), 「愛車パスポートに整備履歴共有を追加」, was OPEN and unmerged when this audit was conducted on 2026-09-22; it was subsequently merged into `main` as `d289f67be6fd0a3f59ad8d639c5014bfabcb765b`. Its diff adds an Owner-approved, Workshop-facing projection of past `MaintenanceRecord` data and refreshes the shared history after an accepted Workshop return. It excludes cost, private notes, internal identifiers, and unrelated records. The PR reports automated verification and an α migration, but also states that the Passport hypothesis is unvalidated and the experiment has not started. The later merge does not change that validation status.
 
 **[Assumption | HYPOTHESIS]** Workshops will read the shared history, find it useful, return a structured result, and do so with acceptable effort.
 
@@ -73,7 +73,7 @@ The natural complexity score is **[Data] 9/9**: broad adjacent market, more than
 ## Red Flags
 
 - There is no observed proof that a Workshop will open, trust, or act on the Passport.
-- The strongest differentiator depends partly on unmerged PR #26.
+- The strongest differentiator depended on unmerged PR #26 at audit time; the implementation is now on `main`, but its market value remains unvalidated.
 
 ## Yellow Flags
 

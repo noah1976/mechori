@@ -85,7 +85,7 @@ A useful entry category must let a first-time Owner or Workshop predict the job 
 |---|---:|---:|---:|---:|---|
 | Maintenance Record App | High | High | Low | Medium | Fallback frame |
 | Digital Service History | Medium/High by market | Partial | Medium | High | Parent category |
-| **Vehicle Maintenance Passport** | Medium with descriptor | Partial / PR #26 dependent | High | Medium | **Recommended entry** |
+| **Vehicle Maintenance Passport** | Medium with descriptor | Implemented on `main` via PR #26 / value unvalidated | High | Medium | **Recommended entry** |
 | Workshop Collaboration Tool | Medium for B2B | Low/Partial | Medium | High | Later expansion |
 | Vehicle History Service | High | Low | Low | High | Reject |
 | Vehicle Health Record | Medium | Low | Medium | High | Reject |

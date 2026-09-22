@@ -14,11 +14,11 @@ None.
 
 ## Warnings
 
-### 1. Recommended entry value depends on unmerged PR #26
+### 1. Recommended entry value depended on unmerged PR #26 at audit time
 
 - **Files:** all synthesized deliverables.
-- **Problem:** the strongest difference from LINE—the past-history projection that compounds after return—is implemented in an OPEN, unmerged PR. It is a current hypothesis, not a `main` product fact.
-- **Resolution in documents:** every core deliverable labels PR #26 as unmerged and separates capability evidence from customer-value evidence.
+- **Problem:** at audit time, the strongest difference from LINE—the past-history projection that compounds after return—was implemented in an OPEN, unmerged PR. PR #26 has since been merged into `main` as `d289f67be6fd0a3f59ad8d639c5014bfabcb765b`; it is now a `main` implementation fact, while its customer value remains a hypothesis.
+- **Resolution in documents:** every core deliverable preserves the audit-time status, records the subsequent merge, and separates capability evidence from customer-value evidence.
 
 ### 2. No direct MECHORI customer or Workshop evidence
 
@@ -45,7 +45,7 @@ None.
 
 - **Best-fit match:** Pass.
 - **Category match:** Pass.
-- **Differentiator traceability:** Pass; Owner-approved outbound history plus returned result maps to verified current-main capabilities and the explicitly unmerged PR #26 addition.
+- **Differentiator traceability:** Pass; Owner-approved outbound history plus returned result maps to current-main capabilities, including the PR #26 addition that was unmerged at audit time and merged afterward.
 - **Onliness integrity:** Pass as an honesty check because it is not presented as a factual public claim.
 
 ### JTBD vs. customer intelligence

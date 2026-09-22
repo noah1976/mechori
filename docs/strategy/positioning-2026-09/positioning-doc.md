@@ -14,7 +14,7 @@
 | Owner Garage and maintenance history | **[Data | FACT]** On `main` | An Owner can keep vehicle-linked records. |
 | Passport current consultation and revocable link | **[Data | FACT]** On `main` | An Owner can share a purpose-limited Passport link. |
 | Workshop structured return → Owner review → Garage | **[Data | FACT]** On `main` | A link recipient can return a Service Visit; the Owner decides what becomes history. Sender identity is not verified. |
-| Past Garage history shown to Workshop and refreshed after return | **[Data | FACT about code, HYPOTHESIS about value]** PR #26 | Implemented in an OPEN, unmerged PR; α migration reported; human QA and positioning experiment pending. |
+| Past Garage history shown to Workshop and refreshed after return | **[Data | FACT about code, HYPOTHESIS about value]** PR #26 | OPEN and unmerged at audit time; subsequently merged into `main` as `d289f67be6fd0a3f59ad8d639c5014bfabcb765b`. Human QA and positioning experiment remain pending. |
 | Knowledge reuse, mechanic reputation, Professional revenue, global network | **[Assumption | HYPOTHESIS]** | Long-term thesis only; not a present marketing promise. |
 
 ## 1. Competitive alternatives
@@ -44,8 +44,8 @@ The following are the strongest evidence-backed attributes. “Unique” applies
 | Vehicle-centered, Owner-controlled longitudinal record | Current repository implementation | Moderate; maintenance apps also keep records |
 | Revocable, purpose-limited Workshop projection rather than sending the whole private workspace | Current `main` | Moderate; privacy control is valuable but not globally unique |
 | Workshop return is preserved as original submission, then Owner-reviewed before entering Garage history | Current `main` | Strong relative to LINE/paper; global competitor parity not fully researched |
-| Past history, current concern, and return flow appear in one Workshop-facing link | PR #26, unmerged | Potentially strong; not yet a current-main or validated attribute |
-| Accepted Workshop work becomes part of what the next Workshop can receive | PR #26, unmerged | Core compounding attribute; behavior and value unvalidated |
+| Past history, current concern, and return flow appear in one Workshop-facing link | PR #26; unmerged at audit time, now on `main` | Potentially strong; now a current-main capability but not a validated attribute |
+| Accepted Workshop work becomes part of what the next Workshop can receive | PR #26; unmerged at audit time, now on `main` | Core compounding attribute; behavior and value unvalidated |
 | Owner value can exist before public Knowledge or Professional network density | Repository architecture and product policy | Strategically important; only proven as design intent, not retention outcome |
 
 > **Confidence: Moderate.** Capabilities are repository-verifiable, but differentiation versus the entire global category and the customer value of PR #26 are not verified.
@@ -137,7 +137,7 @@ Therefore, history projection is **necessary but not yet sufficient**. Positioni
 
 | Horizon | Position | Promise | Evidence status |
 |---|---|---|---|
-| Entry | 愛車の整備履歴パスポート | 次の整備で説明をゼロからやり直さない | Workflow partly on main; key past-history addition is PR #26 and unvalidated |
+| Entry | 愛車の整備履歴パスポート | 次の整備で説明をゼロからやり直さない | Workflow is on `main`, including PR #26; customer value remains unvalidated |
 | Expansion | Owner↔Workshop maintenance collaboration | Each visit returns structured history to the Owner | Current roundtrip exists; Workshop value unvalidated |
 | Long term | Maintenance Knowledge Network | Permissioned outcomes help the next similar vehicle and Workshop | Hypothesis only |
 | Long term Professional | Mechanic Professional Network / “整備士のGitHub” | Contributions become traceable expertise and opportunity | Hypothesis only |
@@ -149,7 +149,7 @@ The Passport can connect to the long-term network because it is positioned at th
 | Component | Strength | Notes |
 |---|---|---|
 | Competitive alternatives | Strong | Status quo is clear and behaviorally realistic |
-| Unique attributes | Moderate | Workflow combination is real; key history projection is unmerged and global uniqueness unproven |
+| Unique attributes | Moderate | Workflow combination is real; key history projection was unmerged at audit time and is now on `main`; global uniqueness remains unproven |
 | Value themes | Moderate | Clear outcomes, but not measured |
 | Best-fit customer | Moderate | Sharply defined; segment response not measured |
 | Market category | Moderate | Understandable with descriptor; category comprehension untested |
@@ -160,7 +160,7 @@ The Passport can connect to the long-term network because it is positioned at th
 1. Lead with the job and outcome: **「工場へ持ち運べる整備履歴」** and **「説明をゼロからやり直さない」**.
 2. Use **愛車パスポート** as the product object, always paired with **整備履歴** until users can restate it unaided.
 3. Keep Workshop, Knowledge Network, and Professional Network as the second and long-term story, not the first headline.
-4. Treat PR #26 as the latest product hypothesis under validation, not a shipped or validated market promise.
+4. Treat PR #26 as implemented on `main` and as the latest product hypothesis under validation, not as a validated market promise.
 5. Run the single α experiment specified in `MECHORI_POSITIONING_DECISION.md` before broadening the segment or category.
 
 ## Data gaps & limitations

@@ -11,7 +11,7 @@
 
 > MECHORI is the only 愛車の整備履歴パスポート that carries Owner-approved past work into a Workshop and brings the returned result back for the next Workshop.
 
-**Result: Needs evidence.** The workflow is distinct from the primary status quo, but LIGHT research cannot substantiate a global “only” claim, and the crucial history-enabled flow is in unmerged PR #26. Do not publish “唯一.”
+**Result: Needs evidence.** The workflow is distinct from the primary status quo, but LIGHT research cannot substantiate a global “only” claim. The crucial history-enabled flow was in unmerged PR #26 at audit time and has since been merged into `main`; implementation does not validate exclusivity or customer value. Do not publish “唯一.”
 
 ## Extended onliness test
 

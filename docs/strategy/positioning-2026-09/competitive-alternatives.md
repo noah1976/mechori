@@ -57,7 +57,7 @@ MECHORI must make the shared object faster to scan than these alternatives. A lo
 
 | Status-quo limitation | MECHORI attribute | Customer value | Evidence status |
 |---|---|---|---|
-| Today and past are in different places | Vehicle-centered Passport combines current concern with selected history | One object for the visit | Past-history portion is PR #26, unmerged |
+| Today and past are in different places | Vehicle-centered Passport combines current concern with selected history | One object for the visit | Past-history portion was unmerged in PR #26 at audit time and is now on `main`; value remains unvalidated |
 | Workshop result becomes another message or invoice | Structured return enters Owner review | Result can become reusable history | On `main` |
 | Private Garage would be too broad to share | Limited, revocable projection | Owner controls scope and access | On `main`; history projection in PR #26 |
 | A later Workshop cannot see the previous return | Accepted result refreshes future share | Each visit can strengthen the next | PR #26, unvalidated |

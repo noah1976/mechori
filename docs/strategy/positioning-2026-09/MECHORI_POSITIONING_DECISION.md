@@ -5,7 +5,7 @@
 
 MECHORI has several true or plausible identities—maintenance log, 愛車パスポート, Workshop handoff, SNS, Knowledge Network, and Professional Network—but presenting them together obscures the immediate job.
 
-**[Data | FACT]** The current `main` supports an Owner→Workshop→Owner roundtrip, but not public Knowledge or a Professional Network. **[Data | FACT]** PR #26 is OPEN and unmerged; it adds past maintenance history to the Workshop projection and refreshes it after accepted work. **[Assumption | HYPOTHESIS]** That latest loop will create enough value to change behavior.
+**[Data | FACT]** The current `main` supports an Owner→Workshop→Owner roundtrip, but not public Knowledge or a Professional Network. **[Data | FACT]** PR #26 was OPEN and unmerged when this positioning audit was conducted; it has since been merged into `main` as `d289f67be6fd0a3f59ad8d639c5014bfabcb765b`. It adds past maintenance history to the Workshop projection and refreshes it after accepted work. **[Assumption | HYPOTHESIS]** That latest loop will create enough value to change behavior; the merge changed implementation status, not validation status.
 
 The positioning problem is therefore to make the testable present loop legible without using the long-term vision as borrowed proof.
 
@@ -108,7 +108,7 @@ Long-term expression:
 
 ### One experiment: blind real-handoff and delayed choice
 
-Use the current α with the already-implemented history-enabled PR #26 branch/preview only after its normal safety and human-QA gates; do not merge or add a feature for this experiment.
+Use the current α with the history-enabled implementation now on `main`, after its normal safety and human-QA gates; do not add a feature for this experiment.
 
 1. Recruit **[Assumption] five** best-fit Owners who have a real upcoming or recent Workshop conversation and at least some past history; include **[Assumption] at least three** actual Workshop recipients.
 2. Before explanation, show the Owner-facing Passport and then the Workshop URL. Ask each person: “これは何をするサービスだと思いますか？” and record the first answer verbatim.
@@ -139,7 +139,7 @@ The gaps in section 10 are decision-critical. Research confidence is **Medium fo
 
 ## Red Flags
 
-- PR #26 is not merged; the recommended entry position depends on its history-enabled difference.
+- PR #26 was unmerged at audit time and is now merged into `main`; the recommended entry position still depends on its history-enabled difference, whose market value remains unvalidated.
 - If later reuse does not occur, the Passport does not compound into the long-term thesis.
 
 ## Yellow Flags

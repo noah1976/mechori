@@ -7,7 +7,7 @@
 - **Research mode:** Live, LIGHT web supplementation
 - **Research Depth:** Light (complexity score: 9/9, override: user request)
 - **Base:** `origin/main` at `686d671`
-- **PR #26:** Read-only reviewed; OPEN and not merged at audit time
+- **PR #26:** Read-only reviewed; OPEN and not merged at audit time, subsequently merged into `main` as `d289f67be6fd0a3f59ad8d639c5014bfabcb765b`; hypothesis validation remains pending
 
 ## Phase checklist
 
