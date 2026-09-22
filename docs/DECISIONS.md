@@ -885,3 +885,13 @@
 - Workshop返却はflatな大textarea群ではなく、1回の入庫をService Visit、入庫内の各整備箇所・作業を複数Service Itemとして扱う。WorkshopへKnowledge記事、原因診断、技術考察を要求せず、「どこ・何について？」「何をした？」を中心に、状態・部品・結果・次回注意は任意で追加する。
 - Garageでは新しい履歴systemを作らず、`1 Service Visit = 1 MaintenanceRecord`、`1 Service Item = 1 MaintenanceRecordAction`として既存`actions[]`をcanonicalな複数作業表現に使う。Item順序と入力文字列を保ち、部品名・原因・結果を推測しない。
 - Workshop original submissionはOwner編集で上書きしない。既存flat reportはrewriteせず1件のlegacy Itemへ投影する。Evidence Graph、Knowledge normalization、AI extractionは将来に残す。
+
+### Refinement: Garage整備履歴を愛車パスポートの限定snapshotとして持ち運ぶ
+
+- 日付: 2026-09-21
+- 状態: Prototype refinement / Experiment not started。Passport hypothesis validatedを意味しない。
+- 愛車パスポートの主要価値は今回の伝言だけでなく、そのVehicleに過去何が起き、何を整備し、何を交換し、どうなったかを次のWorkshopへ持ち運べることにある。この仮説をαで検証する。
+- Garageの`MaintenanceRecord.actions[]`をprimary representationとし、対象Vehicleだけを新しい順にPassport専用snapshotへ投影する。旧flat recordは情報を捏造せず1件の整備項目へfallbackし、日付不明recordも捨てない。
+- private workspaceやMaintenanceRecord自体をpublic RPCから返さない。snapshotには表示用の日付精度、走行距離、summary、作業項目、状態、作業、部品、結果、次回注意だけを含め、Owner/auth/internal ID、cost、private notes、sourceReference、match／hazard／evidence metadataを含めない。
+- 既存shareは作成時の同意範囲を維持し、deployだけで履歴を追加しない。新規shareは共有範囲を明示してv2を作り、既存shareはOwnerの「整備履歴を含めて共有内容を更新」操作後だけv2へ移行する。共有停止、`noindex / nofollow`、active token限定を維持する。
+- Garage保存をshare snapshot更新失敗で取り消さない。history-enabled shareは通常時に自動更新し、失敗時はOwnerへ非致命的な警告と「共有内容を更新」の再試行手段を示す。

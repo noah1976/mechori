@@ -12,6 +12,7 @@ import {
   createVehiclePassportDraft,
   displayVehicleModel,
   getPreferredVehicle,
+  type MaintenanceRecord,
   type Vehicle,
   type VehiclePassport,
   type VehiclePassportDraft,
@@ -26,6 +27,7 @@ import {
   Link2,
   LoaderCircle,
   Pencil,
+  RefreshCw,
   Save,
   Send,
   Share2,
@@ -61,6 +63,7 @@ export function PassportExperience() {
   const [mode, setMode] = useState<PassportMode>(passport ? "view" : "edit");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
+  const [saveShareSyncFailed, setSaveShareSyncFailed] = useState(false);
   const [focusShareControls, setFocusShareControls] = useState(false);
   const hydratedPassportKey = useRef("");
 
@@ -101,10 +104,21 @@ export function PassportExperience() {
     if (saving) return;
     setSaving(true);
     setSaveError(false);
+    setSaveShareSyncFailed(false);
     try {
       const saved = await saveVehiclePassport(draft);
       if (passport?.shareToken) {
-        await publishPassportShare(vehicle!, saved, passport.shareToken);
+        try {
+          await publishPassportShare(
+            vehicle!,
+            saved,
+            data.records,
+            passport.shareToken,
+            passport.historyShareEnabled === true,
+          );
+        } catch {
+          setSaveShareSyncFailed(true);
+        }
       }
       setMode("complete");
     } catch {
@@ -145,6 +159,7 @@ export function PassportExperience() {
         <PassportCompletion
           vehicle={vehicle}
           passport={passport}
+          shareSyncFailed={saveShareSyncFailed}
           onView={() => { setFocusShareControls(false); setMode("view"); }}
           onShare={() => { setFocusShareControls(true); setMode("view"); }}
         />
@@ -153,6 +168,7 @@ export function PassportExperience() {
         <PassportOwnerView
           vehicle={vehicle}
           passport={passport}
+          records={data.records}
           onEdit={() => setMode("edit")}
           onShareTokenChange={setVehiclePassportShare}
           focusShareControls={focusShareControls}
@@ -240,7 +256,7 @@ function PassportTextarea({ label, value, placeholder, onChange }: { label: stri
   return <label className="field passport-textarea"><span>{label} <small>任意</small></span><textarea rows={3} maxLength={2000} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} /></label>;
 }
 
-function PassportCompletion({ vehicle, passport, onView, onShare }: { vehicle: Vehicle; passport: VehiclePassport; onView(): void; onShare(): void }) {
+function PassportCompletion({ vehicle, passport, shareSyncFailed, onView, onShare }: { vehicle: Vehicle; passport: VehiclePassport; shareSyncFailed: boolean; onView(): void; onShare(): void }) {
   const [feedback, setFeedback] = useState("");
   const [feedbackState, setFeedbackState] = useState<"idle" | "saving" | "saved" | "error" | "skipped">("idle");
   async function submitFeedback() {
@@ -267,6 +283,7 @@ function PassportCompletion({ vehicle, passport, onView, onShare }: { vehicle: V
         <div><h2>愛車パスポートができました</h2><p>工場に見せるための愛車情報をまとめました。あとからいつでも変更できます。</p></div>
       </section>
       <PassportPreview vehicle={vehicle} passport={passport} />
+      {shareSyncFailed && <p className="passport-share-sync-warning" role="alert">変更は保存しましたが、共有ページの更新に失敗しました。「工場に見せる」から共有内容を更新できます。</p>}
       <div className="passport-completion-actions"><button type="button" className="primary-action" onClick={onView}>パスポートを見る</button><button type="button" className="secondary-action" onClick={onShare}><Share2 size={17} />工場に見せる</button></div>
       <section className="passport-feedback">
         <h2>ここまで触ってみて、気になったことがあれば教えてください</h2>
@@ -281,8 +298,8 @@ function PassportCompletion({ vehicle, passport, onView, onShare }: { vehicle: V
   );
 }
 
-function PassportOwnerView({ vehicle, passport, onEdit, onShareTokenChange, focusShareControls, onShareControlsFocused }: { vehicle: Vehicle; passport: VehiclePassport; onEdit(): void; onShareTokenChange(vehicleId: string, shareToken?: string): Promise<void>; focusShareControls: boolean; onShareControlsFocused(): void }) {
-  const [shareState, setShareState] = useState<"idle" | "saving" | "copied" | "error">("idle");
+function PassportOwnerView({ vehicle, passport, records, onEdit, onShareTokenChange, focusShareControls, onShareControlsFocused }: { vehicle: Vehicle; passport: VehiclePassport; records: MaintenanceRecord[]; onEdit(): void; onShareTokenChange(vehicleId: string, shareToken?: string, historyShareEnabled?: boolean): Promise<void>; focusShareControls: boolean; onShareControlsFocused(): void }) {
+  const [shareState, setShareState] = useState<"idle" | "saving" | "copied" | "updated" | "error">("idle");
   const shareControlsRef = useRef<HTMLElement>(null);
   const shareUrl = passport.shareToken && typeof window !== "undefined" ? `${window.location.origin}/p/${passport.shareToken}` : "";
   useEffect(() => {
@@ -294,9 +311,27 @@ function PassportOwnerView({ vehicle, passport, onEdit, onShareTokenChange, focu
   async function createShare() {
     setShareState("saving");
     try {
-      const token = await publishPassportShare(vehicle, passport);
-      await onShareTokenChange(vehicle.id, token);
+      const token = await publishPassportShare(vehicle, passport, records, undefined, true);
+      await onShareTokenChange(vehicle.id, token, true);
       setShareState("idle");
+    } catch { setShareState("error"); }
+  }
+  async function refreshShare(nextRecord?: MaintenanceRecord) {
+    if (!passport.shareToken) return;
+    const nextRecords = nextRecord
+      ? [nextRecord, ...records.filter((record) => record.id !== nextRecord.id)]
+      : records;
+    await publishPassportShare(vehicle, passport, nextRecords, passport.shareToken, true);
+  }
+  async function refreshShareFromControls() {
+    setShareState("saving");
+    try {
+      await refreshShare();
+      if (!passport.historyShareEnabled) {
+        await onShareTokenChange(vehicle.id, passport.shareToken, true);
+      }
+      setShareState("updated");
+      window.setTimeout(() => setShareState("idle"), 2200);
     } catch { setShareState("error"); }
   }
   async function copyShare() {
@@ -323,13 +358,22 @@ function PassportOwnerView({ vehicle, passport, onEdit, onShareTokenChange, focu
     <div className="passport-owner-view">
       <div className="passport-view-heading"><div><span className="eyebrow">YOUR PASSPORT</span><h2>工場へ見せる内容</h2></div><button type="button" className="secondary-action" onClick={onEdit}><Pencil size={16} />編集する</button></div>
       <PassportPreview vehicle={vehicle} passport={passport} />
-      <PassportServiceReportInbox vehicleId={vehicle.id} />
+      <PassportServiceReportInbox
+        vehicleId={vehicle.id}
+        onHistorySaved={passport.shareToken && passport.historyShareEnabled
+          ? (record) => refreshShare(record)
+          : undefined}
+      />
       <section className="passport-share-controls" ref={shareControlsRef} tabIndex={-1}>
         <div className="section-heading compact"><div><span className="eyebrow">SHARE</span><h2>工場に見せる</h2></div><ShieldCheck size={21} aria-hidden="true" /></div>
-        <p>共有を始めるまで、このパスポートは非公開です。共有ページには、上に表示した情報だけが載ります。</p>
+        <p>共有を始めるまで、このパスポートは非公開です。車両情報と整備履歴が、このリンクを知っている人に表示されます。</p>
         {!passport.shareToken ? <button className="primary-action" type="button" disabled={shareState === "saving"} onClick={() => void createShare()}><Link2 size={17} />{shareState === "saving" ? "作成中" : "共有リンクを作る"}</button> : <div className="passport-share-active">
           <div className="passport-share-url"><Link2 size={16} /><span>{shareUrl}</span></div>
+          {!passport.historyShareEnabled && <p className="passport-share-upgrade-note">現在のリンクには整備履歴が含まれていません。下の操作をすると、同じURLにGarageの整備履歴が表示されます。</p>}
           <div className="passport-share-actions"><button className="primary-action" type="button" onClick={() => void nativeShare()}><Share2 size={17} />共有する</button><button className="secondary-action" type="button" onClick={() => void copyShare()}><Copy size={17} />{shareState === "copied" ? "コピーしました" : "リンクをコピー"}</button><Link className="secondary-action" href={`/p/${passport.shareToken}`} target="_blank"><ExternalLink size={17} />開く</Link><button className="text-danger-action" type="button" disabled={shareState === "saving"} onClick={() => void revoke()}><Unlink size={16} />共有を停止</button></div>
+          <button className="secondary-action passport-share-refresh" type="button" disabled={shareState === "saving"} onClick={() => void refreshShareFromControls()}>
+            <RefreshCw size={17} />{shareState === "updated" ? "共有内容を更新しました" : passport.historyShareEnabled ? "共有内容を更新" : "整備履歴を含めて共有内容を更新"}
+          </button>
         </div>}
         {shareState === "error" && <p className="form-error-summary" role="alert">共有を変更できませんでした。時間をおいてもう一度お試しください。</p>}
       </section>
