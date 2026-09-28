@@ -13,6 +13,8 @@ MECHORIのMissionは、どんなクルマ・地域でも維持を担う人が必
 
 Human Validation Pipelineは、短い確認作業を協力者へ渡し、正しい人間の証拠を繰り返し取得する運用の仮説である。Productの追加機能ではない。協力者の人数や友人の称賛を事業需要へ変換せず、Founderが全QAを代行しなくても確認が進むかを試す。
 
+**PassportはMissionではなく、現在のProduct Entry Hypothesis（顧客へ価値を届ける入口の仮説）である。Passport自体を成功させるのではなく、実際の用途に十分な価値があるかを判断できるEvidenceを得る。会社として「Passportを守らない。Missionを守る。」Mission Value × Economic Value × Evidenceから入口を検討し、Passportの継続、Positioning変更、縮小、Front-doorからの撤退、別の入口へのpivotはすべてCEO Decision Requiredとする。AIはEvidenceと選択肢を整理し、維持・終了・転換を独断しない。**
+
 ## 2. Current bottleneck
 
 | 分類 | 現在分かること | 根拠・限界 |
@@ -218,6 +220,28 @@ X / Facebookはフォロワー・友人数、閲覧範囲、関係性、投稿�
 - **即時停止:** 意図しない共有、データ喪失、診断・修理指示との重大な誤認、未承認支出・送信があれば対象工程を止め、証拠を保持してCEOへ報告する。安全・権利違反の完走を成果にしない。
 - **未判定:** B/Cに自然機会がなければNO_OPPORTUNITYで、実利用・再利用・Workshop価値・支払意思はUNKNOWN。候補数不足も実数のまま報告し、協力不足からProduct価値を否定しない。
 
+### Passport仮説に関するfailure classificationとCEO判断
+
+Pipeline試験の進み具合とPassportの価値判断を分ける。A協力者2人以上という§13の項目はPipeline運用の継続検討の兆候であり、Passportの成否・継続・停止・pivotを決める人数基準ではない。Passportについて人数だけの固定kill thresholdは置かない。以下の層を混同せず、該当するfailureの証拠・機会・関係・支援・代替手段を添えて扱う。
+
+| 分類 | 観察例 | 扱い |
+| --- | --- | --- |
+| **1. TECHNICAL FAILURE** | 動かない、表示されない、保存できない、共有から返却・Owner承認までのroundtripが壊れている | 該当版・環境・操作のTechnical QA問題として記録し、必要なQAへ戻す。製品価値の否定材料にしない。技術的に使えなかったケースから価値を判定しない |
+| **2. USABILITY / COMPREHENSION FAILURE** | 何をするサービスか分からない、操作が分からない、Passportの意味が伝わらない | 説明前の理解、迷った箇所、援助・誘導を記録し、UI・文言・Positioningの問題として扱う。直ちにPassportの価値仮説を否定しない。修正・追加作業を採用するかは別途判断する |
+| **3. WORKFLOW FAILURE** | Ownerに確認できる便益がある一方、Workshopが履歴を読まない・返却しない、通常業務で返却負担が高い | Owner → Workshop → OwnerのReturn Loop仮説を再検討する。どの段階で誰が止めたか、相手が受け取ったか、自然な機会か、要した支援・時間を確認する。Workflow不成立をOwner価値の不存在と同一視しない |
+| **4. VALUE FAILURE evidence** | 対象のTechnical QAが成立し、利用者が用途を理解し、現実の利用機会がある。それでも「LINEで十分」「紙・整備明細で十分」「履歴を渡す必要を感じない」「次回は使わない」「追加workflowに価値を感じない」といった実際の選択・行動が観察される | Founderとの関係、募集元、自然な機会か、支援量、Workshopの実参加、選ばれた代替手段、発言と行動を示してCEOへ **ENTRY HYPOTHESIS REVIEW** を提案する。発言だけ、機会なし、技術・理解失敗をValue Failureとしない |
+| **5. NO OPPORTUNITY** | 観測期間中に自然な点検・修理・車検・相談等の利用機会が来ない | **UNKNOWN**として残す。機会不足・未回答をProduct failureや成功に数えない。不要な入庫や利用誘導で機会を作らない |
+
+#### Value Failure後のEntry Hypothesis Review
+
+ENTRY HYPOTHESIS REVIEWはPassportを救済する追加機能の承認ではなく、Missionへ届く入口を選び直す判断資料である。必要な条件がそろった具体的なValue Failure evidenceがある場合、またはEntry Hypothesisを選び直すのに十分な複数の観察がそろった場合に、CoordinatorがEvidenceと不確実性をまとめてCEOへ戻す。人数だけの固定kill thresholdは置かない。十分さはFounder relationship、自然な利用機会、支援量、対象導線のTechnical QA、Workshopの関与、実際に選ばれた代替手段、観察された行動と母数を合わせて判断する。
+
+一方、不都合な結果のたびに協力者や観察期間を増やし、追加機能を作って検証を延命しない。AI診断、SNS、OCR、media、notification、Workshop機能拡張をPassportの価値不足を埋める目的だけで提案しない。今回のfailureだけから次の入口も決めない。
+
+比較候補は例として、Owner単独のMaintenance History／愛車カルテ、Workshop起点の顧客報告・整備記録、Knowledge Retrieval、Mechanic work record／Professional evidence、その他のEvidenceから得た入口がある。候補を既定路線にせず、それぞれを **Mission Value × Economic Value × Evidence** で比較する。Missionへの具体的な効果、誰が何に対価を払うか、全実費を含む採算の未知、独立した行動Evidenceと反証を併記する。
+
+Passportの継続、Positioning変更、縮小、Front-doorからの撤退、別Entry Hypothesisへのpivotは **CEO Decision Required**。AIは候補とリスクを提示するだけで、Passportを終了・維持したりpivotを採用したりしない。
+
 14日で分かるのは募集・カード・回答の短い運用が回る兆候と負担である。継続的QA供給、Product Pull、PMF、Knowledge再利用、Revenue validation、実費込み利益は別の未知として残る。
 
 ## 14. What NOT to build
@@ -240,6 +264,7 @@ tester management system、CRM、紹介機能、campaign機能、報酬システ
 | 謝礼を使うか | v0.1は謝礼なしの任意協力を推奨。有償なら単価・支払方法・総額を別審査 | 未決定 / 支出開始なし |
 | 14日experimentを開始するか | §12–13、Pipeline150分以内かつ全社5時間／7日間以内 | 未決定 / EXPERIMENT_NOT_RUN |
 | 確認先・参加・同意・保持範囲 | 初回Aは閲覧中心、検証資料の許可、ローカル台帳の保持案。α招待・保存QAは別ゲート | 未決定 / 実データ取得なし |
+| Passportの継続・Positioning変更・縮小・Front-doorからの撤退・pivot | Entry Hypothesis ReviewのEvidenceを見てCEOが決定 | CEO DECISION REQUIRED |
 
 CEOが対象・操作・データ・時間・費用を選んだ後、その承認範囲だけを別作業で開始する。今回は設計文書とPR提出で停止する。
 
