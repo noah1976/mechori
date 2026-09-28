@@ -24,8 +24,8 @@ export function sanitizeAnalyticsPath(value: unknown): string {
 }
 
 // Self-contained: also serialized into the pre-hydration GTM bootstrap below.
-export function analyticsUrlHasCapability(value: string): boolean {
-  if (value.length > 4096) return true;
+export function analyticsUrlHasCapability(value: string, nesting = 0): boolean {
+  if (value.length > 4096 || nesting > 4) return true;
   let decoded = value;
   try {
     for (let i = 0; i < 4; i++) {
@@ -39,9 +39,14 @@ export function analyticsUrlHasCapability(value: string): boolean {
     // On the public QA entry allow only the four coarse source values.
     if (/^\/qa\/?$/i.test(url.pathname) && (url.hash || [...url.searchParams].some(([key, value]) =>
       key !== "src" || !["x", "facebook", "direct", "unknown"].includes(value)))) return true;
-    return /^\/(?:p|v|auth|join|invite)(?:\/|$)/i.test(url.pathname)
-      || /[?&#](?:invite|token|access_token|refresh_token|code|state|returnto)=/i.test(decoded)
-      || /[A-Za-z0-9_-]{32,}/.test(`${url.pathname}${url.search}${url.hash}`);
+    if (/^\/(?:p|v|auth|join|invite)(?:\/|$)/i.test(url.pathname)
+      || /[?&#](?:invite|invite_token|token|access_token|refresh_token|id_token|code|state)=/i.test(decoded)) return true;
+    // A record/vehicle/profile ID is not a capability because of its length.
+    // Only inspect a continuation URL when it actually contains secret context.
+    for (const [key, target] of url.searchParams) {
+      if (key.toLowerCase() === "returnto" && analyticsUrlHasCapability(target, nesting + 1)) return true;
+    }
+    return /^#\/(?:p|v|auth|join|invite)(?:\/|$)/i.test(url.hash);
   } catch { return true; }
 }
 
@@ -49,7 +54,7 @@ export function safeGtmBootstrap(containerId: string): string {
   if (!/^GTM-[A-Z0-9]+$/.test(containerId)) return "";
   return `(function(w,d){
 var sensitive=${analyticsUrlHasCapability.toString()};
-if(sensitive(w.location.href)||w.location.hash||(d.referrer&&sensitive(d.referrer)))return;
+if(sensitive(w.location.href)||(d.referrer&&sensitive(d.referrer)))return;
 // Force capability navigation into a fresh document before any history-listener
 // tag can see it. On that document this loader is disabled. Ordinary routing stays.
 ['pushState','replaceState'].forEach(function(method){

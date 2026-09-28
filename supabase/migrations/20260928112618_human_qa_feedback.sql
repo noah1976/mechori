@@ -78,7 +78,7 @@ begin
   if auth.uid() is null or not public.is_active_test_member(auth.uid()) or not public.is_alpha_admin(auth.uid())
     then raise exception 'admin_required'; end if;
   perform pg_catalog.pg_advisory_xact_lock(313101);
-  -- Daily operation with a one-day margin keeps raw retention within 30 days.
+  -- Emergency admin action only; scheduled retention does not use this RPC.
   delete from public.human_qa_feedback where created_at <= now() - interval '29 days';
   get diagnostics deleted_count = row_count;
   return deleted_count;
@@ -130,5 +130,32 @@ grant execute on function public.list_human_qa_feedback() to authenticated;
 grant execute on function public.get_human_qa_reception() to authenticated;
 grant execute on function public.set_human_qa_reception(boolean) to authenticated;
 
-comment on table public.human_qa_feedback is 'TEST QA self-reports only, no market/revenue evidence. Raw retention maximum 30 days; daily admin purge deletes rows aged 29 days, including while reception is closed.';
+-- No API role gets schema usage or function execution. SECURITY INVOKER adds
+-- no authority: the existing database job owner executes this fixed operation.
+create schema mechori_qa_internal;
+revoke all on schema mechori_qa_internal from public, anon, authenticated;
+create function mechori_qa_internal.purge_expired_feedback()
+returns bigint language plpgsql security invoker set search_path = '' as $$
+declare deleted_count bigint;
+begin
+  perform pg_catalog.pg_advisory_xact_lock(313101);
+  delete from public.human_qa_feedback where created_at <= now() - interval '29 days';
+  get diagnostics deleted_count = row_count;
+  return deleted_count;
+end;
+$$;
+revoke all on function mechori_qa_internal.purge_expired_feedback() from public, anon, authenticated;
+
+-- BEGIN HUMAN QA CRON SCHEDULING
+-- Supported on the existing Supabase Free project (pg_cron available, PG17).
+-- Never silently install QA without retention. Production apply is separate.
+create extension if not exists pg_cron with schema pg_catalog;
+select cron.schedule(
+  'mechori-human-qa-retention',
+  '17 * * * *',
+  'select mechori_qa_internal.purge_expired_feedback();'
+);
+-- END HUMAN QA CRON SCHEDULING
+
+comment on table public.human_qa_feedback is 'TEST QA self-reports only, no market/revenue evidence. Raw retention maximum 30 days while database/scheduler are operational; hourly job deletes rows aged 29 days even with reception closed. No daily Founder purge.';
 commit;

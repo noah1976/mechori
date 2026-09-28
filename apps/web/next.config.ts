@@ -13,7 +13,9 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@mechori/core", "@mechori/shared", "@mechori/i18n"],
   async headers() {
     const headers = [
-      { key: "Referrer-Policy", value: "no-referrer" },
+      // Preserve referring origins without exposing any path, query or fragment,
+      // even for unexpected secret query parameters on an ordinary route.
+      { key: "Referrer-Policy", value: "strict-origin" },
       {
         key: "TDM-Reservation",
         value: "1",
@@ -32,9 +34,11 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers,
       },
-      // HTML form POST under no-referrer sends Origin: null, which the existing
-      // OAuth start CSRF guard correctly rejects. Send only the origin from the
-      // auth page, never its capability-bearing path/query or fragment.
+      ...["/p/:path*", "/v/:path*", "/join/:path*", "/invite/:path*", "/auth/:path*"].map((source) => ({
+        source, headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
+      })),
+      // Keep native auth form POST's Origin for the existing CSRF guard. Only
+      // the origin is sent, including when auth has a capability continuation.
       { source: "/auth", headers: [{ key: "Referrer-Policy", value: "strict-origin" }] },
     ];
   },
