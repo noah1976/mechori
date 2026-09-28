@@ -1,7 +1,7 @@
 # MECHORI Project State
 
-- 更新日時: 2026-09-21
-- 対象ブランチ: `codex/25-passport-history-sharing`
+- 更新日時: 2026-09-28（会社OS文書checkpoint。アプリのQA状態は変更しない）
+- 対象ブランチ: `codex/28-company-foundation-audit`
 - HEAD基準: 本書を含む現在ブランチの`git log -1`を正とする
 - 本番URL: `https://mechori.com`
 - 状態文書のルール: 実装、テスト、本番反映、人間QAを別々に判定する。コード、テスト、Git履歴、既存の運用記録を照合し、根拠のない項目は完了にしない。本書を現在の実装状態の正本とする。
@@ -396,3 +396,14 @@
 - **Long-term thesis**: Passport roundtripは、許諾・出典・確認状態を保った結果Evidenceを生む可能性があり、Knowledge Networkと「整備士のGitHub」へ接続し得る。ただしWorkshop利用、後日再利用、Knowledge化、mechanic reputation、Professional revenue、global networkはいずれも未検証で、entry marketing claimにしない。
 - **Positioning risk / next step**: 最大の未解決riskは、Workshopが履歴を読まず、Ownerも次回再利用せず、追加workflowがLINEを上回らないこと。新機能なしのα実験として、説明前の二方向理解、実Workshop handoff、返却、Owner承認、7〜14日後の次回手段選択を一つの実験で確認する。開始・Human QA・実行結果は別状態で記録する。
 - **検証**: 必須7 deliverables、MECHORI固有decision、4 raw files、progress、verification reportを作成し、内部整合、FACT/HYPOTHESIS、category label、best-fit、LINE critical test、global/local境界、Red/Yellow Flags、sourceを確認した。verificationはcritical 0、warning 3。documentation-onlyのためapplication lint/typecheck/test/buildは対象外で未実行。application code、DB、migration、外部サービス、本番設定、PR #26はいずれも変更していない。
+
+## 39. 2026-09-28 Company Operating System v0.1 checkpoint
+
+- **状態**: `DOCS_IMPLEMENTED / CEO_DOCUMENT_REVIEW_PENDING / OPERATING_TEST_NOT_RUN`。[会社OS](company/README.md)を作成した。架空会社の経営実験であり、法的な株式会社設立や正式公開を意味しない。branchは`codex/28-company-foundation-audit`。PRは当該branchのPRを参照し、main merge・CEOによる最終文書レビューは別状態として扱う。
+- **承認source**: チャット上のFoundation AuditをCEOが条件付き承認し、会社OSのdocs-only実装・commit・push・PR作成を許可した。今回のCEO明示方針は対象範囲で旧記述より優先するが、過去の判断・Backlog・QA記録は削除しない。
+- **CEO修正**: Professional / B2Bは有力な`CURRENT HYPOTHESIS`で、確定した主利益基盤として扱わず、B2Bを既定路線としてProductを最適化しない。旧料金はHistorical Pricing Hypothesesのみ。モデルは仕事の性質によるtierを恒久ルールとし、具体モデルへの割当は可変の運用指針とする。
+- **現金採算**: 最初のMilestoneは、上位AI契約を含む実運営費全体を外部実売上で賄い、現金赤字を避けること。契約差額だけの判定とFounder時間の仮想利益は使わない。連続黒字期間、安全余裕、実際の購入は`CEO DECISION REQUIRED`。既存の月額5,000円サービス運用費上限（FACT / CEO設定額）と、その対象外のAI契約も含む採算評価を区別する。
+- **成果物**: `docs/company/`のREADME、COMPANY_CHARTER、OPERATING_SYSTEM、CEO_DECISION_BRIEF、FINANCIAL_GUARDRAILS。業務Function、入出力、許可・禁止、escalation、完了条件、週次会議、重要数字の分類を定義した。経営テストの問いと手順だけを設計し、本PRでは実施・経営判断しない。
+- **P0/P1/P2と未完了**: 新規P番号は採番しない。P-087（P0 experiment）はprototype実装・Human QA待ち・実験未開始、MECH-048 / KA-01〜03（P1）は採用待ち・未実測、MECH-041（P2）は課題検証の既存状態を維持する。実売上・実費・転換・継続・Workshop支払意思は今回未取得でUNKNOWN。旧Home、Native着手、α写真共有、価格・無料枠の整合課題はREADMEへ引き継ぎ、無断で一括改訂しない。
+- **次に行うこと**: 文書レビューとCEO判断によるmain merge後、別タスクの明示依頼で「現在の最大経営課題と今週CEOが決めること」を検証する。自動起動、外部連絡、価格決定、購入、実験開始は今回行わない。
+- **検証**: Internal links、Markdown構造、数値分類、Decision / Hypothesis境界、docs-only差分、`git diff --check`を確認済み。Application lint/typecheck/test/buildはdocs-onlyのため対象外で未実行。Application code、DB、dependency、外部サービス設定、live communication、課金、本番反映、main mergeは変更・実行していない。
