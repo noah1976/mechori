@@ -55,7 +55,7 @@ Functionは業務の責任分担です。人格、権限のある役員、自動
 - **Inputs**: 採用済み仕様、依頼範囲、data contract、既存設計、制約、再現手順。
 - **Outputs**: Scope内のbranch、実装またはdocs、差分、必要な検証、commit、PR。
 - **Allowed actions**: 依頼で許可されたローカル編集・検証・commit・push・PR。既存データ互換の調査。
-- **Prohibited actions**: main merge、未承認の本番変更、未知dependency・MCP導入、credential変更、未許可データ送信、需要未検証を理由にしたscope拡大。
+- **Prohibited actions**: CEO承認のないmain merge、未承認の本番変更、未知dependency・MCP導入、credential変更、未許可データ送信、需要未検証を理由にしたscope拡大。
 - **Escalation**: 重要な仕様判断、DB変更、本番反映、security / privacy境界、依存追加、破壊的・不可逆な操作。
 - **Completion criteria**: Scope内の差分、適切な検証、既存データへの影響、未完了、QA状態、関連PRがレビュー可能。実装だけで顧客価値を証明したと報告しない。
 - **Preferred model tier**: 小さく決定的な変更はcost-efficient。Architecture、曖昧な実装、重要なdata model・security判断はhigher-reasoning。
@@ -86,14 +86,14 @@ Functionは業務の責任分担です。人格、権限のある役員、自動
 
 | CEOの明示承認が必要な操作 | 境界 |
 | --- | --- |
-| main merge | PR作成はmergeの許可ではない |
-| Production deploy・本番DB変更 | 高リスク変更、破壊的変更は特に停止。既存repoのより厳しい本番承認ルールを維持 |
+| main merge | PR作成はmergeの許可ではない。main mergeにより既知のCI/CDから通常のProduction deployが自動発生する場合、AIはmerge前にCEOへ明示する。CEOがその自動deployを理解した上でmain mergeを承認した場合、その既知の通常deployは同じ承認に含まれる |
+| その他のProduction操作 | 通常経路外のmanual deploy、Production設定変更、rollback、destructive operation、本番DB変更、migration適用はそれぞれ別のCEO承認が必要。main mergeの承認に含めない |
 | 課金・購入・契約・上限変更 | 無料枠や予算内という理由だけで開始しない |
 | Credential・認証設定変更 | GitHubのglobal account、SSH、credential helper等を自動変更しない |
 | 外部への正式公開・live communication | 利用者、工場、専門家への送信・募集はdraftから別ゲート |
-| Privacy / security boundary変更 | 取得項目、共有範囲、外部AI送信、第三者提供、権限・監査境界の変更 |
+| Privacy / security boundary変更 | 取得項目、共有範囲、外部AI送信、第三者提供、権限・監査境界の変更。Production上で行う場合も別の承認が必要 |
 
-既存authorizationがある場合、その対象・操作・環境・費用・データ範囲内で進めます。未承認の工程だけを保留し、安全な独立作業は続けます。承認取得前に、依頼で許可された範囲で具体的な差分・費用・リスクをレビュー可能にします。曖昧な承認を無期限・全対象の許可へ拡張しません。
+既存authorizationがある場合、その対象・操作・環境・費用・データ範囲内で進めます。通常deployが自動発生するmain mergeの承認には、事前に明示してCEOが理解したその特定のdeployだけを含めます。未知または通常経路外のProduction操作へ承認を拡張しません。未承認の工程だけを保留し、安全な独立作業は続けます。承認取得前に、依頼で許可された範囲で具体的な差分・費用・リスクをレビュー可能にします。曖昧な承認を無期限・全対象の許可へ拡張しません。
 
 未知の実行設定・不審なdependency等は実行・削除・credential rotationをせず、証拠を保持し、隔離とclean deviceでの確認をCEOへ提案します。外部サービス操作とGitHub操作は[AGENTS.md](../../AGENTS.md)に従います。
 
