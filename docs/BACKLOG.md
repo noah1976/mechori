@@ -133,6 +133,17 @@
 
 ## NEEDS_OWNER
 
+### MECH-049 Human Validation Pipelineの運用開始判断
+
+- 優先度: P1
+- 状態: NEEDS_OWNER
+- 目的: Founder時間・少数α・低頻度整備機会に依存するHuman QA取得を、目的別募集と短いself-service作業で継続できるか確認する。
+- 設計成果物: [HUMAN_VALIDATION_PIPELINE_2026-09](HUMAN_VALIDATION_PIPELINE_2026-09.md)。`DESIGN_REVIEW_READY / RECRUITMENT_NOT_STARTED / PIPELINE_EXPERIMENT_NOT_RUN`。A QA協力、B Owner候補、C Workshop候補、Founder debug caseとFounder network bias、X / Facebookのdraft、最小台帳、14日運用試験を定義した。
+- 次の候補: ASSUMPTION / INITIAL TARGETとしてA3人、B最大2人、C最大1拠点。PipelineのFounder上限はWeek 1が90分、Week 2が60分で、既存の全社5時間／7日間枠内に含める。自然な実案件の成立は期限・成功条件にしない。
+- 完了条件: 投稿、draft、DM範囲、人数、謝礼、データ範囲、開始をCEOが判断し、採用時は応答→開始→カード終了→feedbackと支援・時間・欠測を実測する。設計・募集人数・Technical QAをMarket validation完了へ昇格させない。
+- 依存・境界: 許可済み検証先・資料、任意同意、既存feedback、P-087。新規α招待・保存QAの環境と共有範囲は別確認。コード・DB・外部設定・依存追加・新規支出は対象外。
+- 所有者確認の要否: 文書実装・commit・push・PRは今回明示承認済み。SNS投稿、DM、募集、実験、謝礼、main mergeは未承認。
+
 ### MECH-048 Knowledge Acquisition最小実験の採用判断
 
 - 優先度: P1（KA-01 / KA-02 / KA-03）

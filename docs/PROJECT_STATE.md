@@ -1,7 +1,7 @@
 # MECHORI Project State
 
-- 更新日時: 2026-09-28（会社OS文書checkpoint。アプリのQA状態は変更しない）
-- 対象ブランチ: `codex/28-company-foundation-audit`
+- 更新日時: 2026-09-28（Human Validation Pipeline文書checkpoint。アプリのQA・実験状態は変更しない）
+- 対象ブランチ: `codex/30-human-validation-pipeline`
 - HEAD基準: 本書を含む現在ブランチの`git log -1`を正とする
 - 本番URL: `https://mechori.com`
 - 状態文書のルール: 実装、テスト、本番反映、人間QAを別々に判定する。コード、テスト、Git履歴、既存の運用記録を照合し、根拠のない項目は完了にしない。本書を現在の実装状態の正本とする。
@@ -407,3 +407,14 @@
 - **P0/P1/P2と未完了**: 新規P番号は採番しない。P-087（P0 experiment）はprototype実装・Human QA待ち・実験未開始、MECH-048 / KA-01〜03（P1）は採用待ち・未実測、MECH-041（P2）は課題検証の既存状態を維持する。実売上・実費・転換・継続・Workshop支払意思は今回未取得でUNKNOWN。旧Home、Native着手、α写真共有、価格・無料枠の整合課題はREADMEへ引き継ぎ、無断で一括改訂しない。
 - **次に行うこと**: 文書レビューとCEO判断によるmain merge後、別タスクの明示依頼で「現在の最大経営課題と今週CEOが決めること」を検証する。自動起動、外部連絡、価格決定、購入、実験開始は今回行わない。
 - **検証**: Internal links、Markdown構造、数値分類、Decision / Hypothesis境界、docs-only差分、`git diff --check`を確認済み。Application lint/typecheck/test/buildはdocs-onlyのため対象外で未実行。Application code、DB、dependency、外部サービス設定、live communication、課金、本番反映、main mergeは変更・実行していない。
+
+## 40. 2026-09-28 Human Validation Pipeline checkpoint
+
+- **現在の状態**: `DESIGN_REVIEW_READY / RECRUITMENT_NOT_STARTED / PIPELINE_EXPERIMENT_NOT_RUN`。[Human Validation Pipeline](HUMAN_VALIDATION_PIPELINE_2026-09.md)を作成した。文書実装と、Human QA取得・採用・実利用・市場・収益の検証を分ける。branchは`codex/30-human-validation-pipeline`、基準mainは`23e34ab159a1cc071a32997253be6e79cece045c`（PR #29 merge済み）。関連PRは当該branchのPRを参照する。§39は作成時点の履歴として保持し、今回の初回経営会議・CEO判断をここへ追記する。
+- **CEO判断と理由**: 第一回経営会議後、最大課題「実装済みPassportが実際の利用場面で選ばれる理由を確認できていないこと」をCEOが採用。7日間は実機QA、取得可能な既存feedback・財務baseline、観測準備の期間で、実案件成立のquotaにしない。Founder車両・既知工場はPROTOCOL / WORKFLOW DEBUG CASE、外部Owner / Workshopの自然案件とは別集計する。依頼済みα feedbackを先に使い、発言と行動を区別する。全社Founder最大5時間は上限で使い切る目標ではない。
+- **新たに明示した課題**: 今回のCEO報告ではHuman QA取得がFounder時間・少人数α・低頻度整備機会に依存している。遅延や参加率は未実測。MECH-049をP1 / NEEDS_OWNERとして1件追加し、目的別協力者と短いself-serviceカードで取得経路を増やせるかを検証仮説にした。read-only management reviewのbranch・commit・push・PRは明示必要時のみというCEO修正も引き継ぐ。今回のdocs実装と指定branch・commit・push・PRは明示承認済み。
+- **完了した文書作業**: A Technical / Usability QA、B Owner候補、C Workshop候補を分離。個人X / Facebookと二次紹介、source・関係性・FOUNDER NETWORK BIAS、Gitへ参加者情報を残さない最小台帳案、3募集draft、14日RECRUITMENT / HUMAN VALIDATION PIPELINE TEST、成功・学習・停止条件、CEO未決定項目を記録した。会社OS文書は変更していない。
+- **時間・費用の提案**: A3人、B最大2人、C最大1拠点はASSUMPTION / INITIAL TARGETで未採用。PipelineだけのFounder上限案はWeek 1が90分、Week 2が60分で、既存全社5時間／7日間枠へ含める。新規謝礼・有料サービスなしの案であり、実運営費・入金は今回未取得のためUNKNOWN。原価や需要の数値を作らない。
+- **未完了と次の停止点**: 投稿するか、文案、DM範囲、受入人数、謝礼、確認先・同意・データ保持範囲、14日試験開始はCEO DECISION REQUIRED。今回の成果物はdocs-only PRとして提出する。SNS投稿・DM・募集・実験・新規実データ取得・課金・本番変更・main mergeは行わない。次はCEOが実行範囲を選ぶ。
+- **既存P0/P1/P2**: P-087（P0 experiment）はprototype実装・Human QA pending・実験未開始を維持。MECH-048 / KA-01〜03（P1）は既存採用待ち・未実測、MECH-041（P2）等も状態を変更しない。Technical QA・友人の称賛・Founder case・募集数をProduct Pull、PMF、Professional支払、一般工場の行動へ変換しない。
+- **検証**: 指定15章とローカル文書リンク、数値の仮定分類、層・bias・source・時間上限・未承認操作の境界、台帳パスのGit除外、既存untrackedパスの保持を確認済み。docs-only差分と`git diff --check`はPASS。Application lint/typecheck/test/buildはdocs-onlyのため対象外で未実行。文書作成だけで人間QAや実験を完了扱いにしない。
