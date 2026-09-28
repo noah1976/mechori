@@ -25,6 +25,7 @@ test("source/device/build context is coarse, bounded and sanitized", () => {
 test("malformed and identifying feedback cannot reach persistence", () => {
   for (const value of [null, [], {}, { ...input, task: "other" }, { ...input, step: 4 }, { ...input, step: 1.1 }, { ...input, result: "market_validated" }, { ...input, device: "Mozilla/5.0" }, { ...input, note: "a".repeat(301) }, { ...input, submissionId: "not-uuid" }]) assert.equal(validateQaFeedback(value), null);
   for (const note of ["test@example.com", "https://mechori.com/p/secret", "invite=secret", "Mozilla/5.0", "192.168.1.1", "ABCDEFGH123456789", "札幌500あ12-34", "ＡＢＣ＠ｅｘａｍｐｌｅ．ｃｏｍ", "a".repeat(43)]) assert.equal(validateQaFeedback({ ...input, note }), null, note);
+  for (const device of [["mobile"], ["desktop"], { device: "mobile" }, null]) assert.equal(validateQaFeedback({ ...input, device }), null);
 });
 test("handler persists only validated QA fields and server-controlled build", async () => {
   let calls = 0;
@@ -47,6 +48,7 @@ test("closed, cross-origin, oversized, malformed and unsupported requests never 
   assert.equal((await handleQaFeedbackRequest(request(input, { "content-type": "text/plain" }), deps)).status, 415);
   assert.equal((await handleQaFeedbackRequest(request({ ...input, note: "あ".repeat(2000) }), deps)).status, 413);
   assert.equal((await handleQaFeedbackRequest(request({ ...input, userId: "owner" }), deps)).status, 400);
+  assert.equal((await handleQaFeedbackRequest(request({ ...input, device: ["mobile"] }), deps)).status, 400);
   assert.equal((await handleQaFeedbackRequest(new Request("http://localhost:3000/api/qa-feedback", { method: "POST", headers: { origin: "http://localhost:3000", "content-type": "application/json" }, body: "{" }), deps)).status, 400);
   assert.equal(calls, 0);
 });

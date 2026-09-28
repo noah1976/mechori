@@ -45,7 +45,7 @@ export function validateQaFeedback(value: unknown): QaFeedbackInput | null {
   if (typeof input.submissionId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.submissionId)) return null;
   if (input.task !== QA_TASK || !Number.isInteger(input.step) || Number(input.step) < 0 || Number(input.step) > 3) return null;
   if (!QA_RESULTS.includes(input.result as QaResult)) return null;
-  if (!["mobile", "tablet", "desktop", "unknown"].includes(String(input.device))) return null;
+  if (typeof input.device !== "string" || !["mobile", "tablet", "desktop", "unknown"].includes(input.device)) return null;
   if (typeof input.note !== "string") return null;
   const note = input.note.normalize("NFKC").trim();
   if ([...note].length > QA_NOTE_LIMIT || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(note) || qaNoteHasSensitiveData(note)) return null;

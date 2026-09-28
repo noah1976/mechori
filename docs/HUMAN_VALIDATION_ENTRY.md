@@ -3,6 +3,7 @@
 - 更新日: 2026-09-28
 - CEO承認: 登録不要のTEST DATA閲覧QA＋3択Quick Feedbackの最小実装。募集・公開受付・本番DB適用・main mergeは未承認。
 - 状態: `IMPLEMENTED / RECEPTION_CLOSED / DB_EXECUTION_VALIDATION_BLOCKED / HUMAN_QA_PENDING / RECRUITMENT_NOT_STARTED`
+- PR #31 pre-merge review: `MERGE_BLOCKED / RETENTION_DECISION_REQUIRED / LIVE_ANALYTICS_UNKNOWN`。CEOはFounderの日次manual purgeを恒常運用に採用しないと明示。以下のmanual手順は初期実装の記録であり、公開可能な運用としては未採用。新しいCron / production capabilityは未実装、受付停止を維持する。
 - 関連: MECH-049（P1）、[Human Validation Pipeline](HUMAN_VALIDATION_PIPELINE_2026-09.md)、[PROJECT_STATE §41](PROJECT_STATE.md#41-2026-09-28-human-validation-entry-v01-checkpoint)
 
 ## 参加とEvidence
@@ -48,6 +49,8 @@ APIはJSONのみ、streaming body上限2,048 bytes、timeout・一般化した�
 
 ## Raw feedback保持：最大30日
 
+**Pre-merge gate:** 現実装は最大30日を自動で守れない。日次manual依存のままmerge-readyとしない。推奨は既存Supabase内の限定Cronによる自動削除だが、extensionの有効化状態はUNKNOWNで、新しいjob / 実行権限・障害確認方法にはCEO APPROVAL REQUIRED。既存admin purgeは`auth.uid()`条件を持つためCronからそのまま呼べず、認証guardを緩める方法は採用しない。
+
 新しいschemaだけを対象にする。既存alpha_feedback・アカウントは削除しない。匿名集計を自動保存する別tableは作らない。
 
 **開始前にFounder / adminが毎日24時間以内に実行できる担当・時間を決める。** `/admin` →「画面QAの結果」→「29日経過したQA結果を削除」。`purge_human_qa_feedback`は29日経過分を削除し、日次間隔の1日を余裕にする。受付停止後も、最後の保存分の削除まで継続する。削除成功と件数・実行日時だけを運用記録へ残し、本文・UUIDをGitや外部AIへ複製しない。送信RPCも30日経過分を削除し、staff一覧は30日未満だけを返すが、非表示や受付停止だけでは削除完了としない。
@@ -60,7 +63,7 @@ APIはJSONのみ、streaming body上限2,048 bytes、timeout・一般化した�
 
 既存issueとしてraw `/p/[token]`がpage_viewへ渡る経路をソースで確認。central helperをroute patternへ正規化し、任意payload項目を落とす。feedbackのfromも正規化する。capability・auth・invite画面、secret query / fragment、secret referrerではGTM bootstrapを止める。GTM読み込み済み画面からcapabilityへhistory遷移するとfresh documentへ切り替える。noscript iframeはfragment判定を迂回するため除去し、全routeへ`Referrer-Policy: no-referrer`を指定する。Passport Ownerの共有tokenは表示DOM / link hrefへ置かず、明示したコピー・共有・新規タブ操作だけで使う。auth callbackはerror messageをlogへ出さない。
 
-`/qa`のqueryは正しいsrc値だけをGTM対象にし、別query・不正src・fragmentではGTMをロードしない。custom eventは常にsourceをallowlist化する。
+`/qa`のqueryは正しいsrc値だけをGTM対象にし、別query・不正src・fragmentではGTMをロードしない。custom eventは常にsourceをallowlist化する。pre-merge検証で、全体no-referrerがnative auth formのOriginをnullにして既存guardに拒否される回帰を確認した。`/auth`だけstrict-originへ上書きし、Origin検証を維持したままRefererのpath / query / fragmentを除く。他routeのno-referrerは維持する。
 
 実際のGTM containerの第三者送信・後から追加されるhistory listener・click計測・録画tagの動作は**UNKNOWN / 未検証**。dataLayerの単体テスト成功だけでlive送信の不存在を証明しない。公開前に既存containerのURL自動取得・click href・本文録画を確認し、token・本文・PIIの不要送信があれば開始しない。ここではcontainer設定を変更していない。
 

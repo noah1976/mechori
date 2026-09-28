@@ -4,6 +4,7 @@ import test from "node:test";
 import vm from "node:vm";
 import { analyticsUrlHasCapability, safeGtmBootstrap, sanitizeAnalyticsPath } from "../lib/analytics-privacy.ts";
 import { pushAnalyticsEvent } from "../lib/analytics.ts";
+import nextConfig from "../next.config.ts";
 
 const token = "A".repeat(43);
 const dangerous = [`/p/${token}`, `/%70/${token}`, `/p%2F${token}`, `/v/abcdef1234567890`, "/invite", `/join#invite=${token}`, `/auth?in%76ite=${token}`, `/auth/callback?code=${token}`, `/auth?mode=signup&inviteLanding=1#invite=${token}`, `/garage?returnTo=${encodeURIComponent(`/p/${token}`)}`, `/garage?returnTo=%252Fp%252F${token}`, `/garage?token=${token}&token=other`, "/garage?bad=%ZZ"];
@@ -81,4 +82,17 @@ test("no-JS iframe and callback error prose cannot bypass protection", () => {
   const passport = readFileSync(new URL("../components/passport-experience.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(passport, /<span>\{shareUrl\}<\/span>|href=\{`\/p\//);
   assert.match(passport, /window\.open\(shareUrl, "_blank", "noopener,noreferrer"\)/);
+});
+
+test("auth form retains Origin without disclosing capability paths in its referrer", async () => {
+  const routes = await nextConfig.headers!();
+  const policyFor = (path: string) => routes
+    .filter((route) => route.source === "/:path*" || route.source === path)
+    .flatMap((route) => route.headers)
+    .filter((header) => header.key.toLowerCase() === "referrer-policy")
+    .at(-1)?.value;
+  // no-referrer makes native form POST's Origin null. strict-origin retains the
+  // CSRF Origin guard and exposes no path/query, including nested returnTo.
+  assert.equal(policyFor("/auth"), "strict-origin");
+  for (const route of ["/qa", "/p/test", "/join", "/auth/start", "/auth/callback"]) assert.equal(policyFor(route), "no-referrer");
 });
