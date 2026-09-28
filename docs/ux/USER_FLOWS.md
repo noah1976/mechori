@@ -200,3 +200,11 @@ flowchart LR
 | 完了状態 | 受付を確認し、運営が採用・保留・見送りを判断する |
 | 改善が必要な箇所 | 種別を罫線表ではなく独立ボタンで表示し、管理画面で未評価・status・種別・期間を絞り込めるようにする |
 | 計測したいイベント | `feedback_opened`、`feedback_type_selected`、`feedback_submitted`、`feedback_failed` |
+
+## I. 登録不要のHuman QA v0.1
+
+`承認後の共通URL → /qa（TEST DATA・10分程度・登録不要・途中終了可）→ 履歴読取1課題 / 最大3操作 → 同画面の3択＋任意短文 → 受付結果 → 終了`
+
+開始前・途中でもFeedbackから終了でき、自由記述は必須でない。ログイン済みでもTEST fixture固定、workspaceを読み込まない。通信失敗・429・受付停止では入力を残し、再送UUID / payloadを固定する。自動α招待・membershipは追加しない。FounderはQAへの個別招待を発行せず、staff確認と保持運用を担当する。QAの自己申告をProduct / Market / Revenue validationへ昇格させない。
+
+既存dataLayerの`qa_entry_view / qa_started / qa_step_completed / qa_feedback_submitted / qa_completed`で最小段階を記録し、本文・URL・PIIは送らない。受付は初期停止。DB実行検証、実機・実αログイン・staff境界のHuman QA、GTM送信と日次削除の運用確認は[公開前ゲート](../HUMAN_VALIDATION_ENTRY.md)に従う。

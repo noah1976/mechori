@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
   transpilePackages: ["@mechori/core", "@mechori/shared", "@mechori/i18n"],
   async headers() {
     const headers = [
+      { key: "Referrer-Policy", value: "no-referrer" },
       {
         key: "TDM-Reservation",
         value: "1",

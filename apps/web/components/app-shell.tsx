@@ -18,6 +18,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useApp } from "@/lib/app-context";
 import { pushAnalyticsEvent } from "@/lib/analytics";
+import { sanitizeAnalyticsPath } from "@/lib/analytics-privacy";
 import { ProfileAvatar } from "@/components/profile-avatar";
 import { FirstProfileSetup } from "@/components/first-profile-setup";
 import { useNotifications } from "@/components/notification-provider";
@@ -284,7 +285,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 const active = isActiveNavigation(pathname, item.href);
                 const Icon = item.icon;
                 const href = item.id === "feedback"
-                  ? `/feedback?from=${encodeURIComponent(pathname)}`
+                  ? `/feedback?from=${encodeURIComponent(sanitizeAnalyticsPath(pathname))}`
                   : item.href;
                 return (
                   <Link key={item.id} href={href} className={active ? "active" : ""}>
@@ -503,7 +504,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               {drawerSecondaryItems.map((item) => {
                 const Icon = item.icon;
                 const href = item.id === "feedback"
-                  ? `/feedback?from=${encodeURIComponent(pathname)}`
+                  ? `/feedback?from=${encodeURIComponent(sanitizeAnalyticsPath(pathname))}`
                   : item.href;
                 return (
                   <Link key={item.id} href={href} onClick={() => setMenuOpen(false)}>

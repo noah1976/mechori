@@ -1,7 +1,7 @@
 # MECHORI Project State
 
-- 更新日時: 2026-09-28（Human Validation Pipeline文書checkpoint。アプリのQA・実験状態は変更しない）
-- 対象ブランチ: `codex/30-human-validation-pipeline`
+- 更新日時: 2026-09-28（Human Validation Entry v0.1実装checkpoint。実機QA・実験は未完了）
+- 対象ブランチ: `codex/31-human-validation-entry`
 - HEAD基準: 本書を含む現在ブランチの`git log -1`を正とする
 - 本番URL: `https://mechori.com`
 - 状態文書のルール: 実装、テスト、本番反映、人間QAを別々に判定する。コード、テスト、Git履歴、既存の運用記録を照合し、根拠のない項目は完了にしない。本書を現在の実装状態の正本とする。
@@ -418,3 +418,14 @@
 - **未完了と次の停止点**: 投稿するか、文案、DM範囲、受入人数、謝礼、確認先・同意・データ保持範囲、14日試験開始はCEO DECISION REQUIRED。今回の成果物はdocs-only PRとして提出する。SNS投稿・DM・募集・実験・新規実データ取得・課金・本番変更・main mergeは行わない。次はCEOが実行範囲を選ぶ。
 - **既存P0/P1/P2**: P-087（P0 experiment）はprototype実装・Human QA pending・実験未開始を維持。MECH-048 / KA-01〜03（P1）は既存採用待ち・未実測、MECH-041（P2）等も状態を変更しない。Technical QA・友人の称賛・Founder case・募集数をProduct Pull、PMF、Professional支払、一般工場の行動へ変換しない。
 - **検証**: 指定15章とローカル文書リンク、数値の仮定分類、層・bias・source・時間上限・未承認操作の境界、台帳パスのGit除外、既存untrackedパスの保持を確認済み。docs-only差分と`git diff --check`はPASS。Application lint/typecheck/test/buildはdocs-onlyのため対象外で未実行。文書作成だけで人間QAや実験を完了扱いにしない。
+
+## 41. 2026-09-28 Human Validation Entry v0.1 checkpoint
+
+- **現在の状態**: `IMPLEMENTED / RECEPTION_CLOSED / DB_EXECUTION_VALIDATION_BLOCKED / HUMAN_QA_PENDING / RECRUITMENT_NOT_STARTED / PIPELINE_EXPERIMENT_NOT_RUN`。[実装・運用と公開前ゲート](HUMAN_VALIDATION_ENTRY.md)。branchは`codex/31-human-validation-entry`、基準mainは`7ff7488`（PR #30 merge）。今回のPRを同branchから提出し、main merge・本番反映は行わない。§40のdocs-only状態は作成時点の履歴として保持する。
+- **CEO判断と理由**: Human QAの個別DM・招待・login・別Feedback画面の摩擦を下げるため、推奨C「登録不要のTEST DATA閲覧QA＋3択Quick Feedback」を限定承認。課題は1つ・最大3操作、任意短文、最小context、匿名専用保存・staff閲覧・最大30日保持を採用。Passportを守る追加機能ではなく、A Technical / B Usability QAのEvidence入口とする。実車でのC Product Use / D Market / E Revenueは別観察のまま。
+- **実装したこと**: 公開`/qa`は手書きTEST fixtureと既存履歴componentだけを表示し、ログイン状態に依存せずworkspace / 通知providerをmountしない。Feedbackは同画面の3択・任意300文字、最初のpayloadとUUIDを再送時も固定。same-origin APIから既存public keyの限定anon RPCへ送る。schemaはIP / full UA / user ID / token / raw URL / 実α dataを持たない。既存`/admin`へstaff一覧、admin受付停止・保持削除だけを追加した。
+- **安全・運用境界**: table直接権限をrevokeしRLS有効、anonは専用submitだけ、readはactive staff、停止・purgeはactive admin。DB lockによるatomic dedup / quotaは全体10件/10分・100件/24時間。API・DB受付とも初期停止、直接RPCも止めるDB switchを最終境界にする。毎日24時間以内に29日経過分をadmin purgeし、最大30日保持を守る。受付停止中も続ける。schedulerは追加せず、日次担当が確保できない場合は開始しない。
+- **既存security issue**: raw Passport capability pathがpage_viewのdataLayerへ入る経路をソースで確認した（P1）。route pattern正規化、payload allowlist、GTMのsecret URL / referrer除外・fresh-document遷移、noscript loader除去、no-referrer header、共有tokenのDOM / href除去、callback error本文のlog除去を実装。状態は`CODE_SANITIZED / LIVE_TRANSMISSION_VALIDATION_PENDING`。実GTM tag / click / history listener / 録画・platform access logsの送信と保持はUNKNOWN、公開前に確認する。必要な共有route / RPCからtokenを除去する再設計はしていない。
+- **検証**: 全workspace tests、lint、typecheck、production buildはPASS。新規重点13件と既存Passportを合わせた32件もPASS。ローカルChromium390 / 412 / 1280pxでfixed TEST、keyboard / visible focus、履歴展開、途中終了、空本文、通信失敗・429・同一payload再送、200%文字拡大を確認した。API成功はmock、cookie / localStorage private sentinelとprovider境界の確認は実α認証QAの代替ではない。独立read-only security reviewは確認済み範囲で新しい具体的bypassを認めず、GTM実動作・DB・保持運用の未確認を残した。
+- **未完了・次に行うこと**: migration fileと隔離DBテストrunnerを作成したが、Supabase CLI / local DBがなくDocker daemon接続不可のため、actual PostgreSQLのmigration・RLS/RPC・rate / concurrent / purge検証はBLOCKED。本番migrationは未適用。実DB検証、日次保持担当、既存GTM / hosting logs確認、PreviewとiPhone Safari / Android Chrome・実αログイン / staff境界のHuman QAが公開前ゲート。実機QAが済むまで完了や受付開始を宣言しない。
+- **P0/P1/P2と禁止範囲**: MECH-049（P1）はv0.1実装済み・開始判断NEEDS_OWNER。P-087（P0 experiment）はHuman QA pending・実験未開始を維持し、既存P1/P2の状態も変更しない。自動invite / membership、実車登録、Workshop作業、Passport roundtrip公開デモ、巨大tester基盤、外部サービス・dependency・課金は追加していない。会社OS変更、SNS / DM送信、recruitment、production apply / manual deploy、main mergeはいずれもNO。既存運営費・実入金は未取得でUNKNOWN。

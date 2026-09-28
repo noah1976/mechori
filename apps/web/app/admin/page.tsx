@@ -25,6 +25,7 @@ import {
 import { useApp } from "@/lib/app-context";
 import { BookOpenText, Building2, CarFront, CheckCircle2, Copy, Download, Gauge, History, LoaderCircle, MessageSquareText, Search, ShieldCheck, UsersRound } from "lucide-react";
 import Link from "next/link";
+import { HumanQaReview } from "@/components/human-qa-review";
 import { useEffect, useMemo, useState } from "react";
 
 const feedbackStatuses: AlphaFeedbackStatus[] = ["new", "reviewing", "planned", "resolved", "closed"];
@@ -210,6 +211,8 @@ export default function AdminPage() {
         <div><CheckCircle2 size={20} /><span>Owner Plus</span><strong>{dashboard.activeOwnerPlus}</strong></div>
         <div><Gauge size={20} /><span>{ja ? "公開記録" : "Shared records"}</span><strong>{dashboard.sharedJournals}</strong></div>
       </section>
+
+      <HumanQaReview admin={dashboard.isAdmin} />
 
       <section className="admin-section">
         <header><div><span className="eyebrow">FEEDBACK</span><h2>{ja ? "フィードバック" : "Feedback"}</h2></div></header>

@@ -38,8 +38,7 @@ export async function GET(request: NextRequest) {
     });
     if (error) {
       console.error("alpha_invitation_redemption_failed", {
-        code: error.code,
-        message: error.message,
+        code: /^[A-Z0-9]{5,12}$/.test(error.code ?? "") ? error.code : "unknown",
       });
     }
     if (error || !acceptedRedemptionStatuses.has(String(data))) {
