@@ -141,10 +141,11 @@
 - 2026-09-28 CEO承認後: [Human Validation Entry v0.1](HUMAN_VALIDATION_ENTRY.md)を`codex/31-human-validation-entry`で実装。登録不要`/qa`、fixed TEST fixture、3択＋任意短文、限定anon RPC、staff閲覧、初期受付停止。`IMPLEMENTED / DB_EXECUTION_VALIDATION_BLOCKED / HUMAN_QA_PENDING`。本番DB適用・main merge・公開受付・募集は未承認。運用開始判断のNEEDS_OWNERは維持する。
 - PR #31 pre-merge判断: 日次manual purgeを恒常運用にしないCEO条件により`MERGE_BLOCKED / RETENTION_DECISION_REQUIRED`。実PostgreSQL再検証もDocker daemon接続不可でBLOCKED。実GTM configurationはUNKNOWN。retentionの新Cron / production capabilityは別承認まで実装しない。
 - 後続CEO承認によるblocker修正: 既存Free Supabase / PG17にpg_cronがavailable・未有効とread-only確認し、毎時29日経過分を削除する限定jobを未適用migrationに定義。日次purge・日次確認は廃止。長いresource IDのgeneric secret誤判定を除き、通常SPA / analyticsを維持。Referrer-Policyは通常strict-origin・capability / auth子route no-referrerへ縮小。`RETENTION_MIGRATION_IMPLEMENTED / DB_CRON_EXECUTION_BLOCKED / LIVE_CONFIG_UNKNOWN / HUMAN_QA_PENDING`で、NEEDS_OWNER・Draft維持。
+- 2026-09-29 pause correction: CEO報告のFree pause warningはOPERATIONAL ACTIVITY SIGNAL、tester別利用UNKNOWN。30日保持はtargetで休止中の物理削除を保証しない。30日以上の通常staff read除外、復旧後cleanup、admin ON前cleanup、7条件の再開ゲートを定義。実停止時はSUSPENDED、warningだけで停止・未利用・価値不足を断定しない。人工keep-alive / Pro upgradeなし。NEEDS_OWNER・Draft・実DB BLOCKED維持。
 - 設計成果物: [HUMAN_VALIDATION_PIPELINE_2026-09](HUMAN_VALIDATION_PIPELINE_2026-09.md)。`DESIGN_REVIEW_READY / RECRUITMENT_NOT_STARTED / PIPELINE_EXPERIMENT_NOT_RUN`。A QA協力、B Owner候補、C Workshop候補、Founder debug caseとFounder network bias、X / Facebookのdraft、最小台帳、14日運用試験を定義した。
 - 次の候補: ASSUMPTION / INITIAL TARGETとしてA3人、B最大2人、C最大1拠点。PipelineのFounder上限はWeek 1が90分、Week 2が60分で、既存の全社5時間／7日間枠内に含める。自然な実案件の成立は期限・成功条件にしない。
 - 完了条件: 投稿、draft、DM範囲、人数、謝礼、データ範囲、開始をCEOが判断し、採用時は応答→開始→カード終了→feedbackと支援・時間・欠測を実測する。設計・募集人数・Technical QAをMarket validation完了へ昇格させない。
-- 依存・境界: 許可済み検証先・資料、任意同意、既存feedback、P-087。新規α招待・保存QAの環境と共有範囲は別確認。初期docs-only範囲からv0.1の限定code / migration fileと後続Cron案BをCEOが追加承認。実DB / Cronの権限・並行送信検証、最大30日保持の稼働条件、実GTM / platform logs確認を公開前ゲートとする。production apply・外部設定・依存追加・新規支出は未承認。
+- 依存・境界: 許可済み検証先・資料、任意同意、既存feedback、P-087。新規α招待・保存QAの環境と共有範囲は別確認。初期docs-only範囲からv0.1の限定code / migration fileと後続Cron案BをCEOが追加承認。実DB / Cronの権限・並行送信検証、target retention / 復旧ゲート、実GTM / platform logs確認を公開前ゲートとする。production apply・外部設定・依存追加・新規支出は未承認。
 - 所有者確認の要否: 文書実装・commit・push・PRは今回明示承認済み。SNS投稿、DM、募集、実験、謝礼、main mergeは未承認。
 
 ### MECH-048 Knowledge Acquisition最小実験の採用判断

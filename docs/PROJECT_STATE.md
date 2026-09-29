@@ -1,6 +1,6 @@
 # MECHORI Project State
 
-- 更新日時: 2026-09-28（Human Validation Entry v0.1実装checkpoint。実機QA・実験は未完了）
+- 更新日時: 2026-09-29（PR #31 Free pause / retention correction。実DB・実機QA・実験は未完了）
 - 対象ブランチ: `codex/31-human-validation-entry`
 - HEAD基準: 本書を含む現在ブランチの`git log -1`を正とする
 - 本番URL: `https://mechori.com`
@@ -451,3 +451,15 @@
 - **検証境界**: resource ID / pushState / replaceState / bootstrap / secret継続・headersを回帰テスト化。DB runnerにprivate処理拒否、staff/admin境界、受付停止中retention、他table不変、lock待機、実Cron worker実行を追加。Docker unavailableのため実DB / CronはBLOCKED、代替production DBで検証しない。cacheにpg_cronがない場合もfull testをBLOCKEDとし、診断用core-onlyをfull PASSとしない。
 - **修正後の検証結果**: 全490 tests（対象50件を含む）、lint、全workspace typecheck、build、runner syntax、diff checkはPASS。localhostの実response headerで通常strict-origin / secret no-referrerを確認。隔離Chromiumのauth formはOriginを維持し、Refererはoriginのみ、invalid-provider用303を確認（Google / DBなし）。compiled bootstrapのUUID / secret遷移はNext hydrationと未ログインredirectを隔離して確認し、実αアカウントのUXを検証したものではない。外部requestを遮断し、実GTM送信はUNKNOWNのまま。
 - **未完了・次**: 実DB / Cron PASS、実GTMの従来5確認項目、実機Passport / Google auth / history / 下書きの回帰QA、保持の稼働条件。MECH-049（P1）はNEEDS_OWNER、P-087（P0）はHuman QA pending / experiment未開始。本番migration・merge・deploy・受付有効化・recruitment・SNS/DMはNO。
+
+## 42. 2026-09-29 PR #31 Free pause / retention / Evidence correction
+
+- **現在の状態**: `MERGE_BLOCKED / RETENTION_TARGET_30_DAYS / RECOVERY_GATE_REQUIRED / RECEPTION_CLOSED / DB_CRON_EXECUTION_BLOCKED / LIVE_CONFIG_UNKNOWN / HUMAN_QA_PENDING`。`codex/31-human-validation-entry`・PR #31 Draftを維持。前head `925fb53`。§41の当初の最大30日／日次purge方針は履歴で、後続Cron採用と今回のtarget policyへ置き換え済み。
+- **運用Evidence**: CEOからmechori-alphaのactivity不足・Free automatic pause warning email受信報告。原文・tester別利用実績は未取得、actual pauseはUNKNOWN。FACTはproviderがactive維持に十分な最近のactivityを認めていないという運用判定。OPERATIONAL ACTIVITY SIGNALとして扱い、特定／全testerの未利用、Product Pull、Passport Value、利用者retention、market demandの直接Evidenceにしない。現α cohortから継続的Human QAを自然に得られていない可能性を示すSignalで、Pipelineの目的と整合する。
+- **CEO方針と理由**: Freeを維持し、pauseを避けるだけのsynthetic traffic / dummy request / keep-alive / fake activity / 無意味なscheduled DB requestは作らない。必要な開発・実利用・QAとengagement evidenceを分ける。warningが続く場合も利用頻度が低い運用Signalとして残し、人工activityで隠さない。Pro・新scheduler・有料契約は追加しない。
+- **保持と最小修正**: TARGET RETENTIONは30日、通常Cronは29日経過分を削除。pause / outage / DB unavailable中のphysical deletion遅延をUI・docs・SQL commentに明記。通常staff readの既存30日未満条件を維持し、超過rawをProduct / Market / Revenue evidenceに使わない。admin受付ON RPCに既存auth guard・advisory lock後の29日経過分cleanupを追加し、同transactionでONへ更新。anon権限・Cron処理対象・他tableは拡張しない。
+- **復旧ゲート**: 実pause／停止時はexperiment SUSPENDED。unpauseだけで募集・受付を自動再開しない。DB正常、migration存在、29日経過分cleanup、Cron存在／schedule／active、受付状態、匿名smoke、CEO / Founder再開判断の7条件を[運用正本](HUMAN_VALIDATION_ENTRY.md)へ記録。復旧後最初の安全な機会に削除し、再開前に保持を確認する。warningのみで未開始の現在を実験停止済みとは断定しない。
+- **公開QA失敗時**: DB unavailableは503 unavailable、受付OFFは503 closed。画面のerrorで入力note・UUID・再送payloadをmemoryに保持し、保存完了を表示しない。既存qa_completedイベントを受領確認後へ移し、操作終了／保存失敗を完了に数えない。offline storageを追加しない。
+- **検証と未完了**: DB runnerへ30日以上staff read除外、unauthorized cleanup拒否、ON前cleanup、closed submit不変、既存enabled submit cleanupと他table不変を追加。実PostgreSQL / CronはDocker unavailableのためBLOCKED、unit testと区別する。実GTMは従来5確認項目を維持してUNKNOWN、実機Passport / OAuth / historyのQAも残る。今回の自動検証結果とcommitは同PR・チャットに記録する。
+- **今回の検証結果**: 全490 tests、lint、全workspace typecheck、build、runner syntax、diff checkはPASS。ローカル390px Chromiumでclosed / unavailable 503とnetwork failureをmockし、入力note・UUID・再送payload保持、未受領時の成功表示／完了イベント不発火、accepted後だけの完了を確認。外部通信遮断。DB runner再実行はDocker daemon接続不可で停止し、actual migration / RLS / RPC / cleanup / CronはBLOCKEDのまま。
+- **P0/P1/P2・次**: MECH-049（P1）はNEEDS_OWNER、P-087（P0）はHuman QA pending / experiment未開始。他既存項目は変更しない。次は実DB / Cron検証とHuman Actionの公開ゲート。production migration / DB change / reception enable / deploy / merge / SNS・DM / recruitmentは行っていない。

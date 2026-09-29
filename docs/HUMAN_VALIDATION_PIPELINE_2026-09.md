@@ -1,6 +1,6 @@
 # Human Validation Pipeline — 2026-09
 
-- 更新日: 2026-09-28
+- 更新日: 2026-09-29
 - 状態: `ENTRY_V0.1_IMPLEMENTED / RECEPTION_CLOSED / HUMAN_QA_PENDING / RECRUITMENT_NOT_STARTED / PIPELINE_EXPERIMENT_NOT_RUN`
 - 関連課題: MECH-049（P1）。P-087の実機QA・実利用検証を支える運用設計
 - 初期設計基準: main `23e34ab159a1cc071a32997253be6e79cece045c`（会社OS PR #29 merge済み）。v0.1は§16の最新mainを基準にする。
@@ -266,7 +266,7 @@ Passportの継続、Positioning変更、縮小、Front-doorからの撤退、別
 | 確認先・参加・同意・保持範囲 | 初回Aは閲覧中心、検証資料の許可、ローカル台帳の保持案。α招待・保存QAは別ゲート | 未決定 / 実データ取得なし |
 | Passportの継続・Positioning変更・縮小・Front-doorからの撤退・pivot | Entry Hypothesis ReviewのEvidenceを見てCEOが決定 | CEO DECISION REQUIRED |
 
-上表は初期提案時点の未決定項目。今回のv0.1実装・匿名データ範囲・最大30日保持だけは§16のCEO判断で採用済み。投稿・DM・募集・実験開始へ拡張しない。
+上表は初期提案時点の未決定項目。v0.1実装・匿名データ範囲と§16のretention target policyはCEO判断で採用済み。投稿・DM・募集・実験開始へ拡張しない。
 
 ## 16. CEO承認：Human Validation Entry v0.1
 
@@ -274,7 +274,11 @@ Passportの継続、Positioning変更、縮小、Front-doorからの撤退、別
 
 初回Technical / Usability QAは、個別DM → 招待 → loginを必須にせず、共通`/qa?src=x|facebook` → 固定TEST fixtureの閲覧3操作以内 → 同画面の3択・任意短文 → 終了へ変更する。αデータを検証用に匿名化・転用しない。QA結果は自己申告であり、実利用・市場・収益の証拠ではない。srcは個人追跡なしの粗い区分で、X / FacebookはFOUNDER NETWORK BIASを維持する。
 
-専用匿名RPC・staff-only閲覧・二重受付switch（初期停止）・global quota・重複/並行guard・最大30日保持の毎日admin purgeを実装した。実DB実行検証はローカルDockerの接続不可でBLOCKED、人間QAも未完了。公開前にDB検証、日次保持担当、既存GTMとplatform logsの送信・保持確認が必要。secret URLのdataLayer正規化等は既存security issueの最小修正として同PRに含む。
+専用匿名RPC・staff-only閲覧・二重受付switch（初期停止）・global quota・重複/並行guardを実装。後続CEO承認により日次admin purgeを廃止し、限定Cronを未適用migrationに定義した。2026-09-29、保持方針を**TARGET RETENTION = 30 days**へ修正。通常稼働中は29日経過分を自動削除するが、Free pause / outage / DB unavailable中はphysical deletionが遅延し得る。30日以上を通常staff一覧に返さず、Product / Market / Revenue evidenceに使わず、復旧後最初の安全な機会に削除して再開前に確認する。物理削除の最大30日保証はしない。
+
+CEO報告のSupabase Free pause warningは**OPERATIONAL ACTIVITY SIGNAL**。FACTはproviderがactive維持に十分な最近のactivityを認めていないこと。tester別利用はUNKNOWNで、特定／全tester未利用・engagement・Product Pull・Passport Value・利用者retention・market demandの直接Evidenceにしない。継続的Human QAを現α cohortから自然に得られていない可能性を示すSignalとして残す。pause回避だけの人工traffic / keep-aliveは作らず、この理由でProへupgradeしない。実利用・QA・必要な開発activityとtester engagementを区別する。
+
+実際にpause／停止した場合はexperiment **SUSPENDED**。unpause後も募集・QA受付は自動再開せず、DB正常復旧、migration存在、29日経過分cleanup、Cron存在／schedule／active、受付状態、匿名submit smoke、CEO / Founder再開判断の7条件を[復旧ゲート](HUMAN_VALIDATION_ENTRY.md#free-pause-warningと復旧後の再開ゲート)で確認する。現在はwarning報告のみでactual pause UNKNOWN、実験未開始・受付停止。実DB / CronはDocker unavailableでBLOCKED、人間QAも未完了。secret URL対策は既存security issueの最小修正として同PRに含む。
 
 実車登録、Workshop作業、roundtrip公開デモ、自動invite / membership、contact collectionは実装しない。「実際の愛車でも試したい」人の正式α案内は将来の個別運用だけ。PassportはEntry Hypothesisのまま、Mission・Evidence分類・CEO pivot判断・全社Founder5時間上限を維持する。
 

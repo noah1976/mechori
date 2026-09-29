@@ -47,7 +47,6 @@ export function HumanQaExperience() {
     const completed = step + 1;
     setStep(completed);
     pushAnalyticsEvent("qa_step_completed", context(completed));
-    if (completed === 3) pushAnalyticsEvent("qa_completed", context(completed));
   }
   async function submit() {
     if (submitting.current || state === "saved") return;
@@ -71,11 +70,12 @@ export function HumanQaExperience() {
       if (!response.ok || !["accepted", "duplicate"].includes(body.result)) throw new Error("unavailable");
       setState("saved");
       pushAnalyticsEvent("qa_feedback_submitted", { ...current, outcome: input.result });
+      pushAnalyticsEvent("qa_completed", current);
     } catch (failure) {
       setState("error");
       setError(failure instanceof Error && failure.message === "rate"
         ? "受付の送信上限に達しました。しばらく待って再送できます。ここで終了しても大丈夫です。"
-        : "送信できませんでした。入力はこの画面に残っています。再送するか、内容をコピーして終了できます。");
+        : "現在は受付停止または一時利用不可です。保存完了は確認できていません。入力はこの画面に残っています。再送するか、内容をコピーして終了できます。");
     } finally { submitting.current = false; }
   }
 
@@ -113,7 +113,7 @@ export function HumanQaExperience() {
           <p>途中で止まった結果も役立ちます。文章は書かなくても送れます。</p>
           <fieldset disabled={locked} className="qa-choices"><legend className="sr-only">操作の結果</legend>{QA_RESULTS.map((value) => <label key={value}><input type="radio" name="qa-result" checked={result === value} onChange={() => setResult(value)} /><span>{resultLabels[value]}</span></label>)}</fieldset>
           <label className="field"><span>気になったこと <small>任意・300文字以内</small></span><textarea rows={3} maxLength={QA_NOTE_LIMIT} value={note} disabled={locked} onChange={(event) => setNote(event.target.value)} placeholder="迷った箇所や、何をする画面だと思ったかなど" /></label>
-          <p className="privacy-caption">氏名、連絡先、URL、車台番号、ナンバーなどは書かないでください。結果と操作段階・版・募集元・画面幅の区分を保存し、運営だけが確認します。生のフィードバックは30日以内に削除します。</p>
+          <p className="privacy-caption">氏名、連絡先、URL、車台番号、ナンバーなどは書かないでください。結果と操作段階・版・募集元・画面幅の区分を保存し、運営だけが確認します。生のフィードバックの保持目標は30日です。通常稼働中は自動削除しますが、サービスの休止・障害中は削除が遅れる場合があり、復旧後に削除します。</p>
           {error && <p className="form-error-summary" role="alert">{error}</p>}
           <div className="form-actions"><button type="button" className="primary-action" disabled={state === "saving" || !result} onClick={() => void submit()}>{state === "saving" ? "送信中…" : "結果を送って終える"}</button>{state === "error" && <button type="button" className="secondary-action" onClick={() => void copy()}>内容をコピー</button>}</div>
           {copyStatus && <p role="status">{copyStatus}</p>}

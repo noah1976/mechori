@@ -58,6 +58,11 @@ try {
   const migration = readFileSync(new URL("../supabase/migrations/20260928112618_human_qa_feedback.sql", import.meta.url), "utf8");
   const appliedSql = coreOnly ? migration.replace(/-- BEGIN HUMAN QA CRON SCHEDULING[\s\S]*?-- END HUMAN QA CRON SCHEDULING/, "-- Cron integration deliberately excluded from diagnostic run") : migration;
   await sql(fixture + appliedSql);
+  if (!coreOnly) {
+    assert.equal(await sql("select count(*) from cron.job where jobname='mechori-human-qa-retention' and schedule='17 * * * *' and active and command='select mechori_qa_internal.purge_expired_feedback();';"), "1");
+    // Keep scheduled cleanup from racing the explicit recovery boundary checks.
+    await sql("update cron.job set active=false where jobname='mechori-human-qa-retention';");
+  }
   assert.equal(await anon(submit()), "closed");
   for (const role of ["anon", "authenticated"]) {
     for (const operation of ["SELECT", "INSERT", "UPDATE", "DELETE"]) assert.equal(await sql(`select has_table_privilege('${role}','public.human_qa_feedback','${operation}');`), "f");
@@ -75,8 +80,24 @@ try {
   assert.equal(await staff("select count(*) from public.list_human_qa_feedback();"), "0");
   await assert.rejects(staff("select public.set_human_qa_reception(true);"), /admin_required/);
   await assert.rejects(staff("select public.purge_human_qa_feedback();"), /admin_required/);
+  await sql(`create table public.retention_sentinel (value text); insert into public.retention_sentinel values ('unrelated');
+    insert into public.human_qa_feedback values ('${randomUUID()}','history-reading-v1',2,'qa-v0.1','unknown','x','mobile','done','',now()-interval '35 days'), ('${randomUUID()}','history-reading-v1',2,'qa-v0.1','unknown','x','mobile','done','',now()-interval '30 days'), ('${randomUUID()}','history-reading-v1',2,'qa-v0.1','unknown','x','mobile','done','',now()-interval '28 days');`);
+  assert.equal(await staff("select count(*) from public.list_human_qa_feedback();"), "1");
+  assert.equal(await admin("select public.set_human_qa_reception(false);"), "f");
+  assert.equal(await anon(submit()), "closed");
+  assert.equal(await sql("select count(*) from public.human_qa_feedback;"), "3"); // Closed submit adds no cleanup authority.
+  await assert.rejects(staff("select public.set_human_qa_reception(true);"), /admin_required/);
+  assert.equal(await sql("select count(*) from public.human_qa_feedback;"), "3");
   assert.equal(await admin("select public.set_human_qa_reception(true);"), "t");
+  assert.equal(await sql("select count(*) from public.human_qa_feedback;"), "1"); // Expired rows removed before reopening.
+  assert.equal(await sql("select count(*) from public.retention_sentinel;"), "1");
+  await sql("delete from public.human_qa_feedback;");
   for (const [note, ctx] of [["person@example.com", context], ["ＡＢＣ＠ｅｘａｍｐｌｅ．ｃｏｍ", context], ["", JSON.stringify({ ...JSON.parse(context), userId: "private" })], ["", JSON.stringify({ ...JSON.parse(context), step: 4 })], ["", JSON.stringify({ ...JSON.parse(context), source: "hacked" })]]) await assert.rejects(anon(submit(randomUUID(), note, ctx)), /invalid_qa/);
+  await sql(`insert into public.human_qa_feedback values ('${randomUUID()}','history-reading-v1',2,'qa-v0.1','unknown','x','mobile','done','',now()-interval '35 days');`);
+  assert.equal(await anon(submit()), "accepted");
+  assert.equal(await sql("select count(*) from public.human_qa_feedback;"), "1"); // Existing enabled-submit cleanup at 30 days.
+  assert.equal(await sql("select count(*) from public.retention_sentinel;"), "1");
+  await sql("delete from public.human_qa_feedback;");
   const repeatedId = randomUUID();
   const duplicates = await Promise.all(Array.from({ length: 20 }, () => anon(submit(repeatedId))));
   assert.equal(duplicates.filter((value) => value === "accepted").length, 1);
@@ -96,7 +117,7 @@ try {
   assert.equal(await anon(submit()), "closed");
   // Internal retention still deletes expired QA rows with reception disabled,
   // leaves fresh QA rows and unrelated data alone, and shares the same lock.
-  await sql(`insert into public.human_qa_feedback values ('${randomUUID()}','history-reading-v1',2,'qa-v0.1','unknown','x','mobile','done','',now()-interval '29 days 1 minute'), ('${randomUUID()}','history-reading-v1',2,'qa-v0.1','unknown','x','mobile','done','',now()-interval '28 days 23 hours'); create table public.retention_sentinel (value text); insert into public.retention_sentinel values ('unrelated');`);
+  await sql(`insert into public.human_qa_feedback values ('${randomUUID()}','history-reading-v1',2,'qa-v0.1','unknown','x','mobile','done','',now()-interval '29 days 1 minute'), ('${randomUUID()}','history-reading-v1',2,'qa-v0.1','unknown','x','mobile','done','',now()-interval '28 days 23 hours');`);
   assert.equal(await sql("select mechori_qa_internal.purge_expired_feedback();"), "1");
   assert.equal(await sql("select count(*) from public.human_qa_feedback;"), "1");
   assert.equal(await sql("select count(*) from public.retention_sentinel;"), "1");
@@ -116,8 +137,7 @@ try {
     console.log("CORE DB CHECKS PASS; FULL MIGRATION / CRON EXECUTION BLOCKED (diagnostic --core-only). Not merge-ready.");
     process.exitCode = 2;
   } else {
-    assert.equal(await sql("select count(*) from cron.job where jobname='mechori-human-qa-retention' and schedule='17 * * * *' and active and command='select mechori_qa_internal.purge_expired_feedback();';"), "1");
-    await sql("update public.human_qa_feedback set created_at=now()-interval '30 days'; select cron.schedule('mechori-human-qa-retention','1 second','select mechori_qa_internal.purge_expired_feedback();');");
+    await sql("update public.human_qa_feedback set created_at=now()-interval '30 days'; select cron.schedule('mechori-human-qa-retention','1 second','select mechori_qa_internal.purge_expired_feedback();'); update cron.job set active=true where jobname='mechori-human-qa-retention';");
     let ran = false;
     for (let i = 0; i < 20; i++) {
       if (await sql("select exists(select 1 from cron.job_run_details r join cron.job j using(jobid) where j.jobname='mechori-human-qa-retention' and r.status='succeeded');") === "t") { ran = true; break; }

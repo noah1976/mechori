@@ -114,6 +114,11 @@ begin
     then raise exception 'admin_required'; end if;
   if p_enabled is null then raise exception 'invalid_reception'; end if;
   perform pg_catalog.pg_advisory_xact_lock(313101);
+  -- Recovery defense: clean up before reopening in the same transaction.
+  -- Never grant anonymous callers an independent cleanup operation.
+  if p_enabled then
+    delete from public.human_qa_feedback where created_at <= now() - interval '29 days';
+  end if;
   update public.human_qa_reception set enabled = p_enabled where singleton;
   return p_enabled;
 end;
@@ -157,5 +162,5 @@ select cron.schedule(
 );
 -- END HUMAN QA CRON SCHEDULING
 
-comment on table public.human_qa_feedback is 'TEST QA self-reports only, no market/revenue evidence. Raw retention maximum 30 days while database/scheduler are operational; hourly job deletes rows aged 29 days even with reception closed. No daily Founder purge.';
+comment on table public.human_qa_feedback is 'TEST QA self-reports only, no market/revenue evidence. Target raw retention 30 days; hourly cleanup at 29 days during normal operation. Physical deletion may be delayed by Free pause, outage or database unavailability; delete at first safe recovery opportunity and review retention before reopening. Staff list excludes rows aged 30 days or more. No daily Founder purge.';
 commit;

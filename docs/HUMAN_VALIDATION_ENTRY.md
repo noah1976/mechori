@@ -1,6 +1,6 @@
 # Human Validation Entry v0.1
 
-- 更新日: 2026-09-28
+- 更新日: 2026-09-29
 - CEO承認: 登録不要のTEST DATA閲覧QA＋3択Quick Feedbackの最小実装。募集・公開受付・本番DB適用・main mergeは未承認。
 - 状態: `IMPLEMENTED / RECEPTION_CLOSED / DB_EXECUTION_VALIDATION_BLOCKED / HUMAN_QA_PENDING / RECRUITMENT_NOT_STARTED`
 - PR #31 blocking issues resolution: `MERGE_BLOCKED / RETENTION_MIGRATION_IMPLEMENTED / LIVE_ANALYTICS_UNKNOWN`。CEO承認Bの限定Cronを未適用migration内に定義。Founderの日次purge・日次成功確認は廃止。実DB / Cron executionのPASS前に公開可能としない。受付停止を維持する。
@@ -47,7 +47,11 @@ APIはJSONのみ、streaming body上限2,048 bytes、timeout・一般化した�
 - APIの`MECHORI_QA_RECEPTION`は`enabled`以外で停止、DB receptionも初期値false。双方の有効化が必要。APIだけを止めても直接RPCは止まらないため、**緊急停止は既存`/admin`でDB受付を停止**する。これによりAPI経由・直接RPCの新規保存を止める。
 - CAPTCHA・新サービス・識別情報による対策は導入しない。HTTP/RPCへのリクエスト自体の費用・負荷をquotaだけで完全には抑えられない。負荷や迷惑投稿が続けばDB受付を停止し、CEOへ縮小案を戻す。
 
-## Raw feedback保持：最大30日
+## Raw feedback保持：TARGET RETENTION = 30 days
+
+保持目標は30日。通常稼働中は29日経過分の自動削除により30日超の保持を避ける。Supabase Free pause、provider outage、database unavailable等で削除処理を実行できない間は、physical deletionが遅延する場合がある。必ず30日以内に物理削除されるとは保証しない。
+
+遅延中も30日以上のrawは通常staff一覧に返さず、Product / Market / Revenue evidenceとして利用しない。復旧後の最初の安全な機会に削除し、受付再開前にretention状態を確認する。以下は旧「最大30日保証」を置き換えるCEO採用方針であり、日次業務や有料upgradeへ戻さない。
 
 CEOの後続承認により、日次manual方式を既存Supabase内の限定Cronへ置き換える。2026-09-28にavailable project informationをread-onlyで確認: `mechori-alpha`はACTIVE_HEALTHY / Free / PostgreSQL 17.6、`pg_cron` default 1.6.4が利用可能・installed_versionはnull。DB設定のSELECTでもpg_cron preload済み、`cron.database_name=postgres`、`cron.launch_active_jobs=on`、`cron.log_run=on`、`cron.timezone=GMT`を確認した。migrationやjobは実行していない。既存project内のSQL-only jobであり、新しい有料契約・外部scheduler・HTTP・credentialを必要としない。実費全体を0円と認定するものではない。[Cron公式](https://supabase.com/docs/guides/cron)、[Install](https://supabase.com/docs/guides/cron/install)
 
@@ -59,7 +63,7 @@ CEOの後続承認により、日次manual方式を既存Supabase内の限定Cro
 | Schedule | `17 * * * *`（GMT / UTC毎時17分） |
 | 処理 | `mechori_qa_internal.purge_expired_feedback()`が29日経過した`human_qa_feedback`だけを削除 |
 | 境界 | 引数なし / SECURITY INVOKER / 空search_path / 固定table / advisory transaction lock 313101。既存DB job ownerで実行し、新しいroleや他tableへのgrantを追加しない。private schemaとfunctionはPUBLIC / anon / authenticatedからrevoke |
-| 受付停止後 | receptionを参照しないため削除を継続。API停止・新規送信の有無に依存しない |
+| 受付停止後 | DB / schedulerが稼働している間は削除を継続。API停止・新規送信の有無に依存しない。project pause中は実行不可 |
 | 日次業務 | purgeも成功確認も不要 |
 | 本番 | extension有効化・job登録は未実施。別途production apply承認が必要 |
 
@@ -78,9 +82,36 @@ select count(*) as overdue_raw_feedback from public.human_qa_feedback
 where created_at <= now() - interval '30 days';
 ```
 
-成功が直近2時間以内にない、job停止・失敗、超過ありの場合は開始しない／受付停止を維持し、active adminの既存手動purgeで救済・削除件数を確認してCEOへ報告する。日次手動へ戻さない。終了後も残存rawが消えるまでjobを無効化しない。DB休止・長期障害ではCronも動かず最大30日を保証できない。Free projectの自動pauseが削除完了前に起こり得る条件を開始前に確認し、無課金・日次業務なしで保持を守れなければ`RETENTION OPTION C REQUIRED`へ戻す。[Free project pause](https://supabase.com/docs/guides/platform/free-project-pausing)
+成功が直近2時間以内にない、job停止・失敗、超過ありの場合は開始しない／受付停止を維持する。DBが利用可能になった最初の安全な機会にactive adminの既存purgeで救済し、削除件数・残存超過件数を確認してCEOへ報告する。日次手動へ戻さない。終了後も残存rawが消えるまでjobを無効化しない。旧OPTION Cへの自動切替条件は、今回のpause遅延を明示するtarget policyへ置き換える。Cron自体が成立しない場合の代替方式はCEO判断へ戻す。
+
+現在のcleanup挙動:
+
+- Cron専用処理: DB稼働中に29日経過分を削除。reception状態とは独立。
+- anonymous submit: 有効な入力・DB受付ONの時だけ、保存／duplicate／quota判定前に30日経過分を削除する既存動作。受付OFFではclosedを返しcleanupしない。anonに独立したcleanup権限を追加しない。
+- admin受付ON: auth / active admin guardとlockの後、同じtransactionで29日経過分を削除してからONに更新する。削除失敗ならONへの変更も成立しない。
+- staff一覧: 既存の`created_at > now() - interval '30 days'`を維持。物理削除の遅延中も30日以上は通常reviewに返さない。
 
 staff一覧の非表示や受付停止だけでは削除完了としない。Cron実行履歴は本文を含まない既存運用metadataで、他jobの履歴やその保持設定は変更しない。バックアップや既存hosting / Supabaseのaccess logsはtable削除で消去されるとは限らず、保存範囲・保持期限は未確認。公開前に確認し、必要な設定変更は別承認へ戻す。
+
+## Free pause warningと復旧後の再開ゲート
+
+2026-09-29にCEOから`mechori-alpha`のactivity不足・automatic pause warning email受信報告があった。通知原文とtester別実績は未取得。FACTは「Supabaseがprojectをactiveと判断するのに十分なactivityが最近得られていない」というproviderの運用判定で、**OPERATIONAL ACTIVITY SIGNAL**として記録する。warningだけで実際にpauseしたとは断定しない。[Free pause公式](https://supabase.com/docs/guides/platform/free-project-pausing)
+
+tester engagement、Product Pull、Passport Value、利用者retention、market demandの直接Evidenceではない。特定tester／全testerが未利用とは言えず、tester別利用実績はUNKNOWN。ただし「現在のα cohortから継続的Human QAを自然に得られていない可能性」を示すSignalで、Pipelineを整備した理由と整合する。warningが続く場合も現在の利用頻度が低い運用Signalとして残し、価値否定へ昇格させない。
+
+pause回避だけのsynthetic traffic / dummy request / keep-alive / fake activity / 無意味なscheduled DB requestは禁止。Freeを維持し、この問題だけでProへupgradeしない。実Human QA・real tester usage・必要なdevelopment operationによるactivityは許容するが、開発やretention Cronのactivityをtester engagementとして数えない。
+
+実際にpause／停止した場合、Human Validation experimentを**SUSPENDED**とする。unpauseだけで募集・受付を自動再開しない。既存API kill switch・募集を停止したまま、復旧後に以下を満たす。warningのみで未開始の現在はexperiment未開始・受付停止のままで、actual pauseはUNKNOWN。
+
+1. DBが正常に復旧していることを確認する。
+2. Human QA migrationのtable / RPCが存在することを確認する。未適用・不整合なら停止し、無断でproduction applyしない。
+3. active adminでDB受付をOFFにし、29日経過分を既存purgeで削除する。残存超過件数を確認する。復旧後最初の安全な機会に行う。
+4. `mechori-human-qa-retention`が存在し、`17 * * * *` / active / 実行成功の状態を確認する。
+5. API・DB両方のQA reception状態を確認し、再開判断までは停止を維持する。
+6. 有効なTEST payloadで匿名submitの最小smokeを行い、受付OFFでclosed・保存なしを確認する。保存成功系は隔離DB検証のPASSを前提とする。この確認を人工engagementとして数えない。
+7. CEO / Founderが募集・受付再開を明示判断する。ON RPCのcleanupは補助防御で、他の復旧確認やCEO判断を代替しない。
+
+`/qa`のTEST画面が表示できても、DB unavailableならAPIは503 unavailable、受付OFFなら503 closedを返し、受領成功を表示しない。入力noteと再送payloadは現在画面のmemoryに保持し、再送／コピーを案内する。reloadや画面終了後の復元は保証せず、offline storageは追加しない。`qa_completed`はaccepted / duplicateの受領確認後だけに出し、3操作の終了や保存失敗だけで完了Evidenceにしない。
 
 ## Analytics / capability URL
 
@@ -106,6 +137,7 @@ CEO Human ActionのGTM確認は次の最大5項目を維持する。実tokenで�
 
 ## Validationと公開前ゲート
 
+- 2026-09-29 pause correction: 全490 tests、lint / typecheck / build / runner syntax / diff checkはPASS。ローカル390px Chromiumで503 closed / unavailable / network failureをmockし、note・UUID・再送payload保持、未受領時の成功表示／qa_completed不発火、受領後だけの完了を確認。実DB runnerはDocker daemon接続不可でBLOCKED。実pause・本番DB・実GTMを検証したものではない。
 - 後続blocker修正後: 全490 tests（対象50件含む）、lint / typecheck / build / runner syntax / diff checkはPASS。実localhost headersとauth Originを確認。compiled bootstrapの通常ID・secret遷移はapp hydrationを隔離して検証し、実αログイン後のUX QAとは区別する。実DB / CronはBLOCKED、live GTMはUNKNOWN。
 - PASS: lint、全workspace typecheck / tests、production build。重点13件でpayload・source・size・malformed input・失敗応答・secret URL正規化とbootstrapを検証。
 - PASS: ローカルChromiumの390 / 412 / 1280px、focus、履歴展開、途中終了、空本文、通信失敗・429、同一payload再送、200%文字拡大。API成功・429はmock。cookie / localStorageのprivate sentinelとprovider境界を確認したが、実αアカウントのログイン済み実機QAとは別。

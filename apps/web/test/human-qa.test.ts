@@ -54,11 +54,13 @@ test("closed, cross-origin, oversized, malformed and unsupported requests never 
 });
 test("rate limit, closed DB, duplicate receipt and network failure have recoverable outcomes", async () => {
   for (const [outcome, status] of [["rate_limited", 429], ["closed", 503], ["duplicate", 200]] as const) {
-    assert.equal((await handleQaFeedbackRequest(request(input), { enabled: true, build: "", async submit() { return outcome; } })).status, status);
+    const response = await handleQaFeedbackRequest(request(input), { enabled: true, build: "", async submit() { return outcome; } });
+    assert.equal(response.status, status);
+    assert.deepEqual(await response.json(), { result: outcome });
   }
   const failed = await handleQaFeedbackRequest(request(input), { enabled: true, build: "", async submit() { throw new Error("private server detail"); } });
   assert.equal(failed.status, 503);
-  assert.equal((await failed.text()).includes("private server detail"), false);
+  assert.deepEqual(await failed.json(), { result: "unavailable" });
 });
 test("QA events contain no note, identity or raw location", () => {
   assert.deepEqual(qaAnalyticsContext("x", 2, "mobile"), { task: QA_TASK, version: "qa-v0.1", source: "x", step: 2, device_class: "mobile" });

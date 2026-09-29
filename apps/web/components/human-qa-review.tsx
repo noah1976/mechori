@@ -42,7 +42,7 @@ export function HumanQaReview({ admin }: { admin: boolean }) {
       const client = createSupabaseBrowserClient();
       const result = action === "toggle" ? await client.rpc("set_human_qa_reception", { p_enabled: !reception }) : await client.rpc("purge_human_qa_feedback");
       if (result.error) throw new Error("failed");
-      setMessage(action === "purge" ? "保持期限に達する前のフィードバックを削除しました。" : "DBの受付設定を更新しました。公開・募集の承認とは別です。");
+      setMessage(action === "purge" ? "29日経過したフィードバックを削除しました。" : "DBの受付設定を更新しました。公開・募集の承認とは別です。");
       await refresh();
     } catch { setMessage("操作できませんでした。権限・DB適用状態を確認してください。"); }
     finally { setBusy(false); }
@@ -53,7 +53,7 @@ export function HumanQaReview({ admin }: { admin: boolean }) {
     {state === "loading" ? <p role="status">読み込み中…</p> : state === "error" ? <><p>QA結果を読み込めませんでした。新しいDB機能が未適用の場合も表示されます。</p><button type="button" className="secondary-action" onClick={() => void refresh()}>再読み込み</button></> : <>
       <p>DB受付：{reception ? "有効" : "停止中"}（API側の有効化も別途必要）</p>
       {admin && <div className="form-actions"><button type="button" className="secondary-action" disabled={busy} onClick={() => void operate("toggle")}>{reception ? "QA受付を停止" : "QA受付を有効化"}</button><button type="button" className="secondary-action" disabled={busy} onClick={() => void operate("purge")}>29日経過したQA結果を削除</button></div>}
-      <p className="privacy-caption">受付停止中も、管理者が毎日削除を実行します。運用できない場合は公開を開始しません。</p>
+      <p className="privacy-caption">保持目標は30日です。通常は自動削除します。休止・障害中は削除が遅れる場合があるため、復旧後に削除と受付状態を確認してから再開します。</p>
       {rows.length === 0 ? <p>フィードバックはありません。</p> : <div className="admin-feedback-list">{rows.map((row, index) => <article key={`${row.created_at}-${index}`} className="admin-feedback-item"><p>{new Date(row.created_at).toLocaleString("ja-JP")} · {row.result === "done" ? "できた" : row.result === "confusing" ? "少し迷った" : "できなかった"}</p><p>{row.task} · 操作{row.step}/3 · {row.version} · {row.build} · {row.source} · {row.device}</p>{row.note && <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{row.note}</p>}</article>)}</div>}
     </>}
     {message && <p role="status">{message}</p>}
