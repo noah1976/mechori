@@ -26,6 +26,7 @@
 | つながり | P-075の準備中ルート | フォロー関係を確認・管理する | 人と愛車のつながりを整理し、知人を見つける | 相手のGarageを開く、フォロー解除 | 公開範囲設定、車両フォロー解除 | 未実装時は404にせず準備中 | つながり、フォロー中、フォロワー | 準備中・権限外・取得失敗 | 探す／Garage | KEEP（準備中） | 必要 |
 | 設定・プロフィール編集 | `/settings/profile`、`/settings/privacy` | 表示名、username、bio、公開設定 | 自分の見せ方とデータを管理 | 保存 | ログアウト、プライバシー | 設定が日常導線に出過ぎないようにする | 設定、見せる相手 | 重複・保存失敗 | Garage | MOVE | 必要 |
 | フィードバック | `/feedback` | αの意見を送る | 迷い・不具合を安全に伝える | 種別を選び送信 | 戻る、入力保持 | 罫線表では選択状態が伝わりにくい。記録作成FABを表示しない | フィードバック、良かった、迷った、動かなかった、欲しい、その他 | 送信失敗・再試行 | 設定／ホーム | SIMPLIFY | 必要 |
+| 登録不要の画面QA | `/qa` | 固定TEST DATAの閲覧課題と3択Feedbackを同じ画面で行うv0.1 | 招待・登録・個別説明を省くTechnical / Usability QA入口 | 確認をはじめる、次の操作へ、結果を送って終了 | 任意短文、途中終了 | 自己申告と実利用の証拠を混同しない。受付は初期停止、DB実行検証待ち | TEST DATA、登録不要、できた、少し迷った、できなかった | 通信失敗・受付停止・429、入力保持・同じpayload再送 | 公開ホーム | IMPLEMENTED / QA PENDING | 必要 |
 | 管理画面 | `/admin` | 監査、利用権、運用 | 一般IAから隔離した運用面 | 管理操作 | 監査閲覧 | 一般利用者への露出禁止 | 管理、監査 | 権限なし・取得失敗 | 設定 | KEEP | 必要 |
 | 事業者スペース | `/professional/organizations` | 所属Organizationの確認 | OWNERは事業者・member管理、STAFFは閲覧 | Organizationを開く | member確認 | 個人Garageとの用語衝突 | 事業者、お店・工場、OWNER、STAFF | membershipなし・権限なし・取得失敗 | ホーム | KEEP | 必要 |
 | 事業者管理 | `/admin/professional` | Organization、Provider、Founding Garage運用 | platform admin専用の最小運用面 | Organization作成・編集 | Provider連携、member管理 | 一般ユーザーへ露出禁止 | 事業者、Founding Garage | 権限なし・取得失敗 | 管理画面 | KEEP | 必要 |

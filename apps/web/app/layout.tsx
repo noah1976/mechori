@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { AppShell } from "@/components/app-shell";
-import { NotificationProvider } from "@/components/notification-provider";
-import { AppProvider } from "@/lib/app-context";
+import { ApplicationFrame } from "@/components/application-frame";
 import { mechoriProductionOrigin } from "@/lib/site-origin";
+import { safeGtmBootstrap } from "@/lib/analytics-privacy";
 import "./globals.css";
-
-/* eslint-disable @next/next/next-script-for-ga -- MECHORI uses the owner-supplied GTM container snippet verbatim. */
 
 const remoteAlpha = process.env.NEXT_PUBLIC_MECHORI_RUNTIME === "alpha";
 const googleTagManagerId = process.env.NEXT_PUBLIC_GTM_ID?.trim() || "GTM-M54GKLLL";
@@ -56,11 +53,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
             {/* Google Tag Manager */}
             <script
               dangerouslySetInnerHTML={{
-                __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','${googleTagManagerId}');`,
+                __html: safeGtmBootstrap(googleTagManagerId),
               }}
             />
             {/* End Google Tag Manager */}
@@ -68,26 +61,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
         )}
       </head>
       <body>
-        {analyticsEnabled && (
-          <>
-            {/* Google Tag Manager (noscript) */}
-            <noscript>
-              <iframe
-                src={`https://www.googletagmanager.com/ns.html?id=${googleTagManagerId}`}
-                height="0"
-                width="0"
-                style={{ display: "none", visibility: "hidden" }}
-                title="Google Tag Manager"
-              />
-            </noscript>
-            {/* End Google Tag Manager (noscript) */}
-          </>
-        )}
-        <AppProvider>
-          <NotificationProvider>
-            <AppShell>{children}</AppShell>
-          </NotificationProvider>
-        </AppProvider>
+        {/* No noscript GTM iframe: server cannot inspect invitation fragments. */}
+        <ApplicationFrame>{children}</ApplicationFrame>
       </body>
     </html>
   );

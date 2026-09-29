@@ -3,6 +3,7 @@
 import { useApp } from "@/lib/app-context";
 import { submitAlphaFeedback, type AlphaFeedbackKind } from "@/lib/alpha-operations";
 import { pushAnalyticsEvent } from "@/lib/analytics";
+import { sanitizeAnalyticsPath } from "@/lib/analytics-privacy";
 import { translate } from "@mechori/i18n";
 import { Check, ClipboardCopy, LoaderCircle, MessageSquareText, Send } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
@@ -42,7 +43,7 @@ export default function FeedbackPage() {
       await submitAlphaFeedback({
         kind,
         content: feedbackText,
-        pagePath: new URLSearchParams(window.location.search).get("from") || window.location.pathname,
+        pagePath: sanitizeAnalyticsPath(new URLSearchParams(window.location.search).get("from") || window.location.pathname),
         appBuild: process.env.NEXT_PUBLIC_COMMIT_REF ?? process.env.NEXT_PUBLIC_CONTEXT ?? "",
         userAgent: navigator.userAgent,
       });

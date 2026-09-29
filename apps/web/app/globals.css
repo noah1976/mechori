@@ -2518,3 +2518,21 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   .service-brief-header h1 { font-size: 28px; }
   .brief-history-list li { background: #fff; }
 }
+/* Human QA reuses the history ledger and form controls, without the alpha shell. */
+.qa-page { width: min(100% - 40px, 760px); margin-inline: auto; padding-bottom: 40px; }
+.qa-site-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 24px; border-bottom: 1px solid var(--border, #d9dfe3); }
+.qa-site-header span, .qa-task p { color: var(--muted, #58616b); }
+.qa-intro { padding-block: 40px 28px; }
+.qa-intro h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.35; margin-block: 12px 20px; }
+.qa-intro p, .qa-feedback p { line-height: 1.8; }
+.qa-task, .qa-feedback { padding-block: 28px; border-top: 1px solid var(--border, #d9dfe3); }
+.qa-task h2, .qa-feedback h2 { font-size: 21px; line-height: 1.6; }
+.qa-next { margin-block: 24px; }
+.qa-choices { display: flex; flex-wrap: wrap; gap: 12px; padding: 0; border: 0; margin-block: 24px; }
+.qa-choices label { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 10px 14px; border: 1px solid var(--border, #d9dfe3); border-radius: 4px; cursor: pointer; }
+.qa-choices label:has(input:checked) { border-color: var(--blue, #245a85); background: #edf4fa; }
+.qa-page :is(button, a, input, textarea, summary):focus-visible { outline: 3px solid #245a85; outline-offset: 4px; }
+.qa-feedback .field { width: 100%; }
+.qa-feedback textarea { min-height: 96px; }
+.qa-footer { display: flex; flex-wrap: wrap; gap: 24px; padding-block: 24px; border-top: 1px solid var(--border, #d9dfe3); }
+@media (max-width: 599px) { .qa-page { width: calc(100% - 32px); } .qa-site-header { font-size: 13px; } .qa-choices { flex-direction: column; } .qa-choices label { width: 100%; } .qa-intro { padding-top: 28px; } }
